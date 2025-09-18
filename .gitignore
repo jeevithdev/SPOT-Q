@@ -1,0 +1,49 @@
+# Node
+**/node_modules/
+
+# Env
+*.env
+*.env.*.local
+
+# Logs
+**/logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Build outputs
+**/dist/
+**/build/
+
+# Caches
+**/.vite/
+.vite/
+**/.cache/
+.cache/
+
+# Coverage
+**/coverage/
+*.lcov
+
+# TypeScript
+*.tsbuildinfo
+
+# OS/Editor
+.DS_Store
+**/.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+
+# Service worker build artifacts
+sw.js
+workbox-*.js
+
+# Firebase local logs
+firebase-debug.log
+
+# Maps in public (optional)
+frontend/public/*.map

@@ -1,0 +1,105 @@
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const bcrypt = require('bcryptjs');
+const nodemailer = require('nodemailer');
+const crypto = require('crypto');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
+require('dotenv').config();
+
+// Import models and middleware
+const User = require('./models/user');
+const { authenticateToken } = require('./middleware/auth');
+const { connectDB } = require('./config/database');
+const authRoutes = require('./routes/auth');
+const { initFirebaseAdmin } = require('./config/firebaseAdmin');
+
+const app = express();
+const PORT = process.env.PORT || 5000;
+
+// Security Middleware
+app.use(helmet({
+  contentSecurityPolicy: false, // Disable CSP for development
+  crossOriginEmbedderPolicy: false
+}));
+
+// Rate Limiting
+const limiter = rateLimit({
+  windowMs: parseInt(process.env.RATE_LIMIT_WINDOW_MS) || 15 * 60 * 1000, // 15 minutes
+  max: parseInt(process.env.RATE_LIMIT_MAX_REQUESTS) || 100, // limit each IP to 100 requests per windowMs
+  message: {
+    error: 'Too many requests from this IP, please try again later.',
+    retryAfter: '15 minutes'
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+});
+app.use('/api/', limiter);
+
+// CORS Configuration
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:3000', // React app URL
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Body parsing middleware
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+
+// Connect to MongoDB
+connectDB();
+
+// Test email service on startup
+const { testEmailConnection } = require('./utils/emailService');
+testEmailConnection();
+
+// Initialize Firebase Admin (for phone/SMS and Google ID token verification)
+try {
+  const fb = initFirebaseAdmin();
+  if (fb) {
+    console.log('Firebase Admin initialized');
+  } else {
+    console.log('Firebase Admin not configured (set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)');
+  }
+} catch (e) {
+  console.error('Failed to initialize Firebase Admin:', e?.message || e);
+}
+
+// JWT removed from server-level configuration (handled elsewhere or disabled)
+
+// Email transporter setup (mock for development)
+const createEmailTransporter = () => {
+  // In production, use real email service like SendGrid, AWS SES, etc.
+  return nodemailer.createTransport({
+    service: 'gmail',
+    auth: {
+      user: process.env.EMAIL_USER,
+      pass: process.env.EMAIL_PASS
+    }
+  });
+};
+
+// Routes
+app.use('/api/auth', authRoutes);
+
+// Database connection event listeners are handled in config/database.js
+
+// Error handling middleware
+app.use((error, req, res, next) => {
+  console.error('Error:', error);
+  res.status(500).json({ message: 'Internal server error' });
+});
+
+// 404 handler
+app.use('*', (req, res) => {
+  res.status(404).json({ message: 'Route not found' });
+});
+
+// Start server
+app.listen(PORT, () => {
+  console.log(`Server running on port ${PORT}`);
+  console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+});
