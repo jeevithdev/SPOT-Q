@@ -130,7 +130,7 @@ SPOT-Q/
 ```env
 NODE_ENV=development
 PORT=5000
-MONGODB_URI=mongodb://localhost:27017/loginapp
+MONGODB_URI=mongodb+srv://username:password@cluster0.xxxxx.mongodb.net/loginapp?retryWrites=true&w=majority
 JWT_SECRET=replace-with-a-long-random-string
 EMAIL_USER=your-email@gmail.com
 EMAIL_PASS=your-app-password

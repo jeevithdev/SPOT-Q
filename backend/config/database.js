@@ -3,7 +3,7 @@ const mongoose = require('mongoose');
 // Database configuration
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb://localhost:27017/loginapp';
+    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://sakthiautospotq_db_user:mRquJDKoXD5aghcm@spot-q.pphkeph.mongodb.net/?retryWrites=true&w=majority&appName=Spot-Q';
     
     const options = {
       maxPoolSize: 10, // Maintain up to 10 socket connections
