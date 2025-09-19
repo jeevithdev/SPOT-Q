@@ -99,6 +99,39 @@
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* Password input with toggle */
+.password-input {
+  position: relative;
+}
+
+.password-input input {
+  padding-right: 50px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 18px;
+  padding: 5px;
+  color: #6c757d;
+  transition: color 0.3s ease;
+  z-index: 1;
+}
+
+.password-toggle:hover {
+  color: #667eea;
+}
+
+.password-toggle:focus {
+  outline: none;
+  color: #667eea;
+}
+
 .primary-btn {
   width: 100%;
   padding: 15px;

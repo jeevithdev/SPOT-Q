@@ -1,0 +1,16 @@
+{
+  "name": "SPOT-Q Login System",
+  "short_name": "SPOT-Q",
+  "description": "Secure authentication system",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#667eea",
+  "theme_color": "#667eea",
+  "icons": [
+    {
+      "src": "/vite.svg",
+      "sizes": "any",
+      "type": "image/svg+xml"
+    }
+  ]
+}

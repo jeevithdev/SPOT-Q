@@ -27,6 +27,12 @@ const Login = () => {
   const [pendingRegistration, setPendingRegistration] = useState(null);
   const [isForgotPhoneFlow, setIsForgotPhoneFlow] = useState(false);
   const [pendingForgotEmail, setPendingForgotEmail] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPasswordResetForm, setShowPasswordResetForm] = useState(false);
+  const [pendingPasswordReset, setPendingPasswordReset] = useState(null);
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmNewPassword, setConfirmNewPassword] = useState('');
   const recaptchaRef = useRef(null);
 
   const { login, register, forgotPassword, verifyOtp } = useContext(AuthContext);
@@ -153,15 +159,12 @@ const Login = () => {
           setIsLogin(true);
           setMessage('Successfully registered. Please log in with Email/Password or SMS OTP.');
 				} else if (isForgotPhoneFlow && pendingForgotEmail) {
-					const response = await fetch(`${API_URL}/forgot-password-phone`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: pendingForgotEmail, idToken })
-          });
-          const data = await response.json();
-          if (!response.ok) throw new Error(data.message || 'Failed to send reset email');
+          // Show password reset form after SMS verification
           setShowOtpModal(false);
-          setMessage('If an account exists, a reset email was sent.');
+          setShowForgotPassword(false);
+          setShowPasswordResetForm(true);
+          setPendingPasswordReset({ email: pendingForgotEmail, idToken });
+          setMessage('Phone verified! Please enter your new password.');
         } else {
           // Login with verified phone
 					const response = await fetch(`${API_URL}/firebase-login`, {
@@ -170,7 +173,14 @@ const Login = () => {
             body: JSON.stringify({ idToken })
           });
           const data = await response.json();
-          if (!response.ok) throw new Error(data.message || 'Phone auth failed');
+          if (!response.ok) {
+            if (response.status === 404) {
+              setShowOtpModal(false);
+              setMessage('No account found with this phone number. Please register first.');
+              return;
+            }
+            throw new Error(data.message || 'Phone auth failed');
+          }
           localStorage.setItem('token', data.token);
           window.location.reload();
         }
@@ -191,22 +201,153 @@ const Login = () => {
   const handleForgotPassword = async (e) => {
     e.preventDefault();
     setLoading(true);
+    setMessage('');
     try {
-      if (!phoneNumber) throw new Error('Enter phone with country code to verify ownership');
+      if (!resetEmail) throw new Error('Email is required');
+      if (!phoneNumber) throw new Error('Phone number is required for verification');
+      
+      // First check if user exists
+      const checkResponse = await fetch(`${API_URL}/forgot-password`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: resetEmail })
+      });
+      
+      if (checkResponse.status === 404) {
+        setMessage('No account found with this email address. Please check your email or register first.');
+        setLoading(false);
+        return;
+      }
+      
+      if (!checkResponse.ok) {
+        const data = await checkResponse.json();
+        throw new Error(data.message || 'Failed to verify user');
+      }
+      
+      // User exists, now verify phone via SMS
       if (!ensureRecaptcha()) throw new Error('Failed to initialize reCAPTCHA');
       const result = await signInWithPhoneNumber(auth, phoneNumber, recaptchaRef.current);
       setConfirmationResult(result);
       setIsForgotPhoneFlow(true);
       setPendingForgotEmail(resetEmail);
       setShowOtpModal(true);
-      setMessage('SMS sent. Enter the code to continue');
+      setMessage('SMS sent. Enter the code to verify your phone');
     } catch (error) {
       setMessage(error.message || 'Failed to start phone verification');
     }
     setLoading(false);
   };
 
+  const handlePasswordReset = async (e) => {
+    e.preventDefault();
+    setLoading(true);
+    setMessage('');
+    
+    try {
+      if (newPassword !== confirmNewPassword) {
+        setMessage('Passwords do not match');
+        setLoading(false);
+        return;
+      }
+      
+      if (newPassword.length < 6) {
+        setMessage('Password must be at least 6 characters long');
+        setLoading(false);
+        return;
+      }
+      
+      const response = await fetch(`${API_URL}/reset-password-sms`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: pendingPasswordReset.email,
+          newPassword,
+          idToken: pendingPasswordReset.idToken
+        })
+      });
+      
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.message || 'Password reset failed');
+      
+      setShowPasswordResetForm(false);
+      setPendingPasswordReset(null);
+      setNewPassword('');
+      setConfirmNewPassword('');
+      setMessage('Password reset successfully! Please log in with your new password.');
+      setIsLogin(true);
+    } catch (error) {
+      setMessage(error.message || 'Password reset failed');
+    }
+    setLoading(false);
+  };
+
   // Google login removed
+
+  if (showPasswordResetForm) {
+    return (
+      <div className="login-container">
+        <div className="background-div">
+          {/* Background image will be added here later */}
+        </div>
+        <div className="login-card">
+          <h2>Set New Password</h2>
+          <form onSubmit={handlePasswordReset}>
+            <div className="input-group password-input">
+              <input
+                type={showPassword ? "text" : "password"}
+                placeholder="New Password"
+                value={newPassword}
+                onChange={(e) => setNewPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onMouseDown={() => setShowPassword(true)}
+                onMouseUp={() => setShowPassword(false)}
+                onMouseLeave={() => setShowPassword(false)}
+              >
+                Show
+              </button>
+            </div>
+            <div className="input-group password-input">
+              <input
+                type={showConfirmPassword ? "text" : "password"}
+                placeholder="Confirm New Password"
+                value={confirmNewPassword}
+                onChange={(e) => setConfirmNewPassword(e.target.value)}
+                required
+              />
+              <button
+                type="button"
+                className="password-toggle"
+                onMouseDown={() => setShowConfirmPassword(true)}
+                onMouseUp={() => setShowConfirmPassword(false)}
+                onMouseLeave={() => setShowConfirmPassword(false)}
+              >
+                Show
+              </button>
+            </div>
+            <button type="submit" disabled={loading} className="primary-btn">
+              {loading ? 'Resetting...' : 'Reset Password'}
+            </button>
+          </form>
+          <button 
+            onClick={() => {
+              setShowPasswordResetForm(false);
+              setPendingPasswordReset(null);
+              setNewPassword('');
+              setConfirmNewPassword('');
+            }} 
+            className="link-btn"
+          >
+            Cancel
+          </button>
+          {message && <div className="message">{message}</div>}
+        </div>
+      </div>
+    );
+  }
 
   if (showForgotPassword) {
     return (
@@ -229,7 +370,6 @@ const Login = () => {
             <div className="input-group">
               <input
                 type="tel"
-                name="phone"
                 placeholder="Phone e.g. +919123456789"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
@@ -237,7 +377,7 @@ const Login = () => {
               />
             </div>
             <button type="submit" disabled={loading} className="primary-btn">
-              {loading ? 'Sending...' : 'Verify Phone & Send Reset Email'}
+              {loading ? 'Verifying...' : 'Verify Phone & Reset Password'}
             </button>
           </form>
           <button 
@@ -339,28 +479,46 @@ const Login = () => {
                 />
               </div>
               
-              <div className="input-group">
+              <div className="input-group password-input">
                 <input
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   name="password"
                   placeholder="Password"
                   value={formData.password}
                   onChange={handleInputChange}
                   required
                 />
+                <button
+                  type="button"
+                  className="password-toggle"
+                  onMouseDown={() => setShowPassword(true)}
+                  onMouseUp={() => setShowPassword(false)}
+                  onMouseLeave={() => setShowPassword(false)}
+                >
+                  Show
+                </button>
               </div>
               {/* Google login removed */}
               
               {!isLogin && (
-                <div className="input-group">
+                <div className="input-group password-input">
                   <input
-                    type="password"
+                    type={showConfirmPassword ? "text" : "password"}
                     name="confirmPassword"
                     placeholder="Confirm Password"
                     value={formData.confirmPassword}
                     onChange={handleInputChange}
                     required
                   />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    onMouseDown={() => setShowConfirmPassword(true)}
+                    onMouseUp={() => setShowConfirmPassword(false)}
+                    onMouseLeave={() => setShowConfirmPassword(false)}
+                  >
+                    Show
+                  </button>
                 </div>
               )}
             </>

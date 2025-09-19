@@ -12,7 +12,7 @@ const App = () => {
       <div className="loading-container">
         <div className="loading-spinner"></div>
         <div className="loading-text">Loading...</div>
-        <style jsx>{`
+        <style>{`
           .loading-container {
             display: flex;
             flex-direction: column;

@@ -45,7 +45,7 @@ class ErrorBoundary extends React.Component {
               Reload Page
             </button>
           </div>
-          <style jsx>{`
+          <style>{`
             .error-boundary {
               min-height: 100vh;
               display: flex;

@@ -329,9 +329,9 @@ router.post('/forgot-password', async (req, res) => {
 
     const user = await User.findOne({ email: email.toLowerCase().trim() });
     if (!user) {
-      // Don't reveal if user exists or not
-      return res.json({ 
-        message: 'If an account with that email exists, a password reset email has been sent.' 
+      return res.status(404).json({ 
+        message: 'No account found with this email address.',
+        error: 'USER_NOT_FOUND'
       });
     }
 
@@ -442,6 +442,78 @@ router.post('/forgot-password-phone', async (req, res) => {
   }
 });
 
+// @route   POST /api/auth/reset-password-sms
+// @desc    Reset password after SMS verification
+// @access  Public
+router.post('/reset-password-sms', async (req, res) => {
+  try {
+    const { email, newPassword, idToken } = req.body;
+
+    if (!email || !newPassword || !idToken) {
+      return res.status(400).json({ 
+        message: 'Email, new password and idToken are required',
+        errors: {
+          email: !email ? 'Email is required' : null,
+          newPassword: !newPassword ? 'New password is required' : null,
+          idToken: !idToken ? 'idToken is required' : null
+        }
+      });
+    }
+
+    if (newPassword.length < 6) {
+      return res.status(400).json({ 
+        message: 'Password must be at least 6 characters long',
+        errors: { newPassword: 'Password too short' }
+      });
+    }
+
+    // Verify Firebase token
+    let decoded;
+    try {
+      decoded = await verifyFirebaseIdToken(idToken);
+    } catch (e) {
+      if (e && e.code === 'FIREBASE_ADMIN_NOT_CONFIGURED') {
+        return res.status(501).json({ message: 'Firebase Admin not configured on server' });
+      }
+      console.error('Firebase token verify error:', e);
+      return res.status(401).json({ message: 'Invalid Firebase ID token' });
+    }
+
+    const phone = decoded.phone_number || '';
+    if (!phone) {
+      return res.status(400).json({ message: 'Phone number not present in Firebase token' });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'No account found with this email address.',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+
+    // Verify phone matches user's phone
+    if (user.phone && String(user.phone) !== String(phone)) {
+      return res.status(403).json({ message: 'Phone number does not match this account' });
+    }
+
+    // Update password
+    user.password = newPassword;
+    user.resetPasswordToken = undefined;
+    user.resetPasswordExpires = undefined;
+    user.loginAttempts = 0;
+    user.lockUntil = undefined;
+    
+    await user.save();
+
+    res.json({ message: 'Password reset successfully' });
+  } catch (error) {
+    console.error('Reset password (SMS) error:', error);
+    res.status(500).json({ message: 'Server error during password reset' });
+  }
+});
+
 // @route   POST /api/auth/reset-password
 // @desc    Reset password with token
 // @access  Public
@@ -547,7 +619,7 @@ router.post('/firebase-login', async (req, res) => {
       return res.status(400).json({ message: 'Phone number not present in Firebase token' });
     }
 
-    // Determine lookup criteria: prefer phone; fall back to email if present
+    // Only allow login for existing users - do not create new users
     let user = null;
     if (phone) {
       user = await User.findOne({ phone });
@@ -557,23 +629,17 @@ router.post('/firebase-login', async (req, res) => {
     }
 
     if (!user) {
-      user = new User({
-        name: name || (phone || uid),
-        email: email || `${uid}@firebase.local`,
-        password: crypto.randomBytes(12).toString('hex'),
-        provider: 'phone',
-        isVerified: true,
-        phone: phone || ''
+      return res.status(404).json({ 
+        message: 'No account found with this phone number. Please register first.',
+        error: 'USER_NOT_FOUND'
       });
-      await user.save();
-    } else {
-      // Ensure provider and verification are set appropriately
-      if (!user.isVerified) user.isVerified = true;
-      if (email && !user.email) user.email = email.toLowerCase();
-      if (phone && !user.phone) user.phone = phone;
-      if (!user.provider || user.provider === 'local') user.provider = 'phone';
-      await user.save();
     }
+
+    // Update user info if needed (but don't change provider for existing users)
+    if (email && !user.email) user.email = email.toLowerCase();
+    if (phone && !user.phone) user.phone = phone;
+    if (!user.isVerified) user.isVerified = true;
+    await user.save();
 
     const token = generateToken(user._id);
     return res.json({
