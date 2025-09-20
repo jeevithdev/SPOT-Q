@@ -5,13 +5,13 @@ import { getAuth, RecaptchaVerifier, signInWithPhoneNumber } from 'firebase/auth
 // Firebase Web Config (public keys)
 // Provided by user; safe to keep on client
 const firebaseConfig = {
-  apiKey: 'AIzaSyBsxSw34raOrSyLQfsA8DFU-ilznXj-T2k',
-  authDomain: 'spot-q.firebaseapp.com',
-  projectId: 'spot-q',
-  storageBucket: 'spot-q.firebasestorage.app',
-  messagingSenderId: '922687448214',
-  appId: '1:922687448214:web:76c0a639f9f0f8cdc40eb7',
-  measurementId: 'G-150DCJ77CY'
+  apiKey: "AIzaSyBPu2Bv4BJDLv5KO9eDs7szNe3UwRXBJpE",
+  authDomain: "spot-q-45cd9.firebaseapp.com",
+  projectId: "spot-q-45cd9",
+  storageBucket: "spot-q-45cd9.firebasestorage.app",
+  messagingSenderId: "42392180261",
+  appId: "1:42392180261:web:a95c71daeb678c867191cc",
+  measurementId: "G-SYMMY9R2Z5"
 };
 
 const app = initializeApp(firebaseConfig);

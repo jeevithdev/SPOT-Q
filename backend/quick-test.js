@@ -1,17 +1,22 @@
 const mongoose = require('mongoose');
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 // Quick test of your MongoDB Atlas connection
 const quickTest = async () => {
   console.log('🚀 Quick MongoDB Atlas Connection Test');
   console.log('=====================================\n');
   
-  const mongoURI = 'mongodb+srv://sakthiautospotq_db_user:mRquJDKoXD5aghcm@spot-q.pphkeph.mongodb.net/?retryWrites=true&w=majority&appName=Spot-Q';
+  const mongoURI = process.env.MONGODB_URI;
+  if (!mongoURI) {
+    throw new Error('MONGODB_URI is not set. Please set it in your environment.');
+  }
+  const sanitized = (() => {
+    try { return mongoURI.replace(/(mongodb(?:\+srv)?:\/\/)([^@]+)@/i, '$1***:***@'); } catch { return '***'; }
+  })();
   
   try {
     console.log('🔄 Connecting to MongoDB Atlas...');
-    console.log('📍 Cluster: spot-q.pphkeph.mongodb.net');
-    console.log('👤 User: sakthiautospotq_db_user');
-    console.log('📱 App: Spot-Q\n');
+    console.log(`🔗 ${sanitized}`);
     
     const conn = await mongoose.connect(mongoURI, {
       maxPoolSize: 5,

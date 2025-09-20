@@ -3,8 +3,23 @@ const mongoose = require('mongoose');
 // Database configuration
 const connectDB = async () => {
   try {
-    const mongoURI = process.env.MONGODB_URI || 'mongodb+srv://sakthiautospotq_db_user:mRquJDKoXD5aghcm@spot-q.pphkeph.mongodb.net/?retryWrites=true&w=majority&appName=Spot-Q';
-    
+    const mongoURI = process.env.MONGODB_URI;
+    if (!mongoURI) {
+      throw new Error('MONGODB_URI is not set. Please configure your MongoDB Atlas connection string in the environment.');
+    }
+    const sanitized = (() => {
+      try {
+        const schemeIdx = mongoURI.indexOf('://');
+        if (schemeIdx === -1) return '***';
+        const atIdx = mongoURI.indexOf('@', schemeIdx + 3);
+        if (atIdx === -1) return mongoURI; // no credentials present
+        const before = mongoURI.slice(0, schemeIdx + 3);
+        const after = mongoURI.slice(atIdx);
+        return `${before}***:***${after}`;
+      } catch { return '***'; }
+    })();
+    console.log('Connecting to MongoDB:', sanitized);
+
     const options = {
       maxPoolSize: 10, // Maintain up to 10 socket connections
       serverSelectionTimeoutMS: 5000, // Keep trying to send operations for 5 seconds

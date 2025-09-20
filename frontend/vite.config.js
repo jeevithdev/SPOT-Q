@@ -35,7 +35,7 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: true, // Generate source maps for debugging
     minify: 'terser', // Use terser for better minification
-    target: 'es2015', // Support modern browsers
+    target: 'es2020', // Support modern browsers with import.meta
     rollupOptions: {
       output: {
         manualChunks: {
@@ -102,7 +102,7 @@ export default defineConfig({
   
   // ESBuild configuration
   esbuild: {
-    target: 'es2015',
+    target: 'es2020',
     jsxFactory: 'React.createElement',
     jsxFragment: 'React.Fragment',
   }

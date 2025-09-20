@@ -6,7 +6,8 @@ const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
-require('dotenv').config();
+const session = require('express-session');
+require('dotenv').config({ path: require('path').join(__dirname, '.env') });
 
 // Import models and middleware
 const User = require('./models/user');
@@ -43,6 +44,20 @@ app.use(cors({
   credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
+}));
+
+// Session middleware
+app.use(session({
+  secret: process.env.SESSION_SECRET || 'dev-session-secret',
+  resave: true, // Changed to true to ensure session is saved
+  saveUninitialized: true, // Changed to true to save new sessions
+  cookie: {
+    secure: process.env.NODE_ENV === 'production',
+    maxAge: 15 * 60 * 1000, // 15 minutes
+    httpOnly: true, // Prevent XSS attacks
+    sameSite: 'lax' // CSRF protection
+  },
+  name: 'spotq.session' // Custom session name
 }));
 
 // Body parsing middleware

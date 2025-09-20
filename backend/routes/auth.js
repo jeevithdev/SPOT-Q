@@ -443,19 +443,18 @@ router.post('/forgot-password-phone', async (req, res) => {
 });
 
 // @route   POST /api/auth/reset-password-sms
-// @desc    Reset password after SMS verification
+// @desc    Reset password after SMS verification (using session)
 // @access  Public
 router.post('/reset-password-sms', async (req, res) => {
   try {
-    const { email, newPassword, idToken } = req.body;
+    const { email, newPassword } = req.body;
 
-    if (!email || !newPassword || !idToken) {
+    if (!email || !newPassword) {
       return res.status(400).json({ 
-        message: 'Email, new password and idToken are required',
+        message: 'Email and new password are required',
         errors: {
           email: !email ? 'Email is required' : null,
-          newPassword: !newPassword ? 'New password is required' : null,
-          idToken: !idToken ? 'idToken is required' : null
+          newPassword: !newPassword ? 'New password is required' : null
         }
       });
     }
@@ -467,35 +466,39 @@ router.post('/reset-password-sms', async (req, res) => {
       });
     }
 
-    // Verify Firebase token
-    let decoded;
-    try {
-      decoded = await verifyFirebaseIdToken(idToken);
-    } catch (e) {
-      if (e && e.code === 'FIREBASE_ADMIN_NOT_CONFIGURED') {
-        return res.status(501).json({ message: 'Firebase Admin not configured on server' });
-      }
-      console.error('Firebase token verify error:', e);
-      return res.status(401).json({ message: 'Invalid Firebase ID token' });
-    }
+    // Debug session data
+    console.log('🔍 Reset password request for:', email);
+    console.log('📝 Session data:', {
+      sessionExists: !!req.session,
+      forgotVerified: req.session?.forgotVerified,
+      forgotUserId: req.session?.forgotUserId,
+      forgotEmail: req.session?.forgotEmail
+    });
 
-    const phone = decoded.phone_number || '';
-    if (!phone) {
-      return res.status(400).json({ message: 'Phone number not present in Firebase token' });
-    }
-
-    // Find user by email
-    const user = await User.findOne({ email: email.toLowerCase().trim() });
-    if (!user) {
-      return res.status(404).json({ 
-        message: 'No account found with this email address.',
-        error: 'USER_NOT_FOUND'
+    // Check if user is verified through session
+    if (!req.session || !req.session.forgotVerified || !req.session.forgotUserId) {
+      console.log('❌ Session verification failed');
+      return res.status(403).json({ 
+        message: 'OTP verification required. Please complete the verification process.',
+        error: 'VERIFICATION_REQUIRED'
       });
     }
 
-    // Verify phone matches user's phone
-    if (user.phone && String(user.phone) !== String(phone)) {
-      return res.status(403).json({ message: 'Phone number does not match this account' });
+    // Verify email matches session
+    if (req.session.forgotEmail !== email.toLowerCase().trim()) {
+      return res.status(403).json({ 
+        message: 'Email does not match verification session',
+        error: 'EMAIL_MISMATCH'
+      });
+    }
+
+    // Find user by ID from session
+    const user = await User.findById(req.session.forgotUserId);
+    if (!user) {
+      return res.status(404).json({ 
+        message: 'User not found',
+        error: 'USER_NOT_FOUND'
+      });
     }
 
     // Update password
@@ -506,6 +509,11 @@ router.post('/reset-password-sms', async (req, res) => {
     user.lockUntil = undefined;
     
     await user.save();
+
+    // Clear session
+    req.session.forgotVerified = undefined;
+    req.session.forgotUserId = undefined;
+    req.session.forgotEmail = undefined;
 
     res.json({ message: 'Password reset successfully' });
   } catch (error) {
@@ -585,6 +593,134 @@ router.get('/profile', authenticateToken, (req, res) => {
   res.json({
     user: req.user.getPublicProfile()
   });
+});
+
+// @route   POST /api/auth/verify-forgot-data
+// @desc    Verify email and phone exist in database for forgot password
+// @access  Public
+router.post('/verify-forgot-data', async (req, res) => {
+  try {
+    const { email, phone } = req.body;
+
+    if (!email || !phone) {
+      return res.status(400).json({
+        message: 'Email and phone number are required',
+        errors: {
+          email: !email ? 'Email is required' : null,
+          phone: !phone ? 'Phone number is required' : null
+        }
+      });
+    }
+
+    // Find user by email and phone
+    const user = await User.findOne({ 
+      email: email.toLowerCase().trim(),
+      phone: phone.trim()
+    });
+
+    if (!user) {
+      return res.status(404).json({
+        message: 'No account found with this email and phone number combination',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+
+    if (user.provider !== 'local') {
+      return res.status(400).json({
+        message: `Cannot reset password for ${user.provider} accounts. Please login with ${user.provider}.`
+      });
+    }
+
+    if (!user.isActive) {
+      return res.status(403).json({
+        message: 'Account is deactivated. Please contact support.',
+        error: 'ACCOUNT_DEACTIVATED'
+      });
+    }
+
+    // Store user ID in session for OTP verification step
+    req.session = req.session || {};
+    req.session.forgotUserId = user._id.toString();
+
+    res.json({
+      message: 'Email and phone verified successfully',
+      user: { id: user._id, email: user.email, phone: user.phone }
+    });
+  } catch (error) {
+    console.error('Verify forgot data error:', error);
+    res.status(500).json({ message: 'Server error during verification' });
+  }
+});
+
+// @route   POST /api/auth/verify-forgot-otp
+// @desc    Verify Firebase OTP and prepare for password reset
+// @access  Public
+router.post('/verify-forgot-otp', async (req, res) => {
+  try {
+    const { email, idToken } = req.body;
+
+    if (!email || !idToken) {
+      return res.status(400).json({
+        message: 'Email and idToken are required',
+        errors: {
+          email: !email ? 'Email is required' : null,
+          idToken: !idToken ? 'idToken is required' : null
+        }
+      });
+    }
+
+    // Verify Firebase token
+    let decoded;
+    try {
+      decoded = await verifyFirebaseIdToken(idToken);
+    } catch (e) {
+      if (e && e.code === 'FIREBASE_ADMIN_NOT_CONFIGURED') {
+        return res.status(501).json({ message: 'Firebase Admin not configured on server' });
+      }
+      console.error('Firebase token verify error:', e);
+      return res.status(401).json({ message: 'Invalid Firebase ID token' });
+    }
+
+    const phone = decoded.phone_number || '';
+    if (!phone) {
+      return res.status(400).json({ message: 'Phone number not present in Firebase token' });
+    }
+
+    // Find user by email
+    const user = await User.findOne({ email: email.toLowerCase().trim() });
+    if (!user) {
+      return res.status(404).json({
+        message: 'No account found with this email address',
+        error: 'USER_NOT_FOUND'
+      });
+    }
+
+    // Verify phone matches user's phone
+    if (user.phone && String(user.phone) !== String(phone)) {
+      return res.status(403).json({ message: 'Phone number does not match this account' });
+    }
+
+    // Store verification in session for password reset
+    req.session = req.session || {};
+    req.session.forgotVerified = true;
+    req.session.forgotUserId = user._id.toString();
+    req.session.forgotEmail = email.toLowerCase().trim();
+
+    console.log('✅ OTP verification successful for:', email);
+    console.log('📝 Session data stored:', {
+      forgotVerified: req.session.forgotVerified,
+      forgotUserId: req.session.forgotUserId,
+      forgotEmail: req.session.forgotEmail
+    });
+
+    res.json({
+      message: 'OTP verified successfully. You can now reset your password.',
+      verified: true
+    });
+  } catch (error) {
+    console.error('Verify forgot OTP error:', error);
+    res.status(500).json({ message: 'Server error during OTP verification' });
+  }
 });
 
 module.exports = router;

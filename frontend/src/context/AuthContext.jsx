@@ -1,4 +1,5 @@
 import React, { createContext, useState, useEffect } from 'react';
+import { auth as fbAuth, RecaptchaVerifier, signInWithPhoneNumber } from '../config/firebase';
 
 export const AuthContext = createContext();
 
@@ -126,6 +127,118 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Register with phone using Firebase OTP flow
+  const registerWithPhone = async ({ name, email, password, phone, idToken }) => {
+    if (DEMO_MODE) {
+      return { token: 'demo', user: { id: 'demo', name, email, phone, isVerified: true } };
+    }
+    const response = await fetch(`${API_URL}/register-with-phone`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, email, password, idToken })
+    });
+    const data = await response.json();
+    if (!response.ok) {
+      throw new Error(data.message || 'Phone registration failed');
+    }
+    localStorage.setItem('token', data.token);
+    setToken(data.token);
+    setUser(data.user);
+    return data;
+  };
+
+  // Start phone sign-in to send OTP (creates invisible recaptcha if needed)
+  const sendPhoneOtp = async (phoneNumber, recaptchaContainerId = 'recaptcha-container') => {
+    if (DEMO_MODE) return { verificationId: 'demo' };
+    
+    // Clean up existing verifier
+    if (window.__recaptchaVerifier) {
+      try {
+        window.__recaptchaVerifier.clear();
+      } catch (e) {
+        console.log('Clearing existing verifier:', e.message);
+      }
+      window.__recaptchaVerifier = null;
+    }
+    
+    // Ensure container exists
+    let container = document.getElementById(recaptchaContainerId);
+    if (!container) {
+      // Create container if it doesn't exist
+      container = document.createElement('div');
+      container.id = recaptchaContainerId;
+      container.style.marginTop = '8px';
+      container.style.minHeight = '40px';
+      // Find a good place to insert it
+      const loginBox = document.querySelector('.login-box');
+      if (loginBox) {
+        loginBox.appendChild(container);
+      }
+    }
+    
+    // Clear container content
+    container.innerHTML = '';
+    
+    try {
+      // Wait a bit for DOM to be ready
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
+      const verifier = new RecaptchaVerifier(fbAuth, recaptchaContainerId, { 
+        size: 'invisible',
+        callback: () => {
+          console.log('reCAPTCHA solved');
+        },
+        'expired-callback': () => {
+          console.log('reCAPTCHA expired');
+        }
+      });
+      
+      await verifier.render();
+      window.__recaptchaVerifier = verifier;
+      
+      const confirmationResult = await signInWithPhoneNumber(fbAuth, phoneNumber, verifier);
+      window.__confirmationResult = confirmationResult;
+      return { verificationId: confirmationResult.verificationId };
+    } catch (error) {
+      console.error('reCAPTCHA error:', error);
+      
+      // If it's a container error, try to recreate
+      if (error.message.includes('container') || error.message.includes('element')) {
+        console.log('Attempting to recreate reCAPTCHA container...');
+        // Remove existing container
+        const existingContainer = document.getElementById(recaptchaContainerId);
+        if (existingContainer) {
+          existingContainer.remove();
+        }
+        
+        // Create new container
+        const newContainer = document.createElement('div');
+        newContainer.id = recaptchaContainerId;
+        newContainer.style.marginTop = '8px';
+        newContainer.style.minHeight = '40px';
+        
+        const loginBox = document.querySelector('.login-box');
+        if (loginBox) {
+          loginBox.appendChild(newContainer);
+        }
+        
+        throw new Error('reCAPTCHA container issue. Please try again.');
+      }
+      
+      throw new Error('Failed to initialize reCAPTCHA. Please refresh the page and try again.');
+    }
+  };
+
+  // Verify OTP code and get Firebase ID token
+  const verifyPhoneOtp = async (code) => {
+    if (DEMO_MODE) return { idToken: 'demo' };
+    const confirmationResult = window.__confirmationResult;
+    if (!confirmationResult) throw new Error('OTP session not initialized');
+    const credential = await confirmationResult.confirm(code);
+    const idToken = await credential.user.getIdToken();
+    return { idToken };
+  };
+
   const verifyOtp = async (email, otp) => {
     if (DEMO_MODE) {
       // Do not auto-login after verification; just signal success
@@ -173,7 +286,33 @@ export const AuthProvider = ({ children }) => {
     localStorage.removeItem('token');
     setToken(null);
     setUser(null);
+    
+    // Clean up reCAPTCHA
+    if (window.__recaptchaVerifier) {
+      try {
+        window.__recaptchaVerifier.clear();
+      } catch (e) {
+        console.log('Clearing reCAPTCHA on logout:', e.message);
+      }
+      window.__recaptchaVerifier = null;
+    }
+    window.__confirmationResult = null;
   };
+
+  // Clean up reCAPTCHA when component unmounts
+  useEffect(() => {
+    return () => {
+      if (window.__recaptchaVerifier) {
+        try {
+          window.__recaptchaVerifier.clear();
+        } catch (e) {
+          console.log('Clearing reCAPTCHA on unmount:', e.message);
+        }
+        window.__recaptchaVerifier = null;
+      }
+      window.__confirmationResult = null;
+    };
+  }, []);
 
   const value = {
     user,
@@ -181,6 +320,9 @@ export const AuthProvider = ({ children }) => {
     loading,
     login,
     register,
+    registerWithPhone,
+    sendPhoneOtp,
+    verifyPhoneOtp,
     logout,
     forgotPassword,
     verifyOtp
