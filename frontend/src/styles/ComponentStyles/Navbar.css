@@ -1,0 +1,122 @@
+/* src/styles/ComponentStyles/Navbar.css */
+
+.navbar-container {
+  display: flex;
+  align-items: center;
+  padding: 10px 20px;
+  background-color: #273F4F; /* Your specified background color */
+  color: white;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  position: relative; /* Needed for z-index of dropdowns */
+  z-index: 1000; /* Ensure navbar is on top */
+}
+
+.navbar-logo {
+  margin-right: 40px; /* Space between logo and first nav item */
+}
+
+.navbar-logo a {
+  text-decoration: none;
+  display: flex; /* To align logo and text if needed */
+  align-items: center;
+}
+
+.logo-image {
+  height: 40px; /* Adjust height as needed */
+  /* If your logo image already contains "SAKTHI AUTO" text, no need for separate text. */
+  /* If it's just the trident, you might add: */
+  /* filter: brightness(0) invert(1) sepia(1) saturate(10000%) hue-rotate(10deg); */
+  /* The above filter is for making a black logo orange. Adjust as per your actual logo colors */
+}
+
+/* If you have a separate text for logo */
+.navbar-logo .logo-text {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: white;
+  margin-left: 10px;
+}
+
+.navbar-links {
+  display: flex;
+  gap: 30px; /* Space between top-level nav items */
+}
+
+.navbar-item {
+  position: relative; /* For dropdown positioning */
+  height: 100%; /* Ensure hover area is sufficient */
+  display: flex;
+  align-items: center;
+}
+
+.navbar-link {
+  color: #bdc3c7; /* Light gray for default links */
+  text-decoration: none;
+  font-weight: 500;
+  padding: 5px 0; /* Padding for click/hover area */
+  transition: color 0.3s;
+  display: flex;
+  align-items: center;
+  gap: 5px; /* Space for dropdown arrow */
+}
+
+.navbar-link:hover,
+.navbar-item.active .navbar-link {
+  color: white; /* White on hover or when active dropdown */
+}
+
+/* Specific styling for the highlighted items as per Figma (e.g., PROCESS, PRODUCTION) */
+.navbar-link.highlighted {
+  color: #f39c12; /* Orange color for highlighted links */
+}
+
+.navbar-link.highlighted:hover {
+  color: #f5b041; /* Slightly lighter orange on hover */
+}
+
+.dropdown-arrow {
+  width: 0;
+  height: 0;
+  border-left: 4px solid transparent;
+  border-right: 4px solid transparent;
+  border-top: 4px solid #bdc3c7; /* Default arrow color */
+  transition: transform 0.3s;
+}
+
+.navbar-item.active .dropdown-arrow {
+  border-top-color: white; /* Arrow color when dropdown is active */
+  transform: rotate(180deg); /* Rotate arrow when dropdown is open */
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%; /* Position right below the navbar item */
+  left: 0;
+  background-color: #273F4F; /* Same as navbar background */
+  min-width: 250px; /* Adjust width as needed */
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 4px;
+  overflow: hidden;
+  padding: 10px 0;
+  z-index: 10; /* Ensure dropdown is above other content */
+}
+
+.dropdown-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 20px;
+  color: white; /* White text for dropdown items */
+  text-decoration: none;
+  transition: background-color 0.2s, color 0.2s;
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+.dropdown-item:hover {
+  background-color: #34495e; /* Slightly lighter on hover */
+  color: #f39c12; /* Orange text on hover for dropdown items */
+}
+
+.dropdown-item-icon {
+  font-size: 1.1rem; /* Adjust icon size */
+}
