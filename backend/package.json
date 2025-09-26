@@ -1,7 +1,7 @@
 {
-  "name": "login-backend",
+  "name": "spot-q-backend",
   "version": "1.0.0",
-  "description": "Backend server for login application",
+  "description": "SPOT-Q Backend API - Quality Control and Process Management System",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,14 +9,16 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
+    "quality-control",
+    "manufacturing",
+    "process-management",
+    "authentication",
     "nodejs",
     "express",
     "mongodb",
-    "authentication",
-    "jwt",
-    "oauth"
+    "jwt"
   ],
-  "author": "Your Name",
+  "author": "Sakthi Auto",
   "license": "MIT",
   "dependencies": {
     "bcryptjs": "^2.4.3",
@@ -27,12 +29,10 @@
     "express-rate-limit": "^6.10.0",
     "express-session": "^1.17.3",
     "express-validator": "^7.0.1",
-    "firebase-admin": "^12.7.0",
     "helmet": "^7.0.0",
     "jsonwebtoken": "^9.0.2",
     "mongodb": "^6.20.0",
-    "mongoose": "^7.5.0",
-    "nodemailer": "^6.9.4"
+    "mongoose": "^7.5.0"
   },
   "devDependencies": {
     "nodemon": "^3.1.10"

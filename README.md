@@ -7,7 +7,6 @@ A full-stack authentication system built with React (frontend) and Node.js/Expre
 - 🔐 **Secure Authentication**: JWT-based authentication with password hashing
 - 👤 **User Management**: Registration, login, profile management
 - 🔑 **Password Reset**: Email-based password reset functionality
-<!-- Google OAuth removed -->
 - 🛡️ **Security**: Rate limiting, CORS protection, helmet security headers
 - 📱 **Responsive Design**: Mobile-first responsive UI
 - ⚡ **Modern Stack**: React 18, Vite, Express.js, MongoDB
@@ -171,7 +170,6 @@ VITE_APP_VERSION=1.0.0
 ### Authentication
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
-- Google OAuth login removed
 - `POST /api/auth/forgot-password` - Request password reset
 - `POST /api/auth/reset-password` - Reset password with token
 - `GET /api/auth/verify` - Verify JWT token
@@ -188,31 +186,6 @@ VITE_APP_VERSION=1.0.0
 - **Input Validation**: Server-side validation
 - **Account Lockout**: Temporary lockout after failed attempts
 
-## Development
-
-### Backend Development
-```bash
-cd backend
-npm run dev  # Uses nodemon for auto-restart
-```
-
-### Frontend Development
-```bash
-cd frontend
-npm run dev  # Vite dev server with hot reload
-```
-
-### Building for Production
-```bash
-# Frontend
-cd frontend
-npm run build
-
-# Backend
-cd backend
-npm start
-```
-
 ## Contributing
 
 1. Fork the repository
@@ -220,15 +193,3 @@ npm start
 3. Commit your changes (`git commit -m 'Add some amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
-
-## License
-
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-If you encounter any issues or have questions, please open an issue on GitHub.
-
----
-
-**Happy Coding! 🚀**

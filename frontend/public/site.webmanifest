@@ -1,16 +1,20 @@
 {
-  "name": "SPOT-Q Login System",
+  "name": "SPOT-Q - Quality Control System",
   "short_name": "SPOT-Q",
-  "description": "Secure authentication system",
+  "description": "Quality Control and Process Management System for Manufacturing",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#667eea",
   "theme_color": "#667eea",
+  "categories": ["productivity", "business", "utilities"],
+  "lang": "en",
+  "orientation": "portrait-primary",
   "icons": [
     {
       "src": "/vite.svg",
       "sizes": "any",
-      "type": "image/svg+xml"
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
     }
   ]
 }

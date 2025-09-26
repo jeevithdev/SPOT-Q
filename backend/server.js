@@ -2,19 +2,18 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const bcrypt = require('bcryptjs');
-const nodemailer = require('nodemailer');
 const crypto = require('crypto');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
 const session = require('express-session');
-require('dotenv').config({ path: require('path').join(__dirname, '.env') });
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 // Import models and middleware
 const User = require('./models/user');
 const { authenticateToken } = require('./middleware/auth');
 const { connectDB } = require('./config/database');
 const authRoutes = require('./routes/auth');
-const { initFirebaseAdmin } = require('./config/firebaseAdmin');
+// Firebase removed - using MongoDB only
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -67,38 +66,27 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 // Connect to MongoDB
 connectDB();
 
-// Test email service on startup
-const { testEmailConnection } = require('./utils/emailService');
-testEmailConnection();
 
-// Initialize Firebase Admin (for phone/SMS and Google ID token verification)
-try {
-  const fb = initFirebaseAdmin();
-  if (fb) {
-    console.log('Firebase Admin initialized');
-  } else {
-    console.log('Firebase Admin not configured (set FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY)');
-  }
-} catch (e) {
-  console.error('Failed to initialize Firebase Admin:', e?.message || e);
-}
+// Firebase removed - using MongoDB authentication only
+console.log('Authentication: MongoDB-based (Firebase removed)');
 
 // JWT removed from server-level configuration (handled elsewhere or disabled)
 
-// Email transporter setup (mock for development)
-const createEmailTransporter = () => {
-  // In production, use real email service like SendGrid, AWS SES, etc.
-  return nodemailer.createTransport({
-    service: 'gmail',
-    auth: {
-      user: process.env.EMAIL_USER,
-      pass: process.env.EMAIL_PASS
-    }
-  });
-};
 
 // Routes
 app.use('/api/auth', authRoutes);
+
+// Development diagnostics route (non-sensitive)
+if ((process.env.NODE_ENV || 'development') !== 'production') {
+  app.get('/api/__debug__/env', (req, res) => {
+    res.json({
+      frontendUrl: process.env.FRONTEND_URL,
+      corsOriginConfigured: process.env.FRONTEND_URL || 'http://localhost:3000',
+      nodeEnv: process.env.NODE_ENV || 'development',
+      authType: 'MongoDB-based (Firebase removed)'
+    });
+  });
+}
 
 // Database connection event listeners are handled in config/database.js
 

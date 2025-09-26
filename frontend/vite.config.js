@@ -81,6 +81,7 @@ export default defineConfig({
   
   // Environment variables configuration
   envPrefix: 'VITE_', // Only expose env vars starting with VITE_
+  envDir: '../', // Look for .env files in parent directory (root)
   
   // Preview configuration (for production preview)
   preview: {

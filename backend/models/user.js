@@ -52,15 +52,10 @@ const userSchema = new mongoose.Schema({
   },
   resetPasswordToken: String,
   resetPasswordExpires: Date,
-  // OTP for email verification
-  otpCode: String,
-  otpExpires: Date,
   isVerified: {
     type: Boolean,
-    default: false
+    default: true // Auto-verify users
   },
-  verificationToken: String,
-  verificationExpires: Date,
   loginAttempts: {
     type: Number,
     default: 0
@@ -134,20 +129,7 @@ userSchema.methods.resetLoginAttempts = function() {
   });
 };
 
-// Method to generate verification token
-userSchema.methods.generateVerificationToken = function() {
-  const crypto = require('crypto');
-  this.verificationToken = crypto.randomBytes(32).toString('hex');
-  this.verificationExpires = Date.now() + 24 * 60 * 60 * 1000; // 24 hours
-};
-
-// Generate 6-digit numeric OTP
-userSchema.methods.generateOtp = function() {
-  const otp = Math.floor(100000 + Math.random() * 900000).toString();
-  this.otpCode = otp;
-  this.otpExpires = Date.now() + 10 * 60 * 1000; // 10 minutes
-  return otp;
-};
+// OTP and verification token methods removed - users are auto-verified
 
 // Method to generate password reset token
 userSchema.methods.generatePasswordResetToken = function() {
@@ -190,8 +172,6 @@ userSchema.methods.toJSON = function() {
   delete user.password;
   delete user.resetPasswordToken;
   delete user.resetPasswordExpires;
-  delete user.verificationToken;
-  delete user.verificationExpires;
   delete user.loginAttempts;
   delete user.lockUntil;
   delete user.socialIds;

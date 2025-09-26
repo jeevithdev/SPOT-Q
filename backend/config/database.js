@@ -118,9 +118,7 @@ const dbUtils = {
     try {
       // User collection indexes
       await mongoose.connection.db.collection('users').createIndex({ email: 1 }, { unique: true });
-      await mongoose.connection.db.collection('users').createIndex({ 'socialIds.googleId': 1 });
       await mongoose.connection.db.collection('users').createIndex({ resetPasswordToken: 1 });
-      await mongoose.connection.db.collection('users').createIndex({ verificationToken: 1 });
       await mongoose.connection.db.collection('users').createIndex({ createdAt: -1 });
       
       console.log('Database indexes created successfully');
