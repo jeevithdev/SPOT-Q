@@ -1,122 +1,421 @@
 /* src/styles/ComponentStyles/Navbar.css */
 
+/* Main Navbar Container */
 .navbar-container {
   display: flex;
   align-items: center;
-  padding: 10px 20px;
-  background-color: #273F4F; /* Your specified background color */
+  padding: 15px 30px;
+  background: linear-gradient(135deg, #273F4F 0%, #2c4758 100%);
   color: white;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-  position: relative; /* Needed for z-index of dropdowns */
-  z-index: 1000; /* Ensure navbar is on top */
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.navbar-container.scrolled {
+  padding: 10px 30px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+  background: linear-gradient(135deg, #1e2f3b 0%, #273F4F 100%);
+}
+
+/* Logo Section */
 .navbar-logo {
-  margin-right: 40px; /* Space between logo and first nav item */
+  margin-right: 50px;
 }
 
-.navbar-logo a {
+.logo-link {
   text-decoration: none;
-  display: flex; /* To align logo and text if needed */
+  display: flex;
   align-items: center;
+  position: relative;
+  transition: transform 0.3s ease;
+}
+
+.logo-link:hover {
+  transform: scale(1.05);
+}
+
+.logo-link::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #f39c12, #f5b041);
+  transition: width 0.4s ease;
+}
+
+.logo-link:hover::after {
+  width: 100%;
 }
 
 .logo-image {
-  height: 40px; /* Adjust height as needed */
-  /* If your logo image already contains "SAKTHI AUTO" text, no need for separate text. */
-  /* If it's just the trident, you might add: */
-  /* filter: brightness(0) invert(1) sepia(1) saturate(10000%) hue-rotate(10deg); */
-  /* The above filter is for making a black logo orange. Adjust as per your actual logo colors */
+  height: 45px;
+  width: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+  transition: filter 0.3s ease;
 }
 
-/* If you have a separate text for logo */
-.navbar-logo .logo-text {
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: white;
-  margin-left: 10px;
+.logo-link:hover .logo-image {
+  filter: drop-shadow(0 4px 8px rgba(243, 156, 18, 0.3));
 }
 
+/* Navigation Links Container */
 .navbar-links {
   display: flex;
-  gap: 30px; /* Space between top-level nav items */
+  gap: 5px;
+  flex: 1;
+  align-items: center;
 }
 
+/* Navbar Item */
 .navbar-item {
-  position: relative; /* For dropdown positioning */
-  height: 100%; /* Ensure hover area is sufficient */
+  position: relative;
+  height: 100%;
   display: flex;
   align-items: center;
 }
 
+/* Navbar Link */
 .navbar-link {
-  color: #bdc3c7; /* Light gray for default links */
+  color: #fff; /* Change to white */
   text-decoration: none;
   font-weight: 500;
-  padding: 5px 0; /* Padding for click/hover area */
-  transition: color 0.3s;
+  font-size: 0.9rem;
+  padding: 10px 16px;
   display: flex;
   align-items: center;
-  gap: 5px; /* Space for dropdown arrow */
+  gap: 6px;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+  background: none;
 }
 
 .navbar-link:hover,
 .navbar-item.active .navbar-link {
-  color: white; /* White on hover or when active dropdown */
+  color: #f39c12; /* Orange on hover/active */
+  background-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
 }
 
-/* Specific styling for the highlighted items as per Figma (e.g., PROCESS, PRODUCTION) */
+.navbar-link::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+  transition: left 0.6s ease;
+}
+
+.navbar-link:hover::before {
+  left: 100%;
+}
+
+.link-text {
+  position: relative;
+  z-index: 1;
+}
+
+.link-underline {
+  position: absolute;
+  bottom: 8px;
+  left: 16px;
+  right: 16px;
+  height: 2px;
+  background: linear-gradient(90deg, #f39c12, #f5b041);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.navbar-link:hover .link-underline {
+  transform: scaleX(1);
+}
+
+.navbar-link:hover,
+.navbar-item.active .navbar-link {
+  color: #f39c12; /* Orange on hover/active */
+  background-color: rgba(255, 255, 255, 0.08);
+  transform: translateY(-2px);
+}
+
+/* Highlighted Links (PRODUCTION, PROCESS, etc.) */
 .navbar-link.highlighted {
-  color: #f39c12; /* Orange color for highlighted links */
+  color: #fff; /* Keep highlighted links white by default */
+  font-weight: 600;
+  text-shadow: 0 0 10px rgba(243, 156, 18, 0.3);
 }
 
 .navbar-link.highlighted:hover {
-  color: #f5b041; /* Slightly lighter orange on hover */
+  color: #f39c12; /* Orange on hover */
+  background: linear-gradient(135deg, rgba(243, 156, 18, 0.15), rgba(245, 176, 65, 0.1));
+  box-shadow: 0 4px 12px rgba(243, 156, 18, 0.2);
 }
 
+.navbar-link.highlighted .link-underline {
+  background: linear-gradient(90deg, #f5b041, #f39c12, #e67e22);
+}
+
+/* Active Route */
+.navbar-link.active-route {
+  color: #f39c12;
+  background: rgba(243, 156, 18, 0.15);
+  box-shadow: inset 0 0 0 1px rgba(243, 156, 18, 0.3);
+}
+
+.navbar-link.active-route .link-underline {
+  transform: scaleX(1);
+}
+
+/* Dropdown Arrow */
 .dropdown-arrow {
-  width: 0;
-  height: 0;
-  border-left: 4px solid transparent;
-  border-right: 4px solid transparent;
-  border-top: 4px solid #bdc3c7; /* Default arrow color */
-  transition: transform 0.3s;
+  display: flex;
+  align-items: center;
+  transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  opacity: 0.7;
 }
 
+.dropdown-arrow svg {
+  transition: all 0.3s ease;
+}
+
+.navbar-link:hover .dropdown-arrow,
 .navbar-item.active .dropdown-arrow {
-  border-top-color: white; /* Arrow color when dropdown is active */
-  transform: rotate(180deg); /* Rotate arrow when dropdown is open */
+  opacity: 1;
 }
 
+.dropdown-arrow.open {
+  transform: rotate(180deg);
+}
+
+/* Dropdown Menu */
 .dropdown-menu {
   position: absolute;
-  top: 100%; /* Position right below the navbar item */
+  top: calc(100% + 8px);
   left: 0;
-  background-color: #273F4F; /* Same as navbar background */
-  min-width: 250px; /* Adjust width as needed */
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  border-radius: 4px;
+  background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
+  min-width: 300px;
+  border-radius: 12px;
   overflow: hidden;
-  padding: 10px 0;
-  z-index: 10; /* Ensure dropdown is above other content */
+  padding: 8px;
+  z-index: 10;
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-10px);
+  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  border: 1px solid rgba(243, 156, 18, 0.2);
 }
 
+.dropdown-menu::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #f39c12, #f5b041, #e67e22);
+}
+
+.dropdown-menu.show {
+  opacity: 1;
+  visibility: visible;
+  transform: translateY(0);
+}
+
+.dropdown-content {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+/* Dropdown Items */
 .dropdown-item {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 20px;
-  color: white; /* White text for dropdown items */
+  gap: 12px;
+  padding: 14px 18px;
+  color: #ecf0f1;
   text-decoration: none;
-  transition: background-color 0.2s, color 0.2s;
-  white-space: nowrap; /* Prevent text wrapping */
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  white-space: nowrap;
+  font-size: 0.9rem;
+  opacity: 0;
+  transform: translateX(-10px);
+  animation: slideIn 0.4s ease forwards;
+}
+
+@keyframes slideIn {
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.dropdown-item::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 0;
+  background: linear-gradient(90deg, rgba(243, 156, 18, 0.2), transparent);
+  transition: width 0.4s ease;
+}
+
+.dropdown-item:hover::before {
+  width: 100%;
+}
+
+.dropdown-item-bullet {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #7f8c8d;
+  transition: all 0.3s ease;
+  flex-shrink: 0;
+}
+
+.dropdown-item-text {
+  flex: 1;
+  position: relative;
+  z-index: 1;
+}
+
+.dropdown-item-arrow {
+  opacity: 0;
+  transform: translateX(-10px);
+  transition: all 0.3s ease;
+  color: #f39c12;
+  font-weight: bold;
 }
 
 .dropdown-item:hover {
-  background-color: #34495e; /* Slightly lighter on hover */
-  color: #f39c12; /* Orange text on hover for dropdown items */
+  background: rgba(52, 73, 94, 0.8);
+  color: #f39c12;
+  transform: translateX(5px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
 }
 
-.dropdown-item-icon {
-  font-size: 1.1rem; /* Adjust icon size */
+.dropdown-item:hover .dropdown-item-bullet {
+  background: #f39c12;
+  transform: scale(1.5);
+  box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+}
+
+.dropdown-item:hover .dropdown-item-arrow {
+  opacity: 1;
+  transform: translateX(0);
+}
+
+.dropdown-item.active {
+  background: rgba(243, 156, 18, 0.15);
+  color: #f39c12;
+  border-left: 3px solid #f39c12;
+}
+
+.dropdown-item.active .dropdown-item-bullet {
+  background: #f39c12;
+  box-shadow: 0 0 10px rgba(243, 156, 18, 0.5);
+}
+
+/* Responsive Design */
+@media (max-width: 1200px) {
+  .navbar-links {
+    gap: 2px;
+  }
+  
+  .navbar-link {
+    padding: 10px 12px;
+    font-size: 0.85rem;
+  }
+}
+
+@media (max-width: 1024px) {
+  .navbar-container {
+    padding: 12px 20px;
+  }
+  
+  .navbar-logo {
+    margin-right: 30px;
+  }
+  
+  .navbar-link {
+    padding: 8px 10px;
+  }
+  
+  .dropdown-menu {
+    min-width: 250px;
+  }
+}
+
+@media (max-width: 768px) {
+  .navbar-container {
+    flex-wrap: wrap;
+    padding: 10px 15px;
+  }
+  
+  .navbar-logo {
+    margin-right: 15px;
+  }
+  
+  .logo-image {
+    height: 35px;
+  }
+  
+  .navbar-links {
+    width: 100%;
+    overflow-x: auto;
+    gap: 5px;
+    padding: 10px 0;
+    scrollbar-width: thin;
+    scrollbar-color: #f39c12 #273F4F;
+  }
+  
+  .navbar-links::-webkit-scrollbar {
+    height: 4px;
+  }
+  
+  .navbar-links::-webkit-scrollbar-track {
+    background: #273F4F;
+  }
+  
+  .navbar-links::-webkit-scrollbar-thumb {
+    background: #f39c12;
+    border-radius: 2px;
+  }
+  
+  .navbar-link {
+    font-size: 0.8rem;
+    padding: 8px 12px;
+  }
+  
+  .dropdown-menu {
+    min-width: 220px;
+  }
+}
+
+/* Accessibility - Focus Styles */
+.navbar-link:focus,
+.dropdown-item:focus {
+  outline: 2px solid #f39c12;
+  outline-offset: 3px;
+}
+
+.navbar-link:focus:not(:focus-visible),
+.dropdown-item:focus:not(:focus-visible) {
+  outline: none;
 }

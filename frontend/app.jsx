@@ -18,6 +18,7 @@ import SandplantProcessParameter from './src/pages/SandplantProcessParameter';
 import RejectionReportFound from './src/pages/RejectionReportFound';
 import RejectionReportMachine from './src/pages/RejectionReportMachine';
 import Login from './src/pages/Login';
+import AnalyticsPage from './src/pages/AnalyticsPage';
 
 const ProtectedLayout = () => {
   const { user } = useContext(AuthContext);
@@ -68,6 +69,9 @@ const App = () => {
           {/* Rejection */}
           <Route path="rejection/report-founded" element={<RejectionReportFound />} />
           <Route path="rejection/report-machine" element={<RejectionReportMachine />} />
+
+          {/* Analytics */}
+          <Route path="analytics" element={<AnalyticsPage />} />
         </Route>
 
         {/* Fallback */}

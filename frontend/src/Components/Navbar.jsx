@@ -1,10 +1,12 @@
 // src/Components/Navbar.jsx
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation } from 'react-router-dom';
 import '../styles/ComponentStyles/Navbar.css';
+import { LogoutButton } from "./Buttons";
 
 const navItems = [
   { name: 'ITEMS', path: '/items' },
+  { name: 'ANALYTICS', path: '/analytics' },
   { name: 'SPECTRO ANALYSIS', path: '/spectro-analysis' },
   {
     name: 'PRODUCTION',
@@ -34,14 +36,29 @@ const navItems = [
     name: 'PERFORMANCE',
     path: '/performance',
     dropdown: [
-      { name: 'PROCESS CONTROL', path: '/performance/process-control' },
-      { name: 'OVERALL REPORT', path: '/performance/overall-report' },
+      { name: 'PROCESS CONTROL', path: '/process-control' },
+      { name: 'OVERALL REPORT', path: '/overall-reports' },
     ],
   },
 ];
 
 export const Navbar = () => {
   const [activeDropdown, setActiveDropdown] = useState(null);
+  const [scrolled, setScrolled] = useState(false);
+  const location = useLocation();
+
+  // Handle scroll effect
+  useEffect(() => {
+    const handleScroll = () => {
+      const isScrolled = window.scrollY > 10;
+      if (isScrolled !== scrolled) {
+        setScrolled(isScrolled);
+      }
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [scrolled]);
 
   const handleMouseEnter = (itemName) => {
     setActiveDropdown(itemName);
@@ -51,10 +68,18 @@ export const Navbar = () => {
     setActiveDropdown(null);
   };
 
+  const isActiveRoute = (path) => {
+    return location.pathname === path || location.pathname.startsWith(path + '/');
+  };
+
+  const isHighlighted = (path) => {
+    return ['/process', '/production', '/rejection', '/performance'].includes(path);
+  };
+
   return (
-    <nav className="navbar-container">
+    <nav className={`navbar-container${scrolled ? ' scrolled' : ''}`}>
       <div className="navbar-logo">
-        <Link to="/">
+        <Link to="/" className="logo-link">
           <img src="/images/sakthiautologo.png" alt="Sakthi Auto" className="logo-image" />
         </Link>
       </div>
@@ -64,26 +89,47 @@ export const Navbar = () => {
           <div 
             key={item.name} 
             className={`navbar-item ${item.dropdown ? 'has-dropdown' : ''} ${activeDropdown === item.name ? 'active' : ''}`}
-            onMouseEnter={() => handleMouseEnter(item.name)}
+            onMouseEnter={() => item.dropdown && handleMouseEnter(item.name)}
             onMouseLeave={handleMouseLeave}
           >
-            <Link to={item.path} className={`navbar-link ${item.path === '/process' || item.path === '/production' || item.path === '/rejection' || item.path === '/performance' ? 'highlighted' : ''}`}>
-              {item.name} {item.dropdown && <span className="dropdown-arrow"></span>}
+            <Link 
+              to={item.path} 
+              className={`navbar-link ${isHighlighted(item.path) ? 'highlighted' : ''} ${isActiveRoute(item.path) ? 'active-route' : ''}`}
+            >
+              <span className="link-text">{item.name}</span>
+              {item.dropdown && (
+                <span className={`dropdown-arrow ${activeDropdown === item.name ? 'open' : ''}`}>
+                  <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                </span>
+              )}
+              <span className="link-underline"></span>
             </Link>
-
-            {item.dropdown && activeDropdown === item.name && (
-              <div className="dropdown-menu">
-                {item.dropdown.map((subItem) => (
-                  <Link key={subItem.name} to={subItem.path} className="dropdown-item">
-                    {subItem.icon && <span className="dropdown-item-icon">{subItem.icon}</span>}
-                    {subItem.name}
-                  </Link>
-                ))}
+            
+            {item.dropdown && (
+              <div className={`dropdown-menu ${activeDropdown === item.name ? 'show' : ''}`}>
+                <div className="dropdown-content">
+                  {item.dropdown.map((subItem, index) => (
+                    <Link 
+                      key={subItem.name} 
+                      to={subItem.path} 
+                      className={`dropdown-item ${isActiveRoute(subItem.path) ? 'active' : ''}`}
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <span className="dropdown-item-bullet"></span>
+                      <span className="dropdown-item-text">{subItem.name}</span>
+                      <span className="dropdown-item-arrow">→</span>
+                    </Link>
+                  ))}
+                </div>
               </div>
             )}
           </div>
         ))}
       </div>
+
+      <LogoutButton />
     </nav>
   );
 };
