@@ -3,14 +3,19 @@ import React, { createContext, useState, useEffect } from 'react';
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    // Initialize user from localStorage if available
+    const storedUser = localStorage.getItem('user');
+    return storedUser ? JSON.parse(storedUser) : null;
+  });
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
 
   // Safe env access for Vite (avoid runtime errors if unavailable)
   const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
   const DEMO_MODE = String(env.VITE_DEMO || '').toLowerCase() === 'true';
-  const API_URL = (env.VITE_API_URL ? `${env.VITE_API_URL}/auth` : 'http://localhost:5001/api/auth');
+  // Use Vite proxy in development (relative URL), or configured API URL in production
+  const API_URL = env.VITE_API_URL ? `${env.VITE_API_URL}/auth` : '/api/auth';
 
   useEffect(() => {
     if (DEMO_MODE) {
@@ -46,14 +51,68 @@ export const AuthProvider = ({ children }) => {
       if (response.ok) {
         const userData = await response.json();
         setUser(userData.user);
-      } else {
+        localStorage.setItem('user', JSON.stringify(userData.user));
+      } else if (response.status === 401 || response.status === 403) {
+        // Only clear token if it's explicitly invalid/expired
+        console.log('Token is invalid or expired, logging out');
         localStorage.removeItem('token');
+        localStorage.removeItem('user');
         setToken(null);
+        setUser(null);
+      } else {
+        // For other errors (500, etc.), keep the token but don't set user
+        console.error('Server error during token verification, status:', response.status);
+        // Optionally: Try to decode token locally to check if it's expired
+        try {
+          const payload = JSON.parse(atob(token.split('.')[1]));
+          const isExpired = payload.exp * 1000 < Date.now();
+          if (isExpired) {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            setToken(null);
+            setUser(null);
+          } else {
+            // Token still valid locally, use stored user or create minimal one
+            const storedUser = localStorage.getItem('user');
+            if (storedUser) {
+              setUser(JSON.parse(storedUser));
+            } else {
+              setUser({ id: payload.userId });
+            }
+          }
+        } catch (decodeError) {
+          // If we can't decode, keep logged out but don't remove token yet
+          console.error('Could not decode token:', decodeError);
+        }
       }
     } catch (error) {
-      console.error('Token verification failed:', error);
-      localStorage.removeItem('token');
-      setToken(null);
+      // Network error - keep token and try to use it locally
+      console.error('Network error during token verification:', error);
+      try {
+        const payload = JSON.parse(atob(token.split('.')[1]));
+        const isExpired = payload.exp * 1000 < Date.now();
+        if (isExpired) {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          setToken(null);
+          setUser(null);
+        } else {
+          // Token still valid locally, use stored user or create minimal one
+          const storedUser = localStorage.getItem('user');
+          if (storedUser) {
+            setUser(JSON.parse(storedUser));
+          } else {
+            setUser({ id: payload.userId });
+          }
+        }
+      } catch (decodeError) {
+        // If we can't decode, assume invalid and remove
+        console.error('Could not decode token:', decodeError);
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setToken(null);
+        setUser(null);
+      }
     }
     setLoading(false);
   };
@@ -90,6 +149,7 @@ export const AuthProvider = ({ children }) => {
       }
 
       localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
       setToken(data.token);
       setUser(data.user);
       
@@ -129,6 +189,8 @@ export const AuthProvider = ({ children }) => {
 
   const logout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('user');
+    localStorage.removeItem('demo_user'); // Also clear demo user if present
     setToken(null);
     setUser(null);
   };
