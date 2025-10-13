@@ -22,6 +22,7 @@ const navItems = [
     dropdown: [
       { name: 'MELTING PROCESS PARAMETERS', path: '/process/melting-parameters' },
       { name: 'MOLDING PROCESS PARAMETERS', path: '/process/molding-parameters' },
+      { name: 'SANDPLANT PROCESS PARAMETERS', path: '/process/sandplant-parameters' },
     ],
   },
   {

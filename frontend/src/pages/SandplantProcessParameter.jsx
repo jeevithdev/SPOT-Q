@@ -216,8 +216,7 @@ const SandplantProcessParameter = () => {
                 {/* Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Date <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Date                  </label>
                   <input
                     type="date"
                     value={entry.date}
@@ -237,8 +236,7 @@ const SandplantProcessParameter = () => {
                 {/* Shift */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Shift <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Shift                  </label>
                   <select
                     value={entry.shift}
                     onChange={(e) => updateEntry(entry.id, 'shift', e.target.value)}
@@ -263,8 +261,7 @@ const SandplantProcessParameter = () => {
                 {/* Sand Type */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Sand Type <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Sand Type                  </label>
                   <select
                     value={entry.sandType}
                     onChange={(e) => updateEntry(entry.id, 'sandType', e.target.value)}
@@ -291,14 +288,13 @@ const SandplantProcessParameter = () => {
                 {/* Moisture Content */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Moisture Content (%) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Moisture Content (%)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.moistureContent}
                     onChange={(e) => updateEntry(entry.id, 'moistureContent', e.target.value)}
-                    placeholder="e.g., 3.5"
+                    placeholder="e.g: 3.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -314,14 +310,13 @@ const SandplantProcessParameter = () => {
                 {/* Clay Content */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Clay Content (%) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Clay Content (%)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.clayContent}
                     onChange={(e) => updateEntry(entry.id, 'clayContent', e.target.value)}
-                    placeholder="e.g., 8.5"
+                    placeholder="e.g: 8.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -337,13 +332,12 @@ const SandplantProcessParameter = () => {
                 {/* Permeability */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Permeability <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Permeability                  </label>
                   <input
                     type="number"
                     value={entry.permeability}
                     onChange={(e) => updateEntry(entry.id, 'permeability', e.target.value)}
-                    placeholder="e.g., 120"
+                    placeholder="e.g: 120"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -359,14 +353,13 @@ const SandplantProcessParameter = () => {
                 {/* Green Strength */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Green Strength (kPa) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Green Strength (kPa)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.greenStrength}
                     onChange={(e) => updateEntry(entry.id, 'greenStrength', e.target.value)}
-                    placeholder="e.g., 85.5"
+                    placeholder="e.g: 85.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -389,7 +382,7 @@ const SandplantProcessParameter = () => {
                     step="0.1"
                     value={entry.dryStrength}
                     onChange={(e) => updateEntry(entry.id, 'dryStrength', e.target.value)}
-                    placeholder="e.g., 450.0"
+                    placeholder="e.g: 450.0"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -405,14 +398,13 @@ const SandplantProcessParameter = () => {
                 {/* Flowability */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Flowability (%) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Flowability (%)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.flowability}
                     onChange={(e) => updateEntry(entry.id, 'flowability', e.target.value)}
-                    placeholder="e.g., 75.5"
+                    placeholder="e.g: 75.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -428,14 +420,13 @@ const SandplantProcessParameter = () => {
                 {/* Compactability */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Compactability (%) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Compactability (%)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.compactability}
                     onChange={(e) => updateEntry(entry.id, 'compactability', e.target.value)}
-                    placeholder="e.g., 42.5"
+                    placeholder="e.g: 42.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -457,7 +448,7 @@ const SandplantProcessParameter = () => {
                     type="number"
                     value={entry.temperature}
                     onChange={(e) => updateEntry(entry.id, 'temperature', e.target.value)}
-                    placeholder="e.g., 25"
+                    placeholder="e.g: 25"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -480,7 +471,7 @@ const SandplantProcessParameter = () => {
                     step="0.1"
                     value={entry.mixingTime}
                     onChange={(e) => updateEntry(entry.id, 'mixingTime', e.target.value)}
-                    placeholder="e.g., 3.5"
+                    placeholder="e.g: 3.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -503,7 +494,7 @@ const SandplantProcessParameter = () => {
                     step="0.1"
                     value={entry.batchSize}
                     onChange={(e) => updateEntry(entry.id, 'batchSize', e.target.value)}
-                    placeholder="e.g., 500.0"
+                    placeholder="e.g: 500.0"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -519,13 +510,12 @@ const SandplantProcessParameter = () => {
                 {/* Operator Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Operator Name <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Operator Name                  </label>
                   <input
                     type="text"
                     value={entry.operatorName}
                     onChange={(e) => updateEntry(entry.id, 'operatorName', e.target.value)}
-                    placeholder="e.g., John Smith"
+                    placeholder="e.g: John Smith"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -547,7 +537,7 @@ const SandplantProcessParameter = () => {
                     type="text"
                     value={entry.supervisor}
                     onChange={(e) => updateEntry(entry.id, 'supervisor', e.target.value)}
-                    placeholder="e.g., Mike Johnson"
+                    placeholder="e.g: Mike Johnson"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',

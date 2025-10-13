@@ -66,7 +66,7 @@ const Login = () => {
       setRegPassword('');
       setRegConfirm('');
       setActiveTab('login');
-      alert('Registration successful! You are now logged in.');
+      alert('Registration successful! Please log in with your credentials.');
     } catch (err) {
       setRegError(err?.message || 'Registration failed');
     } finally {

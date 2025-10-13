@@ -210,8 +210,7 @@ const ProcessControl = () => {
                 {/* Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Date <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Date                  </label>
                   <input
                     type="date"
                     value={entry.date}
@@ -231,8 +230,7 @@ const ProcessControl = () => {
                 {/* Shift */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Shift <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Shift                  </label>
                   <select
                     value={entry.shift}
                     onChange={(e) => updateEntry(entry.id, 'shift', e.target.value)}
@@ -257,8 +255,7 @@ const ProcessControl = () => {
                 {/* Control Point */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Control Point <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Control Point                  </label>
                   <select
                     value={entry.controlPoint}
                     onChange={(e) => updateEntry(entry.id, 'controlPoint', e.target.value)}
@@ -286,13 +283,12 @@ const ProcessControl = () => {
                 {/* Parameter Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Parameter Name <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Parameter Name                  </label>
                   <input
                     type="text"
                     value={entry.parameterName}
                     onChange={(e) => updateEntry(entry.id, 'parameterName', e.target.value)}
-                    placeholder="e.g., Temperature, Pressure, Speed"
+                    placeholder="e.g: Temperature, Pressure, Speed"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -308,14 +304,13 @@ const ProcessControl = () => {
                 {/* Target Value */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Target Value <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Target Value                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={entry.targetValue}
                     onChange={(e) => updateEntry(entry.id, 'targetValue', e.target.value)}
-                    placeholder="e.g., 1500.00"
+                    placeholder="e.g: 1500.00"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -331,14 +326,13 @@ const ProcessControl = () => {
                 {/* Actual Value */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Actual Value <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Actual Value                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={entry.actualValue}
                     onChange={(e) => updateEntry(entry.id, 'actualValue', e.target.value)}
-                    placeholder="e.g., 1502.50"
+                    placeholder="e.g: 1502.50"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -354,14 +348,13 @@ const ProcessControl = () => {
                 {/* Upper Limit */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Upper Limit <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Upper Limit                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={entry.upperLimit}
                     onChange={(e) => updateEntry(entry.id, 'upperLimit', e.target.value)}
-                    placeholder="e.g., 1520.00"
+                    placeholder="e.g: 1520.00"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -377,14 +370,13 @@ const ProcessControl = () => {
                 {/* Lower Limit */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Lower Limit <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Lower Limit                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={entry.lowerLimit}
                     onChange={(e) => updateEntry(entry.id, 'lowerLimit', e.target.value)}
-                    placeholder="e.g., 1480.00"
+                    placeholder="e.g: 1480.00"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -400,8 +392,7 @@ const ProcessControl = () => {
                 {/* Status */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Status <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Status                  </label>
                   <select
                     value={entry.status}
                     onChange={(e) => updateEntry(entry.id, 'status', e.target.value)}
@@ -434,7 +425,7 @@ const ProcessControl = () => {
                     step="0.01"
                     value={entry.deviation}
                     onChange={(e) => updateEntry(entry.id, 'deviation', e.target.value)}
-                    placeholder="e.g., 2.50"
+                    placeholder="e.g: 2.50"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -478,13 +469,12 @@ const ProcessControl = () => {
                 {/* Operator Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Operator Name <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Operator Name                  </label>
                   <input
                     type="text"
                     value={entry.operatorName}
                     onChange={(e) => updateEntry(entry.id, 'operatorName', e.target.value)}
-                    placeholder="e.g., John Smith"
+                    placeholder="e.g: John Smith"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -506,7 +496,7 @@ const ProcessControl = () => {
                     type="text"
                     value={entry.supervisor}
                     onChange={(e) => updateEntry(entry.id, 'supervisor', e.target.value)}
-                    placeholder="e.g., Mike Johnson"
+                    placeholder="e.g: Mike Johnson"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',

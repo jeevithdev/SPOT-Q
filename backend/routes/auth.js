@@ -74,15 +74,11 @@ router.post('/register', async (req, res) => {
 
     await user.save();
 
-    // Generate token for immediate login
-    const token = generateToken(user._id);
-
     console.log(`✅ User registered: ${email} - Account created successfully`);
 
     res.status(201).json({
-      message: 'User created successfully. You are now logged in.',
-      token,
-      user: user.getPublicProfile()
+      message: 'User registered successfully. Please log in with your credentials.',
+      success: true
     });
   } catch (error) {
     console.error('Registration error:', error);
@@ -169,15 +165,6 @@ router.post('/login', async (req, res) => {
     res.status(500).json({ message: 'Server error during login' });
   }
 });
-
-// OTP verification removed - users are auto-verified on registration
-
-// Google login removed
-
-
-// Firebase phone-based password reset removed
-
-// SMS-based password reset removed - using simple token-based reset only
 
 
 // @route   GET /api/auth/verify

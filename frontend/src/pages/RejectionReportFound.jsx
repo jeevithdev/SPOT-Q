@@ -214,8 +214,7 @@ const RejectionReportFound = () => {
                 {/* Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Date <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Date                  </label>
                   <input
                     type="date"
                     value={entry.date}
@@ -235,8 +234,7 @@ const RejectionReportFound = () => {
                 {/* Shift */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Shift <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Shift                  </label>
                   <select
                     value={entry.shift}
                     onChange={(e) => updateEntry(entry.id, 'shift', e.target.value)}
@@ -261,13 +259,12 @@ const RejectionReportFound = () => {
                 {/* Part Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Part Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Part Number                  </label>
                   <input
                     type="text"
                     value={entry.partNumber}
                     onChange={(e) => updateEntry(entry.id, 'partNumber', e.target.value)}
-                    placeholder="e.g., BRAKE_DISC_001"
+                    placeholder="e.g: BRAKE_DISC_001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -283,13 +280,12 @@ const RejectionReportFound = () => {
                 {/* Heat Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Heat Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Heat Number                  </label>
                   <input
                     type="text"
                     value={entry.heatNumber}
                     onChange={(e) => updateEntry(entry.id, 'heatNumber', e.target.value)}
-                    placeholder="e.g., H2024001"
+                    placeholder="e.g: H2024001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -305,13 +301,12 @@ const RejectionReportFound = () => {
                 {/* Batch Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Batch Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Batch Number                  </label>
                   <input
                     type="text"
                     value={entry.batchNumber}
                     onChange={(e) => updateEntry(entry.id, 'batchNumber', e.target.value)}
-                    placeholder="e.g., B240001"
+                    placeholder="e.g: B240001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -327,13 +322,12 @@ const RejectionReportFound = () => {
                 {/* Casting Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Casting Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Casting Number                  </label>
                   <input
                     type="text"
                     value={entry.castingNumber}
                     onChange={(e) => updateEntry(entry.id, 'castingNumber', e.target.value)}
-                    placeholder="e.g., CAST-2024-001"
+                    placeholder="e.g: CAST-2024-001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -349,8 +343,7 @@ const RejectionReportFound = () => {
                 {/* Defect Type */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Defect Type <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Defect Type                  </label>
                   <select
                     value={entry.defectType}
                     onChange={(e) => updateEntry(entry.id, 'defectType', e.target.value)}
@@ -382,8 +375,7 @@ const RejectionReportFound = () => {
                 {/* Defect Location */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Defect Location <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Defect Location                  </label>
                   <select
                     value={entry.defectLocation}
                     onChange={(e) => updateEntry(entry.id, 'defectLocation', e.target.value)}
@@ -413,8 +405,7 @@ const RejectionReportFound = () => {
                 {/* Defect Severity */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Defect Severity <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Defect Severity                  </label>
                   <select
                     value={entry.defectSeverity}
                     onChange={(e) => updateEntry(entry.id, 'defectSeverity', e.target.value)}
@@ -440,8 +431,7 @@ const RejectionReportFound = () => {
                 {/* Rejection Reason */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Rejection Reason <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Rejection Reason                  </label>
                   <select
                     value={entry.rejectionReason}
                     onChange={(e) => updateEntry(entry.id, 'rejectionReason', e.target.value)}
@@ -497,13 +487,12 @@ const RejectionReportFound = () => {
                 {/* Inspector Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Inspector Name <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Inspector Name                  </label>
                   <input
                     type="text"
                     value={entry.inspectorName}
                     onChange={(e) => updateEntry(entry.id, 'inspectorName', e.target.value)}
-                    placeholder="e.g., John Smith"
+                    placeholder="e.g: John Smith"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -525,7 +514,7 @@ const RejectionReportFound = () => {
                     type="text"
                     value={entry.supervisor}
                     onChange={(e) => updateEntry(entry.id, 'supervisor', e.target.value)}
-                    placeholder="e.g., Mike Johnson"
+                    placeholder="e.g: Mike Johnson"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',

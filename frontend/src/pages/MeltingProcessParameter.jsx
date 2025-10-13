@@ -235,8 +235,7 @@ const MeltingProcessParameter = () => {
                 {/* Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Date <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Date                  </label>
                   <input
                     type="date"
                     value={entry.date}
@@ -256,8 +255,7 @@ const MeltingProcessParameter = () => {
                 {/* Shift */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Shift <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Shift                  </label>
                   <select
                     value={entry.shift}
                     onChange={(e) => updateEntry(entry.id, 'shift', e.target.value)}
@@ -282,8 +280,7 @@ const MeltingProcessParameter = () => {
                 {/* Furnace ID */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Furnace ID <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Furnace ID                  </label>
                   <select
                     value={entry.furnaceId}
                     onChange={(e) => updateEntry(entry.id, 'furnaceId', e.target.value)}
@@ -309,13 +306,12 @@ const MeltingProcessParameter = () => {
                 {/* Heat Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Heat Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Heat Number                  </label>
                   <input
                     type="text"
                     value={entry.heatNumber}
                     onChange={(e) => updateEntry(entry.id, 'heatNumber', e.target.value)}
-                    placeholder="e.g., H2024001"
+                    placeholder="e.g: H2024001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -331,8 +327,7 @@ const MeltingProcessParameter = () => {
                 {/* Melt Start Time */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Melt Start Time <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Melt Start Time                  </label>
                   <input
                     type="time"
                     value={entry.meltStartTime}
@@ -352,8 +347,7 @@ const MeltingProcessParameter = () => {
                 {/* Melt End Time */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Melt End Time <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Melt End Time                  </label>
                   <input
                     type="time"
                     value={entry.meltEndTime}
@@ -373,14 +367,13 @@ const MeltingProcessParameter = () => {
                 {/* Charge Weight */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Charge Weight (kg) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Charge Weight (kg)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.chargeWeight}
                     onChange={(e) => updateEntry(entry.id, 'chargeWeight', e.target.value)}
-                    placeholder="e.g., 2500.5"
+                    placeholder="e.g: 2500.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -396,13 +389,12 @@ const MeltingProcessParameter = () => {
                 {/* Tap Temperature */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Tap Temperature (°C) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Tap Temperature (°C)                  </label>
                   <input
                     type="number"
                     value={entry.tapTemperature}
                     onChange={(e) => updateEntry(entry.id, 'tapTemperature', e.target.value)}
-                    placeholder="e.g., 1580"
+                    placeholder="e.g: 1580"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -418,13 +410,12 @@ const MeltingProcessParameter = () => {
                 {/* Pouring Temperature */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Pouring Temperature (°C) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Pouring Temperature (°C)                  </label>
                   <input
                     type="number"
                     value={entry.pouringTemperature}
                     onChange={(e) => updateEntry(entry.id, 'pouringTemperature', e.target.value)}
-                    placeholder="e.g., 1520"
+                    placeholder="e.g: 1520"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -447,14 +438,13 @@ const MeltingProcessParameter = () => {
                 {/* Carbon Content */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Carbon (C) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Carbon (C)                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={entry.carbonContent}
                     onChange={(e) => updateEntry(entry.id, 'carbonContent', e.target.value)}
-                    placeholder="e.g., 3.25"
+                    placeholder="e.g: 3.25"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -470,14 +460,13 @@ const MeltingProcessParameter = () => {
                 {/* Silicon Content */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Silicon (Si) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Silicon (Si)                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={entry.siliconContent}
                     onChange={(e) => updateEntry(entry.id, 'siliconContent', e.target.value)}
-                    placeholder="e.g., 2.15"
+                    placeholder="e.g: 2.15"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -493,14 +482,13 @@ const MeltingProcessParameter = () => {
                 {/* Manganese Content */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Manganese (Mn) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Manganese (Mn)                  </label>
                   <input
                     type="number"
                     step="0.01"
                     value={entry.manganeseContent}
                     onChange={(e) => updateEntry(entry.id, 'manganeseContent', e.target.value)}
-                    placeholder="e.g., 0.75"
+                    placeholder="e.g: 0.75"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -523,7 +511,7 @@ const MeltingProcessParameter = () => {
                     step="0.001"
                     value={entry.phosphorusContent}
                     onChange={(e) => updateEntry(entry.id, 'phosphorusContent', e.target.value)}
-                    placeholder="e.g., 0.045"
+                    placeholder="e.g: 0.045"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -546,7 +534,7 @@ const MeltingProcessParameter = () => {
                     step="0.001"
                     value={entry.sulfurContent}
                     onChange={(e) => updateEntry(entry.id, 'sulfurContent', e.target.value)}
-                    placeholder="e.g., 0.015"
+                    placeholder="e.g: 0.015"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -569,7 +557,7 @@ const MeltingProcessParameter = () => {
                     step="0.01"
                     value={entry.chromiumContent}
                     onChange={(e) => updateEntry(entry.id, 'chromiumContent', e.target.value)}
-                    placeholder="e.g., 0.25"
+                    placeholder="e.g: 0.25"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -592,7 +580,7 @@ const MeltingProcessParameter = () => {
                     step="0.01"
                     value={entry.nickelContent}
                     onChange={(e) => updateEntry(entry.id, 'nickelContent', e.target.value)}
-                    placeholder="e.g., 0.15"
+                    placeholder="e.g: 0.15"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -615,7 +603,7 @@ const MeltingProcessParameter = () => {
                     step="0.001"
                     value={entry.aluminumContent}
                     onChange={(e) => updateEntry(entry.id, 'aluminumContent', e.target.value)}
-                    placeholder="e.g., 0.005"
+                    placeholder="e.g: 0.005"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -638,7 +626,7 @@ const MeltingProcessParameter = () => {
                     step="0.001"
                     value={entry.titaniumContent}
                     onChange={(e) => updateEntry(entry.id, 'titaniumContent', e.target.value)}
-                    placeholder="e.g., 0.025"
+                    placeholder="e.g: 0.025"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -654,13 +642,12 @@ const MeltingProcessParameter = () => {
                 {/* Melt Operator */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Melt Operator <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Melt Operator                  </label>
                   <input
                     type="text"
                     value={entry.meltOperator}
                     onChange={(e) => updateEntry(entry.id, 'meltOperator', e.target.value)}
-                    placeholder="e.g., John Smith"
+                    placeholder="e.g: John Smith"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -682,7 +669,7 @@ const MeltingProcessParameter = () => {
                     type="text"
                     value={entry.supervisor}
                     onChange={(e) => updateEntry(entry.id, 'supervisor', e.target.value)}
-                    placeholder="e.g., Mike Johnson"
+                    placeholder="e.g: Mike Johnson"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',

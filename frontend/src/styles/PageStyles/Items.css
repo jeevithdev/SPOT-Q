@@ -1,0 +1,29 @@
+/* Items page specific styles */
+.page-container {
+  max-width: 100%;
+  width: 100%;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* Ensure form elements are properly styled */
+input[type="text"],
+select {
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+input[type="text"]:focus,
+select:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+/* Button hover effects */
+button {
+  transition: all 0.2s ease;
+}
+
+button:active {
+  transform: scale(0.98);
+}

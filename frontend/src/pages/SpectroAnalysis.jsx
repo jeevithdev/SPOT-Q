@@ -196,8 +196,7 @@ const SpectroAnalysis = () => {
                 {/* Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Date <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Date                  </label>
                   <input
                     type="date"
                     value={entry.date}
@@ -225,8 +224,7 @@ const SpectroAnalysis = () => {
                 {/* Machine */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Machine <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Machine                  </label>
                   <select
                     value={entry.machine}
                     onChange={(e) => updateEntry(entry.id, 'machine', e.target.value)}
@@ -259,8 +257,7 @@ const SpectroAnalysis = () => {
                 {/* PP NO */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    PP NO <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    PP NO                  </label>
                   <input
                     type="number"
                     value={entry.ppNo}
@@ -289,13 +286,12 @@ const SpectroAnalysis = () => {
                 {/* Part Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Part Name <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Part Name                  </label>
                   <input
                     type="text"
                     value={entry.partName}
                     onChange={(e) => updateEntry(entry.id, 'partName', e.target.value)}
-                    placeholder="e.g., PSA 7B K"
+                    placeholder="e.g: PSA 7B K"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -319,13 +315,12 @@ const SpectroAnalysis = () => {
                 {/* Data Code */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Data Code <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Data Code                  </label>
                   <input
                     type="text"
                     value={entry.dataCode}
                     onChange={(e) => updateEntry(entry.id, 'dataCode', e.target.value)}
-                    placeholder="e.g., SH02"
+                    placeholder="e.g: SH02"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -349,8 +344,7 @@ const SpectroAnalysis = () => {
                 {/* Heat Code */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Heat Code <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Heat Code                  </label>
                   <input
                     type="number"
                     value={entry.heatCode}
@@ -379,8 +373,7 @@ const SpectroAnalysis = () => {
                 {/* Time of Pouring */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Time of Pouring <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Time of Pouring                  </label>
                   <input
                     type="time"
                     value={entry.timeOfPouring}
@@ -408,8 +401,7 @@ const SpectroAnalysis = () => {
                 {/* F/C NO */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    F/C NO <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    F/C NO                  </label>
                   <input
                     type="number"
                     value={entry.fcNo}
@@ -438,8 +430,7 @@ const SpectroAnalysis = () => {
                 {/* Heat NO */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Heat NO <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Heat NO                  </label>
                   <input
                     type="text"
                     value={entry.heatNo}

@@ -101,20 +101,8 @@ export const AuthProvider = ({ children }) => {
 
   const register = async (name, email, password, phone) => {
     if (DEMO_MODE) {
-      // In demo, simulate successful registration
-      const mockUser = {
-        id: 'demo_user_id',
-        name,
-        email,
-        phone,
-        isVerified: true,
-      };
-      const mockToken = 'demo_token_' + Date.now();
-      localStorage.setItem('token', mockToken);
-      localStorage.setItem('demo_user', JSON.stringify(mockUser));
-      setToken(mockToken);
-      setUser(mockUser);
-      return { token: mockToken, user: mockUser };
+      // In demo, simulate successful registration (no auto-login)
+      return { success: true, message: 'Registration successful' };
     }
     try {
       const response = await fetch(`${API_URL}/register`, {
@@ -131,11 +119,7 @@ export const AuthProvider = ({ children }) => {
         throw new Error(data.message || 'Registration failed');
       }
 
-      // Registration now returns token and user directly (no OTP)
-      localStorage.setItem('token', data.token);
-      setToken(data.token);
-      setUser(data.user);
-      
+      // Don't auto-login - user needs to log in manually after registration
       return data;
     } catch (error) {
       throw error;

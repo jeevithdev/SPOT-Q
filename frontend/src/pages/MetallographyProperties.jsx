@@ -231,8 +231,7 @@ const MetallographyProperties = () => {
                 {/* Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Analysis Date <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Analysis Date                  </label>
                   <input
                     type="date"
                     value={entry.date}
@@ -252,13 +251,12 @@ const MetallographyProperties = () => {
                 {/* Sample ID */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Sample ID <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Sample ID                  </label>
                   <input
                     type="text"
                     value={entry.sampleId}
                     onChange={(e) => updateEntry(entry.id, 'sampleId', e.target.value)}
-                    placeholder="e.g., MET-2024-001"
+                    placeholder="e.g: MET-2024-001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -274,13 +272,12 @@ const MetallographyProperties = () => {
                 {/* Part Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Part Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Part Number                  </label>
                   <input
                     type="text"
                     value={entry.partNumber}
                     onChange={(e) => updateEntry(entry.id, 'partNumber', e.target.value)}
-                    placeholder="e.g., BRAKE_DISC_001"
+                    placeholder="e.g: BRAKE_DISC_001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -296,13 +293,12 @@ const MetallographyProperties = () => {
                 {/* Heat Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Heat Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Heat Number                  </label>
                   <input
                     type="text"
                     value={entry.heatNumber}
                     onChange={(e) => updateEntry(entry.id, 'heatNumber', e.target.value)}
-                    placeholder="e.g., H2024001"
+                    placeholder="e.g: H2024001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -318,8 +314,7 @@ const MetallographyProperties = () => {
                 {/* Sample Location */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Sample Location <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Sample Location                  </label>
                   <select
                     value={entry.sampleLocation}
                     onChange={(e) => updateEntry(entry.id, 'sampleLocation', e.target.value)}
@@ -346,8 +341,7 @@ const MetallographyProperties = () => {
                 {/* Magnification */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Magnification <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Magnification                  </label>
                   <select
                     value={entry.magnification}
                     onChange={(e) => updateEntry(entry.id, 'magnification', e.target.value)}
@@ -374,8 +368,7 @@ const MetallographyProperties = () => {
                 {/* Grain Size */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Grain Size (ASTM) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Grain Size (ASTM)                  </label>
                   <select
                     value={entry.grainSize}
                     onChange={(e) => updateEntry(entry.id, 'grainSize', e.target.value)}
@@ -414,8 +407,7 @@ const MetallographyProperties = () => {
                 {/* Graphite Type */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Graphite Type <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Graphite Type                  </label>
                   <select
                     value={entry.graphiteType}
                     onChange={(e) => updateEntry(entry.id, 'graphiteType', e.target.value)}
@@ -443,8 +435,7 @@ const MetallographyProperties = () => {
                 {/* Graphite Size */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Graphite Size <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Graphite Size                  </label>
                   <select
                     value={entry.graphiteSize}
                     onChange={(e) => updateEntry(entry.id, 'graphiteSize', e.target.value)}
@@ -515,7 +506,7 @@ const MetallographyProperties = () => {
                     step="0.1"
                     value={entry.pearliteContent}
                     onChange={(e) => updateEntry(entry.id, 'pearliteContent', e.target.value)}
-                    placeholder="e.g., 85.5"
+                    placeholder="e.g: 85.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -538,7 +529,7 @@ const MetallographyProperties = () => {
                     step="0.1"
                     value={entry.ferriteContent}
                     onChange={(e) => updateEntry(entry.id, 'ferriteContent', e.target.value)}
-                    placeholder="e.g., 12.3"
+                    placeholder="e.g: 12.3"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -561,7 +552,7 @@ const MetallographyProperties = () => {
                     step="0.1"
                     value={entry.cementiteContent}
                     onChange={(e) => updateEntry(entry.id, 'cementiteContent', e.target.value)}
-                    placeholder="e.g., 2.2"
+                    placeholder="e.g: 2.2"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -704,7 +695,7 @@ const MetallographyProperties = () => {
                     type="number"
                     value={entry.microhardness}
                     onChange={(e) => updateEntry(entry.id, 'microhardness', e.target.value)}
-                    placeholder="e.g., 185"
+                    placeholder="e.g: 185"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -748,13 +739,12 @@ const MetallographyProperties = () => {
                 {/* Metallurgist */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Metallurgist <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Metallurgist                  </label>
                   <input
                     type="text"
                     value={entry.metallurgist}
                     onChange={(e) => updateEntry(entry.id, 'metallurgist', e.target.value)}
-                    placeholder="e.g., Dr. Sarah Johnson"
+                    placeholder="e.g: Dr. Sarah Johnson"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',

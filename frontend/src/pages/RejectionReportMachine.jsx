@@ -213,8 +213,7 @@ const RejectionReportMachine = () => {
                 {/* Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Date <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Date                  </label>
                   <input
                     type="date"
                     value={entry.date}
@@ -234,8 +233,7 @@ const RejectionReportMachine = () => {
                 {/* Shift */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Shift <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Shift                  </label>
                   <select
                     value={entry.shift}
                     onChange={(e) => updateEntry(entry.id, 'shift', e.target.value)}
@@ -260,13 +258,12 @@ const RejectionReportMachine = () => {
                 {/* Part Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Part Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Part Number                  </label>
                   <input
                     type="text"
                     value={entry.partNumber}
                     onChange={(e) => updateEntry(entry.id, 'partNumber', e.target.value)}
-                    placeholder="e.g., BRAKE_DISC_001"
+                    placeholder="e.g: BRAKE_DISC_001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -282,8 +279,7 @@ const RejectionReportMachine = () => {
                 {/* Machine ID */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Machine ID <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Machine ID                  </label>
                   <select
                     value={entry.machineId}
                     onChange={(e) => updateEntry(entry.id, 'machineId', e.target.value)}
@@ -310,13 +306,12 @@ const RejectionReportMachine = () => {
                 {/* Operation Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Operation Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Operation Number                  </label>
                   <input
                     type="text"
                     value={entry.operationNumber}
                     onChange={(e) => updateEntry(entry.id, 'operationNumber', e.target.value)}
-                    placeholder="e.g., OP-010, OP-020"
+                    placeholder="e.g: OP-010, OP-020"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -332,8 +327,7 @@ const RejectionReportMachine = () => {
                 {/* Defect Type */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Defect Type <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Defect Type                  </label>
                   <select
                     value={entry.defectType}
                     onChange={(e) => updateEntry(entry.id, 'defectType', e.target.value)}
@@ -366,13 +360,12 @@ const RejectionReportMachine = () => {
                 {/* Defect Location */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Defect Location <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Defect Location                  </label>
                   <input
                     type="text"
                     value={entry.defectLocation}
                     onChange={(e) => updateEntry(entry.id, 'defectLocation', e.target.value)}
-                    placeholder="e.g., Bore ID, Face OD, Thread"
+                    placeholder="e.g: Bore ID, Face OD, Thread"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -388,8 +381,7 @@ const RejectionReportMachine = () => {
                 {/* Defect Severity */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Defect Severity <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Defect Severity                  </label>
                   <select
                     value={entry.defectSeverity}
                     onChange={(e) => updateEntry(entry.id, 'defectSeverity', e.target.value)}
@@ -422,7 +414,7 @@ const RejectionReportMachine = () => {
                     step="0.001"
                     value={entry.dimensionalDeviation}
                     onChange={(e) => updateEntry(entry.id, 'dimensionalDeviation', e.target.value)}
-                    placeholder="e.g., 0.025"
+                    placeholder="e.g: 0.025"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -445,7 +437,7 @@ const RejectionReportMachine = () => {
                     step="0.1"
                     value={entry.surfaceFinishIssue}
                     onChange={(e) => updateEntry(entry.id, 'surfaceFinishIssue', e.target.value)}
-                    placeholder="e.g., 2.5"
+                    placeholder="e.g: 2.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -461,8 +453,7 @@ const RejectionReportMachine = () => {
                 {/* Rejection Reason */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Rejection Reason <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Rejection Reason                  </label>
                   <select
                     value={entry.rejectionReason}
                     onChange={(e) => updateEntry(entry.id, 'rejectionReason', e.target.value)}
@@ -518,13 +509,12 @@ const RejectionReportMachine = () => {
                 {/* Inspector Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Inspector Name <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Inspector Name                  </label>
                   <input
                     type="text"
                     value={entry.inspectorName}
                     onChange={(e) => updateEntry(entry.id, 'inspectorName', e.target.value)}
-                    placeholder="e.g., John Smith"
+                    placeholder="e.g: John Smith"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -546,7 +536,7 @@ const RejectionReportMachine = () => {
                     type="text"
                     value={entry.supervisor}
                     onChange={(e) => updateEntry(entry.id, 'supervisor', e.target.value)}
-                    placeholder="e.g., Mike Johnson"
+                    placeholder="e.g: Mike Johnson"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',

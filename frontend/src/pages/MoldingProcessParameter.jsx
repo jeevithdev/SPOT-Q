@@ -228,8 +228,7 @@ const MoldingProcessParameter = () => {
                 {/* Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Date <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Date                  </label>
                   <input
                     type="date"
                     value={entry.date}
@@ -249,8 +248,7 @@ const MoldingProcessParameter = () => {
                 {/* Shift */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Shift <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Shift                  </label>
                   <select
                     value={entry.shift}
                     onChange={(e) => updateEntry(entry.id, 'shift', e.target.value)}
@@ -275,8 +273,7 @@ const MoldingProcessParameter = () => {
                 {/* Machine ID */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Machine ID <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Machine ID                  </label>
                   <select
                     value={entry.machineId}
                     onChange={(e) => updateEntry(entry.id, 'machineId', e.target.value)}
@@ -303,13 +300,12 @@ const MoldingProcessParameter = () => {
                 {/* Mold ID */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Mold ID <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Mold ID                  </label>
                   <input
                     type="text"
                     value={entry.moldId}
                     onChange={(e) => updateEntry(entry.id, 'moldId', e.target.value)}
-                    placeholder="e.g., MOLD-2024-001"
+                    placeholder="e.g: MOLD-2024-001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -325,13 +321,12 @@ const MoldingProcessParameter = () => {
                 {/* Part Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Part Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Part Number                  </label>
                   <input
                     type="text"
                     value={entry.partNumber}
                     onChange={(e) => updateEntry(entry.id, 'partNumber', e.target.value)}
-                    placeholder="e.g., DASHBOARD_001"
+                    placeholder="e.g: DASHBOARD_001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -347,14 +342,13 @@ const MoldingProcessParameter = () => {
                 {/* Cycle Time */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Cycle Time (sec) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Cycle Time (sec)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.cycleTime}
                     onChange={(e) => updateEntry(entry.id, 'cycleTime', e.target.value)}
-                    placeholder="e.g., 45.5"
+                    placeholder="e.g: 45.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -377,13 +371,12 @@ const MoldingProcessParameter = () => {
                 {/* Mold Temperature */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Mold Temperature (°C) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Mold Temperature (°C)                  </label>
                   <input
                     type="number"
                     value={entry.moldTemperature}
                     onChange={(e) => updateEntry(entry.id, 'moldTemperature', e.target.value)}
-                    placeholder="e.g., 85"
+                    placeholder="e.g: 85"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -405,7 +398,7 @@ const MoldingProcessParameter = () => {
                     type="number"
                     value={entry.meltTemperature}
                     onChange={(e) => updateEntry(entry.id, 'meltTemperature', e.target.value)}
-                    placeholder="e.g., 245"
+                    placeholder="e.g: 245"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -428,14 +421,13 @@ const MoldingProcessParameter = () => {
                 {/* Injection Pressure */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Injection Pressure (bar) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Injection Pressure (bar)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.injectionPressure}
                     onChange={(e) => updateEntry(entry.id, 'injectionPressure', e.target.value)}
-                    placeholder="e.g., 1200.5"
+                    placeholder="e.g: 1200.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -451,14 +443,13 @@ const MoldingProcessParameter = () => {
                 {/* Holding Pressure */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Holding Pressure (bar) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Holding Pressure (bar)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.holdingPressure}
                     onChange={(e) => updateEntry(entry.id, 'holdingPressure', e.target.value)}
-                    placeholder="e.g., 850.0"
+                    placeholder="e.g: 850.0"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -480,7 +471,7 @@ const MoldingProcessParameter = () => {
                     type="number"
                     value={entry.clampForce}
                     onChange={(e) => updateEntry(entry.id, 'clampForce', e.target.value)}
-                    placeholder="e.g., 500"
+                    placeholder="e.g: 500"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -510,7 +501,7 @@ const MoldingProcessParameter = () => {
                     step="0.1"
                     value={entry.injectionSpeed}
                     onChange={(e) => updateEntry(entry.id, 'injectionSpeed', e.target.value)}
-                    placeholder="e.g., 85.5"
+                    placeholder="e.g: 85.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -540,7 +531,7 @@ const MoldingProcessParameter = () => {
                     step="0.1"
                     value={entry.coolingTime}
                     onChange={(e) => updateEntry(entry.id, 'coolingTime', e.target.value)}
-                    placeholder="e.g., 25.0"
+                    placeholder="e.g: 25.0"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -563,7 +554,7 @@ const MoldingProcessParameter = () => {
                     step="0.1"
                     value={entry.ejectionTime}
                     onChange={(e) => updateEntry(entry.id, 'ejectionTime', e.target.value)}
-                    placeholder="e.g., 3.5"
+                    placeholder="e.g: 3.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -586,7 +577,7 @@ const MoldingProcessParameter = () => {
                     step="0.1"
                     value={entry.moldOpenTime}
                     onChange={(e) => updateEntry(entry.id, 'moldOpenTime', e.target.value)}
-                    placeholder="e.g., 2.0"
+                    placeholder="e.g: 2.0"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -609,7 +600,7 @@ const MoldingProcessParameter = () => {
                     step="0.1"
                     value={entry.moldCloseTime}
                     onChange={(e) => updateEntry(entry.id, 'moldCloseTime', e.target.value)}
-                    placeholder="e.g., 3.0"
+                    placeholder="e.g: 3.0"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -632,7 +623,7 @@ const MoldingProcessParameter = () => {
                     step="0.1"
                     value={entry.shotWeight}
                     onChange={(e) => updateEntry(entry.id, 'shotWeight', e.target.value)}
-                    placeholder="e.g., 1250.5"
+                    placeholder="e.g: 1250.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -648,13 +639,12 @@ const MoldingProcessParameter = () => {
                 {/* Operator Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Operator Name <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Operator Name                  </label>
                   <input
                     type="text"
                     value={entry.operatorName}
                     onChange={(e) => updateEntry(entry.id, 'operatorName', e.target.value)}
-                    placeholder="e.g., John Smith"
+                    placeholder="e.g: John Smith"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -676,7 +666,7 @@ const MoldingProcessParameter = () => {
                     type="text"
                     value={entry.supervisor}
                     onChange={(e) => updateEntry(entry.id, 'supervisor', e.target.value)}
-                    placeholder="e.g., Mike Johnson"
+                    placeholder="e.g: Mike Johnson"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',

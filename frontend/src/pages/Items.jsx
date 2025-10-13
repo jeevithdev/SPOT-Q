@@ -1,7 +1,12 @@
 import React, { useState } from 'react';
 import '../styles/PageStyles/Items.css';
+import CustomDatePicker from '../Components/CustomDatePicker';
+import ValidationPopup from '../Components/ValidationPopup';
 
 const Items = () => {
+  // Get today's date in YYYY-MM-DD format
+  const today = new Date().toISOString().split('T')[0];
+
   const [formData, setFormData] = useState({
     date: '',
     machine: '',
@@ -16,6 +21,8 @@ const Items = () => {
 
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [showMissingFields, setShowMissingFields] = useState(false);
+  const [missingFields, setMissingFields] = useState([]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -26,10 +33,26 @@ const Items = () => {
   };
 
   const handleSubmit = () => {
-    if (!formData.date || !formData.machine || !formData.ppNo || !formData.partName) {
-      alert('Please fill all required fields (Date, Machine, PP No, Part Name)');
+    const allFields = [
+      { key: 'date', label: 'Date' },
+      { key: 'machine', label: 'Machine' },
+      { key: 'ppNo', label: 'PP No' },
+      { key: 'partName', label: 'Part Name' },
+      { key: 'dateCode', label: 'Date Code' },
+      { key: 'heatCode', label: 'Heat Code' },
+      { key: 'timeOfPouring', label: 'Time of Pouring' },
+      { key: 'pcNo', label: 'PC No' },
+      { key: 'heatNo', label: 'Heat No' }
+    ];
+
+    const missing = allFields.filter(field => !formData[field.key]);
+
+    if (missing.length > 0) {
+      setMissingFields(missing.map(f => f.label));
+      setShowMissingFields(true);
       return;
     }
+
     console.log('Form Data:', formData);
     alert('Form submitted successfully! Check the console for data.');
     
@@ -53,7 +76,7 @@ const Items = () => {
 
   return (
     <div className="page-container">
-      {/* Header Section */}
+      {/* Form Section */}
       <div style={{ 
         background: 'white', 
         padding: '24px', 
@@ -61,91 +84,28 @@ const Items = () => {
         boxShadow: '0 2px 4px rgba(0,0,0,0.1)', 
         marginBottom: '24px' 
       }}>
-        <h2 style={{ marginBottom: '16px', fontSize: '24px', fontWeight: 'bold' }}>Item Report</h2>
-        
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: '200px' }}>
-            <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-              Start Date
-            </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              style={{ 
-                padding: '8px 12px', 
-                border: '1px solid #d1d5db', 
-                borderRadius: '6px', 
-                fontSize: '14px' 
-              }}
-            />
-          </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', minWidth: '200px' }}>
-            <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-              End Date
-            </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              style={{ 
-                padding: '8px 12px', 
-                border: '1px solid #d1d5db', 
-                borderRadius: '6px', 
-                fontSize: '14px' 
-              }}
-            />
-          </div>
-          
-          <button 
-            onClick={handleFilter}
-            style={{ 
-              padding: '8px 20px', 
-              background: '#3b82f6', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '6px', 
-              cursor: 'pointer', 
-              fontWeight: '500' 
-            }}
-            onMouseOver={(e) => e.target.style.background = '#2563eb'}
-            onMouseOut={(e) => e.target.style.background = '#3b82f6'}
-          >
-            Filter
-          </button>
-        </div>
-      </div>
-
-      {/* Form Section */}
-      <div style={{ 
-        background: 'white', 
-        padding: '24px', 
-        borderRadius: '8px', 
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)' 
-      }}>
         <h3 style={{ marginBottom: '20px', fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>
-          Add New Item
+          Item Entry
         </h3>
         
         <div>
           <div style={{ 
             display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
             gap: '20px', 
             marginBottom: '20px' 
           }}>
             {/* Date */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Date <span style={{ color: '#ef4444' }}>*</span>
-              </label>
-              <input
-                type="date"
+                Date              </label>
+              <CustomDatePicker
                 name="date"
                 value={formData.date}
                 onChange={handleChange}
+                max={today}
                 style={{ 
+                  width: '100%',
                   padding: '10px 12px', 
                   border: '1px solid #d1d5db', 
                   borderRadius: '6px', 
@@ -155,67 +115,70 @@ const Items = () => {
             </div>
 
             {/* Machine */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Machine <span style={{ color: '#ef4444' }}>*</span>
-              </label>
+                Machine              </label>
               <input
                 type="text"
                 name="machine"
                 value={formData.machine}
                 onChange={handleChange}
-                placeholder="e.g., DESA 2"
+                placeholder="e.g: DESA 2"
                 style={{ 
+                  width: '100%',
                   padding: '10px 12px', 
                   border: '1px solid #d1d5db', 
                   borderRadius: '6px', 
-                  fontSize: '14px' 
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
 
             {/* PP No */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                PP No <span style={{ color: '#ef4444' }}>*</span>
-              </label>
+                PP No              </label>
               <input
                 type="text"
                 name="ppNo"
                 value={formData.ppNo}
                 onChange={handleChange}
-                placeholder="e.g., 21"
+                placeholder="e.g: 21"
                 style={{ 
+                  width: '100%',
                   padding: '10px 12px', 
                   border: '1px solid #d1d5db', 
                   borderRadius: '6px', 
-                  fontSize: '14px' 
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
 
             {/* Part Name */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Part Name <span style={{ color: '#ef4444' }}>*</span>
-              </label>
+                Part Name              </label>
               <input
                 type="text"
                 name="partName"
                 value={formData.partName}
                 onChange={handleChange}
-                placeholder="e.g., YST EN"
+                placeholder="e.g: YST EN"
                 style={{ 
+                  width: '100%',
                   padding: '10px 12px', 
                   border: '1px solid #d1d5db', 
                   borderRadius: '6px', 
-                  fontSize: '14px' 
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
 
             {/* Date Code */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
                 Date Code
               </label>
@@ -224,18 +187,20 @@ const Items = () => {
                 name="dateCode"
                 value={formData.dateCode}
                 onChange={handleChange}
-                placeholder="e.g., 5818"
+                placeholder="e.g: 5818"
                 style={{ 
+                  width: '100%',
                   padding: '10px 12px', 
                   border: '1px solid #d1d5db', 
                   borderRadius: '6px', 
-                  fontSize: '14px' 
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
 
             {/* Heat Code */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
                 Heat Code
               </label>
@@ -244,18 +209,20 @@ const Items = () => {
                 name="heatCode"
                 value={formData.heatCode}
                 onChange={handleChange}
-                placeholder="e.g., 21"
+                placeholder="e.g: 21"
                 style={{ 
+                  width: '100%',
                   padding: '10px 12px', 
                   border: '1px solid #d1d5db', 
                   borderRadius: '6px', 
-                  fontSize: '14px' 
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
 
             {/* Time of Pouring */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
                 Time of Pouring
               </label>
@@ -264,18 +231,20 @@ const Items = () => {
                 name="timeOfPouring"
                 value={formData.timeOfPouring}
                 onChange={handleChange}
-                placeholder="e.g., 04:38PM"
+                placeholder="e.g: 04:38PM"
                 style={{ 
+                  width: '100%',
                   padding: '10px 12px', 
                   border: '1px solid #d1d5db', 
                   borderRadius: '6px', 
-                  fontSize: '14px' 
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
 
             {/* PC No */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
                 PC No
               </label>
@@ -284,18 +253,20 @@ const Items = () => {
                 name="pcNo"
                 value={formData.pcNo}
                 onChange={handleChange}
-                placeholder="e.g., 2"
+                placeholder="e.g: 2"
                 style={{ 
+                  width: '100%',
                   padding: '10px 12px', 
                   border: '1px solid #d1d5db', 
                   borderRadius: '6px', 
-                  fontSize: '14px' 
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
 
             {/* Heat No */}
-            <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
               <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
                 Heat No
               </label>
@@ -304,12 +275,14 @@ const Items = () => {
                 name="heatNo"
                 value={formData.heatNo}
                 onChange={handleChange}
-                placeholder="e.g., 140"
+                placeholder="e.g: 140"
                 style={{ 
+                  width: '100%',
                   padding: '10px 12px', 
                   border: '1px solid #d1d5db', 
                   borderRadius: '6px', 
-                  fontSize: '14px' 
+                  fontSize: '14px',
+                  boxSizing: 'border-box'
                 }}
               />
             </div>
@@ -336,6 +309,83 @@ const Items = () => {
           </div>
         </div>
       </div>
+
+      {/* Report Section */}
+      <div style={{ 
+        background: 'white', 
+        padding: '24px', 
+        borderRadius: '8px', 
+        boxShadow: '0 2px 4px rgba(0,0,0,0.1)', 
+        marginBottom: '24px' 
+      }}>
+        <h2 style={{ marginBottom: '16px', fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>Item Report</h2>
+        
+        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 250px' }}>
+            <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
+              Start Date
+            </label>
+            <CustomDatePicker
+              name="startDate"
+              value={startDate}
+              onChange={(e) => setStartDate(e.target.value)}
+              max={today}
+              style={{ 
+                width: '100%',
+                padding: '10px 12px', 
+                border: '1px solid #d1d5db', 
+                borderRadius: '6px', 
+                fontSize: '14px' 
+              }}
+            />
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 250px' }}>
+            <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
+              End Date
+            </label>
+            <CustomDatePicker
+              name="endDate"
+              value={endDate}
+              onChange={(e) => setEndDate(e.target.value)}
+              max={today}
+              style={{ 
+                width: '100%',
+                padding: '10px 12px', 
+                border: '1px solid #d1d5db', 
+                borderRadius: '6px', 
+                fontSize: '14px' 
+              }}
+            />
+          </div>
+          
+          <button 
+            onClick={handleFilter}
+            style={{ 
+              padding: '10px 30px', 
+              background: '#3b82f6', 
+              color: 'white', 
+              border: 'none', 
+              borderRadius: '6px', 
+              cursor: 'pointer', 
+              fontWeight: '500',
+              fontSize: '15px',
+              height: 'fit-content'
+            }}
+            onMouseOver={(e) => e.target.style.background = '#2563eb'}
+            onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+          >
+            Filter
+          </button>
+        </div>
+      </div>
+
+      {/* Validation Popup */}
+      <ValidationPopup
+        isOpen={showMissingFields}
+        onClose={() => setShowMissingFields(false)}
+        missingFields={missingFields}
+      />
     </div>
   );
 };

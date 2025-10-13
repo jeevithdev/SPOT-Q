@@ -11,13 +11,13 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: box-shadow 0.3s ease;
+  height: 75px;
+  box-sizing: border-box;
 }
 
 .navbar-container.scrolled {
-  padding: 10px 30px;
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
-  background: linear-gradient(135deg, #1e2f3b 0%, #273F4F 100%);
 }
 
 /* Logo Section */
@@ -347,6 +347,7 @@
 @media (max-width: 1024px) {
   .navbar-container {
     padding: 12px 20px;
+    height: 70px;
   }
   
   .navbar-logo {
@@ -366,6 +367,8 @@
   .navbar-container {
     flex-wrap: wrap;
     padding: 10px 15px;
+    height: auto;
+    min-height: 60px;
   }
   
   .navbar-logo {

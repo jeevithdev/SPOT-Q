@@ -213,8 +213,7 @@ const MechanicalProperties = () => {
                 {/* Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Test Date <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Test Date                  </label>
                   <input
                     type="date"
                     value={entry.date}
@@ -234,13 +233,12 @@ const MechanicalProperties = () => {
                 {/* Part Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Part Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Part Number                  </label>
                   <input
                     type="text"
                     value={entry.partNumber}
                     onChange={(e) => updateEntry(entry.id, 'partNumber', e.target.value)}
-                    placeholder="e.g., BRAKE_DISC_001"
+                    placeholder="e.g: BRAKE_DISC_001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -256,13 +254,12 @@ const MechanicalProperties = () => {
                 {/* Heat Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Heat Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Heat Number                  </label>
                   <input
                     type="text"
                     value={entry.heatNumber}
                     onChange={(e) => updateEntry(entry.id, 'heatNumber', e.target.value)}
-                    placeholder="e.g., H2024001"
+                    placeholder="e.g: H2024001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -278,13 +275,12 @@ const MechanicalProperties = () => {
                 {/* Batch Number */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Batch Number <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Batch Number                  </label>
                   <input
                     type="text"
                     value={entry.batchNumber}
                     onChange={(e) => updateEntry(entry.id, 'batchNumber', e.target.value)}
-                    placeholder="e.g., B240001"
+                    placeholder="e.g: B240001"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -300,13 +296,12 @@ const MechanicalProperties = () => {
                 {/* Tensile Strength */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Tensile Strength (MPa) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Tensile Strength (MPa)                  </label>
                   <input
                     type="number"
                     value={entry.tensileStrength}
                     onChange={(e) => updateEntry(entry.id, 'tensileStrength', e.target.value)}
-                    placeholder="e.g., 450"
+                    placeholder="e.g: 450"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -322,13 +317,12 @@ const MechanicalProperties = () => {
                 {/* Yield Strength */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Yield Strength (MPa) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Yield Strength (MPa)                  </label>
                   <input
                     type="number"
                     value={entry.yieldStrength}
                     onChange={(e) => updateEntry(entry.id, 'yieldStrength', e.target.value)}
-                    placeholder="e.g., 350"
+                    placeholder="e.g: 350"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -344,14 +338,13 @@ const MechanicalProperties = () => {
                 {/* Elongation */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Elongation (%) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Elongation (%)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.elongation}
                     onChange={(e) => updateEntry(entry.id, 'elongation', e.target.value)}
-                    placeholder="e.g., 12.5"
+                    placeholder="e.g: 12.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -367,13 +360,12 @@ const MechanicalProperties = () => {
                 {/* Hardness HB */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Hardness HB <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Hardness HB                  </label>
                   <input
                     type="number"
                     value={entry.hardnessHB}
                     onChange={(e) => updateEntry(entry.id, 'hardnessHB', e.target.value)}
-                    placeholder="e.g., 220"
+                    placeholder="e.g: 220"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -396,7 +388,7 @@ const MechanicalProperties = () => {
                     step="0.1"
                     value={entry.hardnessHRC}
                     onChange={(e) => updateEntry(entry.id, 'hardnessHRC', e.target.value)}
-                    placeholder="e.g., 18.5"
+                    placeholder="e.g: 18.5"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -412,14 +404,13 @@ const MechanicalProperties = () => {
                 {/* Impact Energy */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Impact Energy (J) <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Impact Energy (J)                  </label>
                   <input
                     type="number"
                     step="0.1"
                     value={entry.impactEnergy}
                     onChange={(e) => updateEntry(entry.id, 'impactEnergy', e.target.value)}
-                    placeholder="e.g., 45.2"
+                    placeholder="e.g: 45.2"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -441,7 +432,7 @@ const MechanicalProperties = () => {
                     type="number"
                     value={entry.fatigueStrength}
                     onChange={(e) => updateEntry(entry.id, 'fatigueStrength', e.target.value)}
-                    placeholder="e.g., 180"
+                    placeholder="e.g: 180"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -490,7 +481,7 @@ const MechanicalProperties = () => {
                     type="number"
                     value={entry.testTemperature}
                     onChange={(e) => updateEntry(entry.id, 'testTemperature', e.target.value)}
-                    placeholder="e.g., 23"
+                    placeholder="e.g: 23"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -506,13 +497,12 @@ const MechanicalProperties = () => {
                 {/* Operator Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Operator Name <span style={{ color: '#ef4444' }}>*</span>
-                  </label>
+                    Operator Name                  </label>
                   <input
                     type="text"
                     value={entry.operatorName}
                     onChange={(e) => updateEntry(entry.id, 'operatorName', e.target.value)}
-                    placeholder="e.g., John Smith"
+                    placeholder="e.g: John Smith"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
