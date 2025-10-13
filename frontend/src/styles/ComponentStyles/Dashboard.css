@@ -1,56 +1,111 @@
 /* src/styles/ComponentStyles/Dashboard.css */
 
 .dashboard-page-container {
-  padding: 20px;
+  padding: var(--spacing-md, 1rem);
   background-color: #f8f9fa; /* A very light background for the content area */
-  min-height: calc(100vh - 60px); /* Adjust based on your navbar height */
-  box-sizing: border-box; /* Include padding in height calculation */
+  min-height: calc(100vh - var(--navbar-height, 75px));
+  box-sizing: border-box;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+@media (min-width: 768px) {
+  .dashboard-page-container {
+    padding: var(--spacing-lg, 1.5rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-page-container {
+    padding: var(--spacing-xl, 2rem);
+  }
 }
 
 .dashboard-page-header {
-  margin-bottom: 25px;
-  padding-bottom: 10px;
+  margin-bottom: var(--spacing-lg, 1.5rem);
+  padding-bottom: var(--spacing-sm, 0.5rem);
   border-bottom: 1px solid #e0e0e0;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: var(--spacing-sm, 0.5rem);
+  align-items: flex-start;
+}
+
+@media (min-width: 640px) {
+  .dashboard-page-header {
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
 }
 
 .dashboard-page-header h1 {
-  font-size: 2rem;
+  font-size: clamp(1.5rem, 4vw, 2rem);
   color: #333;
   margin: 0;
+  word-break: break-word;
 }
 
 .dashboard-page-content {
-  /* This is the area where specific page elements will reside. 
-     You might use CSS Grid or Flexbox here depending on the layout of your pages. */
-  /* Example: A simple grid for cards */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
+  grid-template-columns: 1fr;
+  gap: var(--spacing-md, 1rem);
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .dashboard-page-content {
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+    gap: var(--spacing-lg, 1.5rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .dashboard-page-content {
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  }
 }
 
 /* Example styles for individual content cards within the dashboard-page-content */
 .content-card {
   background-color: white;
-  border-radius: 8px;
-  padding: 20px;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
-  transition: transform 0.2s ease-in-out;
+  border-radius: var(--radius-lg, 0.75rem);
+  padding: var(--spacing-md, 1rem);
+  box-shadow: var(--shadow-sm, 0 1px 2px rgba(0, 0, 0, 0.05));
+  transition: all 0.3s ease;
+  width: 100%;
+  min-width: 0; /* Prevent overflow */
+}
+
+@media (min-width: 768px) {
+  .content-card {
+    padding: var(--spacing-lg, 1.5rem);
+  }
 }
 
 .content-card:hover {
   transform: translateY(-3px);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: var(--shadow-md, 0 4px 8px rgba(0, 0, 0, 0.1));
+}
+
+/* Remove hover effect on touch devices */
+@media (hover: none) and (pointer: coarse) {
+  .content-card:hover {
+    transform: none;
+  }
 }
 
 .content-card h3 {
   margin-top: 0;
   color: #007bff;
+  font-size: clamp(1.125rem, 2.5vw, 1.5rem);
+  word-break: break-word;
 }
 
 .content-card p {
   color: #555;
   line-height: 1.6;
+  font-size: clamp(0.875rem, 2vw, 1rem);
+  word-break: break-word;
 }

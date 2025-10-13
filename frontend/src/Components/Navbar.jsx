@@ -93,20 +93,29 @@ export const Navbar = () => {
             onMouseEnter={() => item.dropdown && handleMouseEnter(item.name)}
             onMouseLeave={handleMouseLeave}
           >
-            <Link 
-              to={item.path} 
-              className={`navbar-link ${isHighlighted(item.path) ? 'highlighted' : ''} ${isActiveRoute(item.path) ? 'active-route' : ''}`}
-            >
-              <span className="link-text">{item.name}</span>
-              {item.dropdown && (
+            {item.dropdown ? (
+              // If item has dropdown, render as non-clickable span
+              <span 
+                className={`navbar-link ${isHighlighted(item.path) ? 'highlighted' : ''} ${isActiveRoute(item.path) ? 'active-route' : ''}`}
+              >
+                <span className="link-text">{item.name}</span>
                 <span className={`dropdown-arrow ${activeDropdown === item.name ? 'open' : ''}`}>
                   <svg width="10" height="6" viewBox="0 0 10 6" fill="none" xmlns="http://www.w3.org/2000/svg">
                     <path d="M1 1L5 5L9 1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
                   </svg>
                 </span>
-              )}
-              <span className="link-underline"></span>
-            </Link>
+                <span className="link-underline"></span>
+              </span>
+            ) : (
+              // If no dropdown, render as clickable link
+              <Link 
+                to={item.path} 
+                className={`navbar-link ${isHighlighted(item.path) ? 'highlighted' : ''} ${isActiveRoute(item.path) ? 'active-route' : ''}`}
+              >
+                <span className="link-text">{item.name}</span>
+                <span className="link-underline"></span>
+              </Link>
+            )}
             
             {item.dropdown && (
               <div className={`dropdown-menu ${activeDropdown === item.name ? 'show' : ''}`}>
