@@ -64,7 +64,7 @@ const App = () => {
           {/* Process */}
           <Route path="process/melting-parameters" element={<MeltingProcessParameter />} />
           <Route path="process/molding-parameters" element={<MoldingProcessParameter />} />
-          <Route path="process/sandplant-parameters" element={<SandplantProcessParameter />} />
+          <Route path="process/sandplant-process-parameters" element={<SandplantProcessParameter />} />
 
           {/* Rejection */}
           <Route path="rejection/report-founded" element={<RejectionReportFound />} />
