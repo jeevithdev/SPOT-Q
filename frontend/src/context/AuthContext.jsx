@@ -6,7 +6,16 @@ export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     // Initialize user from localStorage if available
     const storedUser = localStorage.getItem('user');
-    return storedUser ? JSON.parse(storedUser) : null;
+    if (storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
+      try {
+        return JSON.parse(storedUser);
+      } catch (error) {
+        console.error('Error parsing stored user:', error);
+        localStorage.removeItem('user');
+        return null;
+      }
+    }
+    return null;
   });
   const [loading, setLoading] = useState(true);
   const [token, setToken] = useState(localStorage.getItem('token'));
@@ -21,8 +30,13 @@ export const AuthProvider = ({ children }) => {
     if (DEMO_MODE) {
       // In demo mode, restore mock user from localStorage if present
       const storedUser = localStorage.getItem('demo_user');
-      if (storedUser) {
-        setUser(JSON.parse(storedUser));
+      if (storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
+        try {
+          setUser(JSON.parse(storedUser));
+        } catch (error) {
+          console.error('Error parsing demo user:', error);
+          localStorage.removeItem('demo_user');
+        }
       }
       setLoading(false);
       return;
@@ -74,8 +88,12 @@ export const AuthProvider = ({ children }) => {
           } else {
             // Token still valid locally, use stored user or create minimal one
             const storedUser = localStorage.getItem('user');
-            if (storedUser) {
-              setUser(JSON.parse(storedUser));
+            if (storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
+              try {
+                setUser(JSON.parse(storedUser));
+              } catch (error) {
+                setUser({ id: payload.userId });
+              }
             } else {
               setUser({ id: payload.userId });
             }
@@ -99,8 +117,12 @@ export const AuthProvider = ({ children }) => {
         } else {
           // Token still valid locally, use stored user or create minimal one
           const storedUser = localStorage.getItem('user');
-          if (storedUser) {
-            setUser(JSON.parse(storedUser));
+          if (storedUser && storedUser !== 'undefined' && storedUser !== 'null') {
+            try {
+              setUser(JSON.parse(storedUser));
+            } catch (error) {
+              setUser({ id: payload.userId });
+            }
           } else {
             setUser({ id: payload.userId });
           }

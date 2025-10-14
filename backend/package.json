@@ -1,7 +1,7 @@
 {
   "name": "spot-q-backend",
   "version": "1.0.0",
-  "description": "SPOT-Q Backend API - Quality Control and Process Management System",
+  "description": "SPOT-Q Backend API",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
@@ -9,36 +9,26 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "quality-control",
-    "manufacturing",
-    "process-management",
-    "authentication",
-    "nodejs",
     "express",
     "mongodb",
-    "jwt"
+    "authentication",
+    "api"
   ],
-  "author": "Sakthi Auto",
-  "license": "MIT",
+  "author": "",
+  "license": "ISC",
   "dependencies": {
-    "bcryptjs": "^2.4.3",
-    "cors": "^2.8.5",
-    "crypto": "^1.0.1",
-    "dotenv": "^16.3.1",
     "express": "^4.18.2",
-    "express-rate-limit": "^6.10.0",
-    "express-session": "^1.17.3",
-    "express-validator": "^7.0.1",
-    "helmet": "^7.0.0",
-    "jsonwebtoken": "^9.0.2",
-    "mongo": "^0.1.0",
-    "mongodb": "^6.20.0",
-    "mongoose": "^7.5.0"
+    "mongoose": "^8.0.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.3.1",
+    "bcryptjs": "^2.4.3",
+    "jsonwebtoken": "^9.0.2"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.0.2"
   },
   "engines": {
     "node": ">=14.0.0"
   }
 }
+
