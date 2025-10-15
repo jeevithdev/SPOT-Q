@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom/client';
 import App from './app.jsx';
 import { AuthProvider } from './src/context/AuthContext';
 import './app.css';
-import './src/styles/responsive.css';
+import './src/styles/ComponentStyles/responsive.css';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {

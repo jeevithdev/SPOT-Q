@@ -2,6 +2,7 @@ import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from './src/context/AuthContext';
 import { Navbar } from './src/Components/Navbar';
+import Guidelines from './src/Components/Guidelines';
 import Dashboard from './src/Components/Dashboard';
 import Loader from './src/Components/Loader';
 
@@ -26,6 +27,7 @@ const ProtectedLayout = () => {
   return (
     <>
       <Navbar />
+      <Guidelines />
       <Dashboard>
         <Outlet />
       </Dashboard>

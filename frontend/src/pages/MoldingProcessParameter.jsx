@@ -1,27 +1,22 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, X } from 'lucide-react';
+import CustomDatePicker from '../Components/CustomDatePicker';
 
 const MoldingProcessParameter = () => {
   const [entries, setEntries] = useState([
     {
       id: 1,
-      date: '',
-      shift: '',
-      machineId: '',
+      startDate: '',
+      endDate: '',
       moldId: '',
-      partNumber: '',
-      cycleTime: '',
-      moldTemperature: '',
-      injectionPressure: '',
-      holdingPressure: '',
-      injectionSpeed: '',
-      coolingTime: '',
-      ejectionTime: '',
-      clampForce: '',
-      shotWeight: '',
-      meltTemperature: '',
-      moldOpenTime: '',
-      moldCloseTime: '',
+      targetCycleTime: '',
+      achievedCycleTime: '',
+      totalMetalWeight: '',
+      totalSandWeight: '',
+      breakdownAMC: '',
+      breakdownDMM: '',
+      breakdownOthers: '',
+      incharge: '',
       operatorName: '',
       supervisor: '',
       remarks: ''
@@ -31,23 +26,17 @@ const MoldingProcessParameter = () => {
   const addNewEntry = () => {
     const newEntry = {
       id: Date.now(),
-      date: '',
-      shift: '',
-      machineId: '',
+      startDate: '',
+      endDate: '',
       moldId: '',
-      partNumber: '',
-      cycleTime: '',
-      moldTemperature: '',
-      injectionPressure: '',
-      holdingPressure: '',
-      injectionSpeed: '',
-      coolingTime: '',
-      ejectionTime: '',
-      clampForce: '',
-      shotWeight: '',
-      meltTemperature: '',
-      moldOpenTime: '',
-      moldCloseTime: '',
+      targetCycleTime: '',
+      achievedCycleTime: '',
+      totalMetalWeight: '',
+      totalSandWeight: '',
+      breakdownAMC: '',
+      breakdownDMM: '',
+      breakdownOthers: '',
+      incharge: '',
       operatorName: '',
       supervisor: '',
       remarks: ''
@@ -69,9 +58,8 @@ const MoldingProcessParameter = () => {
 
   const handleSubmit = () => {
     const isValid = entries.every(entry => 
-      entry.date && entry.shift && entry.machineId && entry.moldId && 
-      entry.partNumber && entry.cycleTime && entry.moldTemperature && 
-      entry.injectionPressure && entry.holdingPressure && entry.operatorName
+      entry.moldId && entry.targetCycleTime && entry.achievedCycleTime &&
+      entry.totalMetalWeight && entry.operatorName
     );
 
     if (isValid) {
@@ -85,23 +73,17 @@ const MoldingProcessParameter = () => {
   const handleReset = () => {
     setEntries([{
       id: 1,
-      date: '',
-      shift: '',
-      machineId: '',
+      startDate: '',
+      endDate: '',
       moldId: '',
-      partNumber: '',
-      cycleTime: '',
-      moldTemperature: '',
-      injectionPressure: '',
-      holdingPressure: '',
-      injectionSpeed: '',
-      coolingTime: '',
-      ejectionTime: '',
-      clampForce: '',
-      shotWeight: '',
-      meltTemperature: '',
-      moldOpenTime: '',
-      moldCloseTime: '',
+      targetCycleTime: '',
+      achievedCycleTime: '',
+      totalMetalWeight: '',
+      totalSandWeight: '',
+      breakdownAMC: '',
+      breakdownDMM: '',
+      breakdownOthers: '',
+      incharge: '',
       operatorName: '',
       supervisor: '',
       remarks: ''
@@ -109,7 +91,7 @@ const MoldingProcessParameter = () => {
   };
 
   return (
-    <div className="page-container" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+  <div className="page-container" style={{ minHeight: '100vh' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem' }}>
         {/* Header */}
         <div style={{ 
@@ -137,20 +119,63 @@ const MoldingProcessParameter = () => {
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.5rem 1rem',
-                  backgroundColor: '#f1f5f9',
-                  color: '#334155',
+                  backgroundColor: '#163442',
+                  color: 'white',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '500',
-                  transition: 'background-color 0.2s'
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#e2e8f0'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#1f4f5d';
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 6px rgba(22,52,66,0.25)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#163442';
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+                onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+                onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
               >
                 <X size={18} />
                 Reset
+              </button>
+              <button
+                onClick={() => document.dispatchEvent(new Event('guidelines:open'))}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#5B9AA9',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#4A8494';
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(91,154,169,0.3)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#5B9AA9';
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+                onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+                onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
+              >
+                Guidelines
               </button>
               <button
                 onClick={addNewEntry}
@@ -159,17 +184,28 @@ const MoldingProcessParameter = () => {
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.5rem 1rem',
-                  backgroundColor: '#2563eb',
+                  backgroundColor: '#FF7F50',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '500',
-                  transition: 'background-color 0.2s'
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#FF6A3D';
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(255, 127, 80, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#FF7F50';
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+                onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+                onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
               >
                 <Plus size={18} />
                 Add Cycle
@@ -222,442 +258,174 @@ const MoldingProcessParameter = () => {
 
               <div style={{ 
                 display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
                 gap: '1rem'
               }}>
-                {/* Date */}
+                {/* Start Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Date                  </label>
-                  <input
-                    type="date"
-                    value={entry.date}
-                    onChange={(e) => updateEntry(entry.id, 'date', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
+                    Start Date
+                  </label>
+                  <CustomDatePicker
+                    value={entry.startDate}
+                    onChange={(e) => updateEntry(entry.id, 'startDate', e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
                   />
                 </div>
 
-                {/* Shift */}
+                {/* End Date */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Shift                  </label>
-                  <select
-                    value={entry.shift}
-                    onChange={(e) => updateEntry(entry.id, 'shift', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      backgroundColor: 'white',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  >
-                    <option value="">Select Shift</option>
-                    <option value="Day">Day (6:00 AM - 2:00 PM)</option>
-                    <option value="Evening">Evening (2:00 PM - 10:00 PM)</option>
-                    <option value="Night">Night (10:00 PM - 6:00 AM)</option>
-                  </select>
-                </div>
-
-                {/* Machine ID */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Machine ID                  </label>
-                  <select
-                    value={entry.machineId}
-                    onChange={(e) => updateEntry(entry.id, 'machineId', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      backgroundColor: 'white',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  >
-                    <option value="">Select Machine</option>
-                    <option value="INJ-001">INJ-001 (500 Ton)</option>
-                    <option value="INJ-002">INJ-002 (750 Ton)</option>
-                    <option value="INJ-003">INJ-003 (1000 Ton)</option>
-                    <option value="INJ-004">INJ-004 (1500 Ton)</option>
-                    <option value="INJ-005">INJ-005 (2000 Ton)</option>
-                  </select>
+                    End Date
+                  </label>
+                  <CustomDatePicker
+                    value={entry.endDate}
+                    onChange={(e) => updateEntry(entry.id, 'endDate', e.target.value)}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                  />
                 </div>
 
                 {/* Mold ID */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Mold ID                  </label>
+                    Mold No./ID
+                  </label>
                   <input
                     type="text"
                     value={entry.moldId}
                     onChange={(e) => updateEntry(entry.id, 'moldId', e.target.value)}
                     placeholder="e.g: MOLD-2024-001"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
                   />
                 </div>
 
-                {/* Part Number */}
+                {/* Target Cycle Time */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Part Number                  </label>
+                    Target Cycle Time (sec)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={entry.targetCycleTime}
+                    onChange={(e) => updateEntry(entry.id, 'targetCycleTime', e.target.value)}
+                    placeholder="e.g: 45.0"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                {/* Achieved Cycle Time */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
+                    Achieved Cycle Time (sec)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={entry.achievedCycleTime}
+                    onChange={(e) => updateEntry(entry.id, 'achievedCycleTime', e.target.value)}
+                    placeholder="e.g: 46.2"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                {/* Total Metal Weight */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
+                    Total Metal Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={entry.totalMetalWeight}
+                    onChange={(e) => updateEntry(entry.id, 'totalMetalWeight', e.target.value)}
+                    placeholder="e.g: 1250.50"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                {/* Total Sand Weight */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
+                    Total Sand Weight (kg)
+                  </label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={entry.totalSandWeight}
+                    onChange={(e) => updateEntry(entry.id, 'totalSandWeight', e.target.value)}
+                    placeholder="e.g: 320.00"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                {/* Breakdown Fields */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
+                    Breakdown AMC
+                  </label>
+                  <input
+                    type="number"
+                    value={entry.breakdownAMC}
+                    onChange={(e) => updateEntry(entry.id, 'breakdownAMC', e.target.value)}
+                    placeholder="e.g: 0"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
+                    Breakdown DMM
+                  </label>
+                  <input
+                    type="number"
+                    value={entry.breakdownDMM}
+                    onChange={(e) => updateEntry(entry.id, 'breakdownDMM', e.target.value)}
+                    placeholder="e.g: 0"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
+                    Breakdown Others
+                  </label>
+                  <input
+                    type="number"
+                    value={entry.breakdownOthers}
+                    onChange={(e) => updateEntry(entry.id, 'breakdownOthers', e.target.value)}
+                    placeholder="e.g: 0"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                  />
+                </div>
+
+                {/* Personnel fields */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
+                    Incharge
+                  </label>
                   <input
                     type="text"
-                    value={entry.partNumber}
-                    onChange={(e) => updateEntry(entry.id, 'partNumber', e.target.value)}
-                    placeholder="e.g: DASHBOARD_001"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
+                    value={entry.incharge}
+                    onChange={(e) => updateEntry(entry.id, 'incharge', e.target.value)}
+                    placeholder="e.g: Alice"
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
                   />
                 </div>
 
-                {/* Cycle Time */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Cycle Time (sec)                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entry.cycleTime}
-                    onChange={(e) => updateEntry(entry.id, 'cycleTime', e.target.value)}
-                    placeholder="e.g: 45.5"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Temperature Parameters Section */}
-                <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#1e293b', marginBottom: '1rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-                    Temperature Parameters
-                  </h4>
-                </div>
-
-                {/* Mold Temperature */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Mold Temperature (°C)                  </label>
-                  <input
-                    type="number"
-                    value={entry.moldTemperature}
-                    onChange={(e) => updateEntry(entry.id, 'moldTemperature', e.target.value)}
-                    placeholder="e.g: 85"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Melt Temperature */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Melt Temperature (°C)
+                    Operator
                   </label>
-                  <input
-                    type="number"
-                    value={entry.meltTemperature}
-                    onChange={(e) => updateEntry(entry.id, 'meltTemperature', e.target.value)}
-                    placeholder="e.g: 245"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Pressure Parameters Section */}
-                <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#1e293b', marginBottom: '1rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-                    Pressure Parameters
-                  </h4>
-                </div>
-
-                {/* Injection Pressure */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Injection Pressure (bar)                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entry.injectionPressure}
-                    onChange={(e) => updateEntry(entry.id, 'injectionPressure', e.target.value)}
-                    placeholder="e.g: 1200.5"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Holding Pressure */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Holding Pressure (bar)                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entry.holdingPressure}
-                    onChange={(e) => updateEntry(entry.id, 'holdingPressure', e.target.value)}
-                    placeholder="e.g: 850.0"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Clamp Force */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Clamp Force (Ton)
-                  </label>
-                  <input
-                    type="number"
-                    value={entry.clampForce}
-                    onChange={(e) => updateEntry(entry.id, 'clampForce', e.target.value)}
-                    placeholder="e.g: 500"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Speed Parameters Section */}
-                <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#1e293b', marginBottom: '1rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-                    Speed Parameters
-                  </h4>
-                </div>
-
-                {/* Injection Speed */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Injection Speed (mm/s)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entry.injectionSpeed}
-                    onChange={(e) => updateEntry(entry.id, 'injectionSpeed', e.target.value)}
-                    placeholder="e.g: 85.5"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Time Parameters Section */}
-                <div style={{ gridColumn: '1 / -1', marginTop: '1rem' }}>
-                  <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#1e293b', marginBottom: '1rem', borderBottom: '2px solid #e2e8f0', paddingBottom: '0.5rem' }}>
-                    Time Parameters
-                  </h4>
-                </div>
-
-                {/* Cooling Time */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Cooling Time (sec)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entry.coolingTime}
-                    onChange={(e) => updateEntry(entry.id, 'coolingTime', e.target.value)}
-                    placeholder="e.g: 25.0"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Ejection Time */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Ejection Time (sec)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entry.ejectionTime}
-                    onChange={(e) => updateEntry(entry.id, 'ejectionTime', e.target.value)}
-                    placeholder="e.g: 3.5"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Mold Open Time */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Mold Open Time (sec)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entry.moldOpenTime}
-                    onChange={(e) => updateEntry(entry.id, 'moldOpenTime', e.target.value)}
-                    placeholder="e.g: 2.0"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Mold Close Time */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Mold Close Time (sec)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entry.moldCloseTime}
-                    onChange={(e) => updateEntry(entry.id, 'moldCloseTime', e.target.value)}
-                    placeholder="e.g: 3.0"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Shot Weight */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Shot Weight (g)
-                  </label>
-                  <input
-                    type="number"
-                    step="0.1"
-                    value={entry.shotWeight}
-                    onChange={(e) => updateEntry(entry.id, 'shotWeight', e.target.value)}
-                    placeholder="e.g: 1250.5"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Operator Name */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Operator Name                  </label>
                   <input
                     type="text"
                     value={entry.operatorName}
                     onChange={(e) => updateEntry(entry.id, 'operatorName', e.target.value)}
                     placeholder="e.g: John Smith"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
                   />
                 </div>
 
-                {/* Supervisor */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
                     Supervisor
@@ -667,19 +435,11 @@ const MoldingProcessParameter = () => {
                     value={entry.supervisor}
                     onChange={(e) => updateEntry(entry.id, 'supervisor', e.target.value)}
                     placeholder="e.g: Mike Johnson"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
                   />
                 </div>
 
-                {/* Remarks */}
+                {/* Remarks full width */}
                 <div style={{ gridColumn: '1 / -1' }}>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
                     Remarks
@@ -689,16 +449,7 @@ const MoldingProcessParameter = () => {
                     onChange={(e) => updateEntry(entry.id, 'remarks', e.target.value)}
                     placeholder="Enter any additional notes or observations..."
                     rows="3"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s',
-                      resize: 'vertical'
-                    }}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem', resize: 'vertical' }}
                   />
                 </div>
               </div>
@@ -715,7 +466,7 @@ const MoldingProcessParameter = () => {
               alignItems: 'center',
               gap: '0.5rem',
               padding: '0.75rem 1.5rem',
-              backgroundColor: '#16a34a',
+              backgroundColor: '#5B9AA9',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -723,53 +474,28 @@ const MoldingProcessParameter = () => {
               fontSize: '0.875rem',
               fontWeight: '500',
               boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              transition: 'background-color 0.2s'
+              transition: 'all 0.3s ease',
+              transform: 'scale(1)'
             }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#15803d'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#16a34a'}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#4A8494';
+              e.target.style.transform = 'scale(1.05)';
+              e.target.style.boxShadow = '0 6px 16px rgba(91, 154, 169, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#5B9AA9';
+              e.target.style.transform = 'scale(1)';
+              e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+            }}
+            onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+            onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
           >
             <Save size={20} />
             Save All Cycles
           </button>
         </div>
 
-        {/* Info Card */}
-        <div style={{ 
-          marginTop: '1.5rem', 
-          backgroundColor: '#eff6ff', 
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          padding: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-            <div style={{ 
-              flexShrink: 0,
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#2563eb',
-              color: 'white',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.875rem',
-              fontWeight: 'bold'
-            }}>
-              i
-            </div>
-            <div>
-              <h4 style={{ fontWeight: '600', color: '#1e3a8a', margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>
-                Molding Guidelines
-              </h4>
-              <ul style={{ fontSize: '0.875rem', color: '#1e40af', margin: 0, paddingLeft: '1.25rem', lineHeight: '1.5' }}>
-                <li>Maintain consistent process parameters for quality control</li>
-                <li>Monitor mold temperature and pressure throughout the cycle</li>
-                <li>Record cycle times for process optimization</li>
-                <li>Ensure proper mold maintenance and cleaning schedules</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        {/* Molding guidelines moved to global Guidelines component */}
       </div>
     </div>
   );

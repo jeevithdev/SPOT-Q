@@ -24,6 +24,23 @@ const Items = () => {
   const [showMissingFields, setShowMissingFields] = useState(false);
   const [missingFields, setMissingFields] = useState([]);
 
+  // Helpers: CustomDatePicker may emit either an event (with target.value)
+  // or a raw value. Normalize both shapes to reuse existing handlers.
+  const normalizeDateChange = (name) => (eOrValue) => {
+    const value = eOrValue && eOrValue.target ? eOrValue.target.value : eOrValue;
+    handleChange({ target: { name, value } });
+  };
+
+  const handleStartDateChange = (eOrValue) => {
+    const value = eOrValue && eOrValue.target ? eOrValue.target.value : eOrValue;
+    setStartDate(value);
+  };
+
+  const handleEndDateChange = (eOrValue) => {
+    const value = eOrValue && eOrValue.target ? eOrValue.target.value : eOrValue;
+    setEndDate(value);
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
@@ -75,7 +92,7 @@ const Items = () => {
   };
 
   return (
-    <div className="page-container">
+  <div className="page-container" style={{ minHeight: '100vh' }}>
       {/* Form Section */}
       <div style={{ 
         background: 'white', 
@@ -102,7 +119,7 @@ const Items = () => {
               <CustomDatePicker
                 name="date"
                 value={formData.date}
-                onChange={handleChange}
+                onChange={normalizeDateChange('date')}
                 max={today}
                 style={{ 
                   width: '100%',
@@ -293,16 +310,29 @@ const Items = () => {
               onClick={handleSubmit}
               style={{ 
                 padding: '10px 30px', 
-                background: '#10b981', 
+                backgroundColor: '#5B9AA9', 
                 color: 'white', 
                 border: 'none', 
-                borderRadius: '6px', 
+                borderRadius: '8px', 
                 cursor: 'pointer', 
                 fontWeight: '500', 
-                fontSize: '15px' 
+                fontSize: '15px',
+                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+                transition: 'all 0.3s ease',
+                transform: 'scale(1)'
               }}
-              onMouseOver={(e) => e.target.style.background = '#059669'}
-              onMouseOut={(e) => e.target.style.background = '#10b981'}
+              onMouseEnter={(e) => {
+                e.target.style.backgroundColor = '#4A8494';
+                e.target.style.transform = 'scale(1.05)';
+                e.target.style.boxShadow = '0 6px 16px rgba(91, 154, 169, 0.5)';
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.backgroundColor = '#5B9AA9';
+                e.target.style.transform = 'scale(1)';
+                e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+              }}
+              onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+              onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
             >
               Submit
             </button>
@@ -328,7 +358,7 @@ const Items = () => {
             <CustomDatePicker
               name="startDate"
               value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
+              onChange={handleStartDateChange}
               max={today}
               style={{ 
                 width: '100%',
@@ -347,7 +377,7 @@ const Items = () => {
             <CustomDatePicker
               name="endDate"
               value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
+              onChange={handleEndDateChange}
               max={today}
               style={{ 
                 width: '100%',
@@ -363,17 +393,30 @@ const Items = () => {
             onClick={handleFilter}
             style={{ 
               padding: '10px 30px', 
-              background: '#3b82f6', 
+              backgroundColor: '#5B9AA9', 
               color: 'white', 
               border: 'none', 
-              borderRadius: '6px', 
+              borderRadius: '8px', 
               cursor: 'pointer', 
               fontWeight: '500',
               fontSize: '15px',
+              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
+              transition: 'all 0.3s ease',
+              transform: 'scale(1)',
               height: 'fit-content'
             }}
-            onMouseOver={(e) => e.target.style.background = '#2563eb'}
-            onMouseOut={(e) => e.target.style.background = '#3b82f6'}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#4A8494';
+              e.target.style.transform = 'scale(1.05)';
+              e.target.style.boxShadow = '0 6px 16px rgba(91, 154, 169, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#5B9AA9';
+              e.target.style.transform = 'scale(1)';
+              e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+            }}
+            onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+            onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
           >
             Filter
           </button>

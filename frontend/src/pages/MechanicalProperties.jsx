@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, X } from 'lucide-react';
+import CustomDatePicker from '../Components/CustomDatePicker';
 
 const MechanicalProperties = () => {
   const [entries, setEntries] = useState([
@@ -94,7 +95,7 @@ const MechanicalProperties = () => {
   };
 
   return (
-    <div className="page-container" style={{ minHeight: '100vh', backgroundColor: '#f8fafc' }}>
+  <div className="page-container" style={{ minHeight: '100vh', backgroundColor: '#91bccf' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem' }}>
         {/* Header */}
         <div style={{ 
@@ -122,20 +123,63 @@ const MechanicalProperties = () => {
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.5rem 1rem',
-                  backgroundColor: '#f1f5f9',
-                  color: '#334155',
+                  backgroundColor: '#163442',
+                  color: 'white',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '500',
-                  transition: 'background-color 0.2s'
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#e2e8f0'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#f1f5f9'}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#1f4f5d';
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 6px rgba(22,52,66,0.25)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#163442';
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+                onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+                onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
               >
                 <X size={18} />
                 Reset
+              </button>
+              <button
+                onClick={() => document.dispatchEvent(new Event('guidelines:open'))}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: '#5B9AA9',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  transition: 'all 0.2s ease',
+                  transform: 'scale(1)'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#4A8494';
+                  e.currentTarget.style.transform = 'scale(1.05)';
+                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(74,132,148,0.15)';
+                }}
+                onMouseLeave={(e) => {
+                  e.currentTarget.style.backgroundColor = '#5B9AA9';
+                  e.currentTarget.style.transform = 'scale(1)';
+                  e.currentTarget.style.boxShadow = 'none';
+                }}
+                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
+                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+              >
+                Guidelines
               </button>
               <button
                 onClick={addNewEntry}
@@ -144,17 +188,28 @@ const MechanicalProperties = () => {
                   alignItems: 'center',
                   gap: '0.5rem',
                   padding: '0.5rem 1rem',
-                  backgroundColor: '#2563eb',
+                  backgroundColor: '#FF7F50',
                   color: 'white',
                   border: 'none',
                   borderRadius: '8px',
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '500',
-                  transition: 'background-color 0.2s'
+                  transition: 'all 0.3s ease',
+                  transform: 'scale(1)'
                 }}
-                onMouseEnter={(e) => e.target.style.backgroundColor = '#1d4ed8'}
-                onMouseLeave={(e) => e.target.style.backgroundColor = '#2563eb'}
+                onMouseEnter={(e) => {
+                  e.target.style.backgroundColor = '#FF6A3D';
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(255, 127, 80, 0.5)';
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.backgroundColor = '#FF7F50';
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = 'none';
+                }}
+                onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+                onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
               >
                 <Plus size={18} />
                 Add Test
@@ -214,19 +269,11 @@ const MechanicalProperties = () => {
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
                     Test Date                  </label>
-                  <input
-                    type="date"
+                  <CustomDatePicker
                     value={entry.date}
                     onChange={(e) => updateEntry(entry.id, 'date', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
+                    max={new Date().toISOString().split('T')[0]}
+                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
                   />
                 </div>
 
@@ -555,7 +602,7 @@ const MechanicalProperties = () => {
               alignItems: 'center',
               gap: '0.5rem',
               padding: '0.75rem 1.5rem',
-              backgroundColor: '#16a34a',
+              backgroundColor: '#5B9AA9',
               color: 'white',
               border: 'none',
               borderRadius: '8px',
@@ -563,53 +610,28 @@ const MechanicalProperties = () => {
               fontSize: '0.875rem',
               fontWeight: '500',
               boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              transition: 'background-color 0.2s'
+              transition: 'all 0.3s ease',
+              transform: 'scale(1)'
             }}
-            onMouseEnter={(e) => e.target.style.backgroundColor = '#15803d'}
-            onMouseLeave={(e) => e.target.style.backgroundColor = '#16a34a'}
+            onMouseEnter={(e) => {
+              e.target.style.backgroundColor = '#4A8494';
+              e.target.style.transform = 'scale(1.05)';
+              e.target.style.boxShadow = '0 6px 16px rgba(91, 154, 169, 0.5)';
+            }}
+            onMouseLeave={(e) => {
+              e.target.style.backgroundColor = '#5B9AA9';
+              e.target.style.transform = 'scale(1)';
+              e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
+            }}
+            onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+            onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
           >
             <Save size={20} />
             Save All Tests
           </button>
         </div>
 
-        {/* Info Card */}
-        <div style={{ 
-          marginTop: '1.5rem', 
-          backgroundColor: '#eff6ff', 
-          border: '1px solid #bfdbfe',
-          borderRadius: '8px',
-          padding: '1rem'
-        }}>
-          <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
-            <div style={{ 
-              flexShrink: 0,
-              width: '24px',
-              height: '24px',
-              backgroundColor: '#2563eb',
-              color: 'white',
-              borderRadius: '50%',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              fontSize: '0.875rem',
-              fontWeight: 'bold'
-            }}>
-              i
-            </div>
-            <div>
-              <h4 style={{ fontWeight: '600', color: '#1e3a8a', margin: '0 0 0.5rem 0', fontSize: '0.875rem' }}>
-                Testing Guidelines
-              </h4>
-              <ul style={{ fontSize: '0.875rem', color: '#1e40af', margin: 0, paddingLeft: '1.25rem', lineHeight: '1.5' }}>
-                <li>All tests should follow standard automotive industry protocols</li>
-                <li>Record precise measurements for quality traceability</li>
-                <li>Ensure proper specimen preparation and conditioning</li>
-                <li>Maintain consistent testing environment conditions</li>
-              </ul>
-            </div>
-          </div>
-        </div>
+        {/* Mechanical testing guidelines moved to global Guidelines component */}
       </div>
     </div>
   );
