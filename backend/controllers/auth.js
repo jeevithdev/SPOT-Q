@@ -2,6 +2,7 @@ const User = require('../models/user');
 const { generateToken } = require('../utils/jwt'); 
 const validateEmail = require('../utils/validateEmail'); 
 
+// Register Controller
 exports.register = async (req, res) => {
   try {
     const { name, email, password, phone } = req.body;
@@ -14,7 +15,7 @@ exports.register = async (req, res) => {
     if (password.length < 6) {
       return res.status(400).json({ message: 'Password must be at least 6 characters.' });
     }
-    
+ 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       console.log(' User already exists:', email);
@@ -35,6 +36,7 @@ exports.register = async (req, res) => {
   }
 };
 
+// Login Controller
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -50,13 +52,13 @@ exports.login = async (req, res) => {
       console.log(' User not found:', email);
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
-    
+// Validate password   
     const isMatch = await user.comparePassword(password);
     if (!isMatch) {
       console.log(' Invalid password for:', email);
       return res.status(401).json({ message: 'Invalid credentials.' });
     }
-    
+// Generate JWT Token   
     const token = generateToken(user._id);
     
     console.log(' Login successful:', email);

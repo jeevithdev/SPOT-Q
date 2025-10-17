@@ -5,6 +5,7 @@ import '../styles/ComponentStyles/Navbar.css';
 import { LogoutButton } from "./Buttons";
 
 const navItems = [
+  { name: 'PROCESS CONTROL', path: '/process-control' },
   { name: 'ITEMS', path: '/items' },
   { name: 'ANALYTICS', path: '/analytics' },
   { name: 'SPECTRO ANALYSIS', path: '/spectro-analysis' },
@@ -33,7 +34,6 @@ const navItems = [
   {
     name: 'PERFORMANCE',
     dropdown: [
-      { name: 'PROCESS CONTROL', path: '/process-control' },
       { name: 'OVERALL REPORT', path: '/overall-reports' },
     ],
   },

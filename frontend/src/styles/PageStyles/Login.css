@@ -19,8 +19,8 @@
 }
 
 .company-logo {
-  width: 150px; /* Smaller size for symbol only */
-  height: 120px;
+  width:180px;  /* Smaller size for symbol only */
+  height: 100px;
   max-width: none;
   margin-top: 0; /* Remove any top margin */
 }

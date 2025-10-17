@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 const bcrypt = require('bcryptjs');
 
+// User Schema
 const userSchema = new mongoose.Schema({
   name: { 
   type: String,
@@ -25,7 +26,7 @@ const userSchema = new mongoose.Schema({
     minlength: 6 }
 }, 
 { timestamps: true });
-
+// Hash password before saving
 userSchema.pre('save', async function(next) {
   if (!this.isModified('password') || !this.password) return next();
   try {
@@ -36,12 +37,12 @@ userSchema.pre('save', async function(next) {
     next(error);
   }
 });
-
+// Compare password method
 userSchema.methods.comparePassword = async function(candidatePassword) {
   if (!this.password) return false;
   return await bcrypt.compare(candidatePassword, this.password);
 };
-
+// Exclude password from toJSON output
 userSchema.methods.toJSON = function() {
   const user = this.toObject();
   delete user.password;

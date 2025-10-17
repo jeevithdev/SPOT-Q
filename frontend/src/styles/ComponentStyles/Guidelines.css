@@ -1,7 +1,7 @@
 .guidelines-button-container {
   position: fixed;
-  top: 72px; /* just below typical navbar height */
-  right: 18px;
+  top: 100px; /* just below typical navbar height */
+  right: 50px;
   z-index: 1200;
 }
 
@@ -27,7 +27,7 @@
 }
 
 .guidelines-popup {
-  width: 420px;
+  width: 500px;
   max-width: calc(100% - 40px);
   background: white;
   border-radius: 10px;
@@ -57,6 +57,7 @@
 
 .guidelines-body p {
   margin: 0;
+  
   font-size: 0.95rem;
   color: #334155;
   line-height: 1.4;
