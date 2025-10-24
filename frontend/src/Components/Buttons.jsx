@@ -66,12 +66,12 @@ const StyledWrapper = styled.div`
 const LogoutWrapper = styled(StyledWrapper)`
   position: absolute;
   top: 20px;
-  right: 30px;
+  right: 15px;
   z-index: 100;
 
   button {
-    font-size: 16px; /* Smaller logout button */
-    padding: 4px 12px;
+    font-size: 14px; /* Smaller logout button */
+    padding: 4px 10px;
   }
 `;
 

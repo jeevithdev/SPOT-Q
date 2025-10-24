@@ -10,6 +10,21 @@ const navItems = [
   { name: 'ANALYTICS', path: '/analytics' },
   { name: 'SPECTRO ANALYSIS', path: '/spectro-analysis' },
   {
+    name: 'SAND LAB',
+    dropdown: [
+      { name: 'SAND LAB PAGE 1', path: '/sand-lab/page-1' },
+      { name: 'SAND LAB PAGE 2', path: '/sand-lab/page-2' },
+    ],
+  },
+  {
+    name: 'MOULDING',
+    dropdown: [
+      { name: 'MOULDING PAGE 1', path: '/moulding/page-1' },
+      { name: 'MOULDING PAGE 2', path: '/moulding/page-2' },
+      { name: 'MOULDING PAGE 3', path: '/moulding/page-3' },
+    ],
+  },
+  {
     name: 'PRODUCTION',
     dropdown: [
       { name: 'MECHANICAL PROPERTIES', path: '/production/mechanical-properties' },
@@ -21,7 +36,6 @@ const navItems = [
     dropdown: [
       { name: 'MELTING PROCESS PARAMETERS', path: '/process/melting-parameters' },
       { name: 'MOLDING PROCESS PARAMETERS', path: '/process/molding-parameters' },
-      { name: 'SANDPLANT PROCESS PARAMETERS', path: '/process/sandplant-process-parameters' },
     ],
   },
   {

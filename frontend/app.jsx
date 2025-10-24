@@ -20,6 +20,11 @@ import RejectionReportFound from './src/pages/RejectionReportFound';
 import RejectionReportMachine from './src/pages/RejectionReportMachine';
 import Login from './src/pages/Login';
 import AnalyticsPage from './src/pages/AnalyticsPage';
+import SandLabPage1 from './src/pages/SandLabPage1';
+import SandLabPage2 from './src/pages/SandLabPage2';
+import MouldingPage1 from './src/pages/MouldingPage1';
+import MouldingPage2 from './src/pages/MouldingPage2';
+import MouldingPage3 from './src/pages/MouldingPage3';
 
 const ProtectedLayout = () => {
   const { user } = useContext(AuthContext);
@@ -74,6 +79,15 @@ const App = () => {
 
           {/* Analytics */}
           <Route path="analytics" element={<AnalyticsPage />} />
+
+          {/* Sand Lab */}
+          <Route path="sand-lab/page-1" element={<SandLabPage1 />} />
+          <Route path="sand-lab/page-2" element={<SandLabPage2 />} />
+
+          {/* Moulding */}
+          <Route path="moulding/page-1" element={<MouldingPage1 />} />
+          <Route path="moulding/page-2" element={<MouldingPage2 />} />
+          <Route path="moulding/page-3" element={<MouldingPage3 />} />
         </Route>
 
         {/* Fallback */}
