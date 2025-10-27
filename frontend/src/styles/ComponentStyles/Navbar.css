@@ -85,6 +85,18 @@
   overflow: visible;
 }
 
+/* Add invisible hover bridge for dropdown items */
+.navbar-item.has-dropdown::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  height: 10px;
+  background: transparent;
+  pointer-events: auto;
+}
+
 /* Navbar Link */
 .navbar-link {
   color: #fff; /* Change to white */
@@ -207,7 +219,7 @@
 /* Dropdown Menu */
 .dropdown-menu {
   position: absolute;
-  top: calc(100% + 8px);
+  top: calc(100% + 2px);
   left: 0;
   background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
   min-width: 300px;
@@ -218,7 +230,9 @@
   opacity: 0;
   visibility: hidden;
   transform: translateY(-10px);
-  transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s 0.5s;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   border: 1px solid rgba(243, 156, 18, 0.2);
   pointer-events: none;
@@ -239,6 +253,9 @@
   visibility: visible;
   transform: translateY(0);
   pointer-events: auto;
+  transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1), 
+              transform 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+              visibility 0s 0s;
 }
 
 .dropdown-content {

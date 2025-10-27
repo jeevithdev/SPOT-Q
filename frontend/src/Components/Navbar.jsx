@@ -10,6 +10,15 @@ const navItems = [
   { name: 'PROCESS', path: '/process', department: 'Process' },
   { name: 'MICRO TENSILE', path: '/micro-textile', department: 'Micro Tensile' },
   { name: 'TENSILE', path: '/textile', department: 'Tensile' },
+  {
+    name: 'MOULDING',
+    department: 'Moulding',
+    dropdown: [
+      { name: 'DISAMATIC PRODUCT REPORT', path: '/moulding/page-1' },
+      { name: 'MOULD HARDNESS AND PATTERN TEMPERATURE RECORD', path: '/moulding/page-2' },
+      { name: 'MOULDING PAGE 3', path: '/moulding/page-3' },
+    ],
+  },
   { name: 'QC-PRODUCTION DETAILS', path: '/qc-production-details', department: 'QC - production' },
   { name: 'MICRO STRUCTURE', path: '/micro-structure', department: 'Micro Structure' },
   { name: 'IMPACT', path: '/impact', department: 'Impact' },
@@ -19,15 +28,6 @@ const navItems = [
     dropdown: [
       { name: 'SAND TESTING RECORD', path: '/sand-lab/page-1' },
       { name: 'FOUNDARY SAND TESTING NOTE', path: '/sand-lab/page-2' },
-    ],
-  },
-  {
-    name: 'MOULDING',
-    department: 'Moulding',
-    dropdown: [
-      { name: 'DISAMATIC PRODUCT REPORT', path: '/moulding/page-1' },
-      { name: 'MOULD HARDNESS AND PATTERN TEMPERATURE RECORD', path: '/moulding/page-2' },
-      { name: 'MOULDING PAGE 3', path: '/moulding/page-3' },
     ],
   },
   {
