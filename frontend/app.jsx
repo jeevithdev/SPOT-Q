@@ -7,25 +7,21 @@ import Dashboard from './src/Components/Dashboard';
 import Loader from './src/Components/Loader';
 
 // Pages
-import Items from './src/pages/Items';
-import SpectroAnalysis from './src/pages/SpectroAnalysis';
-import ProcessControl from './src/pages/ProcessControl';
-import OverallReports from './src/pages/OverallReports';
-import MechanicalProperties from './src/pages/MechanicalProperties';
-import MetallographyProperties from './src/pages/MetallographyProperties';
+import MicroTensile from './src/pages/MicroTensile';
+import QcProductionDetails from './src/pages/QcProductionDetails';
+import Process from './src/pages/Process';
 import MeltingProcessParameter from './src/pages/MeltingProcessParameter';
 import MoldingProcessParameter from './src/pages/MoldingProcessParameter';
-import SandplantProcessParameter from './src/pages/SandplantProcessParameter';
-import RejectionReportFound from './src/pages/RejectionReportFound';
-import RejectionReportMachine from './src/pages/RejectionReportMachine';
 import Login from './src/pages/Login';
-import AnalyticsPage from './src/pages/AnalyticsPage';
-import SandLabPage1 from './src/pages/SandLabPage1';
-import SandLabPage2 from './src/pages/SandLabPage2';
-import MouldingPage1 from './src/pages/MouldingPage1';
-import MouldingPage2 from './src/pages/MouldingPage2';
+import Tensile from './src/pages/Tensile';
+import SandTestingRecord from './src/pages/SandTestingRecord';
+import FoundarySandTestingNote from './src/pages/FoundarySandTestingNote';
+import DisamaticProductReport from './src/pages/DisamaticProductReport';
+import MouldHardnessPatternTemperatureRecord from './src/pages/MouldHardnessPatternTemperatureRecord';
 import MouldingPage3 from './src/pages/MouldingPage3';
 import AdminDashboard from './src/pages/AdminDashboard';
+import MicroStructure from './src/pages/MicroStructure';
+import Impact from './src/pages/Impact';
 
 const ProtectedLayout = () => {
   const { user } = useContext(AuthContext);
@@ -44,7 +40,7 @@ const ProtectedLayout = () => {
 const AdminLayout = () => {
   const { user, isAdmin } = useContext(AuthContext);
   if (!user) return <Navigate to="/login" replace />;
-  if (!isAdmin) return <Navigate to="/items" replace />;
+  if (!isAdmin) return <Navigate to="/" replace />;
   return <Outlet />;
 };
 
@@ -68,38 +64,30 @@ const App = () => {
 
         {/* Protected Employee Routes */}
         <Route path="/" element={<ProtectedLayout />}>
-          {/* Default dashboard page - Admin goes to admin dashboard, others to items */}
-          <Route index element={isAdmin ? <Navigate to="/admin" replace /> : <Items />} />
+          {/* Default dashboard page - Admin goes to admin dashboard, others to micro-tensile */}
+          <Route index element={isAdmin ? <Navigate to="/admin" replace /> : <MicroTensile />} />
 
           {/* Top-level pages */}
-          <Route path="items" element={<Items />} />
-          <Route path="spectro-analysis" element={<SpectroAnalysis />} />
-          <Route path="process-control" element={<ProcessControl />} />
-          <Route path="overall-reports" element={<OverallReports />} />
+          <Route path="micro-textile" element={<MicroTensile />} />
+          <Route path="qc-production-details" element={<QcProductionDetails />} />
+          <Route path="micro-structure" element={<MicroStructure />} />
+          <Route path="impact" element={<Impact />} />
+          <Route path="process" element={<Process />} />
 
-          {/* Production */}
-          <Route path="production/mechanical-properties" element={<MechanicalProperties />} />
-          <Route path="production/metallography-properties" element={<MetallographyProperties />} />
-
-          {/* Process */}
+          {/* Melting */}
           <Route path="process/melting-parameters" element={<MeltingProcessParameter />} />
           <Route path="process/molding-parameters" element={<MoldingProcessParameter />} />
-          <Route path="process/sandplant-process-parameters" element={<SandplantProcessParameter />} />
 
-          {/* Rejection */}
-          <Route path="rejection/report-founded" element={<RejectionReportFound />} />
-          <Route path="rejection/report-machine" element={<RejectionReportMachine />} />
-
-          {/* Analytics */}
-          <Route path="analytics" element={<AnalyticsPage />} />
+          {/* Textile */}
+          <Route path="textile" element={<Tensile />} />
 
           {/* Sand Lab */}
-          <Route path="sand-lab/page-1" element={<SandLabPage1 />} />
-          <Route path="sand-lab/page-2" element={<SandLabPage2 />} />
+          <Route path="sand-lab/page-1" element={<SandTestingRecord />} />
+          <Route path="sand-lab/page-2" element={<FoundarySandTestingNote />} />
 
           {/* Moulding */}
-          <Route path="moulding/page-1" element={<MouldingPage1 />} />
-          <Route path="moulding/page-2" element={<MouldingPage2 />} />
+          <Route path="moulding/page-1" element={<DisamaticProductReport />} />
+          <Route path="moulding/page-2" element={<MouldHardnessPatternTemperatureRecord />} />
           <Route path="moulding/page-3" element={<MouldingPage3 />} />
         </Route>
 

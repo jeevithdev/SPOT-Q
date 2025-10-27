@@ -81,7 +81,7 @@ const TableInput = ({ value, onChange, tabIndex, type = 'text', readOnly = false
 );
 
 // --- 4. MAIN COMPONENT ---
-const MouldHardnessRecord = () => {
+const MouldHardnessPatternTemperatureRecord = () => {
     const [formData, setFormData] = useState(InitialState);
 
     // --- HANDLERS ---
@@ -101,8 +101,8 @@ const MouldHardnessRecord = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault(); 
-        console.log('Mould Hardness Record Submitted:', formData);
-        alert('Mould Hardness Record Submitted!');
+        console.log('Mould Hardness and Pattern Temperature Record Submitted:', formData);
+        alert('Mould Hardness and Pattern Temperature Record Submitted!');
     };
 
     const handleReset = () => {
@@ -308,4 +308,4 @@ const MouldHardnessRecord = () => {
     );
 };
 
-export default MouldHardnessRecord;
+export default MouldHardnessPatternTemperatureRecord;

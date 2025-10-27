@@ -1,14 +1,17 @@
 import React from 'react';
+import '../styles/PageStyles/Tensile.css';
 
-const OverallReports = () => {
+const Tensile = () => {
   return (
   <div className="page-container" style={{ minHeight: '100vh', backgroundColor: '#91bccf' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem' }}>
-        <h2>Overall Reports</h2>
-        <p>Content for overall reports will appear here.</p>
+        <h2>Analytics Page</h2>
+        <p>
+          Analytics features are currently under development. Please check back later!
+        </p>
       </div>
     </div>
   );
 };
 
-export default OverallReports;
+export default Tensile;

@@ -1,47 +1,37 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, X } from 'lucide-react';
 import CustomDatePicker from '../Components/CustomDatePicker';
+import '../styles/PageStyles/QcProductionDetails.css';
 
-const RejectionReportMachine = () => {
+const QcProductionDetails = () => {
   const [entries, setEntries] = useState([
     {
       id: 1,
       date: '',
-      shift: '',
-      partNumber: '',
-      machineId: '',
-      operationNumber: '',
-      defectType: '',
-      defectLocation: '',
-      defectSeverity: '',
-      dimensionalDeviation: '',
-      surfaceFinishIssue: '',
-      rejectionReason: '',
-      inspectorName: '',
-      supervisor: '',
-      disposition: '',
-      remarks: ''
+      machine: '',
+      ppNo: '',
+      partName: '',
+      dataCode: '',
+      heatCode: '',
+      timeOfPouring: '',
+      fcNo: '',
+      heatNo: ''
     }
   ]);
+  // rely on global validation from Guidelines (validated-control classes)
 
   const addNewEntry = () => {
     const newEntry = {
       id: Date.now(),
       date: '',
-      shift: '',
-      partNumber: '',
-      machineId: '',
-      operationNumber: '',
-      defectType: '',
-      defectLocation: '',
-      defectSeverity: '',
-      dimensionalDeviation: '',
-      surfaceFinishIssue: '',
-      rejectionReason: '',
-      inspectorName: '',
-      supervisor: '',
-      disposition: '',
-      remarks: ''
+      machine: '',
+      ppNo: '',
+      partName: '',
+      dataCode: '',
+      heatCode: '',
+      timeOfPouring: '',
+      fcNo: '',
+      heatNo: ''
     };
     setEntries([...entries, newEntry]);
   };
@@ -58,16 +48,26 @@ const RejectionReportMachine = () => {
     ));
   };
 
+  // Normalize date changes coming from CustomDatePicker which may emit
+  // either an event ({ target: { value } }) or a raw value string.
+  const normalizeEntryDateChange = (id) => (eOrValue) => {
+    const value = eOrValue && eOrValue.target ? eOrValue.target.value : eOrValue;
+    updateEntry(id, 'date', value);
+  };
+
+  // Rely on central validation (Guidelines) for touched/valid/invalid state.
+
   const handleSubmit = () => {
     const isValid = entries.every(entry => 
-      entry.date && entry.shift && entry.partNumber && entry.machineId && 
-      entry.operationNumber && entry.defectType && entry.defectLocation && 
-      entry.defectSeverity && entry.rejectionReason && entry.inspectorName
+      entry.date && entry.machine && entry.ppNo && entry.partName && 
+      entry.dataCode && entry.heatCode && entry.timeOfPouring && 
+      entry.fcNo && entry.heatNo
     );
 
     if (isValid) {
-      console.log('Submitted rejection report (machine):', entries);
-      alert('Machine rejection report submitted successfully!');
+      console.log('Submitted entries:', entries);
+      // TODO: Send data to backend API
+      alert('Data submitted successfully!');
     } else {
       alert('Please fill in all required fields');
     }
@@ -77,25 +77,20 @@ const RejectionReportMachine = () => {
     setEntries([{
       id: 1,
       date: '',
-      shift: '',
-      partNumber: '',
-      machineId: '',
-      operationNumber: '',
-      defectType: '',
-      defectLocation: '',
-      defectSeverity: '',
-      dimensionalDeviation: '',
-      surfaceFinishIssue: '',
-      rejectionReason: '',
-      inspectorName: '',
-      supervisor: '',
-      disposition: '',
-      remarks: ''
+      machine: '',
+      ppNo: '',
+      partName: '',
+      dataCode: '',
+      heatCode: '',
+      timeOfPouring: '',
+      fcNo: '',
+      heatNo: ''
     }]);
+    // rely on global validation state; nothing else to clear here
   };
 
   return (
-  <div className="page-container" style={{ minHeight: '100vh', backgroundColor: '#91bccf' }}>
+  <div className="page-container" style={{ minHeight: '100vh' }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem' }}>
         {/* Header */}
         <div style={{ 
@@ -109,10 +104,10 @@ const RejectionReportMachine = () => {
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
             <div>
               <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#1e293b', margin: '0 0 0.25rem 0' }}>
-                Rejection Report - Machine Shop
+                Spectro Analysis
               </h2>
               <p style={{ color: '#64748b', margin: 0 }}>
-                Record machining defects and rejection reasons for automotive components
+                Enter spectroscopic analysis data for quality control
               </p>
             </div>
             <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -163,21 +158,21 @@ const RejectionReportMachine = () => {
                   cursor: 'pointer',
                   fontSize: '0.875rem',
                   fontWeight: '500',
-                  transition: 'all 0.2s ease',
+                  transition: 'all 0.3s ease',
                   transform: 'scale(1)'
                 }}
                 onMouseEnter={(e) => {
-                  e.currentTarget.style.backgroundColor = '#4A8494';
-                  e.currentTarget.style.transform = 'scale(1.05)';
-                  e.currentTarget.style.boxShadow = '0 6px 16px rgba(74,132,148,0.15)';
+                  e.target.style.backgroundColor = '#4A8494';
+                  e.target.style.transform = 'scale(1.05)';
+                  e.target.style.boxShadow = '0 4px 12px rgba(91,154,169,0.3)';
                 }}
                 onMouseLeave={(e) => {
-                  e.currentTarget.style.backgroundColor = '#5B9AA9';
-                  e.currentTarget.style.transform = 'scale(1)';
-                  e.currentTarget.style.boxShadow = 'none';
+                  e.target.style.backgroundColor = '#5B9AA9';
+                  e.target.style.transform = 'scale(1)';
+                  e.target.style.boxShadow = 'none';
                 }}
-                onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
+                onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
+                onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
               >
                 Guidelines
               </button>
@@ -212,7 +207,7 @@ const RejectionReportMachine = () => {
                 onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
               >
                 <Plus size={18} />
-                Add Rejection
+                Add Entry
               </button>
             </div>
           </div>
@@ -233,7 +228,7 @@ const RejectionReportMachine = () => {
             >
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
                 <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1e293b', margin: 0 }}>
-                  Rejection #{index + 1}
+                  Entry #{index + 1}
                 </h3>
                 {entries.length > 1 && (
                   <button
@@ -282,19 +277,30 @@ const RejectionReportMachine = () => {
                     Date                  </label>
                   <CustomDatePicker
                     value={entry.date}
-                    onChange={(e) => updateEntry(entry.id, 'date', e.target.value)}
+                    onChange={(eOrVal) => {
+                      normalizeEntryDateChange(entry.id)(eOrVal);
+                    }}
+                    
                     max={new Date().toISOString().split('T')[0]}
-                    style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1px solid #cbd5e1',
+                      fontSize: '0.875rem'
+                    }}
+                    className={'validated-control'}
+                    required
                   />
                 </div>
 
-                {/* Shift */}
+                {/* Machine */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Shift                  </label>
+                    Machine                  </label>
                   <select
-                    value={entry.shift}
-                    onChange={(e) => updateEntry(entry.id, 'shift', e.target.value)}
+                    value={entry.machine}
+                    onChange={(e) => updateEntry(entry.id, 'machine', e.target.value)}
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -305,174 +311,26 @@ const RejectionReportMachine = () => {
                       backgroundColor: 'white',
                       transition: 'border-color 0.2s, box-shadow 0.2s'
                     }}
-                  >
-                    <option value="">Select Shift</option>
-                    <option value="Day">Day (6:00 AM - 2:00 PM)</option>
-                    <option value="Evening">Evening (2:00 PM - 10:00 PM)</option>
-                    <option value="Night">Night (10:00 PM - 6:00 AM)</option>
-                  </select>
-                </div>
-
-                {/* Part Number */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Part Number                  </label>
-                  <input
-                    type="text"
-                    value={entry.partNumber}
-                    onChange={(e) => updateEntry(entry.id, 'partNumber', e.target.value)}
-                    placeholder="e.g: BRAKE_DISC_001"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Machine ID */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Machine ID                  </label>
-                  <select
-                    value={entry.machineId}
-                    onChange={(e) => updateEntry(entry.id, 'machineId', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      backgroundColor: 'white',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
+                    className={'validated-control'}
+                    required
+                    
                   >
                     <option value="">Select Machine</option>
-                    <option value="CNC-001">CNC-001 (Milling)</option>
-                    <option value="CNC-002">CNC-002 (Turning)</option>
-                    <option value="CNC-003">CNC-003 (Drilling)</option>
-                    <option value="CNC-004">CNC-004 (Grinding)</option>
-                    <option value="CNC-005">CNC-005 (Honing)</option>
+                    <option value="DISA-1">DISA-1</option>
+                    <option value="DISA-2">DISA-2</option>
+                    <option value="DISA-3">DISA-3</option>
                   </select>
                 </div>
 
-                {/* Operation Number */}
+                {/* PP NO */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Operation Number                  </label>
-                  <input
-                    type="text"
-                    value={entry.operationNumber}
-                    onChange={(e) => updateEntry(entry.id, 'operationNumber', e.target.value)}
-                    placeholder="e.g: OP-010, OP-020"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Defect Type */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Defect Type                  </label>
-                  <select
-                    value={entry.defectType}
-                    onChange={(e) => updateEntry(entry.id, 'defectType', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      backgroundColor: 'white',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  >
-                    <option value="">Select Defect Type</option>
-                    <option value="Dimensional">Dimensional Out of Tolerance</option>
-                    <option value="Surface Finish">Surface Finish</option>
-                    <option value="Tool Mark">Tool Mark</option>
-                    <option value="Chatter">Chatter</option>
-                    <option value="Burn">Burn</option>
-                    <option value="Burr">Burr</option>
-                    <option value="Scratch">Scratch</option>
-                    <option value="Gouge">Gouge</option>
-                    <option value="Hole Position">Hole Position</option>
-                    <option value="Thread Issue">Thread Issue</option>
-                    <option value="Other">Other</option>
-                  </select>
-                </div>
-
-                {/* Defect Location */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Defect Location                  </label>
-                  <input
-                    type="text"
-                    value={entry.defectLocation}
-                    onChange={(e) => updateEntry(entry.id, 'defectLocation', e.target.value)}
-                    placeholder="e.g: Bore ID, Face OD, Thread"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Defect Severity */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Defect Severity                  </label>
-                  <select
-                    value={entry.defectSeverity}
-                    onChange={(e) => updateEntry(entry.id, 'defectSeverity', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      backgroundColor: 'white',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  >
-                    <option value="">Select Severity</option>
-                    <option value="Minor">Minor</option>
-                    <option value="Major">Major</option>
-                    <option value="Critical">Critical</option>
-                    <option value="Catastrophic">Catastrophic</option>
-                  </select>
-                </div>
-
-                {/* Dimensional Deviation */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Dimensional Deviation (mm)
-                  </label>
+                    PP NO                  </label>
                   <input
                     type="number"
-                    step="0.001"
-                    value={entry.dimensionalDeviation}
-                    onChange={(e) => updateEntry(entry.id, 'dimensionalDeviation', e.target.value)}
-                    placeholder="e.g: 0.025"
+                    value={entry.ppNo}
+                    onChange={(e) => updateEntry(entry.id, 'ppNo', e.target.value)}
+                    placeholder="Enter PP Number"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -482,20 +340,69 @@ const RejectionReportMachine = () => {
                       outline: 'none',
                       transition: 'border-color 0.2s, box-shadow 0.2s'
                     }}
+                    className={'validated-control'}
+                    required
+                    
                   />
                 </div>
 
-                {/* Surface Finish Issue */}
+                {/* Part Name */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Surface Finish Issue (Ra μm)
-                  </label>
+                    Part Name                  </label>
+                  <input
+                    type="text"
+                    value={entry.partName}
+                    onChange={(e) => updateEntry(entry.id, 'partName', e.target.value)}
+                    placeholder="e.g: PSA 7B K"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '8px',
+                      fontSize: '0.875rem',
+                      outline: 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s'
+                    }}
+                    className={'validated-control'}
+                    required
+                    
+                  />
+                </div>
+
+                {/* Data Code */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
+                    Data Code                  </label>
+                  <input
+                    type="text"
+                    value={entry.dataCode}
+                    onChange={(e) => updateEntry(entry.id, 'dataCode', e.target.value)}
+                    placeholder="e.g: SH02"
+                    style={{
+                      width: '100%',
+                      padding: '0.5rem 0.75rem',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '8px',
+                      fontSize: '0.875rem',
+                      outline: 'none',
+                      transition: 'border-color 0.2s, box-shadow 0.2s'
+                    }}
+                    className={'validated-control'}
+                    required
+                    
+                  />
+                </div>
+
+                {/* Heat Code */}
+                <div>
+                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
+                    Heat Code                  </label>
                   <input
                     type="number"
-                    step="0.1"
-                    value={entry.surfaceFinishIssue}
-                    onChange={(e) => updateEntry(entry.id, 'surfaceFinishIssue', e.target.value)}
-                    placeholder="e.g: 2.5"
+                    value={entry.heatCode}
+                    onChange={(e) => updateEntry(entry.id, 'heatCode', e.target.value)}
+                    placeholder="Enter Heat Code"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -505,16 +412,20 @@ const RejectionReportMachine = () => {
                       outline: 'none',
                       transition: 'border-color 0.2s, box-shadow 0.2s'
                     }}
+                    className={'validated-control'}
+                    required
+                    
                   />
                 </div>
 
-                {/* Rejection Reason */}
+                {/* Time of Pouring */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Rejection Reason                  </label>
-                  <select
-                    value={entry.rejectionReason}
-                    onChange={(e) => updateEntry(entry.id, 'rejectionReason', e.target.value)}
+                    Time of Pouring                  </label>
+                  <input
+                    type="time"
+                    value={entry.timeOfPouring}
+                    onChange={(e) => updateEntry(entry.id, 'timeOfPouring', e.target.value)}
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -522,28 +433,23 @@ const RejectionReportMachine = () => {
                       borderRadius: '8px',
                       fontSize: '0.875rem',
                       outline: 'none',
-                      backgroundColor: 'white',
                       transition: 'border-color 0.2s, box-shadow 0.2s'
                     }}
-                  >
-                    <option value="">Select Reason</option>
-                    <option value="Dimensional Out of Tolerance">Dimensional Out of Tolerance</option>
-                    <option value="Surface Finish Not Met">Surface Finish Not Met</option>
-                    <option value="Quality Standard">Quality Standard</option>
-                    <option value="Customer Specification">Customer Specification</option>
-                    <option value="Safety Requirement">Safety Requirement</option>
-                    <option value="Functional Issue">Functional Issue</option>
-                  </select>
+                    className={'validated-control'}
+                    required
+                    
+                  />
                 </div>
 
-                {/* Disposition */}
+                {/* F/C NO */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Disposition
-                  </label>
-                  <select
-                    value={entry.disposition}
-                    onChange={(e) => updateEntry(entry.id, 'disposition', e.target.value)}
+                    F/C NO                  </label>
+                  <input
+                    type="number"
+                    value={entry.fcNo}
+                    onChange={(e) => updateEntry(entry.id, 'fcNo', e.target.value)}
+                    placeholder="Enter F/C Number"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -551,28 +457,23 @@ const RejectionReportMachine = () => {
                       borderRadius: '8px',
                       fontSize: '0.875rem',
                       outline: 'none',
-                      backgroundColor: 'white',
                       transition: 'border-color 0.2s, box-shadow 0.2s'
                     }}
-                  >
-                    <option value="">Select Disposition</option>
-                    <option value="Scrap">Scrap</option>
-                    <option value="Rework">Rework</option>
-                    <option value="Repair">Repair</option>
-                    <option value="Use As Is">Use As Is</option>
-                    <option value="Customer Concession">Customer Concession</option>
-                  </select>
+                    className={'validated-control'}
+                    required
+                    
+                  />
                 </div>
 
-                {/* Inspector Name */}
+                {/* Heat NO */}
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Inspector Name                  </label>
+                    Heat NO                  </label>
                   <input
                     type="text"
-                    value={entry.inspectorName}
-                    onChange={(e) => updateEntry(entry.id, 'inspectorName', e.target.value)}
-                    placeholder="e.g: John Smith"
+                    value={entry.heatNo}
+                    onChange={(e) => updateEntry(entry.id, 'heatNo', e.target.value)}
+                    placeholder="Enter Heat Number"
                     style={{
                       width: '100%',
                       padding: '0.5rem 0.75rem',
@@ -582,51 +483,9 @@ const RejectionReportMachine = () => {
                       outline: 'none',
                       transition: 'border-color 0.2s, box-shadow 0.2s'
                     }}
-                  />
-                </div>
-
-                {/* Supervisor */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Supervisor
-                  </label>
-                  <input
-                    type="text"
-                    value={entry.supervisor}
-                    onChange={(e) => updateEntry(entry.id, 'supervisor', e.target.value)}
-                    placeholder="e.g: Mike Johnson"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                  />
-                </div>
-
-                {/* Remarks */}
-                <div style={{ gridColumn: '1 / -1' }}>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Remarks
-                  </label>
-                  <textarea
-                    value={entry.remarks}
-                    onChange={(e) => updateEntry(entry.id, 'remarks', e.target.value)}
-                    placeholder="Enter any additional notes or recommendations..."
-                    rows="3"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s',
-                      resize: 'vertical'
-                    }}
+                    className={'validated-control'}
+                    required
+                    
                   />
                 </div>
               </div>
@@ -668,14 +527,14 @@ const RejectionReportMachine = () => {
             onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
           >
             <Save size={20} />
-            Save All Rejections
+            Save All Entries
           </button>
         </div>
 
-        {/* Machine shop guidelines moved to global Guidelines component */}
+        {/* Instructions removed — use the central Guidelines tab instead */}
       </div>
     </div>
   );
 };
 
-export default RejectionReportMachine;
+export default QcProductionDetails;
