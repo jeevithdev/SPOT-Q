@@ -8,26 +8,14 @@ const {
   updateItem,
   deleteItem
 } = require('../controllers/item');
+const { protect } = require('../middleware/auth');
 
-// If you have authentication middleware, import it
-// const { protect } = require('../middleware/auth');
-
-// Create a new item
-router.post('/', createItem);
-
-// Get all items
-router.get('/', getAllItems);
-
-// Get items by date range (filter)
-router.get('/filter', getItemsByDateRange);
-
-// Get single item by ID
-router.get('/:id', getItemById);
-
-// Update item
-router.put('/:id', updateItem);
-
-// Delete item
-router.delete('/:id', deleteItem);
+// All item routes require authentication
+router.post('/', protect, createItem);
+router.get('/', protect, getAllItems);
+router.get('/filter', protect, getItemsByDateRange);
+router.get('/:id', protect, getItemById);
+router.put('/:id', protect, updateItem);
+router.delete('/:id', protect, deleteItem);
 
 module.exports = router;

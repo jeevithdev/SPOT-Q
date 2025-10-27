@@ -2,8 +2,7 @@ import React, { useState, useEffect } from 'react';
 import '../styles/PageStyles/Items.css';
 import CustomDatePicker from '../Components/CustomDatePicker';
 import ValidationPopup from '../Components/ValidationPopup';
-
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+import api from '../utils/api';
 
 const Items = () => {
   const today = new Date().toISOString().split('T')[0];
@@ -37,15 +36,14 @@ const Items = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`${API_URL}/items`);
-      const data = await response.json();
+      const data = await api.get('/items');
       
       if (data.success) {
         setItems(data.data);
       }
     } catch (error) {
       console.error('Error fetching items:', error);
-      alert('Failed to fetch items');
+      alert('Failed to fetch items: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -97,15 +95,7 @@ const Items = () => {
 
     try {
       setSubmitLoading(true);
-      const response = await fetch(`${API_URL}/items`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData)
-      });
-
-      const data = await response.json();
+      const data = await api.post('/items', formData);
 
       if (data.success) {
         alert('Item submitted successfully!');
@@ -122,12 +112,10 @@ const Items = () => {
         });
         // Refresh the items list
         fetchItems();
-      } else {
-        alert(`Error: ${data.message}`);
       }
     } catch (error) {
       console.error('Error submitting form:', error);
-      alert('Failed to submit form. Please try again.');
+      alert('Failed to submit form: ' + error.message);
     } finally {
       setSubmitLoading(false);
     }
@@ -145,18 +133,15 @@ const Items = () => {
       if (startDate) params.append('startDate', startDate);
       if (endDate) params.append('endDate', endDate);
 
-      const response = await fetch(`${API_URL}/items/filter?${params}`);
-      const data = await response.json();
+      const data = await api.get(`/items/filter?${params}`);
 
       if (data.success) {
         setItems(data.data);
         alert(`Found ${data.count} items`);
-      } else {
-        alert(`Error: ${data.message}`);
       }
     } catch (error) {
       console.error('Error filtering items:', error);
-      alert('Failed to filter items');
+      alert('Failed to filter items: ' + error.message);
     } finally {
       setLoading(false);
     }

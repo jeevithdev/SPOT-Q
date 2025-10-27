@@ -1,6 +1,7 @@
 // src/Components/Navbar.jsx
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { Link, useLocation } from 'react-router-dom';
+import { AuthContext } from '../context/AuthContext';
 import '../styles/ComponentStyles/Navbar.css';
 import { LogoutButton } from "./Buttons";
 
@@ -54,6 +55,7 @@ const navItems = [
 ];
 
 export const Navbar = () => {
+  const { isAdmin } = useContext(AuthContext);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();

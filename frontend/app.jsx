@@ -25,6 +25,7 @@ import SandLabPage2 from './src/pages/SandLabPage2';
 import MouldingPage1 from './src/pages/MouldingPage1';
 import MouldingPage2 from './src/pages/MouldingPage2';
 import MouldingPage3 from './src/pages/MouldingPage3';
+import AdminDashboard from './src/pages/AdminDashboard';
 
 const ProtectedLayout = () => {
   const { user } = useContext(AuthContext);
@@ -40,8 +41,15 @@ const ProtectedLayout = () => {
   );
 };
 
+const AdminLayout = () => {
+  const { user, isAdmin } = useContext(AuthContext);
+  if (!user) return <Navigate to="/login" replace />;
+  if (!isAdmin) return <Navigate to="/items" replace />;
+  return <Outlet />;
+};
+
 const App = () => {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, isAdmin } = useContext(AuthContext);
 
   if (loading) {
     return <Loader />;
@@ -53,10 +61,15 @@ const App = () => {
         {/* Public */}
         <Route path="/login" element={!user ? <Login /> : <Navigate to="/" replace />} />
 
-        {/* Protected */}
+        {/* Admin Routes - Separate Layout */}
+        <Route element={<AdminLayout />}>
+          <Route path="/admin" element={<AdminDashboard />} />
+        </Route>
+
+        {/* Protected Employee Routes */}
         <Route path="/" element={<ProtectedLayout />}>
-          {/* Default dashboard page */}
-          <Route index element={<Items />} />
+          {/* Default dashboard page - Admin goes to admin dashboard, others to items */}
+          <Route index element={isAdmin ? <Navigate to="/admin" replace /> : <Items />} />
 
           {/* Top-level pages */}
           <Route path="items" element={<Items />} />
