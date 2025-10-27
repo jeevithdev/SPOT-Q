@@ -42,57 +42,13 @@
 .admin-user-info {
   display: flex;
   align-items: center;
-  gap: 20px;
+  gap: 15px;
 }
 
 .admin-welcome {
   color: white;
   font-size: 15px;
   font-weight: 500;
-}
-
-.admin-change-password-btn {
-  background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(52, 152, 219, 0.3);
-}
-
-.admin-change-password-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.4);
-}
-
-.admin-change-password-btn:active {
-  transform: translateY(0);
-}
-
-.admin-logout-btn {
-  background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
-  color: white;
-  border: none;
-  padding: 10px 20px;
-  border-radius: 8px;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.3);
-}
-
-.admin-logout-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.4);
-}
-
-.admin-logout-btn:active {
-  transform: translateY(0);
 }
 
 /* Main Content Container */
@@ -102,6 +58,15 @@
   max-width: 1200px;
   margin: 0 auto;
   width: 100%;
+}
+
+/* Dashboard Title */
+.admin-dashboard-title {
+  margin: 0 0 30px 0;
+  font-size: 28px;
+  color: #1F2937;
+  font-weight: 700;
+  text-align: center;
 }
 
 /* Add Employee Card */
@@ -169,6 +134,11 @@
   cursor: not-allowed;
 }
 
+.form-field select option[value=""] {
+  color: #9CA3AF;
+  font-style: italic;
+}
+
 /* Alerts */
 .alert {
   padding: 15px 20px;
@@ -234,6 +204,57 @@
   font-weight: 600;
 }
 
+/* Employee List Header with Filter */
+.employee-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.employee-list-header h2 {
+  margin: 0;
+}
+
+/* Department Filter */
+.department-filter {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.department-filter label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  white-space: nowrap;
+}
+
+.filter-select {
+  padding: 8px 12px;
+  border: 2px solid #D1D5DB;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  color: #1F2937;
+  background-color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  min-width: 180px;
+}
+
+.filter-select:hover {
+  border-color: #5B9AA9;
+}
+
+.filter-select:focus {
+  outline: none;
+  border-color: #5B9AA9;
+  box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
+}
+
 /* Table */
 .table-wrapper {
   overflow-x: auto;
@@ -296,6 +317,14 @@
 .badge-dept {
   background-color: #DBEAFE;
   color: #1E40AF;
+}
+
+/* Special badge for "All" department */
+.badge-dept-all {
+  background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%);
+  color: white;
+  font-weight: 700;
+  box-shadow: 0 2px 4px rgba(139, 92, 246, 0.3);
 }
 
 .badge-admin {
@@ -525,12 +554,35 @@
 }
 
 /* Responsive Design */
+
+/* Large Tablets and Small Laptops */
+@media (max-width: 1024px) {
+  .admin-header-bar {
+    padding: 12px 20px;
+  }
+
+  .admin-user-info {
+    gap: 10px;
+    flex-wrap: wrap;
+  }
+
+  .admin-dashboard-container {
+    padding: 25px 20px;
+  }
+}
+
+/* Tablets */
 @media (max-width: 768px) {
   .admin-header-bar {
     padding: 12px 15px;
     flex-direction: column;
     gap: 12px;
     position: relative;
+  }
+
+  .admin-logo {
+    width: 100%;
+    justify-content: center;
   }
 
   .admin-logo img {
@@ -543,22 +595,15 @@
 
   .admin-user-info {
     width: 100%;
-    justify-content: space-between;
+    justify-content: center;
     gap: 10px;
+    flex-wrap: wrap;
   }
 
   .admin-welcome {
     font-size: 13px;
-  }
-
-  .admin-change-password-btn {
-    padding: 8px 16px;
-    font-size: 13px;
-  }
-
-  .admin-logout-btn {
-    padding: 8px 16px;
-    font-size: 13px;
+    width: 100%;
+    text-align: center;
   }
 
   .modal-box {
@@ -576,6 +621,11 @@
 
   .admin-dashboard-container {
     padding: 20px 15px;
+  }
+
+  .admin-dashboard-title {
+    font-size: 22px;
+    margin-bottom: 20px;
   }
 
   .add-employee-card,
@@ -598,6 +648,74 @@
   }
 
   .btn-submit {
+    width: 100%;
+  }
+
+  /* Make action buttons stack vertically on small screens */
+  .actions {
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  /* Stack filter on small screens */
+  .employee-list-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .employee-list-header h2 {
+    margin-bottom: 15px;
+  }
+
+  .department-filter {
+    width: 100%;
+  }
+
+  .filter-select {
+    width: 100%;
+    min-width: auto;
+  }
+}
+
+/* Mobile Devices */
+@media (max-width: 480px) {
+  .admin-header-bar {
+    padding: 10px;
+  }
+
+  .admin-logo img {
+    height: 30px;
+  }
+
+  .admin-user-info {
+    gap: 8px;
+  }
+
+  .admin-dashboard-container {
+    padding: 15px 10px;
+  }
+
+  .admin-dashboard-title {
+    font-size: 20px;
+  }
+
+  .add-employee-card,
+  .employee-list-card {
+    padding: 15px;
+    border-radius: 8px;
+  }
+
+  .add-employee-card h2,
+  .employee-list-card h2 {
+    font-size: 18px;
+  }
+
+  .modal-actions {
+    flex-direction: column;
+  }
+
+  .btn-cancel,
+  .btn-submit-modal {
     width: 100%;
   }
 }

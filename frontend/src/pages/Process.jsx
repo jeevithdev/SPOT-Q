@@ -146,38 +146,6 @@ const ProcessControl = () => {
                 <X size={18} />
                 Reset
               </button>
-                <button
-                  onClick={() => document.dispatchEvent(new Event('guidelines:open'))}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '0.5rem',
-                    padding: '0.5rem 1rem',
-                    backgroundColor: '#5B9AA9',
-                    color: 'white',
-                    border: 'none',
-                    borderRadius: '8px',
-                    cursor: 'pointer',
-                    fontSize: '0.875rem',
-                    fontWeight: '500',
-                    transition: 'all 0.2s ease',
-                    transform: 'scale(1)'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.backgroundColor = '#4A8494';
-                    e.currentTarget.style.transform = 'scale(1.05)';
-                    e.currentTarget.style.boxShadow = '0 6px 16px rgba(74,132,148,0.15)';
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.backgroundColor = '#5B9AA9';
-                    e.currentTarget.style.transform = 'scale(1)';
-                    e.currentTarget.style.boxShadow = 'none';
-                  }}
-                  onMouseDown={(e) => e.currentTarget.style.transform = 'scale(0.98)'}
-                  onMouseUp={(e) => e.currentTarget.style.transform = 'scale(1.05)'}
-                >
-                  Guidelines
-                </button>
               <button
                 onClick={addNewEntry}
                 style={{
@@ -631,8 +599,6 @@ const ProcessControl = () => {
             Save All Control Points
           </button>
         </div>
-
-        {/* Process Control guidelines moved to global Guidelines component */}
       </div>
     </div>
   );

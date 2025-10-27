@@ -164,10 +164,48 @@ form div[style*="position: relative"] {
   color: #6a11cb;
 }
 
-/* Responsive for mobile */
+/* Responsive Design */
+
+/* Medium Laptops */
+@media (max-width: 1024px) {
+  .login-box {
+    padding: 40px;
+    width: 480px;
+  }
+
+  .company-logo {
+    width: 160px;
+    height: 90px;
+  }
+}
+
+/* Small Laptops */
+@media (max-width: 900px) {
+  .login-box {
+    padding: 36px;
+    width: 450px;
+  }
+
+  .login-box h2 {
+    font-size: 24px;
+  }
+
+  form input {
+    padding: 11px 14px;
+    font-size: 15px;
+  }
+
+  .login-btn {
+    padding: 13px 15px;
+    font-size: 15px;
+  }
+}
+
+/* Tablets */
 @media (max-width: 768px) {
   .login-container {
     flex-direction: column;
+    padding: 20px;
   }
 
   .login-left,
@@ -177,20 +215,104 @@ form div[style*="position: relative"] {
   }
 
   .login-left {
-    padding: 20px;
+    padding: 15px;
     justify-content: center;
-    align-items: flex-start;
+    align-items: center;
     height: auto;
+    min-height: 80px;
   }
 
   .company-logo {
-    width: 60px;
-    height: 60px;
+    width: 120px;
+    height: 70px;
     margin: 0 auto;
+  }
+
+  .login-right {
+    padding: 10px;
   }
 
   .login-box {
     width: 90%;
-    margin: 20px auto;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 32px;
+  }
+
+  .login-box h2 {
+    font-size: 22px;
+    margin-bottom: 16px;
+  }
+}
+
+/* Mobile Devices */
+@media (max-width: 480px) {
+  .login-container {
+    padding: 10px;
+  }
+
+  .login-left {
+    padding: 10px;
+    min-height: 60px;
+  }
+
+  .company-logo {
+    width: 100px;
+    height: 60px;
+  }
+
+  .login-box {
+    width: 95%;
+    padding: 24px 20px;
+  }
+
+  .login-box h2 {
+    font-size: 20px;
+    margin-bottom: 12px;
+  }
+
+  form {
+    gap: 12px;
+  }
+
+  form input {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+
+  .login-btn {
+    padding: 12px 14px;
+    font-size: 14px;
+  }
+
+  .forgot {
+    font-size: 13px;
+    margin-top: 12px;
+  }
+}
+
+/* Very Small Devices */
+@media (max-width: 360px) {
+  .login-box {
+    padding: 20px 16px;
+  }
+
+  .company-logo {
+    width: 80px;
+    height: 50px;
+  }
+
+  .login-box h2 {
+    font-size: 18px;
+  }
+
+  form input {
+    padding: 9px 11px;
+    font-size: 13px;
+  }
+
+  .login-btn {
+    padding: 11px 12px;
+    font-size: 13px;
   }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
+import { EyeButton } from "../Components/Buttons";
 import "../styles/PageStyles/Login.css";
 
 const Login = () => {
@@ -62,19 +63,21 @@ const Login = () => {
           </p>
 
           <form onSubmit={handleSubmit}>
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '18px' }}>
               <label style={{ 
                 display: 'block',
-                marginBottom: '6px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#333'
+                marginBottom: '8px',
+                fontSize: '15px',
+                fontWeight: '700',
+                color: '#1F2937',
+                textAlign: 'left',
+                letterSpacing: '0.3px'
               }}>
                 Employee ID
               </label>
               <input 
                 type="text" 
-                placeholder="e.g., EMP001, ADMIN001" 
+                placeholder="Employee ID"
                 required 
                 value={employeeId}
                 onChange={(e) => setEmployeeId(e.target.value.toUpperCase())}
@@ -86,13 +89,15 @@ const Login = () => {
               />
             </div>
 
-            <div style={{ marginBottom: '16px' }}>
+            <div style={{ marginBottom: '18px' }}>
               <label style={{ 
                 display: 'block',
-                marginBottom: '6px',
-                fontSize: '14px',
-                fontWeight: '500',
-                color: '#333'
+                marginBottom: '8px',
+                fontSize: '15px',
+                fontWeight: '700',
+                color: '#1F2937',
+                textAlign: 'left',
+                letterSpacing: '0.3px'
               }}>
                 Password
               </label>
@@ -104,26 +109,30 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   style={{ 
-                    paddingRight: '40px',
+                    paddingRight: '50px',
                     width: '100%'
                   }}
                 />
-                <span 
+                <div 
                   style={{ 
                     position: 'absolute', 
-                    right: '12px', 
+                    right: '5px', 
                     top: '50%', 
-                    transform: 'translateY(-50%)', 
+                    transform: 'translateY(-50%)',
                     cursor: 'pointer',
-                    fontSize: '18px',
                     userSelect: 'none'
                   }}
                   onMouseDown={() => setShowPassword(true)}
                   onMouseUp={() => setShowPassword(false)}
                   onMouseLeave={() => setShowPassword(false)}
+                  onTouchStart={() => setShowPassword(true)}
+                  onTouchEnd={() => setShowPassword(false)}
+                  title="Hold to show password"
                 >
-                  {showPassword ? '👁️' : '👁️‍🗨️'}
-                </span>
+                  <EyeButton 
+                    isVisible={showPassword} 
+                  />
+                </div>
               </div>
             </div>
 
@@ -156,19 +165,6 @@ const Login = () => {
             >
               {loading ? 'Signing in...' : 'Login'}
             </button>
-
-            <div style={{
-              marginTop: '20px',
-              padding: '12px',
-              backgroundColor: '#F3F4F6',
-              borderRadius: '6px',
-              fontSize: '12px',
-              color: '#666',
-              textAlign: 'center',
-              lineHeight: '1.5'
-            }}>
-              <strong>Note:</strong> Don't have login credentials? Please contact your administrator.
-            </div>
           </form>
         </div>
       </div>

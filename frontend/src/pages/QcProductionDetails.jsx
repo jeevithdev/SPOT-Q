@@ -18,7 +18,6 @@ const QcProductionDetails = () => {
       heatNo: ''
     }
   ]);
-  // rely on global validation from Guidelines (validated-control classes)
 
   const addNewEntry = () => {
     const newEntry = {
@@ -54,8 +53,6 @@ const QcProductionDetails = () => {
     const value = eOrValue && eOrValue.target ? eOrValue.target.value : eOrValue;
     updateEntry(id, 'date', value);
   };
-
-  // Rely on central validation (Guidelines) for touched/valid/invalid state.
 
   const handleSubmit = () => {
     const isValid = entries.every(entry => 
@@ -143,38 +140,6 @@ const QcProductionDetails = () => {
               >
                 <X size={18} />
                 Reset
-              </button>
-              <button
-                onClick={() => document.dispatchEvent(new Event('guidelines:open'))}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#5B9AA9',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  transform: 'scale(1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#4A8494';
-                  e.target.style.transform = 'scale(1.05)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(91,154,169,0.3)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#5B9AA9';
-                  e.target.style.transform = 'scale(1)';
-                  e.target.style.boxShadow = 'none';
-                }}
-                onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
-                onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
-              >
-                Guidelines
               </button>
               <button
                 onClick={addNewEntry}
@@ -530,8 +495,6 @@ const QcProductionDetails = () => {
             Save All Entries
           </button>
         </div>
-
-        {/* Instructions removed — use the central Guidelines tab instead */}
       </div>
     </div>
   );

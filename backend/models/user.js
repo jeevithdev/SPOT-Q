@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
 
     department: {
         type: String,
-        enum: ['Melting', 'Sand Lab', 'Moulding', 'Process', 'Micro Tensile', 'Tensile', 'QC - production', 'Micro Structure', 'Impact', 'Admin'],
+        enum: ['All', 'Melting', 'Sand Lab', 'Moulding', 'Process', 'Micro Tensile', 'Tensile', 'QC - production', 'Micro Structure', 'Impact', 'Admin'],
         required: true
     },
 

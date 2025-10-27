@@ -3,7 +3,7 @@ const { generateToken } = require('../utils/jwt');
 
 // Hardcoded list of departments for controller validation
 const DEPARTMENTS = [
-    'Melting', 'Sand Lab', 'Moulding', 'Process', 'Micro Tensile', 
+    'All', 'Melting', 'Sand Lab', 'Moulding', 'Process', 'Micro Tensile', 
     'Tensile', 'QC - production', 'Micro Structure', 'Impact', 'Admin'
 ];
 
@@ -213,9 +213,23 @@ exports.deleteEmployee = async (req, res) => {
 
 exports.getDepartments = async (req, res) => {
     try {
+        // Option to exclude Admin department via query parameter
+        const { excludeAdmin } = req.query;
+        
+        let departments = DEPARTMENTS;
+        
+        // Always filter out "All" from the list (it's used for validation/assignment, not display)
+        // Keep it for create/update validation but don't send to frontend lists
+        departments = departments.filter(d => d !== 'All');
+        
+        // Filter out Admin department if requested
+        if (excludeAdmin === 'true') {
+            departments = departments.filter(d => d !== 'Admin');
+        }
+        
         res.status(200).json({
             success: true,
-            data: DEPARTMENTS
+            data: departments
         });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error while fetching departments.' });
