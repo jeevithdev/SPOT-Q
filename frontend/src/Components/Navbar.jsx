@@ -5,50 +5,32 @@ import '../styles/ComponentStyles/Navbar.css';
 import { LogoutButton } from "./Buttons";
 
 const navItems = [
-  { name: 'PROCESS CONTROL', path: '/process-control' },
-  { name: 'ITEMS', path: '/items' },
-  { name: 'ANALYTICS', path: '/analytics' },
-  { name: 'SPECTRO ANALYSIS', path: '/spectro-analysis' },
+  { name: 'PROCESS', path: '/process' },
+  { name: 'MICRO TENSILE', path: '/micro-textile' },
+  { name: 'TENSILE', path: '/textile' },
+  { name: 'QC-PRODUCTION DETAILS', path: '/qc-production-details' },
+  { name: 'MICRO STRUCTURE', path: '/micro-structure' },
+  { name: 'IMPACT', path: '/impact' },
   {
     name: 'SAND LAB',
     dropdown: [
-      { name: 'SAND LAB PAGE 1', path: '/sand-lab/page-1' },
-      { name: 'SAND LAB PAGE 2', path: '/sand-lab/page-2' },
+      { name: 'SAND TESTING RECORD', path: '/sand-lab/page-1' },
+      { name: 'FOUNDARY SAND TESTING NOTE', path: '/sand-lab/page-2' },
     ],
   },
   {
     name: 'MOULDING',
     dropdown: [
-      { name: 'MOULDING PAGE 1', path: '/moulding/page-1' },
-      { name: 'MOULDING PAGE 2', path: '/moulding/page-2' },
+      { name: 'DISAMATIC PRODUCT REPORT', path: '/moulding/page-1' },
+      { name: 'MOULD HARDNESS AND PATTERN TEMPERATURE RECORD', path: '/moulding/page-2' },
       { name: 'MOULDING PAGE 3', path: '/moulding/page-3' },
     ],
   },
   {
-    name: 'PRODUCTION',
-    dropdown: [
-      { name: 'MECHANICAL PROPERTIES', path: '/production/mechanical-properties' },
-      { name: 'METALLOGRAPHY PROPERTIES', path: '/production/metallography-properties' },
-    ],
-  },
-  {
-    name: 'PROCESS',
+    name: 'MELTING',
     dropdown: [
       { name: 'MELTING PROCESS PARAMETERS', path: '/process/melting-parameters' },
       { name: 'MOLDING PROCESS PARAMETERS', path: '/process/molding-parameters' },
-    ],
-  },
-  {
-    name: 'REJECTION',
-    dropdown: [
-      { name: 'REJECTION REPORT - FOUNDED', path: '/rejection/report-founded' },
-      { name: 'REJECTION REPORT - MACHINE', path: '/rejection/report-machine' },
-    ],
-  },
-  {
-    name: 'PERFORMANCE',
-    dropdown: [
-      { name: 'OVERALL REPORT', path: '/overall-reports' },
     ],
   },
 ];

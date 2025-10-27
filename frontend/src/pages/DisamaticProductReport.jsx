@@ -74,7 +74,7 @@ const TableInput = ({ value, onChange, tabIndex, type = 'text', readOnly = false
 
 
 // --- 4. MAIN COMPONENT ---
-const MouldingReport = () => {
+const DisamaticProductReport = () => {
     const [formData, setFormData] = useState(InitialState);
 
     // --- HANDLERS ---
@@ -92,8 +92,8 @@ const MouldingReport = () => {
 
     const handleSubmit = (e) => {
         e.preventDefault(); 
-        console.log('Moulding Report Data Submitted:', formData);
-        alert('Moulding Report Submitted!');
+        console.log('Disamatic Product Report Data Submitted:', formData);
+        alert('Disamatic Product Report Submitted!');
     };
 
     const handleReset = () => {
@@ -325,7 +325,7 @@ const MouldingReport = () => {
                             tabIndex={301}
                         >
                             <Save size={20} />
-                            Save Moulding Report
+                            Save Disamatic Product Report
                         </button>
                     </div>
                      {/* Hidden button: Ensures Enter key in any input/table element triggers focus to the next tabIndex, preventing unwanted submission. */}
@@ -336,4 +336,4 @@ const MouldingReport = () => {
     );
 };
 
-export default MouldingReport;
+export default DisamaticProductReport;
