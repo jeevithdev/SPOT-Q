@@ -383,10 +383,6 @@
     margin-right: 20px;
   }
   
-  .logo-image {
-    height: 40px;
-  }
-  
   .navbar-links {
     margin-right: 70px;
     gap: 1px;
@@ -418,10 +414,6 @@
     margin-right: 15px;
   }
   
-  .logo-image {
-    height: 38px;
-  }
-  
   .navbar-links {
     margin-right: 65px;
     gap: 0px;
@@ -446,10 +438,6 @@
   .navbar-logo {
     margin-right: auto;
     margin-bottom: 10px;
-  }
-  
-  .logo-image {
-    height: 35px;
   }
   
   .navbar-links {
@@ -498,10 +486,6 @@
 @media (max-width: 480px) {
   .navbar-container {
     padding: 8px 10px;
-  }
-  
-  .logo-image {
-    height: 30px;
   }
   
   .navbar-links {
