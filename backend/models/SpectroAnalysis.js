@@ -13,36 +13,36 @@ const SpectroAnalysisSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
-  PPNO: {
+  ppNo: {
     type: Number,
     required: true,
     max: 99,
   },
-  PartName: {
+  partName: {
     type: String,
     required: true,
   },
-  DateCode: {
+  dateCode: {
     type: String,
     required: true,
     maxlength: 4,
   },
-  HeatCode: {
+  heatCode: {
     type: String,
     required: true,
   },
-  TimeOfPacking: {
+  timeOfPacking: {
     type: String,
     required: true,
     match:
       /^(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)-(0?[1-9]|1[0-2]):([0-5]\d)\s?(AM|PM)$/i,
   },
-  FCNO: {
+  fcNo: {
     type: Number,
     required: true,
     max: 9,
   },
-  HeatNo: {
+  heatNo: {
     type: Number,
     required: true,
   },
