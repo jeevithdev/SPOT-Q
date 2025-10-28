@@ -1,14 +1,6 @@
 // src/Components/Dashboard.jsx
 import React from 'react';
 import '../styles/ComponentStyles/Dashboard.css';
-// You might want to import Button if it's used within this component
-// import { Button } from './Buttons'; 
-
-/**
- * This component serves as a layout wrapper for content that appears below the Navbar.
- * It's designed to hold the specific elements of a dashboard or other main page content.
- * You can pass specific page content as children.
- */
 const Dashboard = ({ title, children }) => {
   return (
     <div className="dashboard-page-container">

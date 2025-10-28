@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
-import { handleLogout, AdminLogoutButton, SettingsButton, DeleteButton, EyeButton } from '../Components/Buttons';
+import { handleLogout, AdminLogoutButton, SettingsButton, DeleteButton, EyeButton } from './Buttons';
 import '../styles/PageStyles/AdminDashboard.css';
 
 const AdminDashboard = () => {

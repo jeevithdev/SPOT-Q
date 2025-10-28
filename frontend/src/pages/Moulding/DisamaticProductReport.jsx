@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, Users, Factory, Clock, Zap, X } from 'lucide-react';
+import { Save, Users, Factory, Clock, Zap, X, Plus, Filter } from 'lucide-react';
 
 // Define the number of rows needed
 const NUM_ROWS = 20;
@@ -364,6 +364,93 @@ const MouldingReport = () => {
             </button>
           </div>
         </form>
+
+        {/* Report Section */}
+        <div style={{
+          background: 'white',
+          borderRadius: '12px',
+          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+          padding: '2rem',
+          marginTop: '2rem'
+        }}>
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginBottom: '1.5rem',
+            paddingBottom: '1rem',
+            borderBottom: '2px solid #e2e8f0'
+          }}>
+            <Filter size={20} style={{ color: '#FF7F50' }} />
+            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>
+              Disamatic Product Report - Records
+            </h3>
+          </div>
+
+          <div style={{
+            display: 'grid',
+            gridTemplateColumns: '1fr 1fr auto',
+            gap: '1rem',
+            marginBottom: '1.5rem'
+          }}>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                Start Date
+              </label>
+              <input type="date" style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '2px solid #cbd5e1' }} />
+            </div>
+            <div>
+              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+                End Date
+              </label>
+              <input type="date" style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '2px solid #cbd5e1' }} />
+            </div>
+            <button style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              padding: '0.625rem 1.5rem',
+              background: 'linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%)',
+              color: 'white',
+              border: 'none',
+              borderRadius: '8px',
+              cursor: 'pointer',
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              alignSelf: 'end'
+            }}>
+              <Filter size={18} />
+              Filter
+            </button>
+          </div>
+
+          <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '800px' }}>
+              <thead style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', color: 'white' }}>
+                <tr>
+                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Date</th>
+                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Shift</th>
+                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Part Name</th>
+                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Total Boxes</th>
+                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Remarks</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan="5" style={{
+                    textAlign: 'center',
+                    padding: '3rem',
+                    color: '#94a3b8',
+                    fontStyle: 'italic'
+                  }}>
+                    No records found. Submit entries above to see them here.
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+
       </div>
     </div>
   );

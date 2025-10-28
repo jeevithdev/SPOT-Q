@@ -1,7 +1,5 @@
 const MicroStructureReport = require('../models/MicroStructureReport');
 
-// @desc    Get all Micro Structure Report entries
-// @route   GET /api/v1/micro-structure
 exports.getAllEntries = async (req, res) => {
     try {
         const entries = await MicroStructureReport.find().sort({ createdAt: -1 });
@@ -20,8 +18,6 @@ exports.getAllEntries = async (req, res) => {
     }
 };
 
-// @desc    Create a new Micro Structure Report entry
-// @route   POST /api/v1/micro-structure
 exports.createEntry = async (req, res) => {
     try {
         const entry = await MicroStructureReport.create(req.body);

@@ -1,6 +1,5 @@
 const ProcessRecord = require('../models/ProcessRecord');
 
-// Create a new process record
 exports.createProcessRecord = async (req, res) => {
   try {
     const {
@@ -18,7 +17,6 @@ exports.createProcessRecord = async (req, res) => {
       remarks
     } = req.body;
 
-    // Validate required fields
     if (!date || !processType || !machine || !operator || !partName || 
         !batchNumber || temperature === undefined || pressure === undefined || 
         cycleTime === undefined || quantity === undefined) {
@@ -28,7 +26,6 @@ exports.createProcessRecord = async (req, res) => {
       });
     }
 
-    // Create new process record
     const processRecord = new ProcessRecord({
       date,
       processType,
@@ -61,7 +58,6 @@ exports.createProcessRecord = async (req, res) => {
   }
 };
 
-// Get all process records
 exports.getAllProcessRecords = async (req, res) => {
   try {
     const processRecords = await ProcessRecord.find()
@@ -83,7 +79,6 @@ exports.getAllProcessRecords = async (req, res) => {
   }
 };
 
-// Get process record by ID
 exports.getProcessRecordById = async (req, res) => {
   try {
     const { id } = req.params;
@@ -111,7 +106,6 @@ exports.getProcessRecordById = async (req, res) => {
   }
 };
 
-// Update process record
 exports.updateProcessRecord = async (req, res) => {
   try {
     const { id } = req.params;
@@ -145,7 +139,6 @@ exports.updateProcessRecord = async (req, res) => {
   }
 };
 
-// Delete process record
 exports.deleteProcessRecord = async (req, res) => {
   try {
     const { id } = req.params;
@@ -174,14 +167,12 @@ exports.deleteProcessRecord = async (req, res) => {
   }
 };
 
-// Filter process records by date range
 exports.filterProcessRecords = async (req, res) => {
   try {
     const { startDate, endDate, processType, status } = req.query;
 
     let query = {};
 
-    // Date range filter
     if (startDate || endDate) {
       query.date = {};
       if (startDate) {
@@ -192,12 +183,10 @@ exports.filterProcessRecords = async (req, res) => {
       }
     }
 
-    // Process type filter
     if (processType) {
       query.processType = processType;
     }
 
-    // Status filter
     if (status) {
       query.status = status;
     }
@@ -221,7 +210,6 @@ exports.filterProcessRecords = async (req, res) => {
   }
 };
 
-// Get process statistics
 exports.getProcessStatistics = async (req, res) => {
   try {
     const { startDate, endDate } = req.query;
@@ -253,7 +241,6 @@ exports.getProcessStatistics = async (req, res) => {
       }
     ]);
 
-    // Count status occurrences
     const statusCounts = {};
     const processTypeCounts = {};
 

@@ -8,15 +8,15 @@ import { LogoutButton } from "./Buttons";
 // Map navigation items to departments
 const navItems = [
   { name: 'PROCESS', path: '/process', department: 'Process' },
-  { name: 'MICRO TENSILE', path: '/micro-textile', department: 'Micro Tensile' },
-  { name: 'TENSILE', path: '/textile', department: 'Tensile' },
+  { name: 'MICRO TENSILE', path: '/micro-tensile', department: 'Micro Tensile' },
+  { name: 'TENSILE', path: '/tensile', department: 'Tensile' },
   {
     name: 'MOULDING',
     department: 'Moulding',
     dropdown: [
-      { name: 'DISAMATIC PRODUCT REPORT', path: '/moulding/page-1' },
-      { name: 'MOULD HARDNESS AND PATTERN TEMPERATURE RECORD', path: '/moulding/page-2' },
-      { name: 'MOULDING PAGE 3', path: '/moulding/page-3' },
+      { name: 'DISAMATIC PRODUCT REPORT', path: '/moulding/disamatic-product-report' },
+      { name: 'MOULD HARDNESS AND PATTERN TEMPERATURE RECORD', path: '/moulding/mould-hardness-pattern-temperature-record' },
+      { name: 'DMM SETTING PARAMETERS CHECK SHEET', path: '/moulding/dmm-setting-parameters' },
     ],
   },
   { name: 'QC-PRODUCTION DETAILS', path: '/qc-production-details', department: 'QC - production' },
@@ -26,16 +26,16 @@ const navItems = [
     name: 'SAND LAB',
     department: 'Sand Lab',
     dropdown: [
-      { name: 'SAND TESTING RECORD', path: '/sand-lab/page-1' },
-      { name: 'FOUNDARY SAND TESTING NOTE', path: '/sand-lab/page-2' },
+      { name: 'SAND TESTING RECORD', path: '/sand-lab/sand-testing-record' },
+      { name: 'FOUNDRY SAND TESTING NOTE', path: '/sand-lab/foundry-sand-testing-note' },
     ],
   },
   {
     name: 'MELTING',
     department: 'Melting',
     dropdown: [
-      { name: 'MELTING PROCESS PARAMETERS', path: '/process/melting-parameters' },
-      { name: 'MOLDING PROCESS PARAMETERS', path: '/process/molding-parameters' },
+      { name: 'MELTING LOG SHEET', path: '/melting/melting-log-sheet' },
+      { name: 'CUPOLA HOLDER LOG SHEET', path: '/melting/cupola-holder-log-sheet' },
     ],
   },
 ];

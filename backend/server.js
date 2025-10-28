@@ -16,7 +16,7 @@ const qcReports = require('./routes/qcProductionRoutes');
 const microStructure = require('./routes/microStructureRoutes');
 const impactTests = require('./routes/impactRoutes');
 const microTensileTests = require('./routes/microTensileRoutes');
-const processRoutes = require('./routes/processRoutes');
+// const processRoutes = require('./routes/processRoutes'); // Commented out - frontend only for now
 
 // Middleware
 app.use(cors());
@@ -37,7 +37,7 @@ app.use('/api/v1/qc-reports', qcReports);
 app.use('/api/v1/micro-structure', microStructure);
 app.use('/api/v1/impact-tests', impactTests);
 app.use('/api/v1/micro-tensile-tests', microTensileTests);
-app.use('/api/v1/process-records', processRoutes);
+// app.use('/api/v1/process-records', processRoutes); // Commented out - frontend only for now
 
 // Health check route
 app.get('/api/health', (req, res) => {

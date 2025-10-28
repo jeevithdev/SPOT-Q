@@ -1,7 +1,5 @@
 const TensileTest = require('../models/TensileTest');
 
-// @desc    Get all Tensile Test entries
-// @route   GET /api/v1/tensile-tests
 exports.getAllEntries = async (req, res) => {
     try {
         const entries = await TensileTest.find().sort({ createdAt: -1 });
@@ -20,8 +18,6 @@ exports.getAllEntries = async (req, res) => {
     }
 };
 
-// @desc    Create a new Tensile Test entry
-// @route   POST /api/v1/tensile-tests
 exports.createEntry = async (req, res) => {
     try {
         const entry = await TensileTest.create(req.body);

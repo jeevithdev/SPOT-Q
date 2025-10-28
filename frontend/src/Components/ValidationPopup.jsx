@@ -1,8 +1,8 @@
 import React from 'react';
 import '../styles/ComponentStyles/ValidationPopup.css';
 
-const ValidationPopup = ({ isOpen, onClose, missingFields }) => {
-  if (!isOpen) return null;
+const ValidationPopup = ({ isOpen = true, onClose, missingFields }) => {
+  if (!isOpen || !missingFields || missingFields.length === 0) return null;
 
   // Determine size class based on number of missing fields
   const getSizeClass = () => {

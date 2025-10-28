@@ -1,7 +1,5 @@
 const ImpactTest = require('../models/ImpactTest');
 
-// @desc    Get all Impact Test entries
-// @route   GET /api/v1/impact-tests
 exports.getAllEntries = async (req, res) => {
     try {
         const entries = await ImpactTest.find().sort({ createdAt: -1 });
@@ -20,8 +18,8 @@ exports.getAllEntries = async (req, res) => {
     }
 };
 
-// @desc    Create a new Impact Test entry
-// @route   POST /api/v1/impact-tests
+
+
 exports.createEntry = async (req, res) => {
     try {
         const entry = await ImpactTest.create(req.body);

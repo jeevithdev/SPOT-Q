@@ -1,7 +1,5 @@
 const QCProductionReport = require('../models/QCProductionReport');
 
-// @desc    Get all QC Production Report entries
-// @route   GET /api/v1/qc-reports
 exports.getAllEntries = async (req, res) => {
     try {
         const entries = await QCProductionReport.find().sort({ createdAt: -1 });
@@ -20,8 +18,6 @@ exports.getAllEntries = async (req, res) => {
     }
 };
 
-// @desc    Create a new QC Production Report entry
-// @route   POST /api/v1/qc-reports
 exports.createEntry = async (req, res) => {
     try {
         const entry = await QCProductionReport.create(req.body);

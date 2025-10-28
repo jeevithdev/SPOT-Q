@@ -1,7 +1,5 @@
 const MicroTensileTest = require('../models/MicroTensileTest');
 
-// @desc    Get all Micro Tensile Test entries
-// @route   GET /api/v1/micro-tensile-tests
 exports.getAllEntries = async (req, res) => {
     try {
         const entries = await MicroTensileTest.find().sort({ createdAt: -1 });
@@ -20,8 +18,6 @@ exports.getAllEntries = async (req, res) => {
     }
 };
 
-// @desc    Create a new Micro Tensile Test entry
-// @route   POST /api/v1/micro-tensile-tests
 exports.createEntry = async (req, res) => {
     try {
         const entry = await MicroTensileTest.create(req.body);

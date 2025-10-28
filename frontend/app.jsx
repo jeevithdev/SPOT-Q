@@ -9,16 +9,17 @@ import Loader from './src/Components/Loader';
 import MicroTensile from './src/pages/MicroTensile';
 import QcProductionDetails from './src/pages/QcProductionDetails';
 import Process from './src/pages/Process';
-import MeltingProcessParameter from './src/pages/MeltingProcessParameter';
-import MoldingProcessParameter from './src/pages/MoldingProcessParameter';
+
+import MeltingLogSheet from './src/pages/Melting/MeltingLogSheet';
+import CupolaHolderLogSheet from './src/pages/Melting/CupolaHolderLogSheet';
 import Login from './src/pages/Login';
 import Tensile from './src/pages/Tensile';
-import SandTestingRecord from './src/pages/SandTestingRecord';
-import FoundarySandTestingNote from './src/pages/FoundarySandTestingNote';
-import DisamaticProductReport from './src/pages/DisamaticProductReport';
-import MouldHardnessPatternTemperatureRecord from './src/pages/MouldHardnessPatternTemperatureRecord';
+import SandTestingRecord from './src/pages/SandLab/SandTestingRecord';
+import FoundarySandTestingNote from './src/pages/SandLab/FoundarySandTestingNote';
+import DisamaticProductReport from './src/pages/Moulding/DisamaticProductReport';
+import MouldHardnessPatternTemperatureRecord from './src/pages/Moulding/MouldHardnessPatternTemperatureRecord';
 import MouldingPage3 from './src/pages/MouldingPage3';
-import AdminDashboard from './src/pages/AdminDashboard';
+import AdminDashboard from './src/Components/AdminDashboard';
 import MicroStructure from './src/pages/MicroStructure';
 import Impact from './src/pages/Impact';
 
@@ -66,27 +67,27 @@ const App = () => {
           <Route index element={isAdmin ? <Navigate to="/admin" replace /> : <MicroTensile />} />
 
           {/* Top-level pages */}
-          <Route path="micro-textile" element={<MicroTensile />} />
+          <Route path="micro-tensile" element={<MicroTensile />} />
           <Route path="qc-production-details" element={<QcProductionDetails />} />
           <Route path="micro-structure" element={<MicroStructure />} />
           <Route path="impact" element={<Impact />} />
           <Route path="process" element={<Process />} />
 
           {/* Melting */}
-          <Route path="process/melting-parameters" element={<MeltingProcessParameter />} />
-          <Route path="process/molding-parameters" element={<MoldingProcessParameter />} />
+          <Route path="melting/melting-log-sheet" element={<MeltingLogSheet />} />
+          <Route path="melting/cupola-holder-log-sheet" element={<CupolaHolderLogSheet />} />
 
-          {/* Textile */}
-          <Route path="textile" element={<Tensile />} />
+          {/* Tensile */}
+          <Route path="tensile" element={<Tensile />} />
 
           {/* Sand Lab */}
-          <Route path="sand-lab/page-1" element={<SandTestingRecord />} />
-          <Route path="sand-lab/page-2" element={<FoundarySandTestingNote />} />
+          <Route path="sand-lab/sand-testing-record" element={<SandTestingRecord />} />
+          <Route path="sand-lab/foundry-sand-testing-note" element={<FoundarySandTestingNote />} />
 
           {/* Moulding */}
-          <Route path="moulding/page-1" element={<DisamaticProductReport />} />
-          <Route path="moulding/page-2" element={<MouldHardnessPatternTemperatureRecord />} />
-          <Route path="moulding/page-3" element={<MouldingPage3 />} />
+          <Route path="moulding/disamatic-product-report" element={<DisamaticProductReport />} />
+          <Route path="moulding/mould-hardness-pattern-temperature-record" element={<MouldHardnessPatternTemperatureRecord />} />
+          <Route path="moulding/dmm-setting-parameters" element={<MouldingPage3 />} />
         </Route>
 
         {/* Fallback */}

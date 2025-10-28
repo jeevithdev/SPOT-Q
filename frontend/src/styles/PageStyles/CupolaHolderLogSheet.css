@@ -1,18 +1,18 @@
-/* Process Page Styles */
+/* Cupola Holder Log Sheet Page Styles */
 
-.process-container {
+.cupola-holder-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
   padding: 2rem 1rem;
 }
 
-.process-wrapper {
-  max-width: 1400px;
+.cupola-holder-wrapper {
+  max-width: 1280px;
   margin: 0 auto;
 }
 
 /* Entry Container */
-.process-entry-container {
+.cupola-holder-entry-container {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -21,7 +21,7 @@
   margin-bottom: 2rem;
 }
 
-.process-header {
+.cupola-holder-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -32,20 +32,20 @@
   border-bottom: 2px solid #e2e8f0;
 }
 
-.process-header-text {
+.cupola-holder-header-text {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.process-header-text h2 {
+.cupola-holder-header-text h2 {
   font-size: 1.875rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
 
-.process-reset-btn {
+.cupola-holder-reset-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -61,24 +61,24 @@
   box-shadow: 0 2px 4px rgba(22, 52, 66, 0.2);
 }
 
-.process-reset-btn:hover {
+.cupola-holder-reset-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(22, 52, 66, 0.3);
   background: linear-gradient(135deg, #1f4f5d 0%, #2a6575 100%);
 }
 
-.process-form-grid {
+.cupola-holder-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
 }
 
-.process-form-group {
+.cupola-holder-form-group {
   display: flex;
   flex-direction: column;
 }
 
-.process-form-group label {
+.cupola-holder-form-group label {
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
@@ -86,9 +86,9 @@
   margin-bottom: 0.5rem;
 }
 
-.process-form-group input,
-.process-form-group select,
-.process-form-group textarea {
+.cupola-holder-form-group input,
+.cupola-holder-form-group select,
+.cupola-holder-form-group textarea {
   width: 100%;
   padding: 0.625rem 0.875rem;
   border: 2px solid #cbd5e1;
@@ -98,63 +98,106 @@
   background: white;
 }
 
-.process-form-group input:focus,
-.process-form-group select:focus,
-.process-form-group textarea:focus {
+.cupola-holder-form-group input:focus,
+.cupola-holder-form-group select:focus,
+.cupola-holder-form-group textarea:focus {
   outline: none;
   border-color: #5B9AA9;
   box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
 }
 
-.process-form-group textarea {
+.cupola-holder-form-group textarea {
   resize: vertical;
   min-height: 80px;
-  font-family: inherit;
 }
 
-.process-submit-container {
+.cupola-holder-submit-container {
   margin-top: 2rem;
   display: flex;
-  justify-content: center;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
 }
 
-.process-submit-btn {
+.cupola-holder-submit-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.875rem 2.5rem;
+  padding: 0.875rem 2rem;
   background: linear-gradient(135deg, #5B9AA9 0%, #4A8494 100%);
   color: white;
   border: none;
   border-radius: 8px;
   cursor: pointer;
-  font-size: 1rem;
+  font-size: 0.9375rem;
   font-weight: 600;
-  box-shadow: 0 4px 6px rgba(91, 154, 169, 0.3);
   transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(91, 154, 169, 0.3);
 }
 
-.process-submit-btn:hover:not(:disabled) {
+.cupola-holder-submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow: 0 6px 12px rgba(91, 154, 169, 0.4);
-  background: linear-gradient(135deg, #4A8494 0%, #3A6B7A 100%);
+  background: linear-gradient(135deg, #4A8494 0%, #3a6a78 100%);
 }
 
-.process-submit-btn:disabled {
-  opacity: 0.6;
+.cupola-holder-submit-btn:disabled {
+  background: #94a3b8;
   cursor: not-allowed;
+  box-shadow: none;
 }
 
-/* Report Container */
-.process-report-container {
+/* Responsive Design */
+@media (max-width: 968px) {
+  .cupola-holder-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .cupola-holder-reset-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .cupola-holder-container {
+    padding: 1rem 0.5rem;
+  }
+
+  .cupola-holder-entry-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .cupola-holder-header-text h2 {
+    font-size: 1.5rem;
+  }
+
+  .cupola-holder-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .cupola-holder-submit-container {
+    justify-content: stretch;
+  }
+
+  .cupola-holder-submit-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+/* Report Container Styles */
+.cupola-holder-report-container {
   background: white;
   border-radius: 12px;
   box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
   border: 1px solid #e2e8f0;
   padding: 2rem;
+  margin-bottom: 2rem;
 }
 
-.process-report-title {
+.cupola-holder-report-title {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -163,14 +206,14 @@
   border-bottom: 2px solid #e2e8f0;
 }
 
-.process-report-title h3 {
+.cupola-holder-report-title h3 {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
 
-.process-filter-grid {
+.cupola-holder-filter-grid {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
   gap: 1rem;
@@ -178,12 +221,12 @@
   align-items: end;
 }
 
-.process-filter-group {
+.cupola-holder-filter-group {
   display: flex;
   flex-direction: column;
 }
 
-.process-filter-group label {
+.cupola-holder-filter-group label {
   display: block;
   font-size: 0.875rem;
   font-weight: 600;
@@ -191,12 +234,12 @@
   margin-bottom: 0.5rem;
 }
 
-.process-filter-btn-container {
+.cupola-holder-filter-btn-container {
   display: flex;
   align-items: flex-end;
 }
 
-.process-filter-btn {
+.cupola-holder-filter-btn {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -215,38 +258,31 @@
   min-height: 42px;
 }
 
-.process-filter-btn:hover {
+.cupola-holder-filter-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(255, 127, 80, 0.4);
   background: linear-gradient(135deg, #FF6A3D 0%, #FF5722 100%);
 }
 
-.process-loader-container {
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  padding: 3rem;
-}
-
-.process-table-container {
+.cupola-holder-table-container {
   overflow-x: auto;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
 }
 
-.process-table {
+.cupola-holder-table {
   width: 100%;
   border-collapse: collapse;
   font-size: 0.875rem;
-  min-width: 1800px;
+  min-width: 700px;
 }
 
-.process-table thead {
+.cupola-holder-table thead {
   background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
   color: white;
 }
 
-.process-table thead th {
+.cupola-holder-table thead th {
   padding: 1rem 0.75rem;
   text-align: left;
   font-weight: 600;
@@ -255,105 +291,55 @@
   border-right: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-.process-table thead th:last-child {
+.cupola-holder-table thead th:last-child {
   border-right: none;
 }
 
-.process-table tbody tr {
+.cupola-holder-table tbody tr {
   border-bottom: 1px solid #e2e8f0;
   transition: background-color 0.2s ease;
 }
 
-.process-table tbody tr:hover {
+.cupola-holder-table tbody tr:hover {
   background-color: #f8fafc;
 }
 
-.process-table tbody tr:last-child {
+.cupola-holder-table tbody tr:last-child {
   border-bottom: none;
 }
 
-.process-table tbody td {
+.cupola-holder-table tbody td {
   padding: 0.875rem 0.75rem;
   color: #475569;
   white-space: nowrap;
   border-right: 1px solid #f1f5f9;
 }
 
-.process-table tbody td:last-child {
+.cupola-holder-table tbody td:last-child {
   border-right: none;
   max-width: 200px;
   white-space: normal;
   word-wrap: break-word;
 }
 
-.process-no-records {
+.cupola-holder-no-records {
   text-align: center;
   padding: 3rem !important;
   color: #94a3b8;
   font-style: italic;
 }
 
-/* Responsive Design */
-@media (max-width: 1024px) {
-  .process-form-grid {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-  }
-
-  .process-filter-grid {
+@media (max-width: 968px) {
+  .cupola-holder-filter-grid {
     grid-template-columns: 1fr;
     gap: 1rem;
   }
 
-  .process-filter-btn-container {
+  .cupola-holder-filter-btn-container {
     align-items: stretch;
   }
 
-  .process-filter-btn {
+  .cupola-holder-filter-btn {
     width: 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  .process-container {
-    padding: 1rem 0.5rem;
-  }
-
-  .process-entry-container,
-  .process-report-container {
-    padding: 1.5rem 1rem;
-  }
-
-  .process-header-text h2 {
-    font-size: 1.5rem;
-  }
-
-  .process-form-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .process-table {
-    font-size: 0.8125rem;
-  }
-
-  .process-table thead th,
-  .process-table tbody td {
-    padding: 0.75rem 0.5rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .process-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .process-reset-btn,
-  .process-submit-btn {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .process-header-text {
-    justify-content: center;
   }
 }
