@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
+import Button from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -133,10 +134,10 @@ const MicroTensile = () => {
               <Save size={24} style={{ color: '#5B9AA9' }} />
               <h2>Micro Tensile Test - Entry Form</h2>
             </div>
-            <button onClick={handleReset} className="microtensile-reset-btn">
+            <Button onClick={handleReset} className="microtensile-reset-btn" variant="secondary">
               <RefreshCw size={18} />
               Reset
-            </button>
+            </Button>
           </div>
 
           <div className="microtensile-form-grid">
@@ -266,7 +267,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="microtensile-form-group full-width">
               <label>Remarks</label>
               <textarea
                 name="remarks"
@@ -279,14 +280,10 @@ const MicroTensile = () => {
           </div>
 
           <div className="microtensile-submit-container">
-            <button
-              onClick={handleSubmit}
-              disabled={submitLoading}
-              className="microtensile-submit-btn"
-            >
+            <Button onClick={handleSubmit} disabled={submitLoading} className="microtensile-submit-btn" type="button">
               {submitLoading ? <Loader size={20} /> : <Save size={20} />}
               {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -317,10 +314,10 @@ const MicroTensile = () => {
             </div>
 
             <div className="microtensile-filter-btn-container">
-              <button onClick={handleFilter} className="microtensile-filter-btn">
+              <Button onClick={handleFilter} className="microtensile-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
-              </button>
+              </Button>
             </div>
           </div>
 

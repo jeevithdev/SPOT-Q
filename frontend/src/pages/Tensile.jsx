@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
+import Button from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -134,10 +135,10 @@ const Tensile = () => {
               </h2>
               <p>Record tensile test measurements and analysis</p>
             </div>
-            <button onClick={handleReset} className="tensile-reset-btn">
+            <Button onClick={handleReset} className="tensile-reset-btn" variant="secondary">
               <RefreshCw size={18} />
               Reset
-            </button>
+            </Button>
           </div>
 
           {/* Entry Form */}
@@ -283,10 +284,10 @@ const Tensile = () => {
           </div>
 
           <div className="tensile-submit-container">
-            <button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn">
+            <Button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
               {submitLoading ? <Loader size={20} /> : <Save size={20} />}
               {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </button>
+            </Button>
           </div>
         </div>
         </div>
@@ -318,10 +319,10 @@ const Tensile = () => {
             </div>
 
             <div className="tensile-filter-btn-container">
-              <button onClick={handleFilter} className="tensile-filter-btn">
+              <Button onClick={handleFilter} className="tensile-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
-              </button>
+              </Button>
             </div>
           </div>
 

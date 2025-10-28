@@ -1,137 +1,12 @@
 import React, { useState } from 'react';
 import { Save, Gauge, Thermometer, Hammer, X, Filter } from 'lucide-react';
+import Button from '../../Components/Buttons';
+import '../../styles/PageStyles/MouldHardnessPatternTemperatureRecord.css';
 
 const NUM_ROWS_HARDNESS = 8;
 const NUM_ROWS_TEMP = 8;
 
-const styles = {
-  pageContainer: {
-    minHeight: '100vh',
-    backgroundColor: '#f0f4f8',
-    padding: '2rem',
-    fontFamily: 'Arial, sans-serif',
-  },
-  mainCard: {
-    maxWidth: '1200px',
-    margin: '0 auto',
-    backgroundColor: 'white',
-    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-    borderRadius: '8px',
-    overflow: 'hidden',
-  },
-  header: {
-    padding: '1.5rem',
-    borderBottom: '4px solid #3b82f6',
-    backgroundColor: '#eff6ff',
-    textAlign: 'center',
-  },
-  headerTitle: {
-    fontSize: '2rem',
-    fontWeight: 'bold',
-    color: '#3b82f6',
-    margin: '0',
-  },
-  headerSubtitle: { fontSize: '1.1rem', color: '#555', marginTop: '0.5rem' },
-  section: { padding: '1.5rem', borderBottom: '1px solid #ddd' },
-  sectionTitle: {
-    fontSize: '1.2rem',
-    fontWeight: 'bold',
-    color: '#3b82f6',
-    borderBottom: '2px solid #ccc',
-    paddingBottom: '0.5rem',
-    marginBottom: '1rem',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-  },
-  tableWrapper: { overflowX: 'auto', marginBottom: '1rem', width: '100%' },
-  tableBase: { width: '100%', borderCollapse: 'collapse', minWidth: '600px' },
-  tableHeadCell: {
-    backgroundColor: '#cfe2ff',
-    color: '#1e40af',
-    padding: '0.6rem',
-    textAlign: 'center',
-    fontWeight: 600,
-    border: '1px solid #aaa',
-  },
-  tableBodyCell: {
-    padding: '0px',
-    textAlign: 'center',
-    border: '1px solid #eee',
-    fontSize: '0.875rem',
-    color: '#333',
-  },
-  tableInput: {
-    width: '100%',
-    padding: '0.5rem',
-    border: 'none',
-    outline: 'none',
-    fontSize: '0.875rem',
-    textAlign: 'center',
-    boxSizing: 'border-box',
-    backgroundColor: 'transparent',
-  },
-  inputGroup: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '1rem',
-    marginBottom: '1rem',
-  },
-  inputLabel: {
-    fontWeight: 600,
-    color: '#1a202c',
-    minWidth: '120px',
-    textAlign: 'right',
-    fontSize: '0.9rem',
-  },
-  inputBase: {
-    padding: '0.3rem 0.6rem',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    fontSize: '0.9rem',
-    outline: 'none',
-    width: '150px',
-    backgroundColor: 'white',
-  },
-  textAreaBase: {
-    flexGrow: 1,
-    padding: '0.5rem',
-    border: '1px solid #ccc',
-    borderRadius: '4px',
-    fontSize: '0.9rem',
-    outline: 'none',
-    minHeight: '120px',
-    maxHeight: '200px',
-    resize: 'vertical',
-  },
-  splitSectionGrid: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '1.5rem',
-    padding: '1.5rem',
-    borderBottom: '1px solid #ddd',
-  },
-  buttonGroup: {
-    padding: '1.5rem',
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '0.75rem',
-    borderTop: '1px solid #ddd',
-  },
-  baseButton: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '0.5rem',
-    padding: '0.75rem 1.5rem',
-    border: 'none',
-    borderRadius: '8px',
-    cursor: 'pointer',
-    fontSize: '0.875rem',
-    fontWeight: 500,
-    boxShadow: '0 1px 2px rgba(0,0,0,0.1)',
-  },
-  submitButton: { backgroundColor: '#3b82f6', color: 'white' },
-};
+// Styles are moved to CSS file: mould-hardness-pattern-temperature-record.css
 
 const initialHardnessRow = {
   componentName: '',
@@ -162,7 +37,7 @@ const TableInput = ({ value, onChange, tabIndex, type = 'text' }) => (
     type={type}
     value={value}
     onChange={onChange}
-    style={styles.tableInput}
+    className="table-input"
     tabIndex={tabIndex}
   />
 );
@@ -291,7 +166,7 @@ const MouldHardnessRecord = () => {
           {/* Add Row aligned under SNO */}
           <tr>
             <td style={{ textAlign: 'center', padding: '0.6rem' }}>
-              <button
+              <Button
                 type="button"
                 onClick={addHardnessRow}
                 style={{
@@ -308,7 +183,7 @@ const MouldHardnessRecord = () => {
                 }}
               >
                 +
-              </button>
+              </Button>
             </td>
             <td colSpan="6"></td>
           </tr>
@@ -369,7 +244,7 @@ const MouldHardnessRecord = () => {
           {/* Add Row aligned under SNO */}
           <tr>
             <td style={{ textAlign: 'center', padding: '0.6rem' }}>
-              <button
+              <Button
                 type="button"
                 onClick={addPatternTempRow}
                 style={{
@@ -386,7 +261,7 @@ const MouldHardnessRecord = () => {
                 }}
               >
                 +
-              </button>
+              </Button>
             </td>
             <td colSpan="3"></td>
           </tr>
@@ -396,98 +271,83 @@ const MouldHardnessRecord = () => {
   );
 
   return (
-    <div style={styles.pageContainer}>
-      <div style={styles.mainCard}>
-        <div style={styles.header}>
-          <h1 style={styles.headerTitle}>
-            MOULD HARDNESS AND PATTERN TEMPERATURE RECORD
-          </h1>
-          <p style={styles.headerSubtitle}>PRODUCTION REPORT</p>
+    <div className="page-container">
+      <div className="main-card">
+        <div className="header">
+          <h1 className="header-title">MOULD HARDNESS AND PATTERN TEMPERATURE RECORD</h1>
+          <p className="header-subtitle">PRODUCTION REPORT</p>
         </div>
 
         <form onSubmit={handleSubmit}>
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>
+          <div className="section">
+            <h2 className="section-title">
               <Gauge size={20} /> Mould Hardness
             </h2>
             {renderMouldHardnessTable()}
           </div>
 
-          <div style={styles.splitSectionGrid}>
+          <div className="split-section-grid">
             <div>
-              <h2 style={{ ...styles.sectionTitle, color: '#d97706' }}>
+              <h2 className="section-title" style={{ color: '#d97706' }}>
                 Significant Event
               </h2>
               <textarea
                 value={formData.significantEvent}
                 onChange={(e) => handleMainChange('significantEvent', e.target.value)}
-                style={styles.textAreaBase}
+                className="textarea-base"
                 placeholder="Enter significant events here..."
               />
             </div>
             <div>
-              <h2 style={{ ...styles.sectionTitle, color: '#059669' }}>
+              <h2 className="section-title" style={{ color: '#059669' }}>
                 <Thermometer size={20} /> Pattern Temp. in C°
               </h2>
               {renderPatternTemperatureTable()}
             </div>
           </div>
 
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>
+          <div className="section">
+            <h2 className="section-title">
               <Hammer size={20} /> Maintenance:
             </h2>
             <textarea
               value={formData.maintenance}
               onChange={(e) => handleMainChange('maintenance', e.target.value)}
-              style={styles.textAreaBase}
+              className="textarea-base"
               placeholder="Enter maintenance notes here..."
             />
           </div>
 
-          <div
-            style={{
-              ...styles.section,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'flex-end',
-              borderBottom: 'none',
-            }}
-          >
-            <div style={styles.inputGroup}>
-              <span style={styles.inputLabel}>Supervisor Name:</span>
+          <div className="section" style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', borderBottom: 'none' }}>
+            <div className="input-group">
+              <span className="input-label">Supervisor Name:</span>
               <input
                 type="text"
                 value={formData.supervisorName}
                 onChange={(e) => handleMainChange('supervisorName', e.target.value)}
-                style={{ ...styles.inputBase, width: '200px' }}
+                className="input-base"
+                style={{ width: '200px' }}
               />
             </div>
-            <div style={styles.inputGroup}>
-              <span style={styles.inputLabel}>Sign:</span>
+            <div className="input-group">
+              <span className="input-label">Sign:</span>
               <input
                 type="text"
                 value={formData.supervisorSign}
                 onChange={(e) => handleMainChange('supervisorSign', e.target.value)}
-                style={{ ...styles.inputBase, width: '200px' }}
+                className="input-base"
+                style={{ width: '200px' }}
               />
             </div>
           </div>
 
-          <div style={styles.buttonGroup}>
-            <button
-              type="button"
-              onClick={handleReset}
-              style={{ ...styles.baseButton, backgroundColor: '#333', color: 'white' }}
-            >
+          <div className="button-group">
+            <Button type="button" onClick={handleReset} className="add-reset" style={{ backgroundColor: '#333', color: 'white' }}>
               <X size={18} /> Reset Form
-            </button>
-            <button
-              type="submit"
-              style={{ ...styles.baseButton, ...styles.submitButton }}
-            >
+            </Button>
+            <Button type="submit" className="submit-button base-button">
               <Save size={20} /> Save Record
-            </button>
+            </Button>
           </div>
         </form>
 
@@ -531,7 +391,7 @@ const MouldHardnessRecord = () => {
               </label>
               <input type="date" style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '2px solid #cbd5e1' }} />
             </div>
-            <button style={{
+            <Button style={{
               display: 'flex',
               alignItems: 'center',
               gap: '0.5rem',
@@ -547,7 +407,7 @@ const MouldHardnessRecord = () => {
             }}>
               <Filter size={18} />
               Filter
-            </button>
+            </Button>
           </div>
 
           <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>

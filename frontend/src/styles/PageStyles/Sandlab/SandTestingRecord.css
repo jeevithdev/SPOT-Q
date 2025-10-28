@@ -1,0 +1,199 @@
+.sandrec-root {
+  min-height: 100vh;
+  background-color: #f0f4f8;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
+}
+
+.sandrec-card {
+  max-width: 1280px;
+  margin: 0 auto;
+  background: white;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.sandrec-header {
+  padding: 1.5rem;
+  border-bottom: 4px solid #cc0000;
+  background-color: #ffe6e6;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.sandrec-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #8b0000;
+  margin: 0;
+}
+
+.sandrec-date-input-container {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.sandrec-form-content {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.sandrec-grid-top {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.sandrec-table-box {
+  border: 1px solid #aaa;
+  padding: 0.5rem;
+}
+
+.sandrec-table-header {
+  background-color: #163442;
+  color: white;
+  font-weight: bold;
+  padding: 0.75rem;
+  text-align: center;
+  font-size: 1rem;
+  margin: 0;
+}
+
+.sandrec-grid-mid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+}
+
+.sandrec-grid-main {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.5rem 2rem;
+  padding-top: 1rem;
+  border-top: 2px solid #cbd5e1;
+}
+
+.sandrec-button-group {
+  margin-top: 0.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid #cbd5e1;
+  padding-top: 1.5rem;
+}
+
+/* Buttons */
+.sandrec-reset-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, #163442 0%, #1f4f5d 100%);
+  color: white;
+  border: none;
+}
+
+.sandrec-submit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: linear-gradient(135deg, #5B9AA9 0%, #4A8494 100%);
+  color: white;
+  border: none;
+}
+
+/* Report Section */
+.sandrec-report-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.sandrec-report-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.sandrec-report-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.sandrec-report-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  align-items: end;
+}
+
+.sandrec-filter-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  background: linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.sandrec-report-table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.sandrec-report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+  min-width: 800px;
+}
+
+.sandrec-report-table-head {
+  background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
+  color: white;
+}
+
+.sandrec-report-th {
+  padding: 1rem 0.75rem;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.sandrec-no-records {
+  text-align: center;
+  padding: 3rem;
+  color: #94a3b8;
+  font-style: italic;
+}

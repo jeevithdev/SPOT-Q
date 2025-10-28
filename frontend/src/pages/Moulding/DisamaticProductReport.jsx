@@ -1,142 +1,9 @@
 import React, { useState } from 'react';
 import { Save, Users, Factory, Clock, Zap, X, Plus, Filter } from 'lucide-react';
+import Button from '../../Components/Buttons';
+import '../../styles/PageStyles/Moulding/DisamaticProductReport.css';
 
-// Define the number of rows needed
-const NUM_ROWS = 20;
-
-// --- 1. SIMPLIFIED STYLE DEFINITIONS ---
-const styles = {
-  pageContainer: {
-    minHeight: "100vh",
-    backgroundColor: "#f0f4f8",
-    padding: "2rem",
-    fontFamily: "Arial, sans-serif",
-  },
-  mainCard: {
-    maxWidth: "1000px",
-    margin: "0 auto",
-    backgroundColor: "white",
-    boxShadow: "0 4px 6px rgba(0,0,0,0.1)",
-    borderRadius: "8px",
-    overflow: "hidden",
-  },
-  header: {
-    padding: "1rem 1.5rem",
-    borderBottom: "4px solid #0056b3",
-    backgroundColor: "#e6f2ff",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "1rem",
-  },
-  titleContainer: { textAlign: "center", flexGrow: 1 },
-  headerTitle: {
-    fontSize: "1.8rem",
-    fontWeight: "bold",
-    color: "#0056b3",
-    margin: "0 0 0.25rem 0",
-  },
-  headerSubtitle: {
-    fontSize: "1.2rem",
-    fontWeight: "bold",
-    color: "#333",
-  },
-  inputGroup: {
-    display: "grid",
-    gridTemplateColumns: "auto auto",
-    gap: "0.5rem 1rem",
-    fontSize: "0.875rem",
-    fontWeight: 500,
-    color: "#333",
-  },
-  inputLabel: {
-    fontWeight: 600,
-    color: "#1a202c",
-    textAlign: "right",
-  },
-  inputBase: {
-    padding: "0.3rem 0.6rem",
-    border: "1px solid #ccc",
-    borderRadius: "4px",
-    fontSize: "0.8rem",
-    outline: "none",
-    width: "120px",
-    boxSizing: "border-box",
-    backgroundColor: "white",
-  },
-  section: { padding: "1.5rem", borderBottom: "1px solid #ddd" },
-  sectionTitle: {
-    fontSize: "1.2rem",
-    fontWeight: "bold",
-    color: "#333",
-    borderBottom: "2px solid #ccc",
-    paddingBottom: "0.5rem",
-    marginBottom: "1rem",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-  },
-  tableWrapper: { overflowX: "auto", marginBottom: "1rem" },
-  tableBase: { width: "100%", borderCollapse: "collapse" },
-  tableHeadCell: {
-    backgroundColor: "#cce5ff",
-    color: "#0056b3",
-    padding: "0.6rem",
-    textAlign: "center",
-    fontWeight: 600,
-    border: "1px solid #aaa",
-  },
-  tableBodyCell: {
-    padding: "0px",
-    textAlign: "center",
-    border: "1px solid #ddd",
-    fontSize: "0.875rem",
-    color: "#333",
-  },
-  tableInput: {
-    width: "100%",
-    padding: "0.4rem",
-    border: "none",
-    outline: "none",
-    fontSize: "0.875rem",
-    textAlign: "center",
-    backgroundColor: "transparent",
-  },
-  addRowButton: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "0.4rem",
-    backgroundColor: "#0056b3",
-    color: "white",
-    border: "none",
-    borderRadius: "6px",
-    padding: "0.5rem 1rem",
-    cursor: "pointer",
-    margin: "0.5rem 0",
-  },
-  buttonGroup: {
-    marginTop: "1.5rem",
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: "0.75rem",
-    paddingTop: "1.5rem",
-  },
-  baseButton: {
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    padding: "0.75rem 1.5rem",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "0.875rem",
-    fontWeight: 500,
-    boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-  },
-  submitButton: { backgroundColor: "#0056b3", color: "white" },
-};
+// per-page styles are in the imported CSS file
 
 // --- COMPONENT ---
 const MouldingReport = () => {
@@ -197,12 +64,12 @@ const MouldingReport = () => {
   };
 
   const renderTable = (rows, headers, arrayName, emptyRow) => (
-    <div style={styles.tableWrapper}>
-      <table style={styles.tableBase}>
+    <div className="disamatic-table-wrapper">
+  <table className="disamatic-table">
         <thead>
           <tr>
-            {headers.map((h, i) => (
-              <th key={i} style={styles.tableHeadCell}>
+              {headers.map((h, i) => (
+              <th key={i} className="disamatic-table-head-cell">
                 {h}
               </th>
             ))}
@@ -212,14 +79,14 @@ const MouldingReport = () => {
           {rows.map((row, i) => (
             <tr key={i}>
               {Object.keys(row).map((key, j) => (
-                <td key={j} style={styles.tableBodyCell}>
+                <td key={j} className="disamatic-table-body-cell">
                   <input
                     type="text"
                     value={row[key]}
                     onChange={(e) =>
                       handleArrayChange(arrayName, i, key, e.target.value)
                     }
-                    style={styles.tableInput}
+                    className="disamatic-table-input"
                   />
                 </td>
               ))}
@@ -227,59 +94,53 @@ const MouldingReport = () => {
           ))}
         </tbody>
       </table>
-      <button
+      <Button
         type="button"
-        style={styles.addRowButton}
+        className="disamatic-add-row-btn"
         onClick={() => addRow(arrayName, emptyRow)}
       >
         <Plus size={16} /> Add Row
-      </button>
+      </Button>
     </div>
   );
 
     return (
-        <div style={styles.pageContainer}>
-            <div style={styles.mainCard}>
+    <div className="disamatic-page-container">
+      <div className="disamatic-main-card">
 
                 {/* --- HEADER --- */}
-                <div style={styles.header}>
-                    <Factory size={40} style={{ color: '#0056b3' }} />
-                    <div style={styles.titleContainer}>
-                        <h1 style={styles.headerTitle}>DISAMATIC PRODUCT REPORT</h1>
-                        <p style={styles.headerSubtitle}>SAKTHI AUTO / DISA</p>
-                    </div>
+        <div className="disamatic-header">
+          <Factory size={40} className="disamatic-factory-icon" />
+          <div className="disamatic-title-container">
+            <h1 className="disamatic-header-title">DISAMATIC PRODUCT REPORT</h1>
+            <p className="disamatic-header-subtitle">SAKTHI AUTO / DISA</p>
+          </div>
                     {/* Header Input Fields (Tab Indices 1-3) */}
-                    <div style={styles.inputGroup}>
-                        <span style={styles.inputLabel}>Date:</span>
-                        <input type="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} style={styles.inputBase} tabIndex={1} />
+          <div className="disamatic-input-group">
+            <span className="disamatic-input-label">Date:</span>
+            <input type="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} className="disamatic-input-base" tabIndex={1} />
 
-                        <span style={styles.inputLabel}>Shift:</span>
-                        <input type="text" value={formData.shift} onChange={(e) => handleMainChange('shift', e.target.value)} style={styles.inputBase} tabIndex={2} />
+            <span className="disamatic-input-label">Shift:</span>
+            <input type="text" value={formData.shift} onChange={(e) => handleMainChange('shift', e.target.value)} className="disamatic-input-base" tabIndex={2} />
 
-                        <span style={styles.inputLabel}>Incharge:</span>
-                        <input type="text" value={formData.incharge} onChange={(e) => handleMainChange('incharge', e.target.value)} style={styles.inputBase} tabIndex={3} />
-                    </div>
+            <span className="disamatic-input-label">Incharge:</span>
+            <input type="text" value={formData.incharge} onChange={(e) => handleMainChange('incharge', e.target.value)} className="disamatic-input-base" tabIndex={3} />
+          </div>
                 </div>
 
         <form onSubmit={handleSubmit}>
           {/* Members */}
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>
+          <div className="disamatic-section">
+            <h2 className="disamatic-section-title">
               <Users size={20} color="#0056b3" /> Members Present:
             </h2>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(4, 1fr)",
-                gap: "1rem",
-              }}
-            >
+            <div className="disamatic-members-grid">
               {formData.members.map((m, i) => (
                 <input
                   key={i}
                   type="text"
                   placeholder={`Member ${i + 1}`}
-                  style={styles.inputBase}
+                  className="disamatic-input-base"
                   value={m}
                   onChange={(e) =>
                     handleArrayChange("members", i, "", e.target.value)
@@ -290,8 +151,8 @@ const MouldingReport = () => {
           </div>
 
           {/* Production */}
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>
+          <div className="disamatic-section">
+            <h2 className="disamatic-section-title">
               <Zap size={20} color="#0056b3" /> Production:
             </h2>
             {renderTable(
@@ -319,8 +180,8 @@ const MouldingReport = () => {
           </div>
 
           {/* Next Shift Plan */}
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>
+          <div className="disamatic-section">
+            <h2 className="disamatic-section-title">
               <Clock size={20} color="#0056b3" /> Next Shift Plan:
             </h2>
             {renderTable(
@@ -335,8 +196,8 @@ const MouldingReport = () => {
           </div>
 
           {/* Delays */}
-          <div style={styles.section}>
-            <h2 style={styles.sectionTitle}>
+          <div className="disamatic-section">
+            <h2 className="disamatic-section-title">
               <X size={20} color="red" /> Delays:
             </h2>
             {renderTable(
@@ -351,98 +212,56 @@ const MouldingReport = () => {
           </div>
 
           {/* Buttons */}
-          <div style={styles.buttonGroup}>
-            <button
+          <div className="disamatic-button-group">
+            <Button
               type="button"
               onClick={handleReset}
-              style={{ ...styles.baseButton, backgroundColor: "#333", color: "white" }}
+              className="disamatic-base-button disamatic-reset-btn"
             >
               <X size={18} /> Reset
-            </button>
-            <button type="submit" style={{ ...styles.baseButton, ...styles.submitButton }}>
+            </Button>
+            <Button type="submit" className="disamatic-base-button disamatic-submit-btn">
               <Save size={18} /> Save Report
-            </button>
+            </Button>
           </div>
         </form>
 
         {/* Report Section */}
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          padding: '2rem',
-          marginTop: '2rem'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            marginBottom: '1.5rem',
-            paddingBottom: '1rem',
-            borderBottom: '2px solid #e2e8f0'
-          }}>
-            <Filter size={20} style={{ color: '#FF7F50' }} />
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-              Disamatic Product Report - Records
-            </h3>
+        <div className="disamatic-report-container">
+          <div className="disamatic-report-header">
+            <Filter size={20} className="disamatic-filter-icon" />
+            <h3 className="disamatic-report-title">Disamatic Product Report - Records</h3>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr auto',
-            gap: '1rem',
-            marginBottom: '1.5rem'
-          }}>
+          <div className="disamatic-report-filter-grid">
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                Start Date
-              </label>
-              <input type="date" style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '2px solid #cbd5e1' }} />
+              <label className="disamatic-filter-label">Start Date</label>
+              <input type="date" className="disamatic-filter-input" />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                End Date
-              </label>
-              <input type="date" style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '2px solid #cbd5e1' }} />
+              <label className="disamatic-filter-label">End Date</label>
+              <input type="date" className="disamatic-filter-input" />
             </div>
-            <button style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.625rem 1.5rem',
-              background: 'linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              alignSelf: 'end'
-            }}>
+            <Button className="disamatic-filter-btn">
               <Filter size={18} />
               Filter
-            </button>
+            </Button>
           </div>
 
-          <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '800px' }}>
-              <thead style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', color: 'white' }}>
+          <div className="disamatic-table-wrapper">
+            <table className="disamatic-table">
+              <thead>
                 <tr>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Date</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Shift</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Part Name</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Total Boxes</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Remarks</th>
+                  <th className="disamatic-table-head-cell-left">Date</th>
+                  <th className="disamatic-table-head-cell-left">Shift</th>
+                  <th className="disamatic-table-head-cell-left">Part Name</th>
+                  <th className="disamatic-table-head-cell-left">Total Boxes</th>
+                  <th className="disamatic-table-head-cell-left">Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td colSpan="5" style={{
-                    textAlign: 'center',
-                    padding: '3rem',
-                    color: '#94a3b8',
-                    fontStyle: 'italic'
-                  }}>
+                  <td colSpan="5" className="disamatic-no-records">
                     No records found. Submit entries above to see them here.
                   </td>
                 </tr>

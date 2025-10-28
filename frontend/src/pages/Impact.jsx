@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
+import Button from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -130,10 +131,10 @@ const Impact = () => {
               </h2>
               <p>Record impact test measurements and specifications</p>
             </div>
-            <button onClick={handleReset} className="impact-reset-btn">
+            <Button onClick={handleReset} className="impact-reset-btn" variant="secondary">
               <RefreshCw size={18} />
               Reset
-            </button>
+            </Button>
           </div>
 
           <div className="impact-form-grid">
@@ -227,10 +228,10 @@ const Impact = () => {
           </div>
 
           <div className="impact-submit-container">
-            <button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn">
+            <Button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn" type="button">
               {submitLoading ? <Loader size={20} /> : <Save size={20} />}
               {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -261,10 +262,10 @@ const Impact = () => {
             </div>
 
             <div className="impact-filter-btn-container">
-              <button onClick={handleFilter} className="impact-filter-btn">
+              <Button onClick={handleFilter} className="impact-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
-              </button>
+              </Button>
             </div>
           </div>
 

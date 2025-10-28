@@ -1,0 +1,119 @@
+/* Foundry Sand Testing Note per-page styles */
+
+.foundry-page-container {
+	min-height: 100vh;
+	background-color: #f8fafc;
+	padding: 1rem;
+	font-family: Arial, sans-serif;
+}
+
+.foundry-main-card {
+	max-width: 1100px;
+	margin: 0 auto;
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+	padding: 1.25rem;
+}
+
+.foundry-header {
+	display: flex;
+	align-items: center;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+.foundry-header-info-grid {
+	display: grid;
+	grid-auto-flow: column;
+	align-items: center;
+	gap: 0.5rem 1rem;
+}
+
+.foundry-factory-icon {
+	color: #cc0000;
+}
+
+.foundry-sakthi {
+	font-size: 1.2rem;
+	font-weight: 700;
+	color: #8b0000;
+}
+
+.foundry-header-center {
+	flex-grow: 1;
+	text-align: center;
+	padding: 0 1rem;
+}
+
+.foundry-header-title {
+	margin: 0;
+	font-size: 1.2rem;
+	font-weight: 800;
+	color: #0f172a;
+}
+
+.foundry-header-grid {
+	display: grid;
+	grid-template-columns: repeat(2, auto);
+	gap: 0.5rem 1rem;
+	align-items: center;
+}
+
+.foundry-header-label { font-weight: 600; }
+.foundry-header-input { padding: 0.45rem 0.6rem; border-radius: 6px; border: 1px solid #e2e8f0; }
+
+.foundry-form-content { margin-top: 1rem; }
+
+.foundry-bottom-grid { display: grid; grid-template-columns: 1fr; gap: 1rem; }
+.foundry-bottom-column { display:flex; flex-direction:column; gap:0.75rem; }
+.foundry-bottom-title { display:flex; align-items:center; gap:0.5rem; color:#0f172a; }
+.foundry-icon-teal { color:#5B9AA9; }
+
+.foundry-labeled-input { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem; }
+.foundry-bottom-label { min-width: 120px; font-weight:600; }
+.foundry-bottom-value { display:flex; align-items:center; gap:0.5rem; }
+.foundry-bottom-input { padding:0.45rem 0.65rem; border-radius:6px; border:1px solid #e2e8f0; }
+.foundry-bottom-suffix { color:#334155; font-weight:600; }
+
+.foundry-bottom-row { display:flex; align-items:center; gap:0.75rem; margin-bottom:0.5rem; }
+
+.foundry-bottom-remarks { margin-top:1rem; }
+.foundry-remarks-label { display:block; margin-bottom:0.5rem; }
+.foundry-remarks-textarea { width:100%; min-height:80px; padding:0.5rem; border-radius:6px; border:1px solid #e2e8f0; resize:vertical; }
+
+.foundry-button-group { display:flex; justify-content:flex-end; gap:0.75rem; margin-top:1rem; }
+.foundry-base-btn { display:inline-flex; align-items:center; gap:0.5rem; padding:0.6rem 1rem; border-radius:8px; font-weight:600; cursor:pointer; border:none; }
+.foundry-reset-btn { background:linear-gradient(135deg,#163442 0%,#1f4f5d 100%); color:white; }
+.foundry-submit-btn { background:linear-gradient(135deg,#5B9AA9 0%,#4A8494 100%); color:white; }
+
+.foundry-table-wrapper { margin-top:1.25rem; }
+.foundry-table-title { color:white; background:#0f766e; padding:0.5rem 0.75rem; border-radius:6px; display:inline-block; }
+.foundry-table-base { width:100%; border-collapse:collapse; margin-top:0.75rem; }
+.foundry-sieve-header-row { background:#f8fafc; }
+.foundry-table-head-cell { padding:0.6rem; border:1px solid #e6eef0; text-align:center; }
+.foundry-head-size { width:15%; }
+.foundry-head-percent { width:30%; }
+.foundry-head-mf { width:15%; }
+.foundry-head-product { width:30%; }
+.foundry-head-sub { border-top:1px solid #aaa; }
+.foundry-table-row-even { background:#fbfbfb; }
+.foundry-table-body-left { padding:0.6rem; text-align:left; border-right:1px solid #e6eef0; }
+.foundry-input-cell { padding:0.4rem; text-align:center; }
+.foundry-input-base { width:80px; padding:0.35rem; border:1px solid #ddd; border-radius:4px; }
+.foundry-no-border-right { border-right:none; }
+.foundry-total-row { background:#f1f5f9; }
+.foundry-total-label { font-weight:700; }
+
+.foundry-report-container { background:white; border-radius:12px; box-shadow:0 4px 6px rgba(0,0,0,0.1); padding:1.5rem; margin-top:1.25rem; }
+.foundry-report-header { display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem; padding-bottom:0.75rem; border-bottom:1px solid #e6eef0; }
+.foundry-filter-icon { color:#FF7F50; }
+.foundry-report-title { font-size:1.1rem; font-weight:700; margin:0; }
+.foundry-report-filter-grid { display:grid; grid-template-columns:1fr 1fr auto; gap:1rem; margin-bottom:1rem; align-items:end; }
+.foundry-filter-label { display:block; font-weight:600; margin-bottom:0.5rem; }
+.foundry-filter-btn { display:inline-flex; align-items:center; gap:0.5rem; padding:0.6rem 1rem; background:linear-gradient(135deg,#FF7F50 0%,#FF6A3D 100%); color:white; border-radius:8px; border:none; }
+.foundry-report-table-wrapper { overflow-x:auto; border-radius:8px; border:1px solid #e2e8f0; }
+.foundry-report-table { width:100%; border-collapse:collapse; font-size:0.875rem; min-width:900px; }
+.foundry-report-table-head { background:linear-gradient(135deg,#1e293b 0%,#334155 100%); color:white; }
+.foundry-report-th { padding:1rem 0.75rem; text-align:left; white-space:nowrap; }
+.foundry-no-records { text-align:center; padding:3rem; color:#94a3b8; font-style:italic; }

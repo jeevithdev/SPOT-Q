@@ -9,6 +9,11 @@
   position: relative;
 }
 
+/* moved inline background-image from Login.jsx */
+.login-container {
+  background-image: url('/images/factory-bg.png');
+}
+
 /* Left side logo - positioned at top-left */
 .login-left {
   flex: 0.4;
@@ -111,6 +116,48 @@ form input {
   font-size: 16px;
   box-sizing: border-box;
   transition: border-color 0.3s ease;
+}
+
+/* Additional utility classes replaced inline styles in JSX */
+.login-subtext {
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 24px;
+  text-align: center;
+}
+
+.form-row {
+  margin-bottom: 18px;
+  text-align: left;
+}
+
+.form-label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1F2937;
+  text-align: left;
+  letter-spacing: 0.3px;
+}
+
+.form-input {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.password-wrapper { position: relative; }
+.password-toggle { position: absolute; right: 5px; top: 50%; transform: translateY(-50%); z-index: 10; }
+
+.form-error {
+  text-align: left;
+  background-color: #FEE2E2;
+  color: #991B1B;
+  padding: 10px 12px;
+  border-radius: 6px;
+  margin-bottom: 16px;
+  font-size: 14px;
+  border: 1px solid #FCA5A5;
 }
 
 form input:focus {

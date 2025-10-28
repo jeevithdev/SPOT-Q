@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
+import Button from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -137,10 +138,10 @@ const QcProductionDetails = () => {
               <Save size={24} style={{ color: '#5B9AA9' }} />
               <h2>QC Production Details - Entry Form</h2>
             </div>
-            <button onClick={handleReset} className="qcproduction-reset-btn">
+            <Button onClick={handleReset} className="qcproduction-reset-btn" variant="secondary">
               <RefreshCw size={18} />
               Reset
-            </button>
+            </Button>
           </div>
 
           <div className="qcproduction-form-grid">
@@ -317,14 +318,10 @@ const QcProductionDetails = () => {
           </div>
 
           <div className="qcproduction-submit-container">
-            <button
-              onClick={handleSubmit}
-              disabled={submitLoading}
-              className="qcproduction-submit-btn"
-            >
+            <Button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">
               {submitLoading ? <Loader size={20} /> : <Save size={20} />}
               {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -355,10 +352,10 @@ const QcProductionDetails = () => {
             </div>
 
             <div className="qcproduction-filter-btn-container">
-              <button onClick={handleFilter} className="qcproduction-filter-btn">
+              <Button onClick={handleFilter} className="qcproduction-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
-              </button>
+              </Button>
             </div>
           </div>
 

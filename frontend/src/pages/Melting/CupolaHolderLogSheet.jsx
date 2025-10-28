@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw } from 'lucide-react';
 import { DatePicker } from '../../Components/Buttons';
+import Button from '../../Components/Buttons';
 import ValidationPopup from '../../Components/ValidationPopup';
 import Loader from '../../Components/Loader';
-import '../../styles/PageStyles/CupolaHolderLogSheet.css';
+import '../../styles/PageStyles/Melting/CupolaHolderLogSheet.css';
 
 const CupolaHolderLogSheet = () => {
   const [formData, setFormData] = useState({
@@ -98,10 +99,10 @@ const CupolaHolderLogSheet = () => {
               <Save size={24} style={{ color: '#5B9AA9' }} />
               <h2>Cupola Holder Log Sheet - Entry Form</h2>
             </div>
-            <button onClick={handleReset} className="cupola-holder-reset-btn">
+            <Button onClick={handleReset} className="cupola-holder-reset-btn" variant="secondary">
               <RefreshCw size={18} />
               Reset
-            </button>
+            </Button>
           </div>
 
           <div className="cupola-holder-form-grid">
@@ -347,14 +348,15 @@ const CupolaHolderLogSheet = () => {
           </div>
 
           <div className="cupola-holder-submit-container">
-            <button
+            <Button
               onClick={handleSubmit}
               disabled={submitLoading}
               className="cupola-holder-submit-btn"
+              type="button"
             >
               {submitLoading ? <Loader size={20} /> : <Save size={20} />}
               {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -378,10 +380,10 @@ const CupolaHolderLogSheet = () => {
             </div>
 
             <div className="cupola-holder-filter-btn-container">
-              <button onClick={() => {}} className="cupola-holder-filter-btn">
+              <Button onClick={() => {}} className="cupola-holder-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
-              </button>
+              </Button>
             </div>
           </div>
 

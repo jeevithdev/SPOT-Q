@@ -2,14 +2,32 @@ import React from 'react';
 import styled from 'styled-components';
 import { Settings, Save, Filter, RefreshCw } from 'lucide-react';
 import CustomDatePicker from './CustomDatePicker';
+import '../styles/ComponentStyles/Buttons.css';
 
-const Button = () => {
+const Button = ({
+  children,
+  onClick,
+  className = '',
+  variant = 'primary',
+  disabled = false,
+  type = 'button',
+  ariaLabel,
+  ...rest
+}) => {
+  const base = `btn btn--${variant}`;
+  const combined = `${base} ${className}`.trim();
+
   return (
-    <StyledWrapper>
-      <button>
-        HOVER ME
-      </button>
-    </StyledWrapper>
+    <button
+      type={type}
+      onClick={onClick}
+      className={combined}
+      disabled={disabled}
+      aria-label={ariaLabel}
+      {...rest}
+    >
+      {children}
+    </button>
   );
 };
 
