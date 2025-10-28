@@ -119,18 +119,16 @@ const Login = () => {
                     right: '5px', 
                     top: '50%', 
                     transform: 'translateY(-50%)',
-                    cursor: 'pointer',
-                    userSelect: 'none'
+                    zIndex: 10
                   }}
-                  onMouseDown={() => setShowPassword(true)}
-                  onMouseUp={() => setShowPassword(false)}
-                  onMouseLeave={() => setShowPassword(false)}
-                  onTouchStart={() => setShowPassword(true)}
-                  onTouchEnd={() => setShowPassword(false)}
-                  title="Hold to show password"
                 >
                   <EyeButton 
-                    isVisible={showPassword} 
+                    isVisible={showPassword}
+                    onMouseDown={() => setShowPassword(true)}
+                    onMouseUp={() => setShowPassword(false)}
+                    onMouseLeave={() => setShowPassword(false)}
+                    onTouchStart={() => setShowPassword(true)}
+                    onTouchEnd={() => setShowPassword(false)}
                   />
                 </div>
               </div>

@@ -1,67 +1,54 @@
 import React, { useState, useEffect } from 'react';
-import '../styles/PageStyles/MicroTensile.css';
-import CustomDatePicker from '../Components/CustomDatePicker';
+import { Save, Filter, RefreshCw } from 'lucide-react';
+import { DatePicker } from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
+import Loader from '../Components/Loader';
 import api from '../utils/api';
+import '../styles/PageStyles/MicroTensile.css';
 
 const MicroTensile = () => {
-  const today = new Date().toISOString().split('T')[0];
-
   const [formData, setFormData] = useState({
-    date: '',
-    machine: '',
-    ppNo: '',
-    partName: '',
-    dateCode: '',
-    heatCode: '',
-    timeOfPouring: '',
-    pcNo: '',
-    heatNo: ''
+    dateOfInspection: '',
+    item: '',
+    dateCodeHeatCode: '',
+    barDia: '',
+    gaugeLength: '',
+    maxLoad: '',
+    yieldLoad: '',
+    tensileStrength: '',
+    yieldStrength: '',
+    elongation: '',
+    remarks: '',
+    testedBy: ''
   });
 
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
   const [showMissingFields, setShowMissingFields] = useState(false);
   const [missingFields, setMissingFields] = useState([]);
   const [items, setItems] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch all items on component mount
   useEffect(() => {
     fetchItems();
   }, []);
 
-  // Fetch all items
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const data = await api.get('/items');
+      const data = await api.get('/v1/micro-tensile-tests');
       
       if (data.success) {
-        setItems(data.data);
+        setItems(data.data || []);
+        setFilteredItems(data.data || []);
       }
     } catch (error) {
-      console.error('Error fetching items:', error);
-      alert('Failed to fetch items: ' + error.message);
+      console.error('Error fetching micro tensile tests:', error);
     } finally {
       setLoading(false);
     }
-  };
-
-  const normalizeDateChange = (name) => (eOrValue) => {
-    const value = eOrValue && eOrValue.target ? eOrValue.target.value : eOrValue;
-    handleChange({ target: { name, value } });
-  };
-
-  const handleStartDateChange = (eOrValue) => {
-    const value = eOrValue && eOrValue.target ? eOrValue.target.value : eOrValue;
-    setStartDate(value);
-  };
-
-  const handleEndDateChange = (eOrValue) => {
-    const value = eOrValue && eOrValue.target ? eOrValue.target.value : eOrValue;
-    setEndDate(value);
   };
 
   const handleChange = (e) => {
@@ -73,504 +60,324 @@ const MicroTensile = () => {
   };
 
   const handleSubmit = async () => {
-    const allFields = [
-      { key: 'date', label: 'Date' },
-      { key: 'machine', label: 'Machine' },
-      { key: 'ppNo', label: 'PP No' },
-      { key: 'partName', label: 'Part Name' },
-      { key: 'dateCode', label: 'Date Code' },
-      { key: 'heatCode', label: 'Heat Code' },
-      { key: 'timeOfPouring', label: 'Time of Pouring' },
-      { key: 'pcNo', label: 'PC No' },
-      { key: 'heatNo', label: 'Heat No' }
-    ];
-
-    const missing = allFields.filter(field => !formData[field.key]);
+    const required = ['dateOfInspection', 'item', 'dateCodeHeatCode', 'barDia', 'gaugeLength',
+                     'maxLoad', 'yieldLoad', 'tensileStrength', 'yieldStrength', 'elongation', 'testedBy'];
+    const missing = required.filter(field => !formData[field]);
 
     if (missing.length > 0) {
-      setMissingFields(missing.map(f => f.label));
+      setMissingFields(missing);
       setShowMissingFields(true);
       return;
     }
 
     try {
       setSubmitLoading(true);
-      const data = await api.post('/items', formData);
-
+      const data = await api.post('/v1/micro-tensile-tests', formData);
+      
       if (data.success) {
-        alert('Item submitted successfully!');
+        alert('Micro tensile test entry created successfully!');
         setFormData({
-          date: '',
-          machine: '',
-          ppNo: '',
-          partName: '',
-          dateCode: '',
-          heatCode: '',
-          timeOfPouring: '',
-          pcNo: '',
-          heatNo: ''
+          dateOfInspection: '', item: '', dateCodeHeatCode: '', barDia: '', gaugeLength: '',
+          maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
+          remarks: '', testedBy: ''
         });
-        // Refresh the items list
         fetchItems();
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
-      alert('Failed to submit form: ' + error.message);
+      console.error('Error creating micro tensile test:', error);
+      alert('Failed to create entry: ' + error.message);
     } finally {
       setSubmitLoading(false);
     }
   };
 
-  const handleFilter = async () => {
-    if (!startDate && !endDate) {
-      alert('Please select at least one date');
+  const handleFilter = () => {
+    if (!startDate || !endDate) {
+      setFilteredItems(items);
       return;
     }
 
-    try {
-      setLoading(true);
-      const params = new URLSearchParams();
-      if (startDate) params.append('startDate', startDate);
-      if (endDate) params.append('endDate', endDate);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    const filtered = items.filter(item => {
+      const itemDate = new Date(item.dateOfInspection);
+      return itemDate >= start && itemDate <= end;
+    });
+    
+    setFilteredItems(filtered);
+  };
 
-      const data = await api.get(`/items/filter?${params}`);
-
-      if (data.success) {
-        setItems(data.data);
-        alert(`Found ${data.count} items`);
-      }
-    } catch (error) {
-      console.error('Error filtering items:', error);
-      alert('Failed to filter items: ' + error.message);
-    } finally {
-      setLoading(false);
-    }
+  const handleReset = () => {
+    setFormData({
+      dateOfInspection: '', item: '', dateCodeHeatCode: '', barDia: '', gaugeLength: '',
+      maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
+      remarks: '', testedBy: ''
+    });
   };
 
   return (
-    <div className="page-container" style={{ minHeight: '100vh' }}>
-      {/* Form Section */}
-      <div style={{ 
-        background: 'white', 
-        padding: '24px', 
-        borderRadius: '8px', 
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)', 
-        marginBottom: '24px' 
-      }}>
-        <h3 style={{ marginBottom: '20px', fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>
-          Item Entry
-        </h3>
-        
-        <div>
-          <div style={{ 
-            display: 'grid', 
-            gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', 
-            gap: '20px', 
-            marginBottom: '20px' 
-          }}>
-            {/* Date */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Date
-              </label>
-              <CustomDatePicker
-                name="date"
-                value={formData.date}
-                onChange={normalizeDateChange('date')}
-                max={today}
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px', 
-                  fontSize: '14px' 
-                }}
+    <div className="microtensile-container">
+      <div className="microtensile-wrapper">
+        {showMissingFields && (
+          <ValidationPopup
+            missingFields={missingFields}
+            onClose={() => setShowMissingFields(false)}
+          />
+        )}
+
+        {/* Entry Form Container */}
+        <div className="microtensile-entry-container">
+          <div className="microtensile-header">
+            <div className="microtensile-header-text">
+              <Save size={24} style={{ color: '#5B9AA9' }} />
+              <h2>Micro Tensile Test - Entry Form</h2>
+            </div>
+            <button onClick={handleReset} className="microtensile-reset-btn">
+              <RefreshCw size={18} />
+              Reset
+            </button>
+          </div>
+
+          <div className="microtensile-form-grid">
+            <div className="microtensile-form-group">
+              <label>Date of Inspection *</label>
+              <DatePicker
+                name="dateOfInspection"
+                value={formData.dateOfInspection}
+                onChange={handleChange}
               />
             </div>
 
-            {/* Machine */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Machine
-              </label>
+            <div className="microtensile-form-group">
+              <label>Item *</label>
               <input
                 type="text"
-                name="machine"
-                value={formData.machine}
+                name="item"
+                value={formData.item}
                 onChange={handleChange}
-                placeholder="e.g: DESA 2"
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px', 
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
+                placeholder="e.g: Sample Bar"
               />
             </div>
 
-            {/* PP No */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                PP No
-              </label>
+            <div className="microtensile-form-group">
+              <label>Date Code & Heat Code *</label>
               <input
                 type="text"
-                name="ppNo"
-                value={formData.ppNo}
+                name="dateCodeHeatCode"
+                value={formData.dateCodeHeatCode}
                 onChange={handleChange}
-                placeholder="e.g: 21"
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px', 
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
+                placeholder="e.g: 2024-HC-012"
               />
             </div>
 
-            {/* Part Name */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Part Name
-              </label>
+            <div className="microtensile-form-group">
+              <label>Bar Dia (mm) *</label>
               <input
-                type="text"
-                name="partName"
-                value={formData.partName}
+                type="number"
+                name="barDia"
+                value={formData.barDia}
                 onChange={handleChange}
-                placeholder="e.g: YST EN"
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px', 
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
+                step="0.01"
+                placeholder="e.g: 6.0"
               />
             </div>
 
-            {/* Date Code */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Date Code
-              </label>
+            <div className="microtensile-form-group">
+              <label>Gauge Length (mm) *</label>
               <input
-                type="text"
-                name="dateCode"
-                value={formData.dateCode}
+                type="number"
+                name="gaugeLength"
+                value={formData.gaugeLength}
                 onChange={handleChange}
-                placeholder="e.g: 5818"
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px', 
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
+                step="0.01"
+                placeholder="e.g: 30.0"
               />
             </div>
 
-            {/* Heat Code */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Heat Code
-              </label>
+            <div className="microtensile-form-group">
+              <label>Max Load (Kgs) or KN *</label>
               <input
-                type="text"
-                name="heatCode"
-                value={formData.heatCode}
+                type="number"
+                name="maxLoad"
+                value={formData.maxLoad}
                 onChange={handleChange}
-                placeholder="e.g: 21"
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px', 
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
+                step="0.01"
+                placeholder="e.g: 1560"
               />
             </div>
 
-            {/* Time of Pouring */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Time of Pouring
-              </label>
+            <div className="microtensile-form-group">
+              <label>Yield Load (Kgs) or KN *</label>
               <input
-                type="text"
-                name="timeOfPouring"
-                value={formData.timeOfPouring}
+                type="number"
+                name="yieldLoad"
+                value={formData.yieldLoad}
                 onChange={handleChange}
-                placeholder="e.g: 04:38PM"
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px', 
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
+                step="0.01"
+                placeholder="e.g: 1290"
               />
             </div>
 
-            {/* PC No */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                PC No
-              </label>
+            <div className="microtensile-form-group">
+              <label>Tensile Strength (Kg/mm² or Mpa) *</label>
               <input
-                type="text"
-                name="pcNo"
-                value={formData.pcNo}
+                type="number"
+                name="tensileStrength"
+                value={formData.tensileStrength}
                 onChange={handleChange}
-                placeholder="e.g: 2"
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px', 
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
+                step="0.01"
+                placeholder="e.g: 550"
               />
             </div>
 
-            {/* Heat No */}
-            <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-              <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-                Heat No
-              </label>
+            <div className="microtensile-form-group">
+              <label>Yield Strength (Kg/mm² or Mpa) *</label>
+              <input
+                type="number"
+                name="yieldStrength"
+                value={formData.yieldStrength}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 455"
+              />
+            </div>
+
+            <div className="microtensile-form-group">
+              <label>Elongation % *</label>
+              <input
+                type="number"
+                name="elongation"
+                value={formData.elongation}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 18.5"
+              />
+            </div>
+
+            <div className="microtensile-form-group">
+              <label>Tested By *</label>
               <input
                 type="text"
-                name="heatNo"
-                value={formData.heatNo}
+                name="testedBy"
+                value={formData.testedBy}
                 onChange={handleChange}
-                placeholder="e.g: 140"
-                style={{ 
-                  width: '100%',
-                  padding: '10px 12px', 
-                  border: '1px solid #d1d5db', 
-                  borderRadius: '6px', 
-                  fontSize: '14px',
-                  boxSizing: 'border-box'
-                }}
+                placeholder="e.g: John Smith"
+              />
+            </div>
+
+            <div className="microtensile-form-group" style={{ gridColumn: '1 / -1' }}>
+              <label>Remarks</label>
+              <textarea
+                name="remarks"
+                value={formData.remarks}
+                onChange={handleChange}
+                rows="3"
+                placeholder="Enter any additional notes or observations..."
               />
             </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
+          <div className="microtensile-submit-container">
             <button
               onClick={handleSubmit}
               disabled={submitLoading}
-              style={{ 
-                padding: '10px 30px', 
-                backgroundColor: submitLoading ? '#9CA3AF' : '#5B9AA9', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '8px', 
-                cursor: submitLoading ? 'not-allowed' : 'pointer', 
-                fontWeight: '500', 
-                fontSize: '15px',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                transition: 'all 0.3s ease',
-                transform: 'scale(1)'
-              }}
-              onMouseEnter={(e) => {
-                if (!submitLoading) {
-                  e.target.style.backgroundColor = '#4A8494';
-                  e.target.style.transform = 'scale(1.05)';
-                  e.target.style.boxShadow = '0 6px 16px rgba(91, 154, 169, 0.5)';
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!submitLoading) {
-                  e.target.style.backgroundColor = '#5B9AA9';
-                  e.target.style.transform = 'scale(1)';
-                  e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
-                }
-              }}
-              onMouseDown={(e) => !submitLoading && (e.target.style.transform = 'scale(0.98)')}
-              onMouseUp={(e) => !submitLoading && (e.target.style.transform = 'scale(1.05)')}
+              className="microtensile-submit-btn"
             >
-              {submitLoading ? 'Submitting...' : 'Submit'}
+              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+              {submitLoading ? 'Saving...' : 'Submit Entry'}
             </button>
           </div>
         </div>
-      </div>
 
-      {/* Report Section */}
-      <div style={{ 
-        background: 'white', 
-        padding: '24px', 
-        borderRadius: '8px', 
-        boxShadow: '0 2px 4px rgba(0,0,0,0.1)', 
-        marginBottom: '24px' 
-      }}>
-        <h2 style={{ marginBottom: '16px', fontSize: '20px', fontWeight: '600', color: '#1f2937' }}>
-          Item Report
-        </h2>
-        
-        <div style={{ display: 'flex', gap: '16px', alignItems: 'flex-end', flexWrap: 'wrap', marginBottom: '20px' }}>
-          <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 250px' }}>
-            <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-              Start Date
-            </label>
-            <CustomDatePicker
-              name="startDate"
-              value={startDate}
-              onChange={handleStartDateChange}
-              max={today}
-              style={{ 
-                width: '100%',
-                padding: '10px 12px', 
-                border: '1px solid #d1d5db', 
-                borderRadius: '6px', 
-                fontSize: '14px' 
-              }}
-            />
+        {/* Report Container */}
+        <div className="microtensile-report-container">
+          <div className="microtensile-report-title">
+            <Filter size={20} style={{ color: '#FF7F50' }} />
+            <h3>Micro Tensile Test - Report Card</h3>
           </div>
-          
-          <div style={{ display: 'flex', flexDirection: 'column', flex: '1 1 250px' }}>
-            <label style={{ fontSize: '14px', fontWeight: '500', marginBottom: '6px', color: '#374151' }}>
-              End Date
-            </label>
-            <CustomDatePicker
-              name="endDate"
-              value={endDate}
-              onChange={handleEndDateChange}
-              max={today}
-              style={{ 
-                width: '100%',
-                padding: '10px 12px', 
-                border: '1px solid #d1d5db', 
-                borderRadius: '6px', 
-                fontSize: '14px' 
-              }}
-            />
+
+          <div className="microtensile-filter-grid">
+            <div className="microtensile-filter-group">
+              <label>Start Date</label>
+              <DatePicker
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                placeholder="Select start date"
+              />
+            </div>
+
+            <div className="microtensile-filter-group">
+              <label>End Date</label>
+              <DatePicker
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                placeholder="Select end date"
+              />
+            </div>
+
+            <div className="microtensile-filter-btn-container">
+              <button onClick={handleFilter} className="microtensile-filter-btn">
+                <Filter size={18} />
+                Filter
+              </button>
+            </div>
           </div>
-          
-          <button 
-            onClick={handleFilter}
-            disabled={loading}
-            style={{ 
-              padding: '10px 30px', 
-              backgroundColor: loading ? '#9CA3AF' : '#5B9AA9', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '8px', 
-              cursor: loading ? 'not-allowed' : 'pointer', 
-              fontWeight: '500',
-              fontSize: '15px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              transition: 'all 0.3s ease',
-              transform: 'scale(1)',
-              height: 'fit-content'
-            }}
-            onMouseEnter={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = '#4A8494';
-                e.target.style.transform = 'scale(1.05)';
-                e.target.style.boxShadow = '0 6px 16px rgba(91, 154, 169, 0.5)';
-              }
-            }}
-            onMouseLeave={(e) => {
-              if (!loading) {
-                e.target.style.backgroundColor = '#5B9AA9';
-                e.target.style.transform = 'scale(1)';
-                e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
-              }
-            }}
-            onMouseDown={(e) => !loading && (e.target.style.transform = 'scale(0.98)')}
-            onMouseUp={(e) => !loading && (e.target.style.transform = 'scale(1.05)')}
-          >
-            {loading ? 'Loading...' : 'Filter'}
-          </button>
 
-          <button 
-            onClick={fetchItems}
-            disabled={loading}
-            style={{ 
-              padding: '10px 30px', 
-              backgroundColor: loading ? '#9CA3AF' : '#6B7280', 
-              color: 'white', 
-              border: 'none', 
-              borderRadius: '8px', 
-              cursor: loading ? 'not-allowed' : 'pointer', 
-              fontWeight: '500',
-              fontSize: '15px',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              transition: 'all 0.3s ease',
-              height: 'fit-content'
-            }}
-          >
-            Reset
-          </button>
-        </div>
-
-        {/* Items Display */}
-        {loading ? (
-          <p style={{ textAlign: 'center', color: '#6B7280', padding: '20px' }}>Loading items...</p>
-        ) : items.length > 0 ? (
-          <div style={{ overflowX: 'auto' }}>
-            <p style={{ marginBottom: '12px', color: '#374151', fontWeight: '500' }}>
-              Total Items: {items.length}
-            </p>
-            <table style={{ 
-              width: '100%', 
-              borderCollapse: 'collapse',
-              fontSize: '14px'
-            }}>
-              <thead>
-                <tr style={{ backgroundColor: '#F3F4F6' }}>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #E5E7EB' }}>Date</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #E5E7EB' }}>Machine</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #E5E7EB' }}>PP No</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #E5E7EB' }}>Part Name</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #E5E7EB' }}>Date Code</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #E5E7EB' }}>Heat Code</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #E5E7EB' }}>Time</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #E5E7EB' }}>PC No</th>
-                  <th style={{ padding: '12px', textAlign: 'left', borderBottom: '2px solid #E5E7EB' }}>Heat No</th>
-                </tr>
-              </thead>
-              <tbody>
-                {items.map((item, index) => (
-                  <tr key={item._id} style={{ 
-                    backgroundColor: index % 2 === 0 ? 'white' : '#F9FAFB',
-                    borderBottom: '1px solid #E5E7EB'
-                  }}>
-                    <td style={{ padding: '12px' }}>{new Date(item.date).toLocaleDateString()}</td>
-                    <td style={{ padding: '12px' }}>{item.machine}</td>
-                    <td style={{ padding: '12px' }}>{item.ppNo}</td>
-                    <td style={{ padding: '12px' }}>{item.partName}</td>
-                    <td style={{ padding: '12px' }}>{item.dateCode}</td>
-                    <td style={{ padding: '12px' }}>{item.heatCode}</td>
-                    <td style={{ padding: '12px' }}>{item.timeOfPouring}</td>
-                    <td style={{ padding: '12px' }}>{item.pcNo}</td>
-                    <td style={{ padding: '12px' }}>{item.heatNo}</td>
+          {loading ? (
+            <div className="microtensile-loader-container">
+              <Loader />
+            </div>
+          ) : (
+            <div className="microtensile-table-container">
+              <table className="microtensile-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Item</th>
+                    <th>Heat Code</th>
+                    <th>Bar Dia</th>
+                    <th>Gauge Len</th>
+                    <th>Max Load</th>
+                    <th>Yield Load</th>
+                    <th>TS</th>
+                    <th>YS</th>
+                    <th>Elong %</th>
+                    <th>Tested By</th>
+                    <th>Remarks</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <p style={{ textAlign: 'center', color: '#6B7280', padding: '20px' }}>No items found</p>
-        )}
+                </thead>
+                <tbody>
+                  {filteredItems.length === 0 ? (
+                    <tr>
+                      <td colSpan="12" className="microtensile-no-records">
+                        No records found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredItems.map((item, index) => (
+                      <tr key={item._id || index}>
+                        <td>{new Date(item.dateOfInspection).toLocaleDateString()}</td>
+                        <td>{item.item}</td>
+                        <td>{item.dateCodeHeatCode}</td>
+                        <td>{item.barDia}</td>
+                        <td>{item.gaugeLength}</td>
+                        <td>{item.maxLoad}</td>
+                        <td>{item.yieldLoad}</td>
+                        <td>{item.tensileStrength}</td>
+                        <td>{item.yieldStrength}</td>
+                        <td>{item.elongation}</td>
+                        <td>{item.testedBy}</td>
+                        <td>{item.remarks || '-'}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+        </div>
       </div>
-
-      {/* Validation Popup */}
-      <ValidationPopup
-        isOpen={showMissingFields}
-        onClose={() => setShowMissingFields(false)}
-        missingFields={missingFields}
-      />
     </div>
   );
 };

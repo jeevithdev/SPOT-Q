@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, X } from 'lucide-react';
-import CustomDatePicker from '../Components/CustomDatePicker';
+import { DatePicker } from '../Components/Buttons';
 
 const MeltingProcessParameter = () => {
   const [entries, setEntries] = useState([
@@ -259,7 +259,7 @@ const MeltingProcessParameter = () => {
                 <div>
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
                     Date                  </label>
-                  <CustomDatePicker
+                  <DatePicker
                     value={entry.date}
                     onChange={(e) => updateEntry(entry.id, 'date', e.target.value)}
                     max={new Date().toISOString().split('T')[0]}

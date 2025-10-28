@@ -1,6 +1,7 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Settings } from 'lucide-react';
+import { Settings, Save, Filter, RefreshCw } from 'lucide-react';
+import CustomDatePicker from './CustomDatePicker';
 
 const Button = () => {
   return (
@@ -64,13 +65,28 @@ export const DeleteButton = ({ onClick }) => (
 );
 
 // Eye Icon Button for toggling visibility
-export const EyeButton = ({ onClick, isVisible = true }) => (
+export const EyeButton = ({ 
+  onClick, 
+  isVisible = false, 
+  onMouseDown, 
+  onMouseUp, 
+  onMouseLeave,
+  onTouchStart,
+  onTouchEnd 
+}) => (
   <EyeButtonWrapper>
     <button 
-      onClick={onClick} 
+      onClick={onClick}
+      onMouseDown={(e) => {
+        e.preventDefault();
+        onMouseDown && onMouseDown(e);
+      }}
+      onMouseUp={onMouseUp}
+      onMouseLeave={onMouseLeave}
+      onTouchStart={onTouchStart}
+      onTouchEnd={onTouchEnd}
       type="button"
-      onMouseDown={(e) => e.preventDefault()}
-      style={{ pointerEvents: onClick ? 'auto' : 'none' }}
+      title={onClick ? "Toggle password visibility" : "Hold to show password"}
     >
       {isVisible ? (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -87,6 +103,56 @@ export const EyeButton = ({ onClick, isVisible = true }) => (
   </EyeButtonWrapper>
 );
 
+// Complete Password Input with Eye Button
+export const PasswordInput = ({ 
+  value, 
+  onChange, 
+  placeholder = "Enter password",
+  name = "password",
+  required = false,
+  autoComplete = "current-password",
+  style = {}
+}) => {
+  const [showPassword, setShowPassword] = React.useState(false);
+
+  return (
+    <div style={{ position: 'relative', width: '100%' }}>
+      <input
+        type={showPassword ? "text" : "password"}
+        name={name}
+        value={value}
+        onChange={onChange}
+        placeholder={placeholder}
+        required={required}
+        autoComplete={autoComplete}
+        style={{
+          paddingRight: '50px',
+          width: '100%',
+          ...style
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          right: '5px',
+          top: '50%',
+          transform: 'translateY(-50%)',
+          zIndex: 10
+        }}
+      >
+        <EyeButton
+          isVisible={showPassword}
+          onMouseDown={() => setShowPassword(true)}
+          onMouseUp={() => setShowPassword(false)}
+          onMouseLeave={() => setShowPassword(false)}
+          onTouchStart={() => setShowPassword(true)}
+          onTouchEnd={() => setShowPassword(false)}
+        />
+      </div>
+    </div>
+  );
+};
+
 // Settings Icon Button for password and configuration
 export const SettingsButton = ({ onClick }) => (
   <SettingsButtonWrapper>
@@ -94,6 +160,53 @@ export const SettingsButton = ({ onClick }) => (
       <Settings size={18} />
     </button>
   </SettingsButtonWrapper>
+);
+
+// Unified DatePicker Component - Use this for all date inputs
+export const DatePicker = ({ value, onChange, name, max, placeholder, style, disabled }) => {
+  const today = new Date().toISOString().split('T')[0];
+  
+  return (
+    <CustomDatePicker
+      value={value}
+      onChange={onChange}
+      name={name}
+      max={max || today}
+      placeholder={placeholder}
+      style={style}
+      disabled={disabled}
+    />
+  );
+};
+
+// Submit Button - For form submissions
+export const SubmitButton = ({ onClick, disabled, loading, children, icon = true }) => (
+  <SubmitButtonWrapper>
+    <button onClick={onClick} disabled={disabled || loading}>
+      {icon && (loading ? '⏳' : <Save size={20} />)}
+      {children || (loading ? 'Saving...' : 'Submit Entry')}
+    </button>
+  </SubmitButtonWrapper>
+);
+
+// Filter Button - For filtering data
+export const FilterButton = ({ onClick, disabled, loading, children, icon = true }) => (
+  <FilterButtonWrapper>
+    <button onClick={onClick} disabled={disabled || loading}>
+      {icon && <Filter size={18} />}
+      {children || 'Filter'}
+    </button>
+  </FilterButtonWrapper>
+);
+
+// Reset Button - For resetting forms
+export const ResetButton = ({ onClick, disabled, children, icon = true }) => (
+  <ResetButtonWrapper>
+    <button onClick={onClick} disabled={disabled}>
+      {icon && <RefreshCw size={18} />}
+      {children || 'Reset'}
+    </button>
+  </ResetButtonWrapper>
 );
 
 const StyledWrapper = styled.div`
@@ -485,6 +598,143 @@ const SettingsButtonWrapper = styled.div`
     width: 18px;
     height: 18px;
     stroke-width: 2;
+  }
+`;
+
+// Submit Button Wrapper
+const SubmitButtonWrapper = styled.div`
+  display: inline-block;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.875rem 2rem;
+    background: linear-gradient(135deg, #5B9AA9 0%, #4A8494 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.95rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 2px 6px rgba(91, 154, 169, 0.3);
+    transition: all 0.3s ease;
+    transform: scale(1);
+    white-space: nowrap;
+  }
+
+  button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #4A8494 0%, #3A6B7A 100%);
+    transform: scale(1.05);
+    box-shadow: 0 6px 20px rgba(91, 154, 169, 0.5);
+  }
+
+  button:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  button:disabled {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    cursor: not-allowed;
+    opacity: 0.7;
+  }
+
+  svg {
+    width: 20px;
+    height: 20px;
+  }
+`;
+
+// Filter Button Wrapper
+const FilterButtonWrapper = styled.div`
+  display: inline-block;
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.5rem;
+    background: linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 2px 6px rgba(255, 127, 80, 0.3);
+    transition: all 0.3s ease;
+    width: 100%;
+    min-height: 42px;
+    white-space: nowrap;
+  }
+
+  button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #FF6A3D 0%, #FF5722 100%);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(255, 127, 80, 0.5);
+  }
+
+  button:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  button:disabled {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
+  }
+`;
+
+// Reset Button Wrapper
+const ResetButtonWrapper = styled.div`
+  display: inline-block;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: linear-gradient(135deg, #163442 0%, #1f4f5d 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 2px 6px rgba(22, 52, 66, 0.3);
+    transition: all 0.3s ease;
+    transform: scale(1);
+    white-space: nowrap;
+  }
+
+  button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #1f4f5d 0%, #2a5f6f 100%);
+    transform: scale(1.05);
+    box-shadow: 0 4px 10px rgba(22, 52, 66, 0.4);
+  }
+
+  button:active:not(:disabled) {
+    transform: scale(0.98);
+  }
+
+  button:disabled {
+    background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);
+    cursor: not-allowed;
+    opacity: 0.6;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
   }
 `;
 

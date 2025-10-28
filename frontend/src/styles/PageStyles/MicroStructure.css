@@ -1,108 +1,336 @@
-.micro-structure-container {
-  padding: 20px;
-  max-width: 1200px;
+/* MicroStructure Page Styles */
+
+.microstructure-container {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  padding: 2rem 1rem;
+}
+
+.microstructure-wrapper {
+  max-width: 1280px;
   margin: 0 auto;
 }
 
-.page-header {
-  text-align: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border-radius: 10px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.page-header h1 {
-  font-size: 2.5rem;
-  margin: 0 0 10px 0;
-  font-weight: 600;
-}
-
-.page-header p {
-  font-size: 1.1rem;
-  margin: 0;
-  opacity: 0.9;
-}
-
-.content-section {
-  display: flex;
-  justify-content: center;
-  margin-top: 30px;
-}
-
-.info-card {
+/* Entry Container */
+.microstructure-entry-container {
   background: white;
-  padding: 30px;
-  border-radius: 15px;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e0e0e0;
-  max-width: 600px;
-  width: 100%;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  padding: 2rem;
+  margin-bottom: 2rem;
 }
 
-.info-card h2 {
-  color: #333;
-  font-size: 1.8rem;
-  margin-bottom: 15px;
-  text-align: center;
-}
-
-.info-card p {
-  color: #666;
-  font-size: 1.1rem;
-  line-height: 1.6;
-  margin-bottom: 25px;
-  text-align: center;
-}
-
-.feature-list {
+.microstructure-header {
   display: flex;
-  flex-direction: column;
-  gap: 15px;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
 }
 
-.feature-item {
+.microstructure-header-text {
   display: flex;
   align-items: center;
-  padding: 15px;
-  background: #f8f9fa;
+  gap: 0.75rem;
+}
+
+.microstructure-header-text h2 {
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+}
+
+.microstructure-reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #163442 0%, #1f4f5d 100%);
+  color: white;
+  border: none;
   border-radius: 8px;
-  border-left: 4px solid #667eea;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
   transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(22, 52, 66, 0.2);
 }
 
-.feature-item:hover {
-  background: #e9ecef;
-  transform: translateX(5px);
+.microstructure-reset-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(22, 52, 66, 0.3);
+  background: linear-gradient(135deg, #1f4f5d 0%, #2a6575 100%);
 }
 
-.feature-icon {
+.microstructure-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+}
+
+.microstructure-form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.microstructure-form-group label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.microstructure-form-group input,
+.microstructure-form-group select,
+.microstructure-form-group textarea {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.microstructure-form-group input:focus,
+.microstructure-form-group select:focus,
+.microstructure-form-group textarea:focus {
+  outline: none;
+  border-color: #5B9AA9;
+  box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
+}
+
+.microstructure-form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.microstructure-submit-container {
+  margin-top: 2rem;
+  display: flex;
+  justify-content: flex-end;
+  padding-top: 1.5rem;
+  border-top: 1px solid #e2e8f0;
+}
+
+.microstructure-submit-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.875rem 2rem;
+  background: linear-gradient(135deg, #5B9AA9 0%, #4A8494 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(91, 154, 169, 0.3);
+}
+
+.microstructure-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(91, 154, 169, 0.4);
+  background: linear-gradient(135deg, #4A8494 0%, #3a6a78 100%);
+}
+
+.microstructure-submit-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Report Container */
+.microstructure-report-container {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+  padding: 2rem;
+}
+
+.microstructure-report-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.microstructure-report-title h3 {
   font-size: 1.5rem;
-  margin-right: 15px;
-  min-width: 30px;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
 }
 
-.feature-item span:last-child {
-  font-weight: 500;
-  color: #333;
+.microstructure-filter-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: 1rem;
+  align-items: end;
+  margin-bottom: 1.5rem;
 }
 
-@media (max-width: 768px) {
-  .micro-structure-container {
-    padding: 15px;
+.microstructure-filter-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.microstructure-filter-group label {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.microstructure-filter-btn-container {
+  display: flex;
+  align-items: flex-end;
+}
+
+.microstructure-filter-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  background: linear-gradient(135deg, #FF7F50 0%, #FF6347 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(255, 127, 80, 0.3);
+  white-space: nowrap;
+  height: fit-content;
+}
+
+.microstructure-filter-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(255, 127, 80, 0.4);
+  background: linear-gradient(135deg, #FF6347 0%, #FF4500 100%);
+}
+
+.microstructure-loader-container {
+  display: flex;
+  justify-content: center;
+  padding: 3rem;
+}
+
+.microstructure-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+}
+
+.microstructure-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.875rem;
+}
+
+.microstructure-table thead tr {
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-bottom: 2px solid #cbd5e1;
+}
+
+.microstructure-table th {
+  padding: 1rem 0.75rem;
+  text-align: left;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.microstructure-table tbody tr {
+  border-bottom: 1px solid #e2e8f0;
+  transition: background-color 0.2s ease;
+}
+
+.microstructure-table tbody tr:hover {
+  background-color: #f8fafc;
+}
+
+.microstructure-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.microstructure-table td {
+  padding: 0.875rem 0.75rem;
+  color: #475569;
+}
+
+.microstructure-no-records {
+  padding: 3rem !important;
+  text-align: center;
+  color: #64748b;
+  font-style: italic;
+}
+
+/* Responsive Design */
+@media (max-width: 968px) {
+  .microstructure-filter-grid {
+    grid-template-columns: 1fr;
   }
-  
-  .page-header h1 {
-    font-size: 2rem;
+
+  .microstructure-filter-btn-container {
+    justify-content: stretch;
   }
-  
-  .info-card {
-    padding: 20px;
+
+  .microstructure-filter-btn {
+    width: 100%;
+    justify-content: center;
   }
-  
-  .feature-item {
-    padding: 12px;
+
+  .microstructure-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .microstructure-reset-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 640px) {
+  .microstructure-container {
+    padding: 1rem 0.5rem;
+  }
+
+  .microstructure-entry-container,
+  .microstructure-report-container {
+    padding: 1.5rem 1rem;
+  }
+
+  .microstructure-header-text h2 {
+    font-size: 1.5rem;
+  }
+
+  .microstructure-report-title h3 {
+    font-size: 1.25rem;
+  }
+
+  .microstructure-form-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .microstructure-submit-container {
+    justify-content: stretch;
+  }
+
+  .microstructure-submit-btn {
+    width: 100%;
+    justify-content: center;
   }
 }

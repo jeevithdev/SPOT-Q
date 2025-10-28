@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FileText, Calendar, FlaskConical, Save, X } from 'lucide-react';
+import { DatePicker } from '../Components/Buttons';
 
 // --- STYLE DEFINITIONS ---
 const styles = {
@@ -259,9 +260,8 @@ const SandTestingForm = () => {
                     <div style={styles.dateInputContainer}>
                         <Calendar size={20} style={{ color: '#cc0000' }} />
                         <label htmlFor="date-input">DATE:</label>
-                        <input
-                            id="date-input"
-                            type="date"
+                        <DatePicker
+                            name="date"
                             value={formData.date}
                             onChange={(e) => handleMainChange('date', e.target.value)}
                             style={styles.dateInput}

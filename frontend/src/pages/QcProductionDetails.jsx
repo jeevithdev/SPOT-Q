@@ -1,499 +1,425 @@
-import React, { useState } from 'react';
-import { Plus, Trash2, Save, X } from 'lucide-react';
-import CustomDatePicker from '../Components/CustomDatePicker';
+import React, { useState, useEffect } from 'react';
+import { Save, Filter, RefreshCw } from 'lucide-react';
+import { DatePicker } from '../Components/Buttons';
+import ValidationPopup from '../Components/ValidationPopup';
+import Loader from '../Components/Loader';
+import api from '../utils/api';
 import '../styles/PageStyles/QcProductionDetails.css';
 
 const QcProductionDetails = () => {
-  const [entries, setEntries] = useState([
-    {
-      id: 1,
-      date: '',
-      machine: '',
-      ppNo: '',
-      partName: '',
-      dataCode: '',
-      heatCode: '',
-      timeOfPouring: '',
-      fcNo: '',
-      heatNo: ''
+  const [formData, setFormData] = useState({
+    date: '',
+    partName: '',
+    noOfMoulds: '',
+    cPercent: '',
+    siPercent: '',
+    mnPercent: '',
+    pPercent: '',
+    sPercent: '',
+    mgPercent: '',
+    cuPercent: '',
+    crPercent: '',
+    nodularityGraphiteType: '',
+    pearliteFerrite: '',
+    hardnessBHN: '',
+    tsYsEl: ''
+  });
+
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [showMissingFields, setShowMissingFields] = useState(false);
+  const [missingFields, setMissingFields] = useState([]);
+  const [items, setItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [submitLoading, setSubmitLoading] = useState(false);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const data = await api.get('/v1/qc-reports');
+      
+      if (data.success) {
+        setItems(data.data || []);
+        setFilteredItems(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching QC reports:', error);
+    } finally {
+      setLoading(false);
     }
-  ]);
-
-  const addNewEntry = () => {
-    const newEntry = {
-      id: Date.now(),
-      date: '',
-      machine: '',
-      ppNo: '',
-      partName: '',
-      dataCode: '',
-      heatCode: '',
-      timeOfPouring: '',
-      fcNo: '',
-      heatNo: ''
-    };
-    setEntries([...entries, newEntry]);
   };
 
-  const removeEntry = (id) => {
-    if (entries.length > 1) {
-      setEntries(entries.filter(entry => entry.id !== id));
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleSubmit = async () => {
+    const required = ['date', 'partName', 'noOfMoulds', 'cPercent', 'siPercent', 'mnPercent',
+                     'pPercent', 'sPercent', 'mgPercent', 'cuPercent', 'crPercent',
+                     'nodularityGraphiteType', 'pearliteFerrite', 'hardnessBHN', 'tsYsEl'];
+    const missing = required.filter(field => !formData[field]);
+
+    if (missing.length > 0) {
+      setMissingFields(missing);
+      setShowMissingFields(true);
+      return;
+    }
+
+    try {
+      setSubmitLoading(true);
+      const data = await api.post('/v1/qc-reports', formData);
+      
+      if (data.success) {
+        alert('QC Production report created successfully!');
+        setFormData({
+          date: '', partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
+          pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
+          nodularityGraphiteType: '', pearliteFerrite: '', hardnessBHN: '', tsYsEl: ''
+        });
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error creating QC report:', error);
+      alert('Failed to create entry: ' + error.message);
+    } finally {
+      setSubmitLoading(false);
     }
   };
 
-  const updateEntry = (id, field, value) => {
-    setEntries(entries.map(entry => 
-      entry.id === id ? { ...entry, [field]: value } : entry
-    ));
-  };
-
-  // Normalize date changes coming from CustomDatePicker which may emit
-  // either an event ({ target: { value } }) or a raw value string.
-  const normalizeEntryDateChange = (id) => (eOrValue) => {
-    const value = eOrValue && eOrValue.target ? eOrValue.target.value : eOrValue;
-    updateEntry(id, 'date', value);
-  };
-
-  const handleSubmit = () => {
-    const isValid = entries.every(entry => 
-      entry.date && entry.machine && entry.ppNo && entry.partName && 
-      entry.dataCode && entry.heatCode && entry.timeOfPouring && 
-      entry.fcNo && entry.heatNo
-    );
-
-    if (isValid) {
-      console.log('Submitted entries:', entries);
-      // TODO: Send data to backend API
-      alert('Data submitted successfully!');
-    } else {
-      alert('Please fill in all required fields');
+  const handleFilter = () => {
+    if (!startDate || !endDate) {
+      setFilteredItems(items);
+      return;
     }
+
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    const filtered = items.filter(item => {
+      const itemDate = new Date(item.date);
+      return itemDate >= start && itemDate <= end;
+    });
+    
+    setFilteredItems(filtered);
   };
 
   const handleReset = () => {
-    setEntries([{
-      id: 1,
-      date: '',
-      machine: '',
-      ppNo: '',
-      partName: '',
-      dataCode: '',
-      heatCode: '',
-      timeOfPouring: '',
-      fcNo: '',
-      heatNo: ''
-    }]);
-    // rely on global validation state; nothing else to clear here
+    setFormData({
+      date: '', partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
+      pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
+      nodularityGraphiteType: '', pearliteFerrite: '', hardnessBHN: '', tsYsEl: ''
+    });
   };
 
   return (
-  <div className="page-container" style={{ minHeight: '100vh' }}>
-      <div style={{ maxWidth: '1280px', margin: '0 auto', padding: '2rem' }}>
-        {/* Header */}
-        <div style={{ 
-          backgroundColor: 'white', 
-          borderRadius: '8px', 
-          boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-          border: '1px solid #e2e8f0',
-          padding: '1.5rem',
-          marginBottom: '1.5rem'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '1rem' }}>
-            <div>
-              <h2 style={{ fontSize: '1.875rem', fontWeight: 'bold', color: '#1e293b', margin: '0 0 0.25rem 0' }}>
-                Spectro Analysis
-              </h2>
-              <p style={{ color: '#64748b', margin: 0 }}>
-                Enter spectroscopic analysis data for quality control
-              </p>
+    <div className="qcproduction-container">
+      <div className="qcproduction-wrapper">
+        {showMissingFields && (
+          <ValidationPopup
+            missingFields={missingFields}
+            onClose={() => setShowMissingFields(false)}
+          />
+        )}
+
+        {/* Entry Form Container */}
+        <div className="qcproduction-entry-container">
+          <div className="qcproduction-header">
+            <div className="qcproduction-header-text">
+              <Save size={24} style={{ color: '#5B9AA9' }} />
+              <h2>QC Production Details - Entry Form</h2>
             </div>
-            <div style={{ display: 'flex', gap: '0.75rem' }}>
-              <button
-                onClick={handleReset}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#163442',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  transform: 'scale(1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#1f4f5d';
-                  e.target.style.transform = 'scale(1.05)';
-                  e.target.style.boxShadow = '0 4px 6px rgba(22,52,66,0.25)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#163442';
-                  e.target.style.transform = 'scale(1)';
-                  e.target.style.boxShadow = 'none';
-                }}
-                onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
-                onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
-              >
-                <X size={18} />
-                Reset
-              </button>
-              <button
-                onClick={addNewEntry}
-                style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.5rem',
-                  padding: '0.5rem 1rem',
-                  backgroundColor: '#FF7F50',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '8px',
-                  cursor: 'pointer',
-                  fontSize: '0.875rem',
-                  fontWeight: '500',
-                  transition: 'all 0.3s ease',
-                  transform: 'scale(1)'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.backgroundColor = '#FF6A3D';
-                  e.target.style.transform = 'scale(1.05)';
-                  e.target.style.boxShadow = '0 4px 12px rgba(255, 127, 80, 0.5)';
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.backgroundColor = '#FF7F50';
-                  e.target.style.transform = 'scale(1)';
-                  e.target.style.boxShadow = 'none';
-                }}
-                onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
-                onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
-              >
-                <Plus size={18} />
-                Add Entry
-              </button>
+            <button onClick={handleReset} className="qcproduction-reset-btn">
+              <RefreshCw size={18} />
+              Reset
+            </button>
+          </div>
+
+          <div className="qcproduction-form-grid">
+            <div className="qcproduction-form-group">
+              <label>Date *</label>
+              <DatePicker
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+              />
             </div>
+
+            <div className="qcproduction-form-group">
+              <label>Part Name *</label>
+              <input
+                type="text"
+                name="partName"
+                value={formData.partName}
+                onChange={handleChange}
+                placeholder="e.g: Brake Disc"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>No. of Moulds *</label>
+              <input
+                type="number"
+                name="noOfMoulds"
+                value={formData.noOfMoulds}
+                onChange={handleChange}
+                placeholder="e.g: 5"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>C % *</label>
+              <input
+                type="number"
+                name="cPercent"
+                value={formData.cPercent}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 3.5"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>Si % *</label>
+              <input
+                type="number"
+                name="siPercent"
+                value={formData.siPercent}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 2.5"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>Mn % *</label>
+              <input
+                type="number"
+                name="mnPercent"
+                value={formData.mnPercent}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 0.5"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>P % *</label>
+              <input
+                type="number"
+                name="pPercent"
+                value={formData.pPercent}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 0.05"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>S % *</label>
+              <input
+                type="number"
+                name="sPercent"
+                value={formData.sPercent}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 0.03"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>Mg % *</label>
+              <input
+                type="number"
+                name="mgPercent"
+                value={formData.mgPercent}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 0.04"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>Cu % *</label>
+              <input
+                type="number"
+                name="cuPercent"
+                value={formData.cuPercent}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 0.5"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>Cr % *</label>
+              <input
+                type="number"
+                name="crPercent"
+                value={formData.crPercent}
+                onChange={handleChange}
+                step="0.01"
+                placeholder="e.g: 0.2"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>Nodularity / Graphite Type *</label>
+              <input
+                type="text"
+                name="nodularityGraphiteType"
+                value={formData.nodularityGraphiteType}
+                onChange={handleChange}
+                placeholder="e.g: Type VI"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>Pearlite Ferrite *</label>
+              <input
+                type="text"
+                name="pearliteFerrite"
+                value={formData.pearliteFerrite}
+                onChange={handleChange}
+                placeholder="e.g: 80/20"
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>Hardness BHN *</label>
+              <input
+                type="number"
+                name="hardnessBHN"
+                value={formData.hardnessBHN}
+                onChange={handleChange}
+                placeholder="e.g: 220"
+              />
+            </div>
+
+            <div className="qcproduction-form-group" style={{ gridColumn: '1 / -1' }}>
+              <label>TS/YS/EL *</label>
+              <input
+                type="text"
+                name="tsYsEl"
+                value={formData.tsYsEl}
+                onChange={handleChange}
+                placeholder="e.g: 550/460/18"
+              />
+            </div>
+          </div>
+
+          <div className="qcproduction-submit-container">
+            <button
+              onClick={handleSubmit}
+              disabled={submitLoading}
+              className="qcproduction-submit-btn"
+            >
+              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+              {submitLoading ? 'Saving...' : 'Submit Entry'}
+            </button>
           </div>
         </div>
 
-        {/* Form Entries */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {entries.map((entry, index) => (
-            <div 
-              key={entry.id} 
-              style={{ 
-                backgroundColor: 'white', 
-                borderRadius: '8px', 
-                boxShadow: '0 1px 3px rgba(0,0,0,0.1)',
-                border: '1px solid #e2e8f0',
-                padding: '1.5rem'
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
-                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: '#1e293b', margin: 0 }}>
-                  Entry #{index + 1}
-                </h3>
-                {entries.length > 1 && (
-                  <button
-                    onClick={() => removeEntry(entry.id)}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '0.5rem',
-                      padding: '0.375rem 0.75rem',
-                      backgroundColor: 'transparent',
-                      color: '#FF7F50',
-                      border: '1px solid #FF7F50',
-                      borderRadius: '8px',
-                      cursor: 'pointer',
-                      fontSize: '0.875rem',
-                      transition: 'all 0.3s ease',
-                      transform: 'scale(1)'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.backgroundColor = '#FFF5F0';
-                      e.target.style.transform = 'scale(1.05)';
-                      e.target.style.boxShadow = '0 2px 4px rgba(255, 127, 80, 0.3)';
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.backgroundColor = 'transparent';
-                      e.target.style.transform = 'scale(1)';
-                      e.target.style.boxShadow = 'none';
-                    }}
-                    onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
-                    onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
-                  >
-                    <Trash2 size={16} />
-                    Remove
-                  </button>
-                )}
-              </div>
+        {/* Report Container */}
+        <div className="qcproduction-report-container">
+          <div className="qcproduction-report-title">
+            <Filter size={20} style={{ color: '#FF7F50' }} />
+            <h3>QC Production - Report Card</h3>
+          </div>
 
-              <div style={{ 
-                display: 'grid', 
-                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-                gap: '1rem'
-              }}>
-                {/* Date */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Date                  </label>
-                  <CustomDatePicker
-                    value={entry.date}
-                    onChange={(eOrVal) => {
-                      normalizeEntryDateChange(entry.id)(eOrVal);
-                    }}
-                    
-                    max={new Date().toISOString().split('T')[0]}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      borderRadius: '8px',
-                      border: '1px solid #cbd5e1',
-                      fontSize: '0.875rem'
-                    }}
-                    className={'validated-control'}
-                    required
-                  />
-                </div>
-
-                {/* Machine */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Machine                  </label>
-                  <select
-                    value={entry.machine}
-                    onChange={(e) => updateEntry(entry.id, 'machine', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      backgroundColor: 'white',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                    className={'validated-control'}
-                    required
-                    
-                  >
-                    <option value="">Select Machine</option>
-                    <option value="DISA-1">DISA-1</option>
-                    <option value="DISA-2">DISA-2</option>
-                    <option value="DISA-3">DISA-3</option>
-                  </select>
-                </div>
-
-                {/* PP NO */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    PP NO                  </label>
-                  <input
-                    type="number"
-                    value={entry.ppNo}
-                    onChange={(e) => updateEntry(entry.id, 'ppNo', e.target.value)}
-                    placeholder="Enter PP Number"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                    className={'validated-control'}
-                    required
-                    
-                  />
-                </div>
-
-                {/* Part Name */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Part Name                  </label>
-                  <input
-                    type="text"
-                    value={entry.partName}
-                    onChange={(e) => updateEntry(entry.id, 'partName', e.target.value)}
-                    placeholder="e.g: PSA 7B K"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                    className={'validated-control'}
-                    required
-                    
-                  />
-                </div>
-
-                {/* Data Code */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Data Code                  </label>
-                  <input
-                    type="text"
-                    value={entry.dataCode}
-                    onChange={(e) => updateEntry(entry.id, 'dataCode', e.target.value)}
-                    placeholder="e.g: SH02"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                    className={'validated-control'}
-                    required
-                    
-                  />
-                </div>
-
-                {/* Heat Code */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Heat Code                  </label>
-                  <input
-                    type="number"
-                    value={entry.heatCode}
-                    onChange={(e) => updateEntry(entry.id, 'heatCode', e.target.value)}
-                    placeholder="Enter Heat Code"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                    className={'validated-control'}
-                    required
-                    
-                  />
-                </div>
-
-                {/* Time of Pouring */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Time of Pouring                  </label>
-                  <input
-                    type="time"
-                    value={entry.timeOfPouring}
-                    onChange={(e) => updateEntry(entry.id, 'timeOfPouring', e.target.value)}
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                    className={'validated-control'}
-                    required
-                    
-                  />
-                </div>
-
-                {/* F/C NO */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    F/C NO                  </label>
-                  <input
-                    type="number"
-                    value={entry.fcNo}
-                    onChange={(e) => updateEntry(entry.id, 'fcNo', e.target.value)}
-                    placeholder="Enter F/C Number"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                    className={'validated-control'}
-                    required
-                    
-                  />
-                </div>
-
-                {/* Heat NO */}
-                <div>
-                  <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
-                    Heat NO                  </label>
-                  <input
-                    type="text"
-                    value={entry.heatNo}
-                    onChange={(e) => updateEntry(entry.id, 'heatNo', e.target.value)}
-                    placeholder="Enter Heat Number"
-                    style={{
-                      width: '100%',
-                      padding: '0.5rem 0.75rem',
-                      border: '1px solid #cbd5e1',
-                      borderRadius: '8px',
-                      fontSize: '0.875rem',
-                      outline: 'none',
-                      transition: 'border-color 0.2s, box-shadow 0.2s'
-                    }}
-                    className={'validated-control'}
-                    required
-                    
-                  />
-                </div>
-              </div>
+          <div className="qcproduction-filter-grid">
+            <div className="qcproduction-filter-group">
+              <label>Start Date</label>
+              <DatePicker
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                placeholder="Select start date"
+              />
             </div>
-          ))}
-        </div>
 
-        {/* Submit Button */}
-        <div style={{ marginTop: '1.5rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
-          <button
-            onClick={handleSubmit}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.75rem 1.5rem',
-              backgroundColor: '#5B9AA9',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '500',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              transition: 'all 0.3s ease',
-              transform: 'scale(1)'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.backgroundColor = '#4A8494';
-              e.target.style.transform = 'scale(1.05)';
-              e.target.style.boxShadow = '0 6px 16px rgba(91, 154, 169, 0.5)';
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.backgroundColor = '#5B9AA9';
-              e.target.style.transform = 'scale(1)';
-              e.target.style.boxShadow = '0 1px 2px rgba(0,0,0,0.05)';
-            }}
-            onMouseDown={(e) => e.target.style.transform = 'scale(0.98)'}
-            onMouseUp={(e) => e.target.style.transform = 'scale(1.05)'}
-          >
-            <Save size={20} />
-            Save All Entries
-          </button>
+            <div className="qcproduction-filter-group">
+              <label>End Date</label>
+              <DatePicker
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                placeholder="Select end date"
+              />
+            </div>
+
+            <div className="qcproduction-filter-btn-container">
+              <button onClick={handleFilter} className="qcproduction-filter-btn">
+                <Filter size={18} />
+                Filter
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="qcproduction-loader-container">
+              <Loader />
+            </div>
+          ) : (
+            <div className="qcproduction-table-container">
+              <table className="qcproduction-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Part Name</th>
+                    <th>Moulds</th>
+                    <th>C %</th>
+                    <th>Si %</th>
+                    <th>Mn %</th>
+                    <th>P %</th>
+                    <th>S %</th>
+                    <th>Mg %</th>
+                    <th>Cu %</th>
+                    <th>Cr %</th>
+                    <th>Nodularity</th>
+                    <th>P/F</th>
+                    <th>BHN</th>
+                    <th>TS/YS/EL</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filteredItems.length === 0 ? (
+                    <tr>
+                      <td colSpan="15" className="qcproduction-no-records">
+                        No records found
+                      </td>
+                    </tr>
+                  ) : (
+                    filteredItems.map((item, index) => (
+                      <tr key={item._id || index}>
+                        <td>{new Date(item.date).toLocaleDateString()}</td>
+                        <td>{item.partName}</td>
+                        <td>{item.noOfMoulds}</td>
+                        <td>{item.cPercent}</td>
+                        <td>{item.siPercent}</td>
+                        <td>{item.mnPercent}</td>
+                        <td>{item.pPercent}</td>
+                        <td>{item.sPercent}</td>
+                        <td>{item.mgPercent}</td>
+                        <td>{item.cuPercent}</td>
+                        <td>{item.crPercent}</td>
+                        <td>{item.nodularityGraphiteType}</td>
+                        <td>{item.pearliteFerrite}</td>
+                        <td>{item.hardnessBHN}</td>
+                        <td>{item.tsYsEl}</td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       </div>
     </div>

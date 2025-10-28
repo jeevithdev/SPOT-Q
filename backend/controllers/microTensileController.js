@@ -1,0 +1,42 @@
+const MicroTensileTest = require('../models/MicroTensileTest');
+
+// @desc    Get all Micro Tensile Test entries
+// @route   GET /api/v1/micro-tensile-tests
+exports.getAllEntries = async (req, res) => {
+    try {
+        const entries = await MicroTensileTest.find().sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: entries.length,
+            data: entries
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error fetching Micro Tensile Test entries.'
+        });
+    }
+};
+
+// @desc    Create a new Micro Tensile Test entry
+// @route   POST /api/v1/micro-tensile-tests
+exports.createEntry = async (req, res) => {
+    try {
+        const entry = await MicroTensileTest.create(req.body);
+
+        res.status(201).json({
+            success: true,
+            data: entry,
+            message: 'Micro Tensile Test entry created successfully.'
+        });
+
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || 'Error creating Micro Tensile Test entry.',
+            errors: error.errors
+        });
+    }
+};

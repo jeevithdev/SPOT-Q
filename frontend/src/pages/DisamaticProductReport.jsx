@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Save, Users, Factory, Clock, Zap, X } from 'lucide-react';
+import { DatePicker } from '../Components/Buttons';
 
 // Define the number of rows needed
 const NUM_ROWS = 20;
@@ -247,7 +248,7 @@ const DisamaticProductReport = () => {
                     {/* Header Input Fields (Tab Indices 1-3) */}
                     <div style={styles.inputGroup}>
                         <span style={styles.inputLabel}>Date:</span>
-                        <input type="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} style={styles.inputBase} tabIndex={1} />
+                        <DatePicker name="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} style={styles.inputBase} />
 
                         <span style={styles.inputLabel}>Shift:</span>
                         <input type="text" value={formData.shift} onChange={(e) => handleMainChange('shift', e.target.value)} style={styles.inputBase} tabIndex={2} />

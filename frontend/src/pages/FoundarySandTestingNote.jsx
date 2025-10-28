@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { FlaskConical, Save, X, Factory, FileText } from 'lucide-react';
+import { DatePicker } from '../Components/Buttons';
 
 // --- 1. STYLE DEFINITIONS (Centralized Styles) ---
 const styles = {
@@ -294,7 +295,7 @@ const FoundrySandTestingNote = () => {
                         <input type="text" value={formData.sandPlant} placeholder="e.g. DISA" onChange={(e) => handleMainChange('sandPlant', e.target.value)} style={styles.headerInfoInput} tabIndex={1} onKeyDown={handleKeyDown} />
 
                         <span style={styles.headerInfoLabel}>DATE:</span>
-                        <input type="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} style={styles.headerInfoInput} tabIndex={2} onKeyDown={handleKeyDown} />
+                        <DatePicker name="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} style={styles.headerInfoInput} />
 
                         <span style={styles.headerInfoLabel}>COMPACTIBILITY SETTING:</span>
                         <input type="text" value={formData.compactibilitySetting} placeholder="e.g. J.C. mode" onChange={(e) => handleMainChange('compactibilitySetting', e.target.value)} style={styles.headerInfoInput} tabIndex={3} onKeyDown={handleKeyDown} />

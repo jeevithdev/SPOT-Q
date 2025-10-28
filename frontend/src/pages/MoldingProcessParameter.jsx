@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Plus, Trash2, Save, X } from 'lucide-react';
-import CustomDatePicker from '../Components/CustomDatePicker';
+import { DatePicker } from '../Components/Buttons';
 
 const MoldingProcessParameter = () => {
   const [entries, setEntries] = useState([
@@ -234,7 +234,7 @@ const MoldingProcessParameter = () => {
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
                     Start Date
                   </label>
-                  <CustomDatePicker
+                  <DatePicker
                     value={entry.startDate}
                     onChange={(e) => updateEntry(entry.id, 'startDate', e.target.value)}
                     style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
@@ -246,7 +246,7 @@ const MoldingProcessParameter = () => {
                   <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '500', color: '#334155', marginBottom: '0.375rem' }}>
                     End Date
                   </label>
-                  <CustomDatePicker
+                  <DatePicker
                     value={entry.endDate}
                     onChange={(e) => updateEntry(entry.id, 'endDate', e.target.value)}
                     style={{ width: '100%', padding: '0.5rem 0.75rem', borderRadius: '8px', border: '1px solid #cbd5e1', fontSize: '0.875rem' }}
