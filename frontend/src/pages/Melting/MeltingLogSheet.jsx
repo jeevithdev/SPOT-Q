@@ -4,7 +4,7 @@ import { DatePicker, EditActionButton, DeleteActionButton } from '../../Componen
 import ValidationPopup from '../../Components/ValidationPopup';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
-import '../../styles/PageStyles/MeltingLogSheet.css';
+import '../../styles/PageStyles/Melting/MeltingLogSheet.css';
 
 const MeltingLogSheet = () => {
   const [formData, setFormData] = useState({
@@ -264,10 +264,10 @@ const MeltingLogSheet = () => {
               <Save size={24} style={{ color: '#5B9AA9' }} />
               <h2>Melting Log Sheet - Entry Form</h2>
             </div>
-            <button onClick={handleReset} className="melting-log-reset-btn">
+            <Button onClick={handleReset} className="melting-log-reset-btn" variant="secondary">
               <RefreshCw size={18} />
               Reset
-            </button>
+            </Button>
           </div>
 
           <div className="melting-log-form-grid">
@@ -707,14 +707,15 @@ const MeltingLogSheet = () => {
           </div>
 
           <div className="melting-log-submit-container">
-            <button
+            <Button
               onClick={handleSubmit}
               disabled={submitLoading}
               className="melting-log-submit-btn"
+              type="button"
             >
               {submitLoading ? <Loader size={20} /> : <Save size={20} />}
               {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -745,10 +746,10 @@ const MeltingLogSheet = () => {
             </div>
 
             <div className="melting-log-filter-btn-container">
-              <button onClick={() => {}} className="melting-log-filter-btn">
+              <Button onClick={() => {}} className="melting-log-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
-              </button>
+              </Button>
             </div>
           </div>
 

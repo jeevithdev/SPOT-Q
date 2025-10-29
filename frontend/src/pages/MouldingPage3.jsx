@@ -1,4 +1,6 @@
 import React, { useState } from "react";
+import Button from '../Components/Buttons';
+import '../styles/PageStyles/MoultingPage3.css';
 
 const initialRow = {
   customer: "",
@@ -335,179 +337,6 @@ const DmmSettingParametersCheckSheet = () => {
 
   return (
     <>
-      <style>{`
-        * {
-          box-sizing: border-box;
-        }
-        body {
-          font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-          background: #f9fafb;
-          margin: 0;
-          padding: 0;
-          color: #333;
-        }
-
-        .container {
-          max-width: 1400px;
-          margin: 20px auto;
-          background: white;
-          border-radius: 8px;
-          padding: 24px 32px 40px;
-          box-shadow: 0 4px 14px rgb(0 0 0 / 0.1);
-        }
-
-        h1 {
-          margin-bottom: 16px;
-          font-weight: 700;
-          font-size: 24px;
-          color: #0a2540;
-          border-bottom: 3px solid #007bff;
-          padding-bottom: 6px;
-        }
-
-        .header-form {
-          display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-          gap: 16px 24px;
-          margin-bottom: 36px;
-          padding-bottom: 16px;
-          border-bottom: 2px solid #ddd;
-        }
-
-        .header-field {
-          display: flex;
-          flex-direction: column;
-        }
-        .header-field label {
-          font-weight: 600;
-          font-size: 13px;
-          margin-bottom: 4px;
-          color: #555;
-          user-select: none;
-        }
-        .header-field input {
-          padding: 8px 12px;
-          font-size: 14px;
-          border: 1.8px solid #ccc;
-          border-radius: 4px;
-          transition: border-color 0.25s ease;
-        }
-        .header-field input:focus {
-          border-color: #007bff;
-          outline: none;
-          box-shadow: 0 0 5px rgba(0, 123, 255, 0.3);
-        }
-
-        .parameter-row-container {
-          margin-bottom: 32px;
-          padding: 20px;
-          background: #f7faff;
-          border-radius: 8px;
-          border: 1px solid #d0e2ff;
-        }
-        
-        .parameter-grid {
-          display: grid;
-          grid-template-columns: repeat(7, 1fr);
-          gap: 16px 12px;
-        }
-        
-        .parameter-field {
-          display: flex;
-          flex-direction: column;
-        }
-        
-        .parameter-field label {
-          font-size: 11px;
-          font-weight: 600;
-          color: #0a2540;
-          margin-bottom: 6px;
-          user-select: none;
-          min-height: 32px;
-          display: flex;
-          align-items: center;
-        }
-
-        input[type="text"], input[type="number"], input[type="date"] {
-          width: 100%;
-          font-size: 13px;
-          padding: 6px 8px;
-          border: 1.6px solid #bbb;
-          border-radius: 4px;
-          font-family: inherit;
-          transition: border-color 0.25s ease;
-          min-width: 0;
-        }
-        input[type="text"]:focus, input[type="number"]:focus, input[type="date"]:focus {
-          border-color: #007bff;
-          outline: none;
-          box-shadow: 0 0 6px rgba(0, 123, 255, 0.3);
-        }
-
-        .shift-container {
-          margin-bottom: 48px;
-          border: 1.5px solid #007bff;
-          border-radius: 8px;
-          padding: 16px;
-          background: #f0f7ff;
-        }
-        .shift-header {
-          font-size: 16px;
-          font-weight: 700;
-          color: #007bff;
-          margin-bottom: 12px;
-          user-select: none;
-        }
-        .add-row-button {
-          display: inline-block;
-          margin-top: 12px;
-          padding: 8px 20px;
-          font-size: 14px;
-          font-weight: 600;
-          color: white;
-          background-color: #007bff;
-          border: none;
-          border-radius: 5px;
-          cursor: pointer;
-          box-shadow: 0 2px 7px rgb(0 123 255 / 0.7);
-          transition: background-color 0.3s ease, box-shadow 0.3s ease;
-          user-select: none;
-        }
-        .add-row-button:hover {
-          background-color: #0056b3;
-          box-shadow: 0 3px 11px rgb(0 86 179 / 0.9);
-        }
-
-        @media (max-width: 1200px) {
-          .parameter-grid {
-            grid-template-columns: repeat(4, 1fr);
-          }
-        }
-        
-        @media (max-width: 900px) {
-          .parameter-grid {
-            grid-template-columns: repeat(3, 1fr);
-          }
-        }
-
-        @media (max-width: 720px) {
-          .header-form {
-            grid-template-columns: 1fr 1fr;
-          }
-          .parameter-grid {
-            grid-template-columns: repeat(2, 1fr);
-          }
-          .shift-header {
-            font-size: 14px;
-          }
-        }
-        
-        @media (max-width: 480px) {
-          .parameter-grid {
-            grid-template-columns: 1fr;
-          }
-        }
-      `}</style>
 
       <div className="container" role="main" aria-label="DMM Setting Parameters Check Sheet">
         <h1>DMM Setting Parameters Check Sheet</h1>
@@ -586,14 +415,14 @@ const DmmSettingParametersCheckSheet = () => {
           <div role="region" aria-labelledby="shift1-label">
             {shift1Rows.map((row, i) => renderRow(row, i, 1))}
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => addRow(1)}
             className="add-row-button"
             aria-label="Add row to shift 1"
           >
             Add Row to Shift 1
-          </button>
+          </Button>
         </section>
 
         <section className="shift-container" aria-label="Shift 2 Parameters">
@@ -601,14 +430,14 @@ const DmmSettingParametersCheckSheet = () => {
           <div role="region" aria-labelledby="shift2-label">
             {shift2Rows.map((row, i) => renderRow(row, i, 2))}
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => addRow(2)}
             className="add-row-button"
             aria-label="Add row to shift 2"
           >
             Add Row to Shift 2
-          </button>
+          </Button>
         </section>
 
         <section className="shift-container" aria-label="Shift 3 Parameters">
@@ -616,93 +445,49 @@ const DmmSettingParametersCheckSheet = () => {
           <div role="region" aria-labelledby="shift3-label">
             {shift3Rows.map((row, i) => renderRow(row, i, 3))}
           </div>
-          <button
+          <Button
             type="button"
             onClick={() => addRow(3)}
             className="add-row-button"
             aria-label="Add row to shift 3"
           >
             Add Row to Shift 3
-          </button>
+          </Button>
         </section>
 
         {/* Report Section */}
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          padding: '2rem',
-          marginTop: '2rem'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            marginBottom: '1.5rem',
-            paddingBottom: '1rem',
-            borderBottom: '2px solid #e2e8f0'
-          }}>
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-              📊 DMM Setting Parameters - Records
-            </h3>
+        <div className="moulting-report-container">
+          <div className="moulting-report-header">
+            <h3 className="moulting-report-title">📊 DMM Setting Parameters - Records</h3>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr auto',
-            gap: '1rem',
-            marginBottom: '1.5rem'
-          }}>
+          <div className="moulting-report-filter-grid">
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                Start Date
-              </label>
-              <input type="date" style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '2px solid #cbd5e1' }} />
+              <label className="moulting-filter-label">Start Date</label>
+              <input type="date" className="moulting-filter-input" />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                End Date
-              </label>
-              <input type="date" style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '2px solid #cbd5e1' }} />
+              <label className="moulting-filter-label">End Date</label>
+              <input type="date" className="moulting-filter-input" />
             </div>
-            <button style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.625rem 1.5rem',
-              background: 'linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              alignSelf: 'end'
-            }}>
-              🔍 Filter
-            </button>
+            <Button className="moulting-filter-btn">🔍 Filter</Button>
           </div>
 
-          <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '800px' }}>
-              <thead style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', color: 'white' }}>
+          <div className="moulting-table-wrapper">
+            <table className="moulting-table">
+              <thead>
                 <tr>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Date</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Customer</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Model</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Machine No</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Total Entries</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Remarks</th>
+                  <th className="moulting-table-head">Date</th>
+                  <th className="moulting-table-head">Customer</th>
+                  <th className="moulting-table-head">Model</th>
+                  <th className="moulting-table-head">Machine No</th>
+                  <th className="moulting-table-head">Total Entries</th>
+                  <th className="moulting-table-head">Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td colSpan="6" style={{
-                    textAlign: 'center',
-                    padding: '3rem',
-                    color: '#94a3b8',
-                    fontStyle: 'italic'
-                  }}>
+                  <td colSpan="6" className="moulting-no-records">
                     No records found. Submit entries above to see them here.
                   </td>
                 </tr>

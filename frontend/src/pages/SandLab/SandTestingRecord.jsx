@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FileText, Calendar, FlaskConical, Save, X, Filter } from 'lucide-react';
-import { DatePicker } from '../../Components/Buttons';
+import Button, { DatePicker } from '../../Components/Buttons';
+import '../../styles/PageStyles/Sandlab/SandTestingRecord.css';
 
 // --- STYLE DEFINITIONS (REVISED) ---
 const styles = {
@@ -286,16 +287,16 @@ const SandTestingForm = () => {
     // --- JSX Rendering ---
 
     return (
-        <div style={styles.pageContainer}>
-            <div style={styles.mainCard}>
+        <div className="sandrec-root">
+            <div className="sandrec-card">
 
                 {/* Header Section (No Change) */}
-                <div style={styles.header}>
+                <div className="sandrec-header">
                     <div>
-                        <h1 style={styles.headerTitle}>SAND TESTING RECORD</h1>
+                        <h1 className="sandrec-title">SAND TESTING RECORD</h1>
                     </div>
-                    <div style={styles.dateInputContainer}>
-                        <Calendar size={20} style={{ color: '#cc0000' }} />
+                    <div className="sandrec-date-input-container">
+                        <Calendar size={20} className="sandrec-calendar-icon" />
                         <label htmlFor="date-input">DATE:</label>
                         <DatePicker
                             name="date"
@@ -306,14 +307,14 @@ const SandTestingForm = () => {
                     </div>
                 </div>
 
-                <form onSubmit={handleSubmit} style={styles.formContent}>
+                <form onSubmit={handleSubmit} className="sandrec-form-content">
 
                     {/* TOP SECTION: Shift & Clay/VCM - FORCED EQUAL WIDTH */}
-                    <div style={styles.gridTop}>
+                    <div className="sandrec-grid-top">
 
                         {/* 1. Shift I/II/III (R.Sand, N.Sand, Additives) */}
-                        <div style={styles.tableBox}>
-                            <h2 style={styles.tableHeader}>SHIFT</h2>
+                        <div className="sandrec-table-box">
+                            <h2 className="sandrec-table-header">SHIFT</h2>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ backgroundColor: '#f0f0f0' }}>
@@ -363,8 +364,8 @@ const SandTestingForm = () => {
                         </div>
 
                         {/* 2. Clay/VCM Data - ALIGNED WITH SHIFT BOX (now with separate I/II/III inputs to show vertical lines) */}
-                        <div style={styles.tableBox}>
-                            <h2 style={styles.tableHeader}>CLAY / VCM</h2>
+                        <div className="sandrec-table-box">
+                            <h2 className="sandrec-table-header">CLAY / VCM</h2>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ backgroundColor: '#f0f0f0' }}>
@@ -404,10 +405,10 @@ const SandTestingForm = () => {
                     </div>
 
                     {/* MID SECTION: Mix No. Run Data & Friability (Placed below to free up the top grid for 1fr 1fr) */}
-                    <div style={styles.gridMid}>
+                    <div className="sandrec-grid-mid">
                          {/* 3. Mix No Run Data & Hopper Level */}
-                         <div style={styles.tableBox}>
-                            <h2 style={styles.tableHeader}>Mix No. Run Data & Hopper Level</h2>
+                                 <div className="sandrec-table-box">
+                                     <h2 className="sandrec-table-header">Mix No. Run Data & Hopper Level</h2>
                             <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                                 <thead>
                                     <tr style={{ backgroundColor: '#f0f0f0' }}>
@@ -464,9 +465,9 @@ const SandTestingForm = () => {
                         </div>
 
                         {/* 4. Prepared Sand Friability */}
-                        <div style={styles.tableBox}>
-                          {/* Changed the friability header to use the shared tableHeader style (removes yellow) */}
-                          <h2 style={styles.tableHeader}>Prepared Sand Friability (8.0-13.0%)</h2>
+                                                <div className="sandrec-table-box">
+                                                    {/* Changed the friability header to use the shared tableHeader style (removes yellow) */}
+                                                    <h2 className="sandrec-table-header">Prepared Sand Friability (8.0-13.0%)</h2>
                           <table style={{ width: '100%', borderCollapse: 'collapse' }}>
                             <thead>
                               <tr style={{ height: '39px', backgroundColor: '#fafafa' }}>
@@ -497,7 +498,7 @@ const SandTestingForm = () => {
 
                     {/* --- MAIN TESTING PARAMETERS (19 FIELDS) --- */}
                     {/* *** KEY ALIGNMENT: FORCED 3-COLUMN LAYOUT VIA gridTemplateColumns: 'repeat(3, 1fr)' *** */}
-                    <div style={styles.gridMain}>
+                    <div className="sandrec-grid-main">
   {/* 1 */}
   <div style={styles.fieldContainer}>
     <label style={styles.label}>1. Time</label>
@@ -663,24 +664,9 @@ const SandTestingForm = () => {
 </div>
 
                     {/* Submit Button (No Change) */}
-                    <div style={styles.buttonGroup}>
-
-                        <button
-                            type="button"
-                            onClick={handleReset}
-                            style={{ ...styles.baseButton, ...styles.resetButton }}
-                        >
-                            <X size={18} />
-                            Reset Form
-                        </button>
-
-                        <button
-                            type="submit"
-                            style={{ ...styles.baseButton, ...styles.submitButton }}
-                        >
-                            <Save size={20} />
-                            Save Sand Record
-                        </button>
+                    <div className="sandrec-button-group">
+                        <Button type="button" onClick={handleReset} className="sandrec-reset-btn"><X size={18} /> Reset Form</Button>
+                        <Button type="submit" className="sandrec-submit-btn"><Save size={20} /> Save Sand Record</Button>
                     </div>
 
                 </form>
@@ -726,7 +712,7 @@ const SandTestingForm = () => {
                             </label>
                             <DatePicker placeholder="Select end date" />
                         </div>
-                        <button style={{
+                        <Button style={{
                             display: 'flex',
                             alignItems: 'center',
                             gap: '0.5rem',
@@ -742,7 +728,7 @@ const SandTestingForm = () => {
                         }}>
                             <Filter size={18} />
                             Filter
-                        </button>
+                        </Button>
                     </div>
 
                     <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>

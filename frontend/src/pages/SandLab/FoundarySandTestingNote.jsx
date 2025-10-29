@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { FlaskConical, Save, X, Factory, FileText, Filter } from 'lucide-react';
-import { DatePicker } from '../../Components/Buttons';
+import Button, { DatePicker } from '../../Components/Buttons';
+import '../../styles/PageStyles/Sandlab/FoundarySandTestingNote.css';
 
 // --- 1. STYLE DEFINITIONS (Centralized Styles) ---
 const styles = {
@@ -51,17 +52,18 @@ const styles = {
 // --- 2. REUSABLE ATOMIC COMPONENTS (Unchanged Logic/Tabs) ---
 
 const LabeledInput = ({ label, value, onChange, field, suffix, inputStyle = {}, tabIndex }) => (
-    <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-        <label style={styles.bottomLabel}>{label}</label>
-        <div style={styles.bottomValueContainer}>
+    <div className="foundry-labeled-input">
+        <label className="foundry-bottom-label">{label}</label>
+        <div className="foundry-bottom-value">
             <input
                 type="text"
                 value={value}
                 onChange={(e) => onChange(field, e.target.value)}
-                style={{ ...styles.bottomInput, ...inputStyle }}
+                className="foundry-bottom-input"
+                style={inputStyle}
                 tabIndex={tabIndex}
             />
-            {suffix && <span style={styles.bottomTextSuffix}>{suffix}</span>}
+            {suffix && <span className="foundry-bottom-suffix">{suffix}</span>}
         </div>
     </div>
 );
@@ -124,70 +126,60 @@ const SieveTestTable = ({ data, handleSieveChange, handleSieveTotalChange }) => 
     };
 
     return (
-        <div style={styles.tableWrapper}>
-            <h2 style={{ ...styles.tableTitle, backgroundColor: '#0f766e' }}>Sieve Testing</h2>
-            <table style={styles.tableBase}>
+        <div className="foundry-table-wrapper">
+            <h2 className="foundry-table-title">Sieve Testing</h2>
+            <table className="foundry-table-base">
                 <thead>
-                    <tr style={sieveStyles.headerRow}>
-                        <th rowSpan="2" style={{ ...styles.tableHeadCell, width: '15%' }}>Sieve size (Mic)</th>
-                        <th colSpan="2" style={{ ...styles.tableHeadCell, width: '30%' }}>% Wt retained sand</th>
-                        <th rowSpan="2" style={{ ...styles.tableHeadCell, width: '15%' }}>MF</th>
-                        <th colSpan="2" style={{ ...styles.tableHeadCell, ...styles.noBorderRight, width: '30%' }}>Product</th>
+                    <tr className="foundry-sieve-header-row">
+                        <th rowSpan="2" className="foundry-table-head-cell foundry-head-size">Sieve size (Mic)</th>
+                        <th colSpan="2" className="foundry-table-head-cell foundry-head-percent">% Wt retained sand</th>
+                        <th rowSpan="2" className="foundry-table-head-cell foundry-head-mf">MF</th>
+                        <th colSpan="2" className="foundry-table-head-cell foundry-head-product">Product</th>
                     </tr>
-                    <tr style={sieveStyles.headerRow}>
-                        <th style={{ ...styles.tableHeadCell, borderTop: '1px solid #aaa' }}>TEST-1</th>
-                        <th style={{ ...styles.tableHeadCell, borderTop: '1px solid #aaa' }}>TEST-2</th>
-                        <th style={{ ...styles.tableHeadCell, borderTop: '1px solid #aaa' }}>TEST-1</th>
-                        <th style={{ ...styles.tableHeadCell, ...styles.noBorderRight, borderTop: '1px solid #aaa' }}>TEST-2</th>
+                    <tr className="foundry-sieve-header-row">
+                        <th className="foundry-table-head-cell foundry-head-sub">TEST-1</th>
+                        <th className="foundry-table-head-cell foundry-head-sub">TEST-2</th>
+                        <th className="foundry-table-head-cell foundry-head-sub">TEST-1</th>
+                        <th className="foundry-table-head-cell foundry-head-sub">TEST-2</th>
                     </tr>
                 </thead>
                 <tbody>
                     {data.sieveTest.map((row, index) => (
-                        <tr key={row.sieveSize} style={index % 2 === 0 ? styles.tableRowEven : {}}>
-                            <td style={{ ...styles.tableBodyCell, ...styles.tableBodyCellLeft }}>{row.sieveSize}</td>
-                            
+                        <tr key={row.sieveSize} className={index % 2 === 0 ? 'foundry-table-row-even' : ''}>
+                            <td className="foundry-table-body-left">{row.sieveSize}</td>
+
                             {/* % Wt retained sand TEST-1 (Tab: 30-34, 35-39, etc.) */}
-                            <td style={sieveStyles.inputCell}>
-                                <input type="text" value={row.test1Retained} onChange={(e) => handleSieveChange(index, 'test1Retained', e.target.value)} style={sieveStyles.inputBase} tabIndex={30 + index * 5} />
+                            <td className="foundry-input-cell">
+                                <input type="text" value={row.test1Retained} onChange={(e) => handleSieveChange(index, 'test1Retained', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5} />
                             </td>
                             {/* % Wt retained sand TEST-2 */}
-                            <td style={sieveStyles.inputCell}>
-                                <input type="text" value={row.test2Retained} onChange={(e) => handleSieveChange(index, 'test2Retained', e.target.value)} style={sieveStyles.inputBase} tabIndex={30 + index * 5 + 1} />
+                            <td className="foundry-input-cell">
+                                <input type="text" value={row.test2Retained} onChange={(e) => handleSieveChange(index, 'test2Retained', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5 + 1} />
                             </td>
-                            
+
                             {/* MF */}
-                            <td style={sieveStyles.inputCell}>
-                                <input type="text" value={row.mf} onChange={(e) => handleSieveChange(index, 'mf', e.target.value)} style={sieveStyles.inputBase} tabIndex={30 + index * 5 + 2} />
+                            <td className="foundry-input-cell">
+                                <input type="text" value={row.mf} onChange={(e) => handleSieveChange(index, 'mf', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5 + 2} />
                             </td>
-                            
+
                             {/* Product TEST-1 */}
-                            <td style={sieveStyles.inputCell}>
-                                <input type="text" value={row.product1} onChange={(e) => handleSieveChange(index, 'product1', e.target.value)} style={sieveStyles.inputBase} tabIndex={30 + index * 5 + 3} />
+                            <td className="foundry-input-cell">
+                                <input type="text" value={row.product1} onChange={(e) => handleSieveChange(index, 'product1', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5 + 3} />
                             </td>
                             {/* Product TEST-2 */}
-                            <td style={{ ...sieveStyles.inputCell, ...styles.noBorderRight }}>
-                                <input type="text" value={row.product2} onChange={(e) => handleSieveChange(index, 'product2', e.target.value)} style={sieveStyles.inputBase} tabIndex={30 + index * 5 + 4} />
+                            <td className="foundry-input-cell foundry-no-border-right">
+                                <input type="text" value={row.product2} onChange={(e) => handleSieveChange(index, 'product2', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5 + 4} />
                             </td>
                         </tr>
                     ))}
                     {/* Totals Row (Tab Indices 85-89) */}
-                    <tr style={sieveStyles.totalRow}>
-                        <td style={{ ...styles.tableBodyCell, ...styles.tableBodyCellLeft, borderRight: '1px solid #ccc' }}>Total</td>
-                        <td style={sieveStyles.inputCell}>
-                            <input type="text" value={data.sieveTestTotals.test1Total} onChange={(e) => handleSieveTotalChange('test1Total', e.target.value)} style={sieveStyles.inputBase} tabIndex={85} />
-                        </td>
-                        <td style={sieveStyles.inputCell}>
-                            <input type="text" value={data.sieveTestTotals.test2Total} onChange={(e) => handleSieveTotalChange('test2Total', e.target.value)} style={sieveStyles.inputBase} tabIndex={86} />
-                        </td>
-                        <td style={sieveStyles.inputCell}>
-                            <input type="text" value={data.sieveTestTotals.mfTotal} onChange={(e) => handleSieveTotalChange('mfTotal', e.target.value)} style={sieveStyles.inputBase} tabIndex={87} />
-                        </td>
-                        <td style={sieveStyles.inputCell}>
-                            <input type="text" value={data.sieveTestTotals.productTotal1} onChange={(e) => handleSieveTotalChange('productTotal1', e.target.value)} style={sieveStyles.inputBase} tabIndex={88} />
-                        </td>
-                         <td style={{ ...sieveStyles.inputCell, ...styles.noBorderRight }}>
-                            <input type="text" value={data.sieveTestTotals.productTotal2} onChange={(e) => handleSieveTotalChange('productTotal2', e.target.value)} style={sieveStyles.inputBase} tabIndex={89} />
-                        </td>
+                    <tr className="foundry-total-row">
+                        <td className="foundry-table-body-left foundry-total-label">Total</td>
+                        <td className="foundry-input-cell"><input type="text" value={data.sieveTestTotals.test1Total} onChange={(e) => handleSieveTotalChange('test1Total', e.target.value)} className="foundry-input-base" tabIndex={85} /></td>
+                        <td className="foundry-input-cell"><input type="text" value={data.sieveTestTotals.test2Total} onChange={(e) => handleSieveTotalChange('test2Total', e.target.value)} className="foundry-input-base" tabIndex={86} /></td>
+                        <td className="foundry-input-cell"><input type="text" value={data.sieveTestTotals.mfTotal} onChange={(e) => handleSieveTotalChange('mfTotal', e.target.value)} className="foundry-input-base" tabIndex={87} /></td>
+                        <td className="foundry-input-cell"><input type="text" value={data.sieveTestTotals.productTotal1} onChange={(e) => handleSieveTotalChange('productTotal1', e.target.value)} className="foundry-input-base" tabIndex={88} /></td>
+                         <td className="foundry-input-cell foundry-no-border-right"><input type="text" value={data.sieveTestTotals.productTotal2} onChange={(e) => handleSieveTotalChange('productTotal2', e.target.value)} className="foundry-input-base" tabIndex={89} /></td>
                     </tr>
                 </tbody>
             </table>
@@ -277,39 +269,39 @@ const FoundrySandTestingNote = () => {
     // --- JSX RENDERING ---
 
     return (
-        <div style={styles.pageContainer}>
-            <div style={styles.mainCard}>
+        <div className="foundry-page-container">
+            <div className="foundry-main-card">
 
                 {/* --- HEADER --- */}
-                <div style={styles.header}>
-                    <div style={{ ...styles.headerInfoGrid, gap: '0.2rem 0.5rem' }}>
-                        <Factory size={24} style={{ color: '#cc0000', gridRow: 'span 2' }} />
-                        <span style={{ fontSize: '1.2rem', fontWeight: 'bold', color: '#8b0000', gridColumn: '2' }}>SAKTHI AUTO</span>
+                <div className="foundry-header">
+                    <div className="foundry-header-info-grid">
+                        <Factory size={24} className="foundry-factory-icon" />
+                        <span className="foundry-sakthi">SAKTHI AUTO</span>
                     </div>
-                    <div style={{ flexGrow: 1, textAlign: 'center', padding: '0 1rem' }}>
-                        <h1 style={styles.headerTitle}>FOUNDRY SAND TESTING NOTE</h1>
+                    <div className="foundry-header-center">
+                        <h1 className="foundry-header-title">FOUNDRY SAND TESTING NOTE</h1>
                     </div>
                     {/* Header Input Fields (Tab Indices 1-5) */}
-                    <div style={styles.headerInfoGrid}>
-                        <span style={styles.headerInfoLabel}>SAND PLANT:</span>
-                        <input type="text" value={formData.sandPlant} placeholder="e.g. DISA" onChange={(e) => handleMainChange('sandPlant', e.target.value)} style={styles.headerInfoInput} tabIndex={1} onKeyDown={handleKeyDown} />
+                    <div className="foundry-header-grid">
+                        <span className="foundry-header-label">SAND PLANT:</span>
+                        <input type="text" value={formData.sandPlant} placeholder="e.g. DISA" onChange={(e) => handleMainChange('sandPlant', e.target.value)} className="foundry-header-input" tabIndex={1} onKeyDown={handleKeyDown} />
 
-                        <span style={styles.headerInfoLabel}>DATE:</span>
-                        <DatePicker name="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} style={styles.headerInfoInput} />
+                        <span className="foundry-header-label">DATE:</span>
+                        <DatePicker name="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} className="foundry-header-input" />
 
-                        <span style={styles.headerInfoLabel}>COMPACTIBILITY SETTING:</span>
-                        <input type="text" value={formData.compactibilitySetting} placeholder="e.g. J.C. mode" onChange={(e) => handleMainChange('compactibilitySetting', e.target.value)} style={styles.headerInfoInput} tabIndex={3} onKeyDown={handleKeyDown} />
+                        <span className="foundry-header-label">COMPACTIBILITY SETTING:</span>
+                        <input type="text" value={formData.compactibilitySetting} placeholder="e.g. J.C. mode" onChange={(e) => handleMainChange('compactibilitySetting', e.target.value)} className="foundry-header-input" tabIndex={3} onKeyDown={handleKeyDown} />
 
-                        <span style={styles.headerInfoLabel}>SHIFT:</span>
-                        <input type="text" value={formData.shift} placeholder="e.g. 2nd Shift" onChange={(e) => handleMainChange('shift', e.target.value)} style={styles.headerInfoInput} tabIndex={4} onKeyDown={handleKeyDown} />
+                        <span className="foundry-header-label">SHIFT:</span>
+                        <input type="text" value={formData.shift} placeholder="e.g. 2nd Shift" onChange={(e) => handleMainChange('shift', e.target.value)} className="foundry-header-input" tabIndex={4} onKeyDown={handleKeyDown} />
 
-                        <span style={styles.headerInfoLabel}>SHEAR/MOULD STRENGTH SETTING:</span>
-                        <input type="text" value={formData.shearStrengthSetting} placeholder="e.g. MP.VOX 2" onChange={(e) => handleMainChange('shearStrengthSetting', e.target.value)} style={styles.headerInfoInput} tabIndex={5} onKeyDown={handleKeyDown} />
+                        <span className="foundry-header-label">SHEAR/MOULD STRENGTH SETTING:</span>
+                        <input type="text" value={formData.shearStrengthSetting} placeholder="e.g. MP.VOX 2" onChange={(e) => handleMainChange('shearStrengthSetting', e.target.value)} className="foundry-header-input" tabIndex={5} onKeyDown={handleKeyDown} />
                     </div>
                 </div>
 
                 {/* IMPORTANT: The form onSubmit={handleSubmit} is now the primary mechanism to prevent Enter key submission. */}
-                <form onSubmit={handleSubmit} style={styles.formContent}>
+                <form onSubmit={handleSubmit} className="foundry-form-content">
 
                     {/* --- 1. CLAY/VCM/LOI TABLES (Tab Indices 10-29) --- */}
                     <TestTable data={formData} handleTestChange={(testNum, field, value) => { handleTestChange(testNum, field, value); }} />
@@ -318,11 +310,11 @@ const FoundrySandTestingNote = () => {
                     <SieveTestTable data={formData} handleSieveChange={handleSieveChange} handleSieveTotalChange={handleSieveTotalChange} />
 
                     {/* --- 3. BOTTOM PARAMETER SECTION --- */}
-                    <div style={styles.bottomGrid}>
+                    <div className="foundry-bottom-grid">
                         
                         {/* Left Column: Main Parameters (Tab Indices 90-101) */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <h3 style={styles.bottomGridTitle}><FlaskConical size={20} style={{marginRight: '0.5rem', color: '#5B9AA9'}} />Main Parameters</h3>
+                        <div className="foundry-bottom-column">
+                            <h3 className="foundry-bottom-title"><FlaskConical size={20} className="foundry-icon-teal" />Main Parameters</h3>
                             <LabeledInput label="Compactability" value={formData.compactability} onChange={handleMainChange} field="compactability" suffix="%" tabIndex={90} onKeyDown={handleKeyDown} />
                             <LabeledInput label="Permeability" value={formData.permeability} onChange={handleMainChange} field="permeability" tabIndex={91} onKeyDown={handleKeyDown} />
                             <LabeledInput label="GCS" value={formData.gcs} onChange={handleMainChange} field="gcs" suffix="gm/cm²" tabIndex={92} onKeyDown={handleKeyDown} />
@@ -338,161 +330,90 @@ const FoundrySandTestingNote = () => {
                         </div>
 
                         {/* Right Column: Additional Data & Remarks (Tab Indices 110-117) */}
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                            <h3 style={styles.bottomGridTitle}><FileText size={20} style={{marginRight: '0.5rem', color: '#5B9AA9'}} />Additional Data</h3>
+                        <div className="foundry-bottom-column">
+                            <h3 className="foundry-bottom-title"><FileText size={20} className="foundry-icon-teal" />Additional Data</h3>
                             
                             {/* AFS No */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                                <label style={styles.bottomLabel}>AFS No.</label>
-                                <div style={styles.bottomValueContainer}>
-                                    <input type="text" value={formData.afsNo} onChange={(e) => handleMainChange('afsNo', e.target.value)} style={styles.bottomInput} tabIndex={110} onKeyDown={handleKeyDown} />
-                                    <input type="text" value={formData.afsNo2} onChange={(e) => handleMainChange('afsNo2', e.target.value)} style={styles.bottomInput} tabIndex={111} onKeyDown={handleKeyDown} />
+                            <div className="foundry-bottom-row">
+                                <label className="foundry-bottom-label">AFS No.</label>
+                                <div className="foundry-bottom-value">
+                                    <input type="text" value={formData.afsNo} onChange={(e) => handleMainChange('afsNo', e.target.value)} className="foundry-bottom-input" tabIndex={110} onKeyDown={handleKeyDown} />
+                                    <input type="text" value={formData.afsNo2} onChange={(e) => handleMainChange('afsNo2', e.target.value)} className="foundry-bottom-input" tabIndex={111} onKeyDown={handleKeyDown} />
                                 </div>
                             </div>
                             
                             {/* Fines */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                                <label style={styles.bottomLabel}>Fines</label>
-                                <div style={styles.bottomValueContainer}>
-                                    <input type="text" value={formData.fines} onChange={(e) => handleMainChange('fines', e.target.value)} style={styles.bottomInput} tabIndex={112} onKeyDown={handleKeyDown} />
-                                    <input type="text" value={formData.fines2} onChange={(e) => handleMainChange('fines2', e.target.value)} style={styles.bottomInput} tabIndex={113} onKeyDown={handleKeyDown} />
+                            <div className="foundry-bottom-row">
+                                <label className="foundry-bottom-label">Fines</label>
+                                <div className="foundry-bottom-value">
+                                    <input type="text" value={formData.fines} onChange={(e) => handleMainChange('fines', e.target.value)} className="foundry-bottom-input" tabIndex={112} onKeyDown={handleKeyDown} />
+                                    <input type="text" value={formData.fines2} onChange={(e) => handleMainChange('fines2', e.target.value)} className="foundry-bottom-input" tabIndex={113} onKeyDown={handleKeyDown} />
                                 </div>
                             </div>
 
                             {/* GD */}
-                            <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', marginBottom: '0.5rem' }}>
-                                <label style={styles.bottomLabel}>GD</label>
-                                <div style={styles.bottomValueContainer}>
-                                    <input type="text" value={formData.gd} onChange={(e) => handleMainChange('gd', e.target.value)} style={styles.bottomInput} tabIndex={114} onKeyDown={handleKeyDown} />
-                                    <input type="text" value={formData.gd2} onChange={(e) => handleMainChange('gd2', e.target.value)} style={styles.bottomInput} tabIndex={115} onKeyDown={handleKeyDown} />
+                            <div className="foundry-bottom-row">
+                                <label className="foundry-bottom-label">GD</label>
+                                <div className="foundry-bottom-value">
+                                    <input type="text" value={formData.gd} onChange={(e) => handleMainChange('gd', e.target.value)} className="foundry-bottom-input" tabIndex={114} onKeyDown={handleKeyDown} />
+                                    <input type="text" value={formData.gd2} onChange={(e) => handleMainChange('gd2', e.target.value)} className="foundry-bottom-input" tabIndex={115} onKeyDown={handleKeyDown} />
                                 </div>
                             </div>
 
                             {/* Remarks */}
-                            <div style={{ display: 'flex', flexDirection: 'column', marginTop: '1rem' }}>
-                                <label style={{ ...styles.bottomLabel, textAlign: 'left', minWidth: 'auto', marginBottom: '0.5rem' }}>Remarks:</label>
-                                <textarea
-                                    value={formData.remarks}
-                                    onChange={(e) => handleMainChange('remarks', e.target.value)}
-                                    rows="4"
-                                    style={{ ...styles.bottomInput, height: 'auto', resize: 'vertical' }}
-                                    tabIndex={116}
-                                    onKeyDown={handleKeyDown}
-                                ></textarea>
+                            <div className="foundry-bottom-remarks">
+                                <label className="foundry-bottom-label foundry-remarks-label">Remarks:</label>
+                                <textarea value={formData.remarks} onChange={(e) => handleMainChange('remarks', e.target.value)} rows="4" className="foundry-bottom-input foundry-remarks-textarea" tabIndex={116} onKeyDown={handleKeyDown}></textarea>
                             </div>
                         </div>
                     </div>
 
                     {/* --- SUBMIT BUTTONS (Tab Indices 200/201) --- */}
-                    <div style={styles.buttonGroup}>
-                        <button
-                            type="button"
-                            onClick={handleReset}
-                            style={{ ...styles.baseButton, ...styles.resetButton }}
-                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                            tabIndex={200}
-                        >
-                            <X size={18} />
-                            Reset Form
-                        </button>
-
-                        <button
-                            type="submit" // Type 'submit' is necessary to trigger the form's onSubmit handler
-                            style={{ ...styles.baseButton, ...styles.submitButton }}
-                            onMouseEnter={(e) => { e.currentTarget.style.transform = 'scale(1.03)'; }}
-                            onMouseLeave={(e) => { e.currentTarget.style.transform = 'scale(1)'; }}
-                            tabIndex={201}
-                        >
-                            <Save size={20} />
-                            Save Foundry Record
-                        </button>
+                    <div className="foundry-button-group">
+                        <Button type="button" onClick={handleReset} className="foundry-base-btn foundry-reset-btn" tabIndex={200}>
+                            <X size={18} /> Reset Form
+                        </Button>
+                        <Button type="submit" className="foundry-base-btn foundry-submit-btn" tabIndex={201}>
+                            <Save size={20} /> Save Foundry Record
+                        </Button>
                     </div>
 
                 </form>
 
                 {/* Report Section */}
-                <div style={{
-                    background: 'white',
-                    borderRadius: '12px',
-                    boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-                    padding: '2rem',
-                    marginTop: '2rem'
-                }}>
-                    <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '0.75rem',
-                        marginBottom: '1.5rem',
-                        paddingBottom: '1rem',
-                        borderBottom: '2px solid #e2e8f0'
-                    }}>
-                        <Filter size={20} style={{ color: '#FF7F50' }} />
-                        <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>
-                            Foundry Sand Testing Note - Report
-                        </h3>
+                <div className="foundry-report-container">
+                    <div className="foundry-report-header">
+                        <Filter size={20} className="foundry-filter-icon" />
+                        <h3 className="foundry-report-title">Foundry Sand Testing Note - Report</h3>
                     </div>
 
-                    <div style={{
-                        display: 'grid',
-                        gridTemplateColumns: '1fr 1fr auto',
-                        gap: '1rem',
-                        marginBottom: '1.5rem',
-                        alignItems: 'end'
-                    }}>
+                    <div className="foundry-report-filter-grid">
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                                Start Date
-                            </label>
+                            <label className="foundry-filter-label">Start Date</label>
                             <DatePicker placeholder="Select start date" />
                         </div>
                         <div>
-                            <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
-                                End Date
-                            </label>
+                            <label className="foundry-filter-label">End Date</label>
                             <DatePicker placeholder="Select end date" />
                         </div>
-                        <button style={{
-                            display: 'flex',
-                            alignItems: 'center',
-                            gap: '0.5rem',
-                            padding: '0.625rem 1.5rem',
-                            background: 'linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%)',
-                            color: 'white',
-                            border: 'none',
-                            borderRadius: '8px',
-                            cursor: 'pointer',
-                            fontSize: '0.875rem',
-                            fontWeight: '600',
-                            minHeight: '42px'
-                        }}>
-                            <Filter size={18} />
-                            Filter
-                        </button>
+                        <Button className="foundry-filter-btn"><Filter size={18} /> Filter</Button>
                     </div>
 
-                    <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '900px' }}>
-                            <thead style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', color: 'white' }}>
+                    <div className="foundry-report-table-wrapper">
+                        <table className="foundry-report-table">
+                            <thead className="foundry-report-table-head">
                                 <tr>
-                                    <th style={{ padding: '1rem 0.75rem', textAlign: 'left', whiteSpace: 'nowrap' }}>Date</th>
-                                    <th style={{ padding: '1rem 0.75rem', textAlign: 'left', whiteSpace: 'nowrap' }}>Sand Type</th>
-                                    <th style={{ padding: '1rem 0.75rem', textAlign: 'left', whiteSpace: 'nowrap' }}>Moisture %</th>
-                                    <th style={{ padding: '1rem 0.75rem', textAlign: 'left', whiteSpace: 'nowrap' }}>Comp. Strength</th>
-                                    <th style={{ padding: '1rem 0.75rem', textAlign: 'left', whiteSpace: 'nowrap' }}>Permeability</th>
-                                    <th style={{ padding: '1rem 0.75rem', textAlign: 'left', whiteSpace: 'nowrap' }}>Remarks</th>
+                                    <th className="foundry-report-th">Date</th>
+                                    <th className="foundry-report-th">Sand Type</th>
+                                    <th className="foundry-report-th">Moisture %</th>
+                                    <th className="foundry-report-th">Comp. Strength</th>
+                                    <th className="foundry-report-th">Permeability</th>
+                                    <th className="foundry-report-th">Remarks</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr>
-                                    <td colSpan="6" style={{
-                                        textAlign: 'center',
-                                        padding: '3rem',
-                                        color: '#94a3b8',
-                                        fontStyle: 'italic'
-                                    }}>
-                                        No records found. Submit entries above to see them here.
-                                    </td>
+                                    <td colSpan="6" className="foundry-no-records">No records found. Submit entries above to see them here.</td>
                                 </tr>
                             </tbody>
                         </table>

@@ -1,0 +1,55 @@
+/* Button.css
+	 Generic button styles used by the shared Button component.
+	 Pages keep their page-specific class names (e.g. impact-submit-btn).
+	 The Button component forwards className so page CSS stays effective.
+*/
+
+.btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.5rem;
+	padding: 0.6rem 1rem;
+	border-radius: 8px;
+	border: none;
+	cursor: pointer;
+	font-size: 0.9rem;
+	font-weight: 600;
+	transition: transform 0.15s ease, box-shadow 0.15s ease, opacity 0.15s ease;
+}
+
+.btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.65;
+	transform: none;
+}
+
+.btn--primary {
+	background-color: #5B9AA9;
+	color: white;
+}
+.btn--secondary {
+	background-color: #163442;
+	color: white;
+}
+.btn--danger {
+	background-color: #ff4d4f;
+	color: white;
+}
+.btn--ghost {
+	background: transparent;
+	color: inherit;
+	box-shadow: none;
+}
+
+/* Icon-only small circular button */
+.btn--circle {
+	border-radius: 9999px;
+	padding: 0.35rem;
+	width: 34px;
+	height: 34px;
+}
+
+/* If a page provides its own class (e.g. .impact-submit-btn) those rules will apply
+	 together with the base .btn class above. This keeps page-specific hover/box-shadow
+	 behavior unchanged while providing consistent base spacing and disabled handling. */

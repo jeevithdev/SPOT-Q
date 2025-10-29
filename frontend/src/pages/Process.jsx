@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw, X } from 'lucide-react';
-import { DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
+import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -222,10 +222,10 @@ const Process = () => {
               <Save size={24} style={{ color: '#5B9AA9' }} />
               <h2>Process Record - Entry Form</h2>
             </div>
-            <button onClick={handleReset} className="process-reset-btn">
+            <Button onClick={handleReset} className="process-reset-btn" variant="secondary">
               <RefreshCw size={18} />
               Reset
-            </button>
+            </Button>
           </div>
 
           <div className="process-form-grid">
@@ -273,10 +273,8 @@ const Process = () => {
             </div>
 
             {/* Metal Composition Section */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Metal Composition (%)
-              </h4>
+            <div className="section-separator">
+              <h4 className="section-title">Metal Composition (%)</h4>
             </div>
 
             <div className="process-form-group">
@@ -376,10 +374,8 @@ const Process = () => {
             </div>
 
             {/* Pouring Details Section */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Pouring Details
-              </h4>
+            <div className="section-separator">
+              <h4 className="section-title">Pouring Details</h4>
             </div>
 
             <div className="process-form-group">
@@ -464,14 +460,10 @@ const Process = () => {
           </div>
 
           <div className="process-submit-container">
-            <button
-              onClick={handleSubmit}
-              disabled={submitLoading}
-              className="process-submit-btn"
-            >
+            <Button onClick={handleSubmit} disabled={submitLoading} className="process-submit-btn" type="button">
               {submitLoading ? <Loader size={20} /> : <Save size={20} />}
               {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -502,10 +494,10 @@ const Process = () => {
             </div>
 
             <div className="process-filter-btn-container">
-              <button onClick={handleFilter} className="process-filter-btn">
+              <Button onClick={handleFilter} className="process-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
-              </button>
+              </Button>
             </div>
           </div>
 

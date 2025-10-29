@@ -4,6 +4,7 @@ import App from './app.jsx';
 import { AuthProvider } from './src/context/AuthContext';
 import './app.css';
 import './src/styles/ComponentStyles/responsive.css';
+import Button from './src/Components/Buttons';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -39,12 +40,13 @@ class ErrorBoundary extends React.Component {
                 {this.state.error && this.state.error.toString()}
               </pre>
             </details>
-            <button 
-              onClick={() => window.location.reload()} 
+            <Button
+              onClick={() => window.location.reload()}
               className="retry-button"
+              variant="ghost"
             >
               Reload Page
-            </button>
+            </Button>
           </div>
           <style>{`
             .error-boundary {

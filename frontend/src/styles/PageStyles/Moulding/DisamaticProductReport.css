@@ -1,0 +1,218 @@
+/* Disamatic Product Report - per-page styles */
+
+.disamatic-page-container {
+	min-height: 100vh;
+	background-color: #f0f4f8;
+	padding: 2rem;
+	font-family: Arial, sans-serif;
+}
+
+.disamatic-main-card {
+	max-width: 1000px;
+	margin: 0 auto;
+	background-color: white;
+	box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+	border-radius: 8px;
+	overflow: hidden;
+}
+
+.disamatic-header {
+	padding: 1rem 1.5rem;
+	border-bottom: 4px solid #0056b3;
+	background-color: #e6f2ff;
+	display: flex;
+	justify-content: space-between;
+	align-items: center;
+	flex-wrap: wrap;
+	gap: 1rem;
+}
+
+.disamatic-factory-icon {
+	color: #0056b3;
+}
+
+.disamatic-title-container { text-align: center; flex-grow: 1; }
+.disamatic-header-title {
+	font-size: 1.8rem;
+	font-weight: bold;
+	color: #0056b3;
+	margin: 0 0 0.25rem 0;
+}
+.disamatic-header-subtitle {
+	font-size: 1.2rem;
+	font-weight: bold;
+	color: #333;
+}
+
+.disamatic-input-group {
+	display: grid;
+	grid-template-columns: auto auto;
+	gap: 0.5rem 1rem;
+	font-size: 0.875rem;
+	font-weight: 500;
+	color: #333;
+}
+.disamatic-input-label {
+	font-weight: 600;
+	color: #1a202c;
+	text-align: right;
+}
+.disamatic-input-base {
+	padding: 0.3rem 0.6rem;
+	border: 1px solid #ccc;
+	border-radius: 4px;
+	font-size: 0.8rem;
+	outline: none;
+	width: 120px;
+	box-sizing: border-box;
+	background-color: white;
+}
+
+.disamatic-section { padding: 1.5rem; border-bottom: 1px solid #ddd; }
+.disamatic-section-title {
+	font-size: 1.2rem;
+	font-weight: bold;
+	color: #333;
+	border-bottom: 2px solid #ccc;
+	padding-bottom: 0.5rem;
+	margin-bottom: 1rem;
+	display: flex;
+	align-items: center;
+	gap: 0.5rem;
+}
+
+.disamatic-members-grid {
+	display: grid;
+	grid-template-columns: repeat(4, 1fr);
+	gap: 1rem;
+}
+
+.disamatic-table-wrapper {
+	overflow-x: auto;
+	margin-bottom: 1rem;
+}
+
+.disamatic-table {
+	width: 100%;
+	border-collapse: collapse;
+	font-size: 0.875rem;
+	min-width: 800px;
+}
+
+.disamatic-table-head-cell,
+.disamatic-table-head-cell-left {
+	background-color: #cce5ff;
+	color: #0056b3;
+	padding: 0.6rem;
+	text-align: center;
+	font-weight: 600;
+	border: 1px solid #aaa;
+}
+.disamatic-table-head-cell-left { text-align: left; }
+
+.disamatic-table-body-cell {
+	padding: 0px;
+	text-align: center;
+	border: 1px solid #ddd;
+	font-size: 0.875rem;
+	color: #333;
+}
+.disamatic-table-input {
+	width: 100%;
+	padding: 0.4rem;
+	border: none;
+	outline: none;
+	font-size: 0.875rem;
+	text-align: center;
+	background-color: transparent;
+}
+
+.disamatic-add-row-btn {
+	display: inline-flex;
+	align-items: center;
+	justify-content: center;
+	gap: 0.4rem;
+	background-color: #0056b3;
+	color: white;
+	border: none;
+	border-radius: 6px;
+	padding: 0.5rem 1rem;
+	cursor: pointer;
+	margin: 0.5rem 0;
+}
+
+.disamatic-button-group {
+	margin-top: 1.5rem;
+	display: flex;
+	justify-content: flex-end;
+	gap: 0.75rem;
+	padding-top: 1.5rem;
+}
+.disamatic-base-button {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.75rem 1.5rem;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 0.875rem;
+	font-weight: 500;
+	box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+.disamatic-reset-btn { background-color: #333; color: white; }
+.disamatic-submit-btn { background-color: #0056b3; color: white; }
+
+.disamatic-report-container {
+	background: white;
+	border-radius: 12px;
+	box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+	padding: 2rem;
+	margin-top: 2rem;
+}
+.disamatic-report-header {
+	display: flex;
+	align-items: center;
+	gap: 0.75rem;
+	margin-bottom: 1.5rem;
+	padding-bottom: 1rem;
+	border-bottom: 2px solid #e2e8f0;
+}
+.disamatic-filter-icon { color: #FF7F50; }
+.disamatic-report-title { font-size: 1.5rem; font-weight: 700; color: #1e293b; margin: 0; }
+
+.disamatic-report-filter-grid {
+	display: grid;
+	grid-template-columns: 1fr 1fr auto;
+	gap: 1rem;
+	margin-bottom: 1.5rem;
+}
+.disamatic-filter-label { display: block; font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem; }
+.disamatic-filter-input { width: 100%; padding: 0.5rem; border-radius: 8px; border: 2px solid #cbd5e1; }
+.disamatic-filter-btn {
+	display: inline-flex;
+	align-items: center;
+	gap: 0.5rem;
+	padding: 0.625rem 1.5rem;
+	background: linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%);
+	color: white;
+	border: none;
+	border-radius: 8px;
+	cursor: pointer;
+	font-size: 0.875rem;
+	font-weight: 600;
+	align-self: end;
+}
+
+.disamatic-no-records {
+	text-align: center;
+	padding: 3rem;
+	color: #94a3b8;
+	font-style: italic;
+}
+
+@media (max-width: 968px) {
+	.disamatic-members-grid { grid-template-columns: repeat(2, 1fr); }
+	.disamatic-report-filter-grid { grid-template-columns: 1fr; }
+}
+

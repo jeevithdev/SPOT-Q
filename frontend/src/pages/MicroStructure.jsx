@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw, X } from 'lucide-react';
-import { DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
+import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -197,10 +197,10 @@ const MicroStructure = () => {
               <Save size={24} style={{ color: '#5B9AA9' }} />
               <h2>Micro Structure - Entry Form</h2>
             </div>
-            <button onClick={handleReset} className="microstructure-reset-btn">
+            <Button onClick={handleReset} className="microstructure-reset-btn" variant="secondary">
               <RefreshCw size={18} />
               Reset
-            </button>
+            </Button>
           </div>
 
           <div className="microstructure-form-grid">
@@ -236,10 +236,8 @@ const MicroStructure = () => {
             </div>
 
             {/* Micro Structure Section */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Micro Structure Details
-              </h4>
+            <div className="section-separator">
+              <h4 className="section-title">Micro Structure Details</h4>
             </div>
 
             <div className="microstructure-form-group">
@@ -324,14 +322,10 @@ const MicroStructure = () => {
           </div>
 
           <div className="microstructure-submit-container">
-            <button
-              onClick={handleSubmit}
-              disabled={submitLoading}
-              className="microstructure-submit-btn"
-            >
+            <Button onClick={handleSubmit} disabled={submitLoading} className="microstructure-submit-btn" type="button">
               {submitLoading ? <Loader size={20} /> : <Save size={20} />}
               {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -363,10 +357,10 @@ const MicroStructure = () => {
             </div>
 
             <div className="microstructure-filter-btn-container">
-              <button onClick={handleFilter} className="microstructure-filter-btn">
+              <Button onClick={handleFilter} className="microstructure-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
-              </button>
+              </Button>
             </div>
           </div>
 
