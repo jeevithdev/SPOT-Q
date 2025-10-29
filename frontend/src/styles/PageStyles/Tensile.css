@@ -2,7 +2,6 @@
 
 .tensile-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef3 100%);
 }
 
 .tensile-wrapper {
@@ -13,7 +12,6 @@
 
 /* Entry Container */
 .tensile-entry-container {
-  background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
@@ -23,7 +21,6 @@
 
 /* Report Container */
 .tensile-report-container {
-  background-color: white;
   border-radius: 12px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   border: 1px solid #e2e8f0;
@@ -236,7 +233,6 @@
   overflow-x: auto;
   border-radius: 8px;
   border: 1px solid #e2e8f0;
-  background-color: white;
 }
 
 .tensile-table {
@@ -417,4 +413,3 @@
     padding: 1rem 1.5rem;
   }
 }
-

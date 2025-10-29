@@ -11,10 +11,8 @@ const Impact = () => {
     dateOfInspection: '',
     partName: '',
     dateCode: '',
-    heatCode: '',
-    specimenType: '',
-    temp: '',
-    energy: '',
+    specification: '',
+    observedValue: '',
     remarks: ''
   });
 
@@ -70,8 +68,8 @@ const Impact = () => {
   };
 
   const handleSubmit = async () => {
-    const required = ['dateOfInspection', 'partName', 'dateCode', 'heatCode', 
-                     'specimenType', 'temp', 'energy'];
+    const required = ['dateOfInspection', 'partName', 'dateCode', 
+                     'specification', 'observedValue'];
     const missing = required.filter(field => !formData[field]);
 
     if (missing.length > 0) {
@@ -87,8 +85,8 @@ const Impact = () => {
       if (data.success) {
         alert('Impact test entry created successfully!');
         setFormData({
-          dateOfInspection: '', partName: '', dateCode: '', heatCode: '',
-          specimenType: '', temp: '', energy: '', remarks: ''
+          dateOfInspection: '', partName: '', dateCode: '', 
+          specification: '', observedValue: '', remarks: ''
         });
         fetchItems();
       }
@@ -106,10 +104,8 @@ const Impact = () => {
       dateOfInspection: item.dateOfInspection ? new Date(item.dateOfInspection).toISOString().split('T')[0] : '',
       partName: item.partName || '',
       dateCode: item.dateCode || '',
-      heatCode: item.heatCode || '',
-      specimenType: item.specimenType || '',
-      temp: item.temp || '',
-      energy: item.energy || '',
+      specification: item.specification || '',
+      observedValue: item.observedValue || '',
       remarks: item.remarks || ''
     });
     setShowEditModal(true);
@@ -171,14 +167,14 @@ const Impact = () => {
 
   const handleReset = () => {
     setFormData({
-      dateOfInspection: '', partName: '', dateCode: '', heatCode: '',
-      specimenType: '', temp: '', energy: '', remarks: ''
+      dateOfInspection: '', partName: '', dateCode: '', 
+      specification: '', observedValue: '', remarks: ''
     });
   };
 
   return (
-    <div className="page-container impact-container container">
-      <div className="impact-wrapper">
+    <div className="page-container impact-container" style={{ background: 'transparent' }}>
+      <div className="impact-wrapper" style={{ background: 'transparent' }}>
         {showMissingFields && (
           <ValidationPopup
             missingFields={missingFields}
@@ -187,7 +183,7 @@ const Impact = () => {
         )}
 
         {/* Entry Form Container */}
-        <div className="impact-entry-container">
+        <div className="impact-entry-container" style={{ background: 'transparent' }}>
           <div className="impact-header">
             <div className="impact-header-text">
               <h2>
@@ -235,48 +231,25 @@ const Impact = () => {
             </div>
 
             <div className="impact-form-group">
-              <label>Heat Code *</label>
+              <label>Specification *</label>
               <input
                 type="text"
-                name="heatCode"
-                value={formData.heatCode}
+                name="specification"
+                value={formData.specification}
                 onChange={handleChange}
-                placeholder="e.g: HC-2024-501"
+                placeholder="e.g: 60 J/cm2 (min)"
               />
             </div>
 
             <div className="impact-form-group">
-              <label>Specimen Type *</label>
-              <input
-                type="text"
-                name="specimenType"
-                value={formData.specimenType}
-                onChange={handleChange}
-                placeholder="e.g: Charpy V-Notch"
-              />
-            </div>
-
-            <div className="impact-form-group">
-              <label>Temperature (°C) *</label>
+              <label>Observed Value *</label>
               <input
                 type="number"
-                name="temp"
-                value={formData.temp}
+                name="observedValue"
+                value={formData.observedValue}
                 onChange={handleChange}
                 step="0.1"
-                placeholder="e.g: 25.5"
-              />
-            </div>
-
-            <div className="impact-form-group">
-              <label>Energy (J) *</label>
-              <input
-                type="number"
-                name="energy"
-                value={formData.energy}
-                onChange={handleChange}
-                step="0.1"
-                placeholder="e.g: 45.0"
+                placeholder="e.g: 92,96"
               />
             </div>
 
@@ -301,7 +274,7 @@ const Impact = () => {
         </div>
 
         {/* Report Container */}
-        <div className="impact-report-container">
+        <div className="impact-report-container" style={{ background: 'transparent' }}>
           <h3 className="impact-report-title">
             <Filter size={28} style={{ color: '#FF7F50' }} />
             Impact Test - Report Card
@@ -339,17 +312,15 @@ const Impact = () => {
               <Loader />
             </div>
           ) : (
-            <div className="impact-table-container table-wrapper">
+            <div className="impact-table-container">
               <table className="impact-table">
                 <thead>
                   <tr>
                     <th>Date</th>
                     <th>Part Name</th>
                     <th>Date Code</th>
-                    <th>Heat Code</th>
-                    <th>Specimen Type</th>
-                    <th>Temp (°C)</th>
-                    <th>Energy (J)</th>
+                    <th>Specification</th>
+                    <th>Observed Value</th>
                     <th>Remarks</th>
                     <th>Actions</th>
                   </tr>
@@ -367,10 +338,8 @@ const Impact = () => {
                         <td>{new Date(item.dateOfInspection).toLocaleDateString()}</td>
                         <td>{item.partName}</td>
                         <td>{item.dateCode}</td>
-                        <td>{item.heatCode}</td>
-                        <td>{item.specimenType}</td>
-                        <td>{item.temp}</td>
-                        <td>{item.energy}</td>
+                        <td>{item.specification}</td>
+                        <td>{item.observedValue}</td>
                         <td>{item.remarks || '-'}</td>
                         <td style={{ minWidth: '100px' }}>
                           <EditActionButton onClick={() => handleEdit(item)} />
@@ -428,42 +397,21 @@ const Impact = () => {
                   </div>
 
                   <div className="impact-form-group">
-                    <label>Heat Code *</label>
+                    <label>Specification *</label>
                     <input
                       type="text"
-                      name="heatCode"
-                      value={editFormData.heatCode}
+                      name="specification"
+                      value={editFormData.specification}
                       onChange={handleEditChange}
                     />
                   </div>
 
                   <div className="impact-form-group">
-                    <label>Specimen Type *</label>
-                    <input
-                      type="text"
-                      name="specimenType"
-                      value={editFormData.specimenType}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="impact-form-group">
-                    <label>Temperature (°C) *</label>
+                    <label>Observed Value *</label>
                     <input
                       type="number"
-                      name="temp"
-                      value={editFormData.temp}
-                      onChange={handleEditChange}
-                      step="0.1"
-                    />
-                  </div>
-
-                  <div className="impact-form-group">
-                    <label>Energy (J) *</label>
-                    <input
-                      type="number"
-                      name="energy"
-                      value={editFormData.energy}
+                      name="observedValue"
+                      value={editFormData.observedValue}
                       onChange={handleEditChange}
                       step="0.1"
                     />

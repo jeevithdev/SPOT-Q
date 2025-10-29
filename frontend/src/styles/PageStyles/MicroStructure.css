@@ -106,6 +106,101 @@
   box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
 }
 
+/* Micro Structure Table Styles */
+.microstructure-table-section {
+  margin: 1.5rem 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  border: 1px solid #e2e8f0;
+}
+
+.table-title {
+  padding: 1rem 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  background: linear-gradient(to right, #f8fafc, #ffffff);
+}
+
+.table-title h4 {
+  color: #1e293b;
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.table-container {
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.microstructure-details-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.microstructure-details-table thead tr {
+  background: #f8fafc;
+}
+
+.microstructure-details-table th {
+  text-align: left;
+  padding: 1rem;
+  font-weight: 600;
+  color: #334155;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.microstructure-details-table td {
+  padding: 0.75rem 1rem;
+  border-bottom: 1px solid #e2e8f0;
+  color: #475569;
+}
+
+.microstructure-details-table tr:last-child td {
+  border-bottom: none;
+}
+
+.microstructure-details-table tr:hover {
+  background-color: #f8fafc;
+}
+
+.microstructure-details-table td:first-child {
+  font-weight: 500;
+  width: 40%;
+}
+
+.table-input {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 2px solid #e2e8f0;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+}
+
+.table-input:focus {
+  outline: none;
+  border-color: #5B9AA9;
+  box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
+}
+
+/* Responsive styles */
+@media (max-width: 640px) {
+  .table-container {
+    padding: 0.5rem;
+  }
+  
+  .microstructure-details-table th,
+  .microstructure-details-table td {
+    padding: 0.75rem;
+  }
+  
+  .table-title {
+    padding: 0.75rem 1rem;
+  }
+}
+
 .microstructure-form-group textarea {
   resize: vertical;
   min-height: 80px;

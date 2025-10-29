@@ -181,8 +181,8 @@ const MicroStructure = () => {
   };
 
   return (
-    <div className="microstructure-container container">
-      <div className="microstructure-wrapper">
+    <div className="microstructure-container" style={{ background: 'transparent' }}>
+      <div className="microstructure-wrapper" style={{ background: 'transparent' }}>
         {showMissingFields && (
           <ValidationPopup
             missingFields={missingFields}
@@ -191,7 +191,7 @@ const MicroStructure = () => {
         )}
 
         {/* Entry Form Container */}
-        <div className="microstructure-entry-container">
+        <div className="microstructure-entry-container" style={{ background: 'transparent' }}>
           <div className="microstructure-header">
             <div className="microstructure-header-text">
               <Save size={24} style={{ color: '#5B9AA9' }} />
@@ -331,7 +331,7 @@ const MicroStructure = () => {
 
 
         {/* Report Container */}
-        <div className="microstructure-report-container">
+        <div className="microstructure-report-container" style={{ background: 'transparent' }}>
           <div className="microstructure-report-title">
             <Filter size={20} style={{ color: '#FF7F50' }} />
             <h3>Micro Structure - Report Card</h3>
@@ -369,7 +369,7 @@ const MicroStructure = () => {
               <Loader />
             </div>
           ) : (
-            <div className="microstructure-table-container table-wrapper">
+            <div className="microstructure-table-container">
               <table className="microstructure-table">
                 <thead>
                   <tr>

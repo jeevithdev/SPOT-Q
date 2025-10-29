@@ -194,8 +194,8 @@ const QcProductionDetails = () => {
   };
 
   return (
-    <div className="qcproduction-container container">
-      <div className="qcproduction-wrapper">
+    <div className="qcproduction-container" style={{ background: 'transparent' }}>
+      <div className="qcproduction-wrapper" style={{ background: 'transparent' }}>
         {showMissingFields && (
           <ValidationPopup
             missingFields={missingFields}
@@ -204,7 +204,7 @@ const QcProductionDetails = () => {
         )}
 
         {/* Entry Form Container */}
-        <div className="qcproduction-entry-container">
+        <div className="qcproduction-entry-container" style={{ background: 'transparent' }}>
           <div className="qcproduction-header">
             <div className="qcproduction-header-text">
               <Save size={24} style={{ color: '#5B9AA9' }} />
@@ -398,7 +398,7 @@ const QcProductionDetails = () => {
         </div>
 
         {/* Report Container */}
-        <div className="qcproduction-report-container">
+        <div className="qcproduction-report-container" style={{ background: 'transparent' }}>
           <div className="qcproduction-report-title">
             <Filter size={20} style={{ color: '#FF7F50' }} />
             <h3>QC Production - Report Card</h3>
@@ -436,7 +436,7 @@ const QcProductionDetails = () => {
               <Loader />
             </div>
           ) : (
-            <div className="qcproduction-table-container table-wrapper">
+            <div className="qcproduction-table-container">
               <table className="qcproduction-table">
                 <thead>
                   <tr>

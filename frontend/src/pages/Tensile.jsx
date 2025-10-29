@@ -19,6 +19,7 @@ const Tensile = () => {
     uts: '',
     ys: '',
     elongation: '',
+    testedBy: '',
     remarks: ''
   });
 
@@ -75,7 +76,7 @@ const Tensile = () => {
 
   const handleSubmit = async () => {
     const required = ['dateOfInspection', 'item', 'dateHeatCode', 'dia', 'lo', 'li', 
-                     'breakingLoad', 'yieldLoad', 'uts', 'ys', 'elongation'];
+                     'breakingLoad', 'yieldLoad', 'uts', 'ys', 'elongation', 'testedBy' ];
     const missing = required.filter(field => !formData[field]);
 
     if (missing.length > 0) {
@@ -92,7 +93,7 @@ const Tensile = () => {
         alert('Tensile test entry created successfully!');
         setFormData({
           dateOfInspection: '', item: '', dateHeatCode: '', dia: '', lo: '', li: '',
-          breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: ''
+          breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', testedBy: '', remarks: ''
         });
         fetchItems();
       }
@@ -118,6 +119,7 @@ const Tensile = () => {
       uts: item.uts || '',
       ys: item.ys || '',
       elongation: item.elongation || '',
+      testedBy: item.testedBy || '',
       remarks: item.remarks || ''
     });
     setShowEditModal(true);
@@ -180,12 +182,12 @@ const Tensile = () => {
   const handleReset = () => {
     setFormData({
       dateOfInspection: '', item: '', dateHeatCode: '', dia: '', lo: '', li: '',
-      breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: ''
+      breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', testedBy: '', remarks: ''
     });
   };
 
   return (
-    <div className="page-container tensile-container container">
+    <div className="tensile-container">
       <div className="tensile-wrapper">
         {showMissingFields && (
           <ValidationPopup
@@ -340,6 +342,17 @@ const Tensile = () => {
               />
             </div>
 
+             <div className="tensile-form-group">
+              <label>TestedBy *</label>
+              <input
+                type="text"
+                name="testedBy"
+                value={formData.testedBy}
+                onChange={handleChange}
+                placeholder="e.g: John Doe"
+              />
+            </div>
+
             <div className="tensile-form-group full-width">
               <label>Remarks</label>
               <textarea
@@ -400,7 +413,7 @@ const Tensile = () => {
               <Loader />
             </div>
           ) : (
-            <div className="tensile-table-container table-wrapper">
+            <div className="tensile-table-container">
               <table className="tensile-table">
                 <thead>
                   <tr>
@@ -415,6 +428,7 @@ const Tensile = () => {
                     <th>UTS</th>
                     <th>YS</th>
                     <th>Elongation</th>
+                    <th>TestedBy</th>
                     <th>Remarks</th>
                     <th>Actions</th>
                   </tr>
@@ -440,6 +454,7 @@ const Tensile = () => {
                         <td>{item.uts}</td>
                         <td>{item.ys}</td>
                         <td>{item.elongation}</td>
+                        <td>{item.testedBy}</td>
                         <td>{item.remarks || '-'}</td>
                         <td style={{ minWidth: '100px' }}>
                           <EditActionButton onClick={() => handleEdit(item)} />
@@ -581,6 +596,17 @@ const Tensile = () => {
                       type="number"
                       name="elongation"
                       value={editFormData.elongation}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                   <div className="tensile-form-group">
+                    <label>TestedBy *</label>
+                    <input
+                      type="text"
+                      name="testedBy"
+                      value={editFormData.testedBy}
                       onChange={handleEditChange}
                       step="0.01"
                     />
