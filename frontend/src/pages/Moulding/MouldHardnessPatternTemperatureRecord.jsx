@@ -104,11 +104,7 @@ const MouldHardnessRecord = () => {
         <tbody>
           {formData.mouldHardnessTable.map((row, index) => (
             <tr key={index}>
-<<<<<<< Updated upstream
-              <td className="table-body-cell" style={{ color: '#808080', fontWeight: 'bold' }}>
-=======
               <td className="table-body-cell table-body-cell--muted">
->>>>>>> Stashed changes
                 {index + 1}
               </td>
               <td className="table-body-cell">
@@ -193,11 +189,7 @@ const MouldHardnessRecord = () => {
         <tbody>
           {formData.patternTempTable.map((row, index) => (
             <tr key={index}>
-<<<<<<< Updated upstream
-              <td className="table-body-cell" style={{ color: '#808080', fontWeight: 'bold' }}>
-=======
               <td className="table-body-cell table-body-cell--muted">
->>>>>>> Stashed changes
                 {row.sno}
               </td>
               <td className="table-body-cell">

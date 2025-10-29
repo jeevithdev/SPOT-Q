@@ -3,50 +3,7 @@ import { FlaskConical, Save, X, Factory, FileText, Filter } from 'lucide-react';
 import Button, { DatePicker } from '../../Components/Buttons';
 import '../../styles/PageStyles/Sandlab/FoundarySandTestingNote.css';
 
-// --- 1. STYLE DEFINITIONS (Centralized Styles) ---
-const styles = {
-    // General Page & Card Structure
-    pageContainer: { minHeight: '100vh', backgroundColor: '#f0f4f8', padding: '2rem', fontFamily: 'Arial, sans-serif', },
-    mainCard: { maxWidth: '1280px', margin: '0 auto', backgroundColor: 'white', boxShadow: '0 4px 6px rgba(0,0,0,0.1)', borderRadius: '8px', overflow: 'hidden', },
-
-    // Header Styles
-    header: { padding: '1rem 1.5rem', borderBottom: '4px solid #cc0000', backgroundColor: '#ffe6e6', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', },
-    headerTitle: { fontSize: '1.8rem', fontWeight: 'bold', color: '#1a202c', margin: '0', textAlign: 'center' },
-    headerInfoGrid: { display: 'grid', gridTemplateColumns: 'auto auto', gap: '0.5rem 1rem', fontSize: '0.875rem', fontWeight: 500, color: '#334155', },
-    headerInfoLabel: { fontWeight: 600, color: '#1a202c', textAlign: 'right', },
-    headerInfoInput: { padding: '0.3rem 0.6rem', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.8rem', outline: 'none', width: '120px', boxSizing: 'border-box', backgroundColor: 'white' },
-
-    // Form Content & Layout
-    formContent: { padding: '1.5rem', display: 'flex', flexDirection: 'column', gap: '1.5rem', },
-    
-    // Table Styles
-    tableWrapper: { border: '1px solid #aaa', borderRadius: '4px', overflow: 'hidden', },
-    tableTitle: { backgroundColor: '#163442', color: 'white', fontWeight: 'bold', padding: '0.75rem', textAlign: 'center', fontSize: '1rem', borderBottom: '1px solid #aaa', },
-    tableBase: { width: '100%', borderCollapse: 'collapse', },
-    tableHeadCell: { backgroundColor: '#e2e8f0', color: '#1a202c', padding: '0.6rem', textAlign: 'center', fontWeight: 600, borderBottom: '1px solid #aaa', borderRight: '1px solid #ccc', },
-    tableBodyCell: { padding: '0.4rem', textAlign: 'center', borderBottom: '1px solid #eee', borderRight: '1px solid #eee', fontSize: '0.875rem', color: '#334155', },
-    tableBodyCellLeft: { textAlign: 'left', paddingLeft: '0.8rem', fontWeight: 500, },
-    noBorderRight: { borderRight: 'none', },
-    tableRowEven: { backgroundColor: '#f8fafc', },
-
-    // Input Styles
-    inputBase: { width: '100%', padding: '0.3rem', border: '1px solid #ccc', borderRadius: '3px', fontSize: '0.875rem', textAlign: 'center', boxSizing: 'border-box', outline: 'none', },
-    inputSmall: { width: '60px', padding: '0.2rem', fontSize: '0.75rem', },
-    
-    // Bottom Section Styles
-    bottomGrid: { display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.5rem', },
-    bottomGridTitle: { fontSize: '1.2rem', fontWeight: 'bold', color: '#1a202c', borderBottom: '1px solid #ccc', paddingBottom: '0.5rem', marginBottom: '0.5rem', },
-    bottomLabel: { fontWeight: 500, color: '#334155', minWidth: '120px', textAlign: 'right', fontSize: '0.875rem', },
-    bottomValueContainer: { flexGrow: 1, display: 'flex', alignItems: 'center', gap: '0.5rem', },
-    bottomInput: { flexGrow: 1, padding: '0.4rem 0.6rem', border: '1px solid #ccc', borderRadius: '4px', fontSize: '0.875rem', outline: 'none', },
-    bottomTextSuffix: { fontSize: '0.8rem', color: '#64748b', },
-
-    // Button Styles
-    buttonGroup: { marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem', borderTop: '1px solid #cbd5e1', paddingTop: '1.5rem', },
-    baseButton: { display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.75rem 1.5rem', border: 'none', borderRadius: '8px', cursor: 'pointer', fontSize: '0.875rem', fontWeight: 500, transition: 'transform 0.3s ease', transform: 'scale(1)', boxShadow: '0 1px 2px rgba(0,0,0,0.05)', },
-    submitButton: { backgroundColor: '#5B9AA9', color: 'white', },
-    resetButton: { backgroundColor: '#163442', color: 'white', },
-};
+// Styles are moved to CSS file: FoundarySandTestingNote.css
 
 
 // --- 2. REUSABLE ATOMIC COMPONENTS (Unchanged Logic/Tabs) ---
@@ -78,36 +35,36 @@ const TestTable = ({ data, handleTestChange }) => {
     ];
 
     return (
-        <div style={styles.tableWrapper}>
-            <table style={styles.tableBase}>
+        <div className="foundry-table-wrapper table-wrapper">
+            <table className="foundry-table-base">
                 <thead>
                     <tr>
-                        <th style={{ ...styles.tableHeadCell, width: '25%' }}>Parameters</th>
-                        <th colSpan="2" style={{ ...styles.tableHeadCell, width: '37.5%' }}>TEST-1</th>
-                        <th colSpan="2" style={{ ...styles.tableHeadCell, ...styles.noBorderRight, width: '37.5%' }}>TEST-2</th>
+                        <th className="foundry-table-head-cell foundry-table-head-cell--25">Parameters</th>
+                        <th colSpan="2" className="foundry-table-head-cell foundry-table-head-cell--375">TEST-1</th>
+                        <th colSpan="2" className="foundry-table-head-cell foundry-table-head-cell--375 foundry-no-border-right">TEST-2</th>
                     </tr>
                 </thead>
                 <tbody>
                     {fields.map(({ label, f1, f2, startTab }, index) => (
-                        <tr key={label} style={index % 2 === 0 ? styles.tableRowEven : {}}>
-                            <td style={{ ...styles.tableBodyCell, ...styles.tableBodyCellLeft }}>{label}</td>
+                        <tr key={label} className={index % 2 === 0 ? 'foundry-table-row-even' : ''}>
+                            <td className="foundry-table-body-cell foundry-table-body-cell-left">{label}</td>
                             
                             {/* TEST-1 */}
-                            <td style={styles.tableBodyCell}>
-                                <input type="text" value={data.test1[f1]} onChange={(e) => handleTestChange(1, f1, e.target.value)} style={styles.inputBase} tabIndex={startTab} />
+                            <td className="foundry-table-body-cell">
+                                <input type="text" value={data.test1[f1]} onChange={(e) => handleTestChange(1, f1, e.target.value)} className="foundry-input-base" tabIndex={startTab} />
                             </td>
-                            <td style={styles.tableBodyCell}>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>% = </span>
-                                <input type="text" value={data.test1[f2]} onChange={(e) => handleTestChange(1, f2, e.target.value)} style={{ ...styles.inputBase, ...styles.inputSmall, width: '60px' }} tabIndex={startTab + 1} />
+                            <td className="foundry-table-body-cell">
+                                <span className="foundry-percent-label">% = </span>
+                                <input type="text" value={data.test1[f2]} onChange={(e) => handleTestChange(1, f2, e.target.value)} className="foundry-input-base foundry-input-small" tabIndex={startTab + 1} />
                             </td>
                             
                             {/* TEST-2 */}
-                            <td style={styles.tableBodyCell}>
-                                <input type="text" value={data.test2[f1]} onChange={(e) => handleTestChange(2, f1, e.target.value)} style={styles.inputBase} tabIndex={startTab + 2} />
+                            <td className="foundry-table-body-cell">
+                                <input type="text" value={data.test2[f1]} onChange={(e) => handleTestChange(2, f1, e.target.value)} className="foundry-input-base" tabIndex={startTab + 2} />
                             </td>
-                            <td style={{ ...styles.tableBodyCell, ...styles.noBorderRight }}>
-                                <span style={{ fontSize: '0.8rem', color: '#64748b' }}>% = </span>
-                                <input type="text" value={data.test2[f2]} onChange={(e) => handleTestChange(2, f2, e.target.value)} style={{ ...styles.inputBase, ...styles.inputSmall, width: '60px' }} tabIndex={startTab + 3} />
+                            <td className="foundry-table-body-cell foundry-no-border-right">
+                                <span className="foundry-percent-label">% = </span>
+                                <input type="text" value={data.test2[f2]} onChange={(e) => handleTestChange(2, f2, e.target.value)} className="foundry-input-base foundry-input-small" tabIndex={startTab + 3} />
                             </td>
                         </tr>
                     ))}
@@ -118,15 +75,8 @@ const TestTable = ({ data, handleTestChange }) => {
 };
 
 const SieveTestTable = ({ data, handleSieveChange, handleSieveTotalChange }) => {
-    const sieveStyles = {
-        headerRow: { backgroundColor: '#f0f0f0' },
-        totalRow: { backgroundColor: '#e2e8f0', fontWeight: 'bold' },
-        inputCell: { padding: '0px', borderRight: '1px solid #ccc' },
-        inputBase: { width: '100%', padding: '0.4rem', border: 'none', outline: 'none', fontSize: '0.875rem', textAlign: 'center', boxSizing: 'border-box', }
-    };
-
     return (
-        <div className="foundry-table-wrapper">
+        <div className="foundry-table-wrapper table-wrapper">
             <h2 className="foundry-table-title">Sieve Testing</h2>
             <table className="foundry-table-base">
                 <thead>
@@ -269,7 +219,7 @@ const FoundrySandTestingNote = () => {
     // --- JSX RENDERING ---
 
     return (
-        <div className="foundry-page-container">
+        <div className="foundry-page-container container">
             <div className="foundry-main-card">
 
                 {/* --- HEADER --- */}
