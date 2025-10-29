@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw, X } from 'lucide-react';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
-import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/QcProductionDetails.css';
@@ -27,12 +26,11 @@ const QcProductionDetails = () => {
 
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [showMissingFields, setShowMissingFields] = useState(false);
-  const [missingFields, setMissingFields] = useState([]);
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   
   // Edit states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -66,6 +64,42 @@ const QcProductionDetails = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value, type } = e.target;
+    
+    // Auto-format single digit numbers with leading zero
+    if (type === 'number' && value && !isNaN(value) && parseFloat(value) >= 0 && parseFloat(value) <= 9 && !value.includes('.') && value.length === 1) {
+      const formattedValue = '0' + value;
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedValue
+      }));
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form;
+      const inputs = Array.from(form.querySelectorAll('input, textarea'));
+      const currentIndex = inputs.indexOf(e.target);
+      const nextInput = inputs[currentIndex + 1];
+      
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
   };
 
   const handleEditChange = (e) => {
@@ -81,12 +115,20 @@ const QcProductionDetails = () => {
                      'pPercent', 'sPercent', 'mgPercent', 'cuPercent', 'crPercent',
                      'nodularityGraphiteType', 'pearliteFerrite', 'hardnessBHN', 'tsYsEl'];
     const missing = required.filter(field => !formData[field]);
+    
+    // Set validation errors for missing fields
+    const errors = {};
+    missing.forEach(field => {
+      errors[field] = true;
+    });
+    setValidationErrors(errors);
 
     if (missing.length > 0) {
-      setMissingFields(missing);
-      setShowMissingFields(true);
       return;
     }
+    
+    // Clear validation errors if all fields are valid
+    setValidationErrors({});
 
     try {
       setSubmitLoading(true);
@@ -191,17 +233,12 @@ const QcProductionDetails = () => {
       pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
       nodularityGraphiteType: '', pearliteFerrite: '', hardnessBHN: '', tsYsEl: ''
     });
+    setValidationErrors({});
   };
 
   return (
     <div className="qcproduction-container" style={{ background: 'transparent' }}>
       <div className="qcproduction-wrapper" style={{ background: 'transparent' }}>
-        {showMissingFields && (
-          <ValidationPopup
-            missingFields={missingFields}
-            onClose={() => setShowMissingFields(false)}
-          />
-        )}
 
         {/* Entry Form Container */}
         <div className="qcproduction-entry-container" style={{ background: 'transparent' }}>
@@ -216,13 +253,15 @@ const QcProductionDetails = () => {
             </Button>
           </div>
 
-          <div className="qcproduction-form-grid">
+          <form className="qcproduction-form-grid">
             <div className="qcproduction-form-group">
               <label>Date *</label>
               <DatePicker
                 name="date"
                 value={formData.date}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                className={validationErrors.date ? 'invalid-input' : ''}
               />
             </div>
 
@@ -233,7 +272,9 @@ const QcProductionDetails = () => {
                 name="partName"
                 value={formData.partName}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: Brake Disc"
+                className={validationErrors.partName ? 'invalid-input' : ''}
               />
             </div>
 
@@ -244,7 +285,10 @@ const QcProductionDetails = () => {
                 name="noOfMoulds"
                 value={formData.noOfMoulds}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 5"
+                className={validationErrors.noOfMoulds ? 'invalid-input' : ''}
               />
             </div>
 
@@ -255,8 +299,11 @@ const QcProductionDetails = () => {
                 name="cPercent"
                 value={formData.cPercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 3.5"
+                className={validationErrors.cPercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -267,8 +314,11 @@ const QcProductionDetails = () => {
                 name="siPercent"
                 value={formData.siPercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 2.5"
+                className={validationErrors.siPercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -279,8 +329,11 @@ const QcProductionDetails = () => {
                 name="mnPercent"
                 value={formData.mnPercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 0.5"
+                className={validationErrors.mnPercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -291,8 +344,11 @@ const QcProductionDetails = () => {
                 name="pPercent"
                 value={formData.pPercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 0.05"
+                className={validationErrors.pPercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -303,8 +359,11 @@ const QcProductionDetails = () => {
                 name="sPercent"
                 value={formData.sPercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 0.03"
+                className={validationErrors.sPercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -315,8 +374,11 @@ const QcProductionDetails = () => {
                 name="mgPercent"
                 value={formData.mgPercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 0.04"
+                className={validationErrors.mgPercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -327,8 +389,11 @@ const QcProductionDetails = () => {
                 name="cuPercent"
                 value={formData.cuPercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 0.5"
+                className={validationErrors.cuPercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -339,8 +404,11 @@ const QcProductionDetails = () => {
                 name="crPercent"
                 value={formData.crPercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 0.2"
+                className={validationErrors.crPercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -351,7 +419,9 @@ const QcProductionDetails = () => {
                 name="nodularityGraphiteType"
                 value={formData.nodularityGraphiteType}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: Type VI"
+                className={validationErrors.nodularityGraphiteType ? 'invalid-input' : ''}
               />
             </div>
 
@@ -362,7 +432,9 @@ const QcProductionDetails = () => {
                 name="pearliteFerrite"
                 value={formData.pearliteFerrite}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 80/20"
+                className={validationErrors.pearliteFerrite ? 'invalid-input' : ''}
               />
             </div>
 
@@ -373,21 +445,26 @@ const QcProductionDetails = () => {
                 name="hardnessBHN"
                 value={formData.hardnessBHN}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 220"
+                className={validationErrors.hardnessBHN ? 'invalid-input' : ''}
               />
             </div>
 
-            <div className="qcproduction-form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="qcproduction-form-group">
               <label>TS/YS/EL *</label>
               <input
                 type="text"
                 name="tsYsEl"
                 value={formData.tsYsEl}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 550/460/18"
+                className={validationErrors.tsYsEl ? 'invalid-input' : ''}
               />
             </div>
-          </div>
+          </form>
 
           <div className="qcproduction-submit-container">
             <Button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">

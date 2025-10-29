@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw, X } from 'lucide-react';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
-import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/Tensile.css';
@@ -25,12 +24,11 @@ const Tensile = () => {
 
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [showMissingFields, setShowMissingFields] = useState(false);
-  const [missingFields, setMissingFields] = useState([]);
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   
   // Edit states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -64,6 +62,42 @@ const Tensile = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value, type } = e.target;
+    
+    // Auto-format single digit numbers with leading zero
+    if (type === 'number' && value && !isNaN(value) && parseFloat(value) >= 0 && parseFloat(value) <= 9 && !value.includes('.') && value.length === 1) {
+      const formattedValue = '0' + value;
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedValue
+      }));
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form;
+      const inputs = Array.from(form.querySelectorAll('input, textarea'));
+      const currentIndex = inputs.indexOf(e.target);
+      const nextInput = inputs[currentIndex + 1];
+      
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
   };
 
   const handleEditChange = (e) => {
@@ -78,12 +112,20 @@ const Tensile = () => {
     const required = ['dateOfInspection', 'item', 'dateHeatCode', 'dia', 'lo', 'li', 
                      'breakingLoad', 'yieldLoad', 'uts', 'ys', 'elongation', 'testedBy' ];
     const missing = required.filter(field => !formData[field]);
+    
+    // Set validation errors for missing fields
+    const errors = {};
+    missing.forEach(field => {
+      errors[field] = true;
+    });
+    setValidationErrors(errors);
 
     if (missing.length > 0) {
-      setMissingFields(missing);
-      setShowMissingFields(true);
       return;
     }
+    
+    // Clear validation errors if all fields are valid
+    setValidationErrors({});
 
     try {
       setSubmitLoading(true);
@@ -184,17 +226,12 @@ const Tensile = () => {
       dateOfInspection: '', item: '', dateHeatCode: '', dia: '', lo: '', li: '',
       breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', testedBy: '', remarks: ''
     });
+    setValidationErrors({});
   };
 
   return (
     <div className="tensile-container">
       <div className="tensile-wrapper">
-        {showMissingFields && (
-          <ValidationPopup
-            missingFields={missingFields}
-            onClose={() => setShowMissingFields(false)}
-          />
-        )}
 
         {/* Entry Form Container */}
         <div className="tensile-entry-container">
@@ -214,13 +251,15 @@ const Tensile = () => {
 
           {/* Entry Form */}
           <div className="tensile-card">
-          <div className="tensile-form-grid">
+          <form className="tensile-form-grid">
             <div className="tensile-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
                 name="dateOfInspection"
                 value={formData.dateOfInspection}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                className={validationErrors.dateOfInspection ? 'invalid-input' : ''}
               />
             </div>
 
@@ -231,7 +270,9 @@ const Tensile = () => {
                 name="item"
                 value={formData.item}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: Steel Rod"
+                className={validationErrors.item ? 'invalid-input' : ''}
               />
             </div>
 
@@ -242,7 +283,9 @@ const Tensile = () => {
                 name="dateHeatCode"
                 value={formData.dateHeatCode}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 2024-HC-001"
+                className={validationErrors.dateHeatCode ? 'invalid-input' : ''}
               />
             </div>
 
@@ -253,8 +296,11 @@ const Tensile = () => {
                 name="dia"
                 value={formData.dia}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 10.5"
+                className={validationErrors.dia ? 'invalid-input' : ''}
               />
             </div>
 
@@ -265,8 +311,11 @@ const Tensile = () => {
                 name="lo"
                 value={formData.lo}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 50.0"
+                className={validationErrors.lo ? 'invalid-input' : ''}
               />
             </div>
 
@@ -277,8 +326,11 @@ const Tensile = () => {
                 name="li"
                 value={formData.li}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 52.5"
+                className={validationErrors.li ? 'invalid-input' : ''}
               />
             </div>
 
@@ -289,8 +341,11 @@ const Tensile = () => {
                 name="breakingLoad"
                 value={formData.breakingLoad}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 45.5"
+                className={validationErrors.breakingLoad ? 'invalid-input' : ''}
               />
             </div>
 
@@ -301,8 +356,11 @@ const Tensile = () => {
                 name="yieldLoad"
                 value={formData.yieldLoad}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 38.2"
+                className={validationErrors.yieldLoad ? 'invalid-input' : ''}
               />
             </div>
 
@@ -313,8 +371,11 @@ const Tensile = () => {
                 name="uts"
                 value={formData.uts}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 550"
+                className={validationErrors.uts ? 'invalid-input' : ''}
               />
             </div>
 
@@ -325,8 +386,11 @@ const Tensile = () => {
                 name="ys"
                 value={formData.ys}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 460"
+                className={validationErrors.ys ? 'invalid-input' : ''}
               />
             </div>
 
@@ -337,8 +401,11 @@ const Tensile = () => {
                 name="elongation"
                 value={formData.elongation}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 18.5"
+                className={validationErrors.elongation ? 'invalid-input' : ''}
               />
             </div>
 
@@ -349,7 +416,9 @@ const Tensile = () => {
                 name="testedBy"
                 value={formData.testedBy}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: John Doe"
+                className={validationErrors.testedBy ? 'invalid-input' : ''}
               />
             </div>
 
@@ -359,11 +428,13 @@ const Tensile = () => {
                 name="remarks"
                 value={formData.remarks}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 rows="3"
                 placeholder="Enter any additional notes or observations..."
+                className=""
               />
             </div>
-          </div>
+          </form>
 
           <div className="tensile-submit-container">
             <Button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
