@@ -77,11 +77,6 @@
   transform: scale(1.05);
   box-shadow: 0 4px 6px rgba(22, 52, 66, 0.25);
 }
-
-.tensile-card {
-  /* Card styling removed as we're using containers now */
-}
-
 .tensile-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
