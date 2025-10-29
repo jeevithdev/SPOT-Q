@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw, X } from 'lucide-react';
-import { DatePicker, EditActionButton, DeleteActionButton } from '../../Components/Buttons';
+import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../../Components/Buttons';
 import ValidationPopup from '../../Components/ValidationPopup';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
@@ -746,7 +746,7 @@ const MeltingLogSheet = () => {
             </div>
 
             <div className="melting-log-filter-btn-container">
-              <Button onClick={() => {}} className="melting-log-filter-btn" type="button">
+              <Button onClick={handleFilter} className="melting-log-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
               </Button>

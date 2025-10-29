@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Save, Users, Factory, Clock, Zap, X, Plus, Filter } from 'lucide-react';
-import Button from '../../Components/Buttons';
+import { Button } from '../../Components/Buttons';
 import '../../styles/PageStyles/Moulding/DisamaticProductReport.css';
 
 // per-page styles are in the imported CSS file
@@ -118,13 +118,13 @@ const MouldingReport = () => {
                     {/* Header Input Fields (Tab Indices 1-3) */}
           <div className="disamatic-input-group">
             <span className="disamatic-input-label">Date:</span>
-            <input type="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} className="disamatic-input-base" tabIndex={1} />
+            <input type="date" value={formData.date} onChange={(e) => handleChange('date', e.target.value)} className="disamatic-input-base" tabIndex={1} />
 
             <span className="disamatic-input-label">Shift:</span>
-            <input type="text" value={formData.shift} onChange={(e) => handleMainChange('shift', e.target.value)} className="disamatic-input-base" tabIndex={2} />
+            <input type="text" value={formData.shift} onChange={(e) => handleChange('shift', e.target.value)} className="disamatic-input-base" tabIndex={2} />
 
             <span className="disamatic-input-label">Incharge:</span>
-            <input type="text" value={formData.incharge} onChange={(e) => handleMainChange('incharge', e.target.value)} className="disamatic-input-base" tabIndex={3} />
+            <input type="text" value={formData.incharge} onChange={(e) => handleChange('incharge', e.target.value)} className="disamatic-input-base" tabIndex={3} />
           </div>
                 </div>
 

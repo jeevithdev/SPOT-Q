@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Save, Gauge, Thermometer, Hammer, X, Filter } from 'lucide-react';
-import Button from '../../Components/Buttons';
+import { Button } from '../../Components/Buttons';
 import '../../styles/PageStyles/MouldHardnessPatternTemperatureRecord.css';
 
 const NUM_ROWS_HARDNESS = 8;
@@ -88,32 +88,26 @@ const MouldHardnessRecord = () => {
 
   // ---------- TABLE RENDERING ----------
   const renderMouldHardnessTable = () => (
-    <div style={styles.tableWrapper}>
-      <table style={styles.tableBase}>
+    <div className="table-wrapper">
+      <table className="table-base">
         <thead>
           <tr>
-            <th style={styles.tableHeadCell}>SNO</th>
-            <th style={styles.tableHeadCell}>Component Name</th>
-            <th style={styles.tableHeadCell}>Mould Penetrant PP</th>
-            <th style={styles.tableHeadCell}>Mould Penetrant SP</th>
-            <th style={styles.tableHeadCell}>B-Scale PP</th>
-            <th style={styles.tableHeadCell}>B-Scale SP</th>
-            <th style={styles.tableHeadCell}>Remarks</th>
+            <th className="table-head-cell">SNO</th>
+            <th className="table-head-cell">Component Name</th>
+            <th className="table-head-cell">Mould Penetrant PP</th>
+            <th className="table-head-cell">Mould Penetrant SP</th>
+            <th className="table-head-cell">B-Scale PP</th>
+            <th className="table-head-cell">B-Scale SP</th>
+            <th className="table-head-cell">Remarks</th>
           </tr>
         </thead>
         <tbody>
           {formData.mouldHardnessTable.map((row, index) => (
             <tr key={index}>
-              <td
-                style={{
-                  ...styles.tableBodyCell,
-                  color: '#808080',
-                  fontWeight: 'bold',
-                }}
-              >
+              <td className="table-body-cell" style={{ color: '#808080', fontWeight: 'bold' }}>
                 {index + 1}
               </td>
-              <td style={styles.tableBodyCell}>
+              <td className="table-body-cell">
                 <TableInput
                   value={row.componentName}
                   onChange={(e) =>
@@ -121,7 +115,7 @@ const MouldHardnessRecord = () => {
                   }
                 />
               </td>
-              <td style={styles.tableBodyCell}>
+              <td className="table-body-cell">
                 <TableInput
                   value={row.mouldPenetrantPP}
                   onChange={(e) =>
@@ -129,7 +123,7 @@ const MouldHardnessRecord = () => {
                   }
                 />
               </td>
-              <td style={styles.tableBodyCell}>
+              <td className="table-body-cell">
                 <TableInput
                   value={row.mouldPenetrantSP}
                   onChange={(e) =>
@@ -137,7 +131,7 @@ const MouldHardnessRecord = () => {
                   }
                 />
               </td>
-              <td style={styles.tableBodyCell}>
+              <td className="table-body-cell">
                 <TableInput
                   value={row.bScalePP}
                   onChange={(e) =>
@@ -145,7 +139,7 @@ const MouldHardnessRecord = () => {
                   }
                 />
               </td>
-              <td style={styles.tableBodyCell}>
+              <td className="table-body-cell">
                 <TableInput
                   value={row.bScaleSP}
                   onChange={(e) =>
@@ -153,7 +147,7 @@ const MouldHardnessRecord = () => {
                   }
                 />
               </td>
-              <td style={styles.tableBodyCell}>
+              <td className="table-body-cell">
                 <TableInput
                   value={row.remarks}
                   onChange={(e) =>
@@ -193,29 +187,23 @@ const MouldHardnessRecord = () => {
   );
 
   const renderPatternTemperatureTable = () => (
-    <div style={styles.tableWrapper}>
-      <table style={styles.tableBase}>
+    <div className="table-wrapper">
+      <table className="table-base">
         <thead>
           <tr>
-            <th style={styles.tableHeadCell}>SNO</th>
-            <th style={styles.tableHeadCell}>Items</th>
-            <th style={styles.tableHeadCell}>PP</th>
-            <th style={styles.tableHeadCell}>SP</th>
+            <th className="table-head-cell">SNO</th>
+            <th className="table-head-cell">Items</th>
+            <th className="table-head-cell">PP</th>
+            <th className="table-head-cell">SP</th>
           </tr>
         </thead>
         <tbody>
           {formData.patternTempTable.map((row, index) => (
             <tr key={index}>
-              <td
-                style={{
-                  ...styles.tableBodyCell,
-                  color: '#808080',
-                  fontWeight: 'bold',
-                }}
-              >
+              <td className="table-body-cell" style={{ color: '#808080', fontWeight: 'bold' }}>
                 {row.sno}
               </td>
-              <td style={styles.tableBodyCell}>
+              <td className="table-body-cell">
                 <TableInput
                   value={row.items}
                   onChange={(e) =>
@@ -223,7 +211,7 @@ const MouldHardnessRecord = () => {
                   }
                 />
               </td>
-              <td style={styles.tableBodyCell}>
+              <td className="table-body-cell">
                 <TableInput
                   value={row.pp}
                   onChange={(e) =>
@@ -231,7 +219,7 @@ const MouldHardnessRecord = () => {
                   }
                 />
               </td>
-              <td style={styles.tableBodyCell}>
+              <td className="table-body-cell">
                 <TableInput
                   value={row.sp}
                   onChange={(e) =>
