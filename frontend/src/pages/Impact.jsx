@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Filter, RefreshCw } from 'lucide-react';
-import { DatePicker } from '../Components/Buttons';
+import { Save, Filter, RefreshCw, X } from 'lucide-react';
+import { DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -26,6 +26,12 @@ const Impact = () => {
   const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -50,6 +56,14 @@ const Impact = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -83,6 +97,58 @@ const Impact = () => {
       alert('Failed to create entry: ' + error.message);
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setEditFormData({
+      dateOfInspection: item.dateOfInspection ? new Date(item.dateOfInspection).toISOString().split('T')[0] : '',
+      partName: item.partName || '',
+      dateCode: item.dateCode || '',
+      heatCode: item.heatCode || '',
+      specimenType: item.specimenType || '',
+      temp: item.temp || '',
+      energy: item.energy || '',
+      remarks: item.remarks || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      setEditLoading(true);
+      const data = await api.put(`/v1/impact-tests/${editingItem._id}`, editFormData);
+      
+      if (data.success) {
+        alert('Impact test entry updated successfully!');
+        setShowEditModal(false);
+        setEditingItem(null);
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error updating impact test:', error);
+      alert('Failed to update entry: ' + error.message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const data = await api.delete(`/v1/impact-tests/${id}`);
+      
+      if (data.success) {
+        alert('Impact test entry deleted successfully!');
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error deleting impact test:', error);
+      alert('Failed to delete entry: ' + error.message);
     }
   };
 
@@ -285,12 +351,13 @@ const Impact = () => {
                     <th>Temp (°C)</th>
                     <th>Energy (J)</th>
                     <th>Remarks</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="8" className="impact-no-records">
+                      <td colSpan="9" className="impact-no-records">
                         No records found
                       </td>
                     </tr>
@@ -305,6 +372,10 @@ const Impact = () => {
                         <td>{item.temp}</td>
                         <td>{item.energy}</td>
                         <td>{item.remarks || '-'}</td>
+                        <td style={{ minWidth: '100px' }}>
+                          <EditActionButton onClick={() => handleEdit(item)} />
+                          <DeleteActionButton onClick={() => handleDelete(item._id)} />
+                        </td>
                       </tr>
                     ))
                   )}
@@ -313,6 +384,122 @@ const Impact = () => {
             </div>
           )}
         </div>
+
+        {/* Edit Modal */}
+        {showEditModal && (
+          <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Edit Impact Test Entry</h2>
+                <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="modal-body">
+                <div className="impact-form-grid">
+                  <div className="impact-form-group">
+                    <label>Date of Inspection *</label>
+                    <DatePicker
+                      name="dateOfInspection"
+                      value={editFormData.dateOfInspection}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+
+                  <div className="impact-form-group">
+                    <label>Part Name *</label>
+                    <input
+                      type="text"
+                      name="partName"
+                      value={editFormData.partName}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+
+                  <div className="impact-form-group">
+                    <label>Date Code *</label>
+                    <input
+                      type="text"
+                      name="dateCode"
+                      value={editFormData.dateCode}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+
+                  <div className="impact-form-group">
+                    <label>Heat Code *</label>
+                    <input
+                      type="text"
+                      name="heatCode"
+                      value={editFormData.heatCode}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+
+                  <div className="impact-form-group">
+                    <label>Specimen Type *</label>
+                    <input
+                      type="text"
+                      name="specimenType"
+                      value={editFormData.specimenType}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+
+                  <div className="impact-form-group">
+                    <label>Temperature (°C) *</label>
+                    <input
+                      type="number"
+                      name="temp"
+                      value={editFormData.temp}
+                      onChange={handleEditChange}
+                      step="0.1"
+                    />
+                  </div>
+
+                  <div className="impact-form-group">
+                    <label>Energy (J) *</label>
+                    <input
+                      type="number"
+                      name="energy"
+                      value={editFormData.energy}
+                      onChange={handleEditChange}
+                      step="0.1"
+                    />
+                  </div>
+
+                  <div className="impact-form-group full-width">
+                    <label>Remarks</label>
+                    <textarea
+                      name="remarks"
+                      value={editFormData.remarks}
+                      onChange={handleEditChange}
+                      rows="3"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button 
+                  className="modal-cancel-btn" 
+                  onClick={() => setShowEditModal(false)}
+                  disabled={editLoading}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="modal-submit-btn" 
+                  onClick={handleUpdate}
+                  disabled={editLoading}
+                >
+                  {editLoading ? 'Updating...' : 'Update Entry'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

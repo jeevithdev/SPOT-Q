@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Filter, RefreshCw } from 'lucide-react';
-import { DatePicker } from '../Components/Buttons';
+import { Save, Filter, RefreshCw, X } from 'lucide-react';
+import { DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -37,6 +37,12 @@ const Process = () => {
   const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -61,6 +67,14 @@ const Process = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -98,6 +112,69 @@ const Process = () => {
       alert('Failed to create entry: ' + error.message);
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setEditFormData({
+      date: item.date ? new Date(item.date).toISOString().split('T')[0] : '',
+      partName: item.partName || '',
+      heatCode: item.heatCode || '',
+      qtyOfMoulds: item.qtyOfMoulds || '',
+      cPercent: item.cPercent || '',
+      siPercent: item.siPercent || '',
+      mnPercent: item.mnPercent || '',
+      pPercent: item.pPercent || '',
+      sPercent: item.sPercent || '',
+      mgFlPercent: item.mgFlPercent || '',
+      cuPercent: item.cuPercent || '',
+      crPercent: item.crPercent || '',
+      timeOfPouring: item.timeOfPouring || '',
+      pouringTemperature: item.pouringTemperature || '',
+      resMgConvertorPercent: item.resMgConvertorPercent || '',
+      recMgPercent: item.recMgPercent || '',
+      streamInoculantGmsSec: item.streamInoculantGmsSec || '',
+      pTimeSec: item.pTimeSec || '',
+      remarks: item.remarks || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      setEditLoading(true);
+      const data = await api.put(`/v1/process-records/${editingItem._id}`, editFormData);
+      
+      if (data.success) {
+        alert('Process record updated successfully!');
+        setShowEditModal(false);
+        setEditingItem(null);
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error updating process record:', error);
+      alert('Failed to update entry: ' + error.message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const data = await api.delete(`/v1/process-records/${id}`);
+      
+      if (data.success) {
+        alert('Process record deleted successfully!');
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error deleting process record:', error);
+      alert('Failed to delete entry: ' + error.message);
     }
   };
 
@@ -460,12 +537,13 @@ const Process = () => {
                     <th>Stream In.</th>
                     <th>P.Time</th>
                     <th>Remarks</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="19" className="process-no-records">
+                      <td colSpan="20" className="process-no-records">
                         No records found
                       </td>
                     </tr>
@@ -491,6 +569,10 @@ const Process = () => {
                         <td>{item.streamInoculantGmsSec || '-'}</td>
                         <td>{item.pTimeSec || '-'}</td>
                         <td>{item.remarks || '-'}</td>
+                        <td style={{ minWidth: '100px' }}>
+                          <EditActionButton onClick={() => handleEdit(item)} />
+                          <DeleteActionButton onClick={() => handleDelete(item._id)} />
+                        </td>
                       </tr>
                     ))
                   )}
@@ -499,6 +581,136 @@ const Process = () => {
             </div>
           )}
         </div>
+
+        {/* Edit Modal */}
+        {showEditModal && (
+          <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Edit Process Record</h2>
+                <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="modal-body">
+                <div className="process-form-grid">
+                  <div className="process-form-group">
+                    <label>Date *</label>
+                    <DatePicker name="date" value={editFormData.date} onChange={handleEditChange} />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Part Name *</label>
+                    <input type="text" name="partName" value={editFormData.partName} onChange={handleEditChange} />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Heat Code *</label>
+                    <input type="text" name="heatCode" value={editFormData.heatCode} onChange={handleEditChange} />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Qty of Moulds *</label>
+                    <input type="number" name="qtyOfMoulds" value={editFormData.qtyOfMoulds} onChange={handleEditChange} />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>Metal Composition (%)</h4>
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>C %</label>
+                    <input type="number" name="cPercent" value={editFormData.cPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Si %</label>
+                    <input type="number" name="siPercent" value={editFormData.siPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Mn %</label>
+                    <input type="number" name="mnPercent" value={editFormData.mnPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>P %</label>
+                    <input type="number" name="pPercent" value={editFormData.pPercent} onChange={handleEditChange} step="0.001" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>S %</label>
+                    <input type="number" name="sPercent" value={editFormData.sPercent} onChange={handleEditChange} step="0.001" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Mg (F/L) %</label>
+                    <input type="number" name="mgFlPercent" value={editFormData.mgFlPercent} onChange={handleEditChange} step="0.001" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Cu %</label>
+                    <input type="number" name="cuPercent" value={editFormData.cuPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Cr %</label>
+                    <input type="number" name="crPercent" value={editFormData.crPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+
+                  <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
+                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>Pouring Details</h4>
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Time of Pouring</label>
+                    <input type="time" name="timeOfPouring" value={editFormData.timeOfPouring} onChange={handleEditChange} />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Pouring Temperature (°C)</label>
+                    <input type="number" name="pouringTemperature" value={editFormData.pouringTemperature} onChange={handleEditChange} />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Res. Mg Convertor %</label>
+                    <input type="number" name="resMgConvertorPercent" value={editFormData.resMgConvertorPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Rec. of Mg %</label>
+                    <input type="number" name="recMgPercent" value={editFormData.recMgPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>Stream Inoculant (gms/sec)</label>
+                    <input type="number" name="streamInoculantGmsSec" value={editFormData.streamInoculantGmsSec} onChange={handleEditChange} step="0.1" />
+                  </div>
+
+                  <div className="process-form-group">
+                    <label>P.Time (sec)</label>
+                    <input type="number" name="pTimeSec" value={editFormData.pTimeSec} onChange={handleEditChange} />
+                  </div>
+
+                  <div className="process-form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>Remarks</label>
+                    <textarea name="remarks" value={editFormData.remarks} onChange={handleEditChange} rows="3" />
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button className="modal-cancel-btn" onClick={() => setShowEditModal(false)} disabled={editLoading}>
+                  Cancel
+                </button>
+                <button className="modal-submit-btn" onClick={handleUpdate} disabled={editLoading}>
+                  {editLoading ? 'Updating...' : 'Update Entry'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

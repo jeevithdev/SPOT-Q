@@ -8,15 +8,21 @@ require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// --- Import Routes ---
+// --- Import ALL Routes ---
 const authRoutes = require('./routes/auth');
-// Import the 5 new QC Routes
+// const itemRoutes = require('./routes/item'); // Assuming this was removed or no longer needed
+
+// 5 QC Routes
 const tensileTests = require('./routes/tensileRoutes');
 const qcReports = require('./routes/qcProductionRoutes');
 const microStructure = require('./routes/microStructureRoutes');
 const impactTests = require('./routes/impactRoutes');
 const microTensileTests = require('./routes/microTensileRoutes');
-// const processRoutes = require('./routes/processRoutes'); // Commented out - frontend only for now
+
+// Melting & Pouring/Process Routes (NEW IMPORTS)
+const meltingLogs = require('./routes/meltingLogRoutes');
+const cupolaHolderLogs = require('./routes/cupolaHolderLogRoutes');
+const processLogs = require('./routes/processLogRoutes'); // Using 'processLogs' and 'processRoutes'
 
 // Middleware
 app.use(cors());
@@ -24,20 +30,25 @@ app.use(express.json());
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('✅ MongoDB Connected'))
-  .catch(err => console.error('❌ MongoDB Connection Error:', err));
+  .then(() => console.log(' MongoDB Connected'))
+  .catch(err => console.error('MongoDB Connection Error:', err));
 
 // --- Routes ---
 // Existing Routes
 app.use('/api/auth', authRoutes);
+// app.use('/api/items', itemRoutes); // If itemRoutes is still needed, uncomment this
 
-// New QC Report Routes (Using /api/v1/ prefix for versioning)
+// V1 QC and Production Log Routes
 app.use('/api/v1/tensile-tests', tensileTests);
 app.use('/api/v1/qc-reports', qcReports);
 app.use('/api/v1/micro-structure', microStructure);
 app.use('/api/v1/impact-tests', impactTests);
 app.use('/api/v1/micro-tensile-tests', microTensileTests);
-// app.use('/api/v1/process-records', processRoutes); // Commented out - frontend only for now
+
+// V1 Melting and Process Routes (NEWLY ADDED)
+app.use('/api/v1/melting-logs', meltingLogs);
+app.use('/api/v1/cupola-holder-logs', cupolaHolderLogs);
+app.use('/api/v1/process-records', processLogs); // Changed to match frontend expectations
 
 // Health check route
 app.get('/api/health', (req, res) => {
@@ -60,7 +71,17 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Start Server
-app.listen(PORT, () => {
-  console.log(`🚀 Server running on port ${PORT}`);
+// Start Server with error handling
+const server = app.listen(PORT, () => {
+  console.log(`✅ Server running on port ${PORT}`);
+});
+
+server.on('error', (err) => {
+  if (err.code === 'EADDRINUSE') {
+    console.error(`❌ Port ${PORT} is already in use!`);
+    console.log(`💡 Try stopping the existing server or use a different port.`);
+    process.exit(1);
+  } else {
+    console.error('Server error:', err);
+  }
 });

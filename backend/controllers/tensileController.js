@@ -36,3 +36,57 @@ exports.createEntry = async (req, res) => {
         });
     }
 };
+
+exports.updateEntry = async (req, res) => {
+    try {
+        const entry = await TensileTest.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+
+        if (!entry) {
+            return res.status(404).json({
+                success: false,
+                message: 'Tensile Test entry not found.'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: entry,
+            message: 'Tensile Test entry updated successfully.'
+        });
+
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || 'Error updating Tensile Test entry.',
+            errors: error.errors
+        });
+    }
+};
+
+exports.deleteEntry = async (req, res) => {
+    try {
+        const entry = await TensileTest.findByIdAndDelete(req.params.id);
+
+        if (!entry) {
+            return res.status(404).json({
+                success: false,
+                message: 'Tensile Test entry not found.'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Tensile Test entry deleted successfully.'
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error deleting Tensile Test entry.'
+        });
+    }
+};

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Filter, RefreshCw } from 'lucide-react';
-import { DatePicker } from '../Components/Buttons';
+import { Save, Filter, RefreshCw, X } from 'lucide-react';
+import { DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -33,6 +33,12 @@ const QcProductionDetails = () => {
   const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -57,6 +63,14 @@ const QcProductionDetails = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -92,6 +106,65 @@ const QcProductionDetails = () => {
       alert('Failed to create entry: ' + error.message);
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setEditFormData({
+      date: item.date ? new Date(item.date).toISOString().split('T')[0] : '',
+      partName: item.partName || '',
+      noOfMoulds: item.noOfMoulds || '',
+      cPercent: item.cPercent || '',
+      siPercent: item.siPercent || '',
+      mnPercent: item.mnPercent || '',
+      pPercent: item.pPercent || '',
+      sPercent: item.sPercent || '',
+      mgPercent: item.mgPercent || '',
+      cuPercent: item.cuPercent || '',
+      crPercent: item.crPercent || '',
+      nodularityGraphiteType: item.nodularityGraphiteType || '',
+      pearliteFerrite: item.pearliteFerrite || '',
+      hardnessBHN: item.hardnessBHN || '',
+      tsYsEl: item.tsYsEl || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      setEditLoading(true);
+      const data = await api.put(`/v1/qc-reports/${editingItem._id}`, editFormData);
+      
+      if (data.success) {
+        alert('QC Production entry updated successfully!');
+        setShowEditModal(false);
+        setEditingItem(null);
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error updating QC report:', error);
+      alert('Failed to update entry: ' + error.message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const data = await api.delete(`/v1/qc-reports/${id}`);
+      
+      if (data.success) {
+        alert('QC Production entry deleted successfully!');
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error deleting QC report:', error);
+      alert('Failed to delete entry: ' + error.message);
     }
   };
 
@@ -386,12 +459,13 @@ const QcProductionDetails = () => {
                     <th>P/F</th>
                     <th>BHN</th>
                     <th>TS/YS/EL</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="15" className="qcproduction-no-records">
+                      <td colSpan="16" className="qcproduction-no-records">
                         No records found
                       </td>
                     </tr>
@@ -413,6 +487,10 @@ const QcProductionDetails = () => {
                         <td>{item.pearliteFerrite}</td>
                         <td>{item.hardnessBHN}</td>
                         <td>{item.tsYsEl}</td>
+                        <td style={{ minWidth: '100px' }}>
+                          <EditActionButton onClick={() => handleEdit(item)} />
+                          <DeleteActionButton onClick={() => handleDelete(item._id)} />
+                        </td>
                       </tr>
                     ))
                   )}
@@ -421,6 +499,94 @@ const QcProductionDetails = () => {
             </div>
           )}
         </div>
+
+        {/* Edit Modal */}
+        {showEditModal && (
+          <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Edit QC Production Entry</h2>
+                <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="modal-body">
+                <div className="qcproduction-form-grid">
+                  <div className="qcproduction-form-group">
+                    <label>Date *</label>
+                    <DatePicker name="date" value={editFormData.date} onChange={handleEditChange} />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Part Name *</label>
+                    <input type="text" name="partName" value={editFormData.partName} onChange={handleEditChange} />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>No. of Moulds *</label>
+                    <input type="number" name="noOfMoulds" value={editFormData.noOfMoulds} onChange={handleEditChange} />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>C % *</label>
+                    <input type="number" name="cPercent" value={editFormData.cPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Si % *</label>
+                    <input type="number" name="siPercent" value={editFormData.siPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Mn % *</label>
+                    <input type="number" name="mnPercent" value={editFormData.mnPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>P % *</label>
+                    <input type="number" name="pPercent" value={editFormData.pPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>S % *</label>
+                    <input type="number" name="sPercent" value={editFormData.sPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Mg % *</label>
+                    <input type="number" name="mgPercent" value={editFormData.mgPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Cu % *</label>
+                    <input type="number" name="cuPercent" value={editFormData.cuPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Cr % *</label>
+                    <input type="number" name="crPercent" value={editFormData.crPercent} onChange={handleEditChange} step="0.01" />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Nodularity / Graphite Type *</label>
+                    <input type="text" name="nodularityGraphiteType" value={editFormData.nodularityGraphiteType} onChange={handleEditChange} />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Pearlite Ferrite *</label>
+                    <input type="text" name="pearliteFerrite" value={editFormData.pearliteFerrite} onChange={handleEditChange} />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Hardness (BHN) *</label>
+                    <input type="number" name="hardnessBHN" value={editFormData.hardnessBHN} onChange={handleEditChange} />
+                  </div>
+                  <div className="qcproduction-form-group" style={{ gridColumn: '1 / -1' }}>
+                    <label>TS/YS/EL *</label>
+                    <input type="text" name="tsYsEl" value={editFormData.tsYsEl} onChange={handleEditChange} />
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button className="modal-cancel-btn" onClick={() => setShowEditModal(false)} disabled={editLoading}>
+                  Cancel
+                </button>
+                <button className="modal-submit-btn" onClick={handleUpdate} disabled={editLoading}>
+                  {editLoading ? 'Updating...' : 'Update Entry'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

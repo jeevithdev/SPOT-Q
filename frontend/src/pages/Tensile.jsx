@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Filter, RefreshCw } from 'lucide-react';
-import { DatePicker } from '../Components/Buttons';
+import { Save, Filter, RefreshCw, X } from 'lucide-react';
+import { DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -30,6 +30,12 @@ const Tensile = () => {
   const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  
+  // Edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -54,6 +60,14 @@ const Tensile = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
       ...prev,
       [name]: value
     }));
@@ -87,6 +101,62 @@ const Tensile = () => {
       alert('Failed to create entry: ' + error.message);
     } finally {
       setSubmitLoading(false);
+    }
+  };
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setEditFormData({
+      dateOfInspection: item.dateOfInspection ? new Date(item.dateOfInspection).toISOString().split('T')[0] : '',
+      item: item.item || '',
+      dateHeatCode: item.dateHeatCode || '',
+      dia: item.dia || '',
+      lo: item.lo || '',
+      li: item.li || '',
+      breakingLoad: item.breakingLoad || '',
+      yieldLoad: item.yieldLoad || '',
+      uts: item.uts || '',
+      ys: item.ys || '',
+      elongation: item.elongation || '',
+      remarks: item.remarks || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      setEditLoading(true);
+      const data = await api.put(`/v1/tensile-tests/${editingItem._id}`, editFormData);
+      
+      if (data.success) {
+        alert('Tensile test entry updated successfully!');
+        setShowEditModal(false);
+        setEditingItem(null);
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error updating tensile test:', error);
+      alert('Failed to update entry: ' + error.message);
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
+      return;
+    }
+
+    try {
+      const data = await api.delete(`/v1/tensile-tests/${id}`);
+      
+      if (data.success) {
+        alert('Tensile test entry deleted successfully!');
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error deleting tensile test:', error);
+      alert('Failed to delete entry: ' + error.message);
     }
   };
 
@@ -346,12 +416,13 @@ const Tensile = () => {
                     <th>YS</th>
                     <th>Elongation</th>
                     <th>Remarks</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="12" className="tensile-no-records">
+                      <td colSpan="13" className="tensile-no-records">
                         No records found
                       </td>
                     </tr>
@@ -370,6 +441,10 @@ const Tensile = () => {
                         <td>{item.ys}</td>
                         <td>{item.elongation}</td>
                         <td>{item.remarks || '-'}</td>
+                        <td style={{ minWidth: '100px' }}>
+                          <EditActionButton onClick={() => handleEdit(item)} />
+                          <DeleteActionButton onClick={() => handleDelete(item._id)} />
+                        </td>
                       </tr>
                     ))
                   )}
@@ -378,6 +453,170 @@ const Tensile = () => {
             </div>
           )}
         </div>
+
+        {/* Edit Modal */}
+        {showEditModal && (
+          <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+              <div className="modal-header">
+                <h2>Edit Tensile Test Entry</h2>
+                <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
+                  <X size={24} />
+                </button>
+              </div>
+              
+              <div className="modal-body">
+                <div className="tensile-form-grid">
+                  <div className="tensile-form-group">
+                    <label>Date of Inspection *</label>
+                    <DatePicker
+                      name="dateOfInspection"
+                      value={editFormData.dateOfInspection}
+                      onChange={handleEditChange}
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>Item *</label>
+                    <input
+                      type="text"
+                      name="item"
+                      value={editFormData.item}
+                      onChange={handleEditChange}
+                      placeholder="e.g: Steel Rod"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>Date & Heat Code *</label>
+                    <input
+                      type="text"
+                      name="dateHeatCode"
+                      value={editFormData.dateHeatCode}
+                      onChange={handleEditChange}
+                      placeholder="e.g: 2024-HC-001"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>Dia (mm) *</label>
+                    <input
+                      type="number"
+                      name="dia"
+                      value={editFormData.dia}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>Lo (mm) *</label>
+                    <input
+                      type="number"
+                      name="lo"
+                      value={editFormData.lo}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>Li (mm) *</label>
+                    <input
+                      type="number"
+                      name="li"
+                      value={editFormData.li}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>Breaking Load (kN) *</label>
+                    <input
+                      type="number"
+                      name="breakingLoad"
+                      value={editFormData.breakingLoad}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>Yield Load *</label>
+                    <input
+                      type="number"
+                      name="yieldLoad"
+                      value={editFormData.yieldLoad}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>UTS (N/mm²) *</label>
+                    <input
+                      type="number"
+                      name="uts"
+                      value={editFormData.uts}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>YS (N/mm²) *</label>
+                    <input
+                      type="number"
+                      name="ys"
+                      value={editFormData.ys}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>Elongation (%) *</label>
+                    <input
+                      type="number"
+                      name="elongation"
+                      value={editFormData.elongation}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group full-width">
+                    <label>Remarks</label>
+                    <textarea
+                      name="remarks"
+                      value={editFormData.remarks}
+                      onChange={handleEditChange}
+                      rows="3"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              <div className="modal-footer">
+                <button 
+                  className="modal-cancel-btn" 
+                  onClick={() => setShowEditModal(false)}
+                  disabled={editLoading}
+                >
+                  Cancel
+                </button>
+                <button 
+                  className="modal-submit-btn" 
+                  onClick={handleUpdate}
+                  disabled={editLoading}
+                >
+                  {editLoading ? 'Updating...' : 'Update Entry'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

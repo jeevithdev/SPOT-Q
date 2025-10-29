@@ -36,3 +36,57 @@ exports.createEntry = async (req, res) => {
         });
     }
 };
+
+exports.updateEntry = async (req, res) => {
+    try {
+        const entry = await MicroTensileTest.findByIdAndUpdate(
+            req.params.id,
+            req.body,
+            { new: true, runValidators: true }
+        );
+
+        if (!entry) {
+            return res.status(404).json({
+                success: false,
+                message: 'Micro Tensile Test entry not found.'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            data: entry,
+            message: 'Micro Tensile Test entry updated successfully.'
+        });
+
+    } catch (error) {
+        res.status(400).json({
+            success: false,
+            message: error.message || 'Error updating Micro Tensile Test entry.',
+            errors: error.errors
+        });
+    }
+};
+
+exports.deleteEntry = async (req, res) => {
+    try {
+        const entry = await MicroTensileTest.findByIdAndDelete(req.params.id);
+
+        if (!entry) {
+            return res.status(404).json({
+                success: false,
+                message: 'Micro Tensile Test entry not found.'
+            });
+        }
+
+        res.status(200).json({
+            success: true,
+            message: 'Micro Tensile Test entry deleted successfully.'
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error deleting Micro Tensile Test entry.'
+        });
+    }
+};

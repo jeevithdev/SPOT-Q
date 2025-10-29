@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Settings, Save, Filter, RefreshCw } from 'lucide-react';
+import { Settings, Save, Filter, RefreshCw, Edit2, Trash2 } from 'lucide-react';
 import CustomDatePicker from './CustomDatePicker';
 
 const Button = () => {
@@ -207,6 +207,24 @@ export const ResetButton = ({ onClick, disabled, children, icon = true }) => (
       {children || 'Reset'}
     </button>
   </ResetButtonWrapper>
+);
+
+// Edit Action Button - For table action columns
+export const EditActionButton = ({ onClick, disabled }) => (
+  <EditActionButtonWrapper>
+    <button onClick={onClick} disabled={disabled} title="Edit">
+      <Edit2 size={16} />
+    </button>
+  </EditActionButtonWrapper>
+);
+
+// Delete Action Button - For table action columns
+export const DeleteActionButton = ({ onClick, disabled }) => (
+  <DeleteActionButtonWrapper>
+    <button onClick={onClick} disabled={disabled} title="Delete">
+      <Trash2 size={16} />
+    </button>
+  </DeleteActionButtonWrapper>
 );
 
 const StyledWrapper = styled.div`
@@ -735,6 +753,94 @@ const ResetButtonWrapper = styled.div`
   svg {
     width: 18px;
     height: 18px;
+  }
+`;
+
+// Edit Action Button Wrapper - For table actions
+const EditActionButtonWrapper = styled.div`
+  display: inline-block;
+  margin: 0 4px;
+
+  button {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border-radius: 6px;
+    border: none;
+    background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 2px 4px rgba(52, 152, 219, 0.3);
+  }
+
+  button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(52, 152, 219, 0.4);
+    background: linear-gradient(135deg, #2980b9 0%, #21618c 100%);
+  }
+
+  button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  button:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
+  }
+`;
+
+// Delete Action Button Wrapper - For table actions
+const DeleteActionButtonWrapper = styled.div`
+  display: inline-block;
+  margin: 0 4px;
+
+  button {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border-radius: 6px;
+    border: none;
+    background: linear-gradient(135deg, #e74c3c 0%, #c0392b 100%);
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+    box-shadow: 0 2px 4px rgba(231, 76, 60, 0.3);
+  }
+
+  button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(231, 76, 60, 0.4);
+    background: linear-gradient(135deg, #c0392b 0%, #a93226 100%);
+  }
+
+  button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  button:disabled {
+    background: #94a3b8;
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
+    stroke-width: 2;
   }
 `;
 
