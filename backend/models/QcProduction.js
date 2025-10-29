@@ -59,7 +59,13 @@ const QcProductionSchema = new mongoose.Schema({
         required: true 
     },
 
-    nodularityGraphiteType: {
+    nodularity: {
+        type: String,
+        required: true,
+        trim: true
+    },
+
+    graphiteType: {
         type: String,
         required: true,
         trim: true
@@ -76,16 +82,21 @@ const QcProductionSchema = new mongoose.Schema({
         required: true 
     },
 
-    tsYsEl: { 
+    ts: { 
         type: String,
         required: true,
         trim: true
     },
-
-    createdAt: {
-         type: Date, 
-         default: Date.now
-         }
+    ys: { 
+        type: String,
+        required: true,
+        trim: true
+    },
+    el: { 
+        type: String,
+        required: true,
+        trim: true
+    }
 });
 
 module.exports = mongoose.model('QcProduction', QcProductionSchema);

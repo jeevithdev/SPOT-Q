@@ -1,31 +1,38 @@
 const mongoose = require('mongoose');
 
 const DismaticProductReportDISASchema = new mongoose.Schema({
+
     date: {
         type: Date,
         required: true
     },
+
     shift: {
         type: String,
         required: true
     },
+
     incharge: {
         type: String,
         required: true
     },
-    members: [{
+
+    memberspresent: {
         type: String,
         required: true
-    }],
+    },
+
     production: {
         type: String,
         required: true
     },
+
     ppOperator: {
         type: String,
         required: true
     },
-    productionDetails: [{
+
+    productionDetails: {
         mouldCounterNo: {
             type: Number,
             required: true
@@ -50,68 +57,125 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
             type: Number,
             required: true
         },
-        remarks: String
-    }],
-    nextShiftPlan: [{
-        sNo: Number,
+        remarks: {
+            type: String,
+            required: true
+        }
+    },
+
+    nextShiftPlan : {
+
+        sNo: {
+            type: Number,
+            required: true
+        },
+
         componentName: {
             type: String,
             required: true
         },
+
         plannedMoulds: {
             type: Number,
             required: true
         },
-        remarks: String
-    }],
-    delays: [{
-        sNo: Number,
-        delayType: {
+        remarks: {
+            type: String,
+            required: true
+        }
+    },
+
+    delays: {
+        sNo: {
+            type: Number,
+            required: true
+        },
+
+        delay: {
             type: String,
             required: true
         },
+
         durationInMinutes: {
             type: Number,
             required: true
         },
+
         durationInTime: {
             type: String,
             required: true
         }
-    }],
-    mouldHardness: [{
-        sNo: Number,
+    },
+
+    mouldHardness: {
+        sNo: {
+            type: Number,
+            required: true
+        },
+
+        componentName: {
+            type: String,
+            required: true
+        },
+
         mouldPenetrantTester: {
-            pp: Number,
-            sp: Number
+            pp: {
+                type: Number,
+                required: true
+            },
+            sp: {
+                type: Number,
+                required: true
+            }
         },
         bScale: {
-            pp: Number,
-            sp: Number
+            pp: {
+                type: Number,
+                required: true
+            },
+            sp: {
+                type: Number,
+                required: true
+            }
         },
-        remarks: String
-    }],
-    patternTemperature: [{
-        sNo: Number,
+        remarks: {
+            type: String,
+            required: true
+        }
+    },
+
+    patternTemperature: {
+        sNo: {
+            type: Number,
+            required: true
+        },
         items: {
             type: String,
             required: true
         },
-        pp: Number,
-        sp: Number
-    }],
-    significantEvent: String,
-    maintenance: String,
-    supervisorName: {
+        pp: {
+            type: Number,
+            required: true
+        },
+        sp: {
+            type: Number,
+            required: true
+        }
+    },
+
+    significantEvent: {
         type: String,
         required: true
     },
-    supervisorSign: {
+
+    maintenance: {
+        type: String,
+        required: true
+    },
+    supervisorName: {
         type: String,
         required: true
     }
-}, {
-    timestamps: true
 });
 
 module.exports = mongoose.model('DismaticProductReportDISA', DismaticProductReportDISASchema);

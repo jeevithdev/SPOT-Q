@@ -1,6 +1,23 @@
 const mongoose = require('mongoose');
 
 const CupolaHolderLogSchema = new mongoose.Schema({
+
+    date: {
+        type: Date,
+        required: true
+    },
+
+    shift: {
+        type: String,
+        required: true
+
+    },
+
+    holderno :{
+        type : Number,
+        required : true
+    },
+    
     heatNo: { 
         type: String, 
         required: true, 
@@ -14,7 +31,7 @@ const CupolaHolderLogSchema = new mongoose.Schema({
             min: 0 
         },
 
-        mFeSl: { 
+        FeSl: { 
             type: Number, 
             min: 0 
         },
@@ -46,14 +63,17 @@ const CupolaHolderLogSchema = new mongoose.Schema({
     },
 
     tapping: {
+        time: {
+
         actualTime: { 
             type: String 
         },
 
         tappingTime: { 
             type: String 
-        },
-
+        }
+    },
+    
         tempC: { 
             type: Number 
         },
@@ -88,9 +108,7 @@ const CupolaHolderLogSchema = new mongoose.Schema({
         kw: { 
             type: Number 
         },
-    },
-    
-    createdAt: { type: Date, default: Date.now }
+    }
 });
 
 module.exports = mongoose.model('CupolaHolderLog', CupolaHolderLogSchema);

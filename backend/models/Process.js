@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const ProcessSchema = new mongoose.Schema({
 
+    disa :{
+        type : Number,
+        required: true
+    },
+
     date: { 
         type: Date, 
         required: true 
@@ -11,6 +16,11 @@ const ProcessSchema = new mongoose.Schema({
         type: String, 
         required: true, 
         trim: true 
+    },
+
+    datecode : {
+        type : String,
+        required: true
     },
 
     heatCode: { 
@@ -25,6 +35,7 @@ const ProcessSchema = new mongoose.Schema({
         min: 1 
     },
 
+    metalComposition : {
     cPercent: { 
         type: Number, 
         required: true 
@@ -63,7 +74,8 @@ const ProcessSchema = new mongoose.Schema({
     crPercent: { 
         type: Number, 
         required: true 
-    },
+    }
+},
 
     timeOfPouring: { 
         type: String, 
@@ -73,6 +85,82 @@ const ProcessSchema = new mongoose.Schema({
     pouringTemperature: {
         type: Number, 
         required: true 
+    },
+
+    ppcode :{
+        type : Number,
+        required: true
+    },
+
+    treatmentno :{
+        type : Number,
+        required: true
+    },
+
+    fcno :{
+        type : Number,
+        required: true
+    },
+
+    heatNo :{
+        type : Number,
+        required: true
+    },
+
+    conNo :{
+        type : Number,
+        required: true
+    },
+
+    tappingtime :{
+        type : Number,
+        required: true
+    },
+
+    corrativeaddition :{
+
+        C :{
+            type : Number,
+            required: true
+        },
+
+        Si :{
+            type : Number,
+            required: true
+        },
+        Mn :{
+            type : Number,
+            required: true
+        },
+        S :{    
+            type : Number,
+            required: true
+        },
+
+        Cr :{
+            type : Number,
+            required: true
+        },
+
+        Cu :{
+            type : Number,
+            required: true
+        },
+
+        Sn :{ 
+            type : Number,
+            required: true
+        }
+    },
+
+    tappingWt : {
+        type : Number,
+        required: true
+    },
+
+    Mg :{
+        type : Number,
+        required: true
     },
 
     resMgConvertorPercent: { 
@@ -99,9 +187,7 @@ const ProcessSchema = new mongoose.Schema({
         trim: true, 
         default: '' 
     }
-
-}, {
-    timestamps: true
+    
 });
 
 module.exports = mongoose.model('Process', ProcessSchema);

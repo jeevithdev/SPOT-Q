@@ -1,6 +1,11 @@
 const mongoose = require('mongoose');
 
 const MicroStructureSchema = new mongoose.Schema({
+
+    disa : {
+        type : Number,
+        required: true
+    },
     
     insDate: { 
         type: Date,
@@ -13,28 +18,24 @@ const MicroStructureSchema = new mongoose.Schema({
         trim: true 
     },
 
-    dateCodeHeatCode: { 
+    dateCode: { 
         type: String, 
         required: true, 
         trim: true 
     },
 
-    nodularityGraphiteType: { 
-        type: String, 
-        required: true, 
-        trim: true 
+    heatCode: {
+        type: String,
+        required: true,
+        trim: true
     },
 
-    countNos: { 
-        type: Number, 
-        required: true 
-    }, 
-
-    size: { 
-        type: String, 
-        required: true, 
-        trim: true 
-    },
+    microStructure : {
+        nodularityGraphiteType: { 
+            type: String, 
+            required: true, 
+            trim: true 
+        },
 
     ferritePercent: { 
         type: Number, 
@@ -55,17 +56,14 @@ const MicroStructureSchema = new mongoose.Schema({
         required: true, 
         min: 0, 
         max: 100
-     }, 
+     }
+    }, 
 
     remarks: { 
         type: String, 
         trim: true, 
         default: '' 
-    },
-
-    createdAt: { 
-        type: Date, 
-        default: Date.now }
+    }
 });
 
 module.exports = mongoose.model('MicroStructure', MicroStructureSchema);

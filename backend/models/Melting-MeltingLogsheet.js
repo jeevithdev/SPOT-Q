@@ -1,239 +1,299 @@
 const mongoose = require('mongoose');
 
-const ChargingDetailsSchema = new mongoose.Schema({
-    item: { 
-        type: String, 
-        trim: true, 
-        required: true 
-    },
-
-    kgs: { 
-        type: Number, 
-        required: true, 
-        min: 0 
-    }
-}, { _id: false });
-
-const FurnaceReadingsSchema = new mongoose.Schema({
-
-    kw: { 
-        type: Number 
-    },
-
-    volts: { 
-        type: Number 
-    },
-
-    amps: { 
-        type: Number 
-    },
-
-    gld: { 
-        type: Number 
-    },
-
-    hz: { 
-        type: Number 
-    },
-
-    gld1: { 
-        type: Number 
-    }
-
-}, { _id: false });
-
 const MeltingLogsheetSchema = new mongoose.Schema({
-    heatNo: { 
-        type: String, 
-        required: true, 
-        trim: true, 
-        unique: true 
-    },
-    grade: { 
-        type: String, 
-        required: true, 
-        trim: true 
-    },
-    chargingTime: { 
-        type: String 
+
+    date: {
+        type: Date,
+        required: true
     },
 
-    chargingKgs: { 
-        type: Number, 
-        min: 0 
+    shift: {
+        type: String,
+        required: true
     },
 
-    chargingMix: {
-        liquidMetalPressPour: { 
-            type: Number, 
-            min: 0, 
-            max: 5000 
-        },
-
-        sgMsSteel: { 
-            type: Number, 
-            min: 400, 
-            max: 2500 
-        },
-
-        greyMsSteel: { 
-            type: Number, 
-            min: 400, 
-            max: 2500 
-        },
-
-        ralumsSG: { 
-            type: Number, 
-            min: 500, 
-            max: 2500 
-        },
-
-        gl: { 
-            type: Number, 
-            min: 800, 
-            max: 2250 
-        },
-
-        pigIron: { 
-            type: Number, 
-            min: 0, 
-            max: 350 
-        },
-
-        borings: { 
-            type: Number, 
-            min: 0, 
-            max: 1500 
-        },
-
-        finalBath: { 
-            type: Number, 
-            min: 0 
-        },
+    furnaceNo: {
+        type: Number,
+        required: true
     },
 
-    additives: {
-        charCoal: { 
-            type: Number, 
-            min: 0 
-        },
-
-        cpcFUR: { 
-            type: Number, 
-            min: 0 
-        },
-
-        cpcLC: { 
-            type: Number, 
-            min: 0 
-        },
-
-        siliconCarbideFUR: { 
-            type: Number, 
-            min: 3, 
-            max: 9 
-        },
-
-        ferroSiliconFUR: { 
-            type: Number, 
-            min: 0 
-        },
-
-        ferroSiliconLC: { 
-            type: Number, 
-            min: 0 
-        },
-
-        ferroManganeseFUR: { 
-            type: Number, 
-            min: 0 
-        },
-
-        ferroManganeseLC: { 
-            type: Number, 
-            min: 0 
-        },
-
-        cu: { 
-            type: Number, 
-            min: 0 
-        },
-
-        cr: { 
-            type: Number, 
-            min: 0 
-        },
-
-        pureMg: { 
-            type: Number, 
-            min: 0 
-        },
-
-        ironPyrite: { 
-            type: Number, 
-            min: 0 
-        },
+    panel : {
+        type: String,
+        required: true
     },
 
-    labCoin: {
-        time: { 
-            type: String 
-        },
-        tempC: { 
-            type: Number 
-        },
-    },
-    deslaggingTime: {
-        from: { type: String },
-        to: { type: String },
-    },
-    metalReadyTime: { 
-        type: String 
+    cumulativeLiquidMetal: {
+        type: Number,
+        required: true
     },
 
-    waitingForTapping: {
-        from: { type: String },
-        to: { type: String },
-        reason: { type: String, trim: true }
-    },
-
-    tappingDetails: {
-        time: { 
-            type: String 
-        },
-        tempC: { 
-            type: Number 
-        },
-        metalKgs: { 
-            type: Number, 
-            min: 0 
-        },
-        type: { 
-            type: String, 
-            enum: ['SG', 'Grey'] 
-        },
-        source: { 
-            type: String, 
-            enum: ['Direct Furnace', 'Holder to Furnace', 'Furnace to Holder'] 
-        },
-        disaNo: { 
-            type: String, 
-            trim: true 
-        },
-        item: { 
-            type: String, 
-            trim: true 
-        },
-    },
-            
-    electricalReadings: {
-        furnace1: { type: FurnaceReadingsSchema },
-        furnace2: { type: FurnaceReadingsSchema },
-        furnace3: { type: FurnaceReadingsSchema },
-        furnace4: { type: FurnaceReadingsSchema },
+    finalkwhr : {
+        type: Number,
+        required: true
     },
     
-    createdAt: { type: Date, default: Date.now }
+    initialkwhr: {
+        type: Number,
+        required: true
+    },
+
+    totoalunits : {
+        type: Number,
+        required: true
+    },
+
+    cumulativeunits : {
+        type: Number,
+        required: true
+    },
+
+    heatno : {
+        type : Number,
+
+
+    },
+
+    grade : {
+        type : String,
+        required: true
+    },
+
+    chargingkgs : {
+        time : {
+            type : String,
+            required: true
+        },
+
+        ifbath :{
+            type : Number,
+            required: true
+        },
+
+        liquidmetal : {
+            presspour : {
+                type : Number,
+                required: true
+            },
+
+            holder : {
+                type : Number,
+                required: true
+            }
+        },
+
+        sqmssteel : {
+            type : Number,
+            required: true
+        },
+
+        greymssteel : {
+            type : Number,
+            required: true
+        },
+
+        returnSg :{
+            type : Number,
+            required: true
+        },
+        pigiron : {
+            type : Number,
+            required: true
+        },
+
+        borings : {
+            type : Number,
+            required: true
+        },
+
+        finalbath : {
+            type : Number,
+            required: true
+        }
+    },
+
+    charcoal : {
+        type : Number,
+        required: true
+    },
+
+    cpc : {
+        fur :{
+            type : Number,
+            required: true
+        },
+
+        lc : {
+            type : Number,
+            required: true
+        }
+    },
+
+    siliconcarbide : {
+        fur : {
+            type : Number,
+            required: true
+        }
+    },
+
+    ferroSilicon : {
+        fur : {
+            type : Number,
+            required: true
+        },
+
+        lc : {
+            type : Number,
+            required: true
+        }
+    },
+
+    ferroManganese : {
+        fur : { 
+            type : Number,
+            required: true
+        },
+
+        lc : {
+            type : Number,
+            required: true
+        }
+    },
+
+    cu : {
+        type : Number,
+        required: true
+    },
+
+    cr : {
+        type : Number,
+        required: true
+    },
+
+    pureMg : {
+        type : Number,
+        required: true
+    },
+
+    ironPyrite : {
+        type : Number,
+        required: true
+    },
+
+    labCoin : {
+
+        time : {
+            type : String,
+            required: true
+        },
+
+        tempC : {
+            type : Number,
+            required: true
+        }
+    },
+
+    deslagingTime : {
+        from : {
+            type : String,
+            required: true
+        },
+
+        to : {
+            type : String,
+            required: true
+        }
+    },
+
+    metalReadyTime : {
+        type : String,
+        required: true
+    },
+
+    waitingForTapping : {
+        from : {
+            type : String,
+            required: true
+        },
+
+        to : {
+            type : String,
+            required: true
+        }
+    },
+
+    reason :{
+        type : String,
+        required: true
+    },
+
+    metalTapping : {
+        time : {
+            type : String,
+            required: true
+        },
+        tempC : {
+            type : Number,
+            required: true
+        }
+    },
+    
+    directFurnace : {
+        type : Number,
+        required: true
+    },
+    
+    holderToFurnace : {
+        type : Number,
+        required: true
+    },
+    
+    furnaceToHolder : {
+        type : Number,
+        required: true
+    },
+
+    disaNo : {
+        type : Number,
+        required: true
+    },
+    
+    item : {
+        type : String,
+        required: true
+    },
+
+    electricalReadings : {
+        furnace123 : {
+            kw : {
+                type : Number,
+                required: true
+            },
+            v : {
+                type : Number,
+                required: true
+            },
+            a : {
+                type : Number,
+                required: true
+            }
+        },
+
+        furnace4 : {
+            hz : {
+                type : Number,
+                required: true
+            },
+            gld : {
+                type : Number,
+                required: true
+            },
+
+            kwh : {
+                type : Number,
+                required: true
+            }
+        }
+    }
 });
 
 module.exports = mongoose.model('MeltingLogsheet', MeltingLogsheetSchema);

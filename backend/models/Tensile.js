@@ -1,6 +1,7 @@
 const mongoose = require('mongoose');
 
 const TensileSchema = new mongoose.Schema({
+
     dateOfInspection: { 
         type: Date, 
         required: true 
@@ -12,7 +13,13 @@ const TensileSchema = new mongoose.Schema({
         trim: true 
     },
 
-    dateHeatCode: { 
+    date: { 
+        type: String, 
+        required: true, 
+        trim: true
+    },
+
+    heatCode: { 
         type: String, 
         required: true, 
         trim: true
@@ -32,6 +39,7 @@ const TensileSchema = new mongoose.Schema({
         type: Number, 
         required: true
     },
+    
     breakingLoad: { 
         type: Number, 
         required: true 
@@ -65,9 +73,9 @@ const TensileSchema = new mongoose.Schema({
         default: '' 
     },
 
-    createdAt: { 
-        type: Date, 
-        default: Date.now 
+    testedBy: { 
+        type: String,
+        required: true
     }
 });
 

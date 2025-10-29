@@ -2,6 +2,11 @@ const mongoose = require('mongoose');
 
 const MicroTensileSchema = new mongoose.Schema({
 
+    disa : {
+        type : Number,
+        required: true
+    },
+    
     dateOfInspection: { 
         type: Date, 
         required: true 
@@ -13,10 +18,16 @@ const MicroTensileSchema = new mongoose.Schema({
         trim: true 
     },
 
-    dateCodeHeatCode: { 
+    dateCode: { 
         type: String, 
         required: true, 
         trim: true 
+    },
+
+    heatCode: {
+        type: String,
+        required: true,
+        trim: true
     },
 
     barDia: { 
@@ -66,12 +77,6 @@ const MicroTensileSchema = new mongoose.Schema({
         type: String, 
         required: true, 
         trim: true 
-    },
-
-    createdAt: { 
-        type: Date, 
-        default: Date.now 
-    
     }
 });
 
