@@ -4,27 +4,27 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
-import '../styles/PageStyles/Tensile.css';
+import '../styles/PageStyles/MicroStructure.css';
 
-const TensileReport = () => {
+const MicroStructureReport = () => {
   const location = useLocation();
 
   const isActive = (path) => {
     return location.pathname === path;
   };
 
-  const TensileTabs = () => (
-    <div className="tensile-tabs-container">
-      <div className="tensile-tabs">
+  const MicroStructureTabs = () => (
+    <div className="microstructure-tabs-container">
+      <div className="microstructure-tabs">
         <Link
-          to="/tensile"
-          className={`tensile-tab ${isActive('/tensile') ? 'active' : ''}`}
+          to="/micro-structure"
+          className={`microstructure-tab ${isActive('/micro-structure') ? 'active' : ''}`}
         >
           Data Entry
         </Link>
         <Link
-          to="/tensile/report"
-          className={`tensile-tab ${isActive('/tensile/report') ? 'active' : ''}`}
+          to="/micro-structure/report"
+          className={`microstructure-tab ${isActive('/micro-structure/report') ? 'active' : ''}`}
         >
           Report
         </Link>
@@ -51,14 +51,14 @@ const TensileReport = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const data = await api.get('/v1/tensile-tests');
+      const data = await api.get('/v1/micro-structure');
       
       if (data.success) {
         setItems(data.data || []);
         setFilteredItems(data.data || []);
       }
     } catch (error) {
-      console.error('Error fetching tensile tests:', error);
+      console.error('Error fetching micro structure reports:', error);
     } finally {
       setLoading(false);
     }
@@ -75,18 +75,15 @@ const TensileReport = () => {
   const handleEdit = (item) => {
     setEditingItem(item);
     setEditFormData({
-      dateOfInspection: item.dateOfInspection,
-      item: item.item,
-      dateHeatCode: item.dateHeatCode,
-      dia: item.dia,
-      lo: item.lo,
-      li: item.li,
-      breakingLoad: item.breakingLoad,
-      yieldLoad: item.yieldLoad,
-      uts: item.uts,
-      ys: item.ys,
-      elongation: item.elongation,
-      testedBy: item.testedBy,
+      insDate: item.insDate,
+      partName: item.partName,
+      dateCodeHeatCode: item.dateCodeHeatCode,
+      nodularityGraphiteType: item.nodularityGraphiteType,
+      countNos: item.countNos,
+      size: item.size,
+      ferritePercent: item.ferritePercent,
+      pearlitePercent: item.pearlitePercent,
+      carbidePercent: item.carbidePercent,
       remarks: item.remarks || ''
     });
     setShowEditModal(true);
@@ -95,14 +92,14 @@ const TensileReport = () => {
   const handleUpdate = async () => {
     try {
       setEditLoading(true);
-      const data = await api.put(`/v1/tensile-tests/${editingItem._id}`, editFormData);
+      const data = await api.put(`/v1/micro-structure/${editingItem._id}`, editFormData);
       
       if (data.success) {
         setShowEditModal(false);
         fetchItems();
       }
     } catch (error) {
-      console.error('Error updating tensile test:', error);
+      console.error('Error updating micro structure report:', error);
     } finally {
       setEditLoading(false);
     }
@@ -111,13 +108,13 @@ const TensileReport = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
       try {
-        const data = await api.delete(`/v1/tensile-tests/${id}`);
+        const data = await api.delete(`/v1/micro-structure/${id}`);
         
         if (data.success) {
           fetchItems();
         }
       } catch (error) {
-        console.error('Error deleting tensile test:', error);
+        console.error('Error deleting micro structure report:', error);
       }
     }
   };
@@ -129,7 +126,7 @@ const TensileReport = () => {
     }
 
     const filtered = items.filter(item => {
-      const itemDate = new Date(item.dateOfInspection);
+      const itemDate = new Date(item.insDate);
       const start = new Date(startDate);
       const end = new Date(endDate);
       
@@ -140,18 +137,19 @@ const TensileReport = () => {
   };
 
   return (
-    <div className="tensile-container">
-      <div className="tensile-wrapper">
-        <TensileTabs />
+    <div className="microstructure-container">
+      <div className="microstructure-wrapper">
+        <MicroStructureTabs />
 
         {/* Report Container */}
-        <div className="tensile-report-container">
-          <h3 className="tensile-report-title">
-            <Filter size={28} style={{ color: '#FF7F50' }} />
-          </h3>
+        <div className="microstructure-report-container">
+          <div className="microstructure-report-title">
+            <Filter size={20} style={{ color: '#FF7F50' }} />
+            <h3>Micro Structure - Report Card</h3>
+          </div>
 
-          <div className="tensile-filter-grid">
-            <div className="tensile-filter-group">
+          <div className="microstructure-filter-grid">
+            <div className="microstructure-filter-group">
               <label>Start Date</label>
               <DatePicker
                 value={startDate}
@@ -160,7 +158,7 @@ const TensileReport = () => {
               />
             </div>
 
-            <div className="tensile-filter-group">
+            <div className="microstructure-filter-group">
               <label>End Date</label>
               <DatePicker
                 value={endDate}
@@ -169,8 +167,8 @@ const TensileReport = () => {
               />
             </div>
 
-            <div className="tensile-filter-btn-container">
-              <Button onClick={handleFilter} className="tensile-filter-btn" type="button">
+            <div className="microstructure-filter-btn-container">
+              <Button onClick={handleFilter} className="microstructure-filter-btn" type="button">
                 <Filter size={18} />
                 Filter
               </Button>
@@ -178,26 +176,23 @@ const TensileReport = () => {
           </div>
 
           {loading ? (
-            <div className="tensile-loader-container">
+            <div className="microstructure-loader-container">
               <Loader />
             </div>
           ) : (
-            <div className="tensile-table-container">
-              <table className="tensile-table">
+            <div className="microstructure-table-container">
+              <table className="microstructure-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
-                    <th>Item</th>
+                    <th>Ins Date</th>
+                    <th>Part Name</th>
                     <th>Heat Code</th>
-                    <th>Dia(mm)</th>
-                    <th>Lo(mm)</th>
-                    <th>Li(mm)</th>
-                    <th>Break Load</th>
-                    <th>Yield Load</th>
-                    <th>UTS</th>
-                    <th>YS</th>
-                    <th>Elongation</th>
-                    <th>TestedBy</th>
+                    <th>Nodularity/Graphite Type</th>
+                    <th>Count Nos</th>
+                    <th>Size</th>
+                    <th>Ferrite %</th>
+                    <th>Pearlite %</th>
+                    <th>Carbide %</th>
                     <th>Remarks</th>
                     <th>Actions</th>
                   </tr>
@@ -205,25 +200,22 @@ const TensileReport = () => {
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="13" className="tensile-no-records">
+                      <td colSpan="11" className="microstructure-no-records">
                         No records found
                       </td>
                     </tr>
                   ) : (
                     filteredItems.map((item, index) => (
                       <tr key={item._id || index}>
-                        <td>{new Date(item.dateOfInspection).toLocaleDateString()}</td>
-                        <td>{item.item}</td>
-                        <td>{item.dateHeatCode}</td>
-                        <td>{item.dia}</td>
-                        <td>{item.lo}</td>
-                        <td>{item.li}</td>
-                        <td>{item.breakingLoad}</td>
-                        <td>{item.yieldLoad}</td>
-                        <td>{item.uts}</td>
-                        <td>{item.ys}</td>
-                        <td>{item.elongation}</td>
-                        <td>{item.testedBy}</td>
+                        <td>{new Date(item.insDate).toLocaleDateString()}</td>
+                        <td>{item.partName}</td>
+                        <td>{item.dateCodeHeatCode}</td>
+                        <td>{item.nodularityGraphiteType}</td>
+                        <td>{item.countNos}</td>
+                        <td>{item.size}</td>
+                        <td>{item.ferritePercent}</td>
+                        <td>{item.pearlitePercent}</td>
+                        <td>{item.carbidePercent}</td>
                         <td>{item.remarks || '-'}</td>
                         <td style={{ minWidth: '100px' }}>
                           <EditActionButton onClick={() => handleEdit(item)} />
@@ -243,145 +235,112 @@ const TensileReport = () => {
           <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
             <div className="modal-container" onClick={(e) => e.stopPropagation()}>
               <div className="modal-header">
-                <h2>Edit Tensile Test Entry</h2>
+                <h2>Edit Micro Structure Entry</h2>
                 <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
                   <X size={24} />
                 </button>
               </div>
               
               <div className="modal-body">
-                <div className="tensile-form-grid">
-                  <div className="tensile-form-group">
-                    <label>Date of Inspection *</label>
+                <div className="microstructure-form-grid">
+                  <div className="microstructure-form-group">
+                    <label>Inspection Date *</label>
                     <DatePicker
-                      name="dateOfInspection"
-                      value={editFormData.dateOfInspection}
+                      name="insDate"
+                      value={editFormData.insDate}
                       onChange={handleEditChange}
                     />
                   </div>
 
-                  <div className="tensile-form-group">
-                    <label>Item *</label>
+                  <div className="microstructure-form-group">
+                    <label>Part Name *</label>
                     <input
                       type="text"
-                      name="item"
-                      value={editFormData.item}
+                      name="partName"
+                      value={editFormData.partName}
                       onChange={handleEditChange}
-                      placeholder="e.g: Steel Rod"
+                      placeholder="e.g: Engine Block"
                     />
                   </div>
 
-                  <div className="tensile-form-group">
-                    <label>Date & Heat Code *</label>
+                  <div className="microstructure-form-group">
+                    <label>Date Code & Heat Code *</label>
                     <input
                       type="text"
-                      name="dateHeatCode"
-                      value={editFormData.dateHeatCode}
+                      name="dateCodeHeatCode"
+                      value={editFormData.dateCodeHeatCode}
                       onChange={handleEditChange}
                       placeholder="e.g: 2024-HC-001"
                     />
                   </div>
 
-                  <div className="tensile-form-group">
-                    <label>Dia (mm) *</label>
-                    <input
-                      type="number"
-                      name="dia"
-                      value={editFormData.dia}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="tensile-form-group">
-                    <label>Lo (mm) *</label>
-                    <input
-                      type="number"
-                      name="lo"
-                      value={editFormData.lo}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="tensile-form-group">
-                    <label>Li (mm) *</label>
-                    <input
-                      type="number"
-                      name="li"
-                      value={editFormData.li}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="tensile-form-group">
-                    <label>Breaking Load (kN) *</label>
-                    <input
-                      type="number"
-                      name="breakingLoad"
-                      value={editFormData.breakingLoad}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="tensile-form-group">
-                    <label>Yield Load *</label>
-                    <input
-                      type="number"
-                      name="yieldLoad"
-                      value={editFormData.yieldLoad}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="tensile-form-group">
-                    <label>UTS (N/mm²) *</label>
-                    <input
-                      type="number"
-                      name="uts"
-                      value={editFormData.uts}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="tensile-form-group">
-                    <label>YS (N/mm²) *</label>
-                    <input
-                      type="number"
-                      name="ys"
-                      value={editFormData.ys}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="tensile-form-group">
-                    <label>Elongation (%) *</label>
-                    <input
-                      type="number"
-                      name="elongation"
-                      value={editFormData.elongation}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                   <div className="tensile-form-group">
-                    <label>TestedBy *</label>
+                  <div className="microstructure-form-group">
+                    <label>Nodularity/Graphite Type *</label>
                     <input
                       type="text"
-                      name="testedBy"
-                      value={editFormData.testedBy}
+                      name="nodularityGraphiteType"
+                      value={editFormData.nodularityGraphiteType}
+                      onChange={handleEditChange}
+                      placeholder="e.g: Spheroidal"
+                    />
+                  </div>
+
+                  <div className="microstructure-form-group">
+                    <label>Count Nos *</label>
+                    <input
+                      type="number"
+                      name="countNos"
+                      value={editFormData.countNos}
                       onChange={handleEditChange}
                       step="0.01"
                     />
                   </div>
 
-                  <div className="tensile-form-group full-width">
+                  <div className="microstructure-form-group">
+                    <label>Size *</label>
+                    <input
+                      type="text"
+                      name="size"
+                      value={editFormData.size}
+                      onChange={handleEditChange}
+                      placeholder="e.g: 50-100 μm"
+                    />
+                  </div>
+
+                  <div className="microstructure-form-group">
+                    <label>Ferrite % *</label>
+                    <input
+                      type="number"
+                      name="ferritePercent"
+                      value={editFormData.ferritePercent}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="microstructure-form-group">
+                    <label>Pearlite % *</label>
+                    <input
+                      type="number"
+                      name="pearlitePercent"
+                      value={editFormData.pearlitePercent}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="microstructure-form-group">
+                    <label>Carbide % *</label>
+                    <input
+                      type="number"
+                      name="carbidePercent"
+                      value={editFormData.carbidePercent}
+                      onChange={handleEditChange}
+                      step="0.01"
+                    />
+                  </div>
+
+                  <div className="microstructure-form-group full-width">
                     <label>Remarks</label>
                     <textarea
                       name="remarks"
@@ -417,4 +376,4 @@ const TensileReport = () => {
   );
 };
 
-export default TensileReport;
+export default MicroStructureReport;

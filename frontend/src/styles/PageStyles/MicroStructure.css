@@ -1,5 +1,51 @@
 /* MicroStructure Page Styles */
 
+/* Tab Styles */
+.microstructure-tabs-container {
+  margin-bottom: 2rem;
+  border-bottom: 1px solid #e2e8f0;
+}
+
+.microstructure-tabs {
+  display: flex;
+  gap: 0;
+  background: transparent;
+}
+
+.microstructure-tab {
+  padding: 1rem 2rem;
+  text-decoration: none;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 0.95rem;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  background: transparent;
+}
+
+.microstructure-tab:hover {
+  color: #334155;
+  background: #f8fafc;
+}
+
+.microstructure-tab.active {
+  color: #5B9AA9;
+  border-bottom-color: #5B9AA9;
+  background: #f0f9ff;
+  font-weight: 600;
+}
+
+.microstructure-tab.active::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: #f0f9ff;
+}
+
 .microstructure-container {
   min-height: 100vh;
   background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);

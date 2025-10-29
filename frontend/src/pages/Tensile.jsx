@@ -1,12 +1,37 @@
 import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker } from '../Components/Buttons';
 import Loader from '../Components/Loader';
-import TensileTabs from '../Components/TensileTabs';
 import api from '../utils/api';
 import '../styles/PageStyles/Tensile.css';
 
 const Tensile = () => {
+  const location = useLocation();
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  const TensileTabs = () => (
+    <div className="tensile-tabs-container">
+      <div className="tensile-tabs">
+        <Link
+          to="/tensile"
+          className={`tensile-tab ${isActive('/tensile') ? 'active' : ''}`}
+        >
+          Data Entry
+        </Link>
+        <Link
+          to="/tensile/report"
+          className={`tensile-tab ${isActive('/tensile/report') ? 'active' : ''}`}
+        >
+          Report
+        </Link>
+      </div>
+    </div>
+  );
+
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     item: '',

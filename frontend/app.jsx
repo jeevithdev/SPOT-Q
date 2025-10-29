@@ -7,6 +7,8 @@ import Loader from './src/Components/Loader';
 
 // Pages
 import MicroTensile from './src/pages/MicroTensile';
+import MicroStructure from './src/pages/MicroStructure';
+import MicroStructureReport from './src/pages/MicroStructureReport';
 import QcProductionDetails from './src/pages/QcProductionDetails';
 import QcProductionReport from './src/pages/QcProductionReport';
 import Process from './src/pages/Process';
@@ -21,8 +23,8 @@ import DisamaticProductReport from './src/pages/Moulding/DisamaticProductReport'
 import MouldHardnessPatternTemperatureRecord from './src/pages/Moulding/MouldHardnessPatternTemperatureRecord';
 import MouldingPage3 from './src/pages/MouldingPage3';
 import AdminDashboard from './src/Components/AdminDashboard';
-import MicroStructure from './src/pages/MicroStructure';
 import Impact from './src/pages/Impact';
+import ImpactReport from './src/pages/ImpactReport';
 
 const ProtectedLayout = () => {
   const { user } = useContext(AuthContext);
@@ -70,7 +72,9 @@ const App = () => {
           {/* Top-level pages */}
           <Route path="micro-tensile" element={<MicroTensile />} />
           <Route path="micro-structure" element={<MicroStructure />} />
+          <Route path="micro-structure/report" element={<MicroStructureReport />} />
           <Route path="impact" element={<Impact />} />
+          <Route path="impact/report" element={<ImpactReport />} />
           <Route path="process" element={<Process />} />
 
           {/* QC Production Details */}
