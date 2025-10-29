@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw, X } from 'lucide-react';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
-import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroStructure.css';
@@ -22,12 +21,11 @@ const MicroStructure = () => {
 
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [showMissingFields, setShowMissingFields] = useState(false);
-  const [missingFields, setMissingFields] = useState([]);
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   
   // Edit states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -61,6 +59,42 @@ const MicroStructure = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value, type } = e.target;
+    
+    // Auto-format single digit numbers with leading zero
+    if (type === 'number' && value && !isNaN(value) && parseFloat(value) >= 0 && parseFloat(value) <= 9 && !value.includes('.') && value.length === 1) {
+      const formattedValue = '0' + value;
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedValue
+      }));
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form;
+      const inputs = Array.from(form.querySelectorAll('input, textarea'));
+      const currentIndex = inputs.indexOf(e.target);
+      const nextInput = inputs[currentIndex + 1];
+      
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
   };
 
   const handleEditChange = (e) => {
@@ -75,12 +109,20 @@ const MicroStructure = () => {
     const required = ['insDate', 'partName', 'dateCodeHeatCode', 'nodularityGraphiteType',
                      'countNos', 'size', 'ferritePercent', 'pearlitePercent', 'carbidePercent'];
     const missing = required.filter(field => !formData[field]);
+    
+    // Set validation errors for missing fields
+    const errors = {};
+    missing.forEach(field => {
+      errors[field] = true;
+    });
+    setValidationErrors(errors);
 
     if (missing.length > 0) {
-      setMissingFields(missing);
-      setShowMissingFields(true);
       return;
     }
+    
+    // Clear validation errors if all fields are valid
+    setValidationErrors({});
 
     try {
       setSubmitLoading(true);
@@ -178,17 +220,12 @@ const MicroStructure = () => {
       insDate: '', partName: '', dateCodeHeatCode: '', nodularityGraphiteType: '',
       countNos: '', size: '', ferritePercent: '', pearlitePercent: '', carbidePercent: '', remarks: ''
     });
+    setValidationErrors({});
   };
 
   return (
     <div className="microstructure-container" style={{ background: 'transparent' }}>
       <div className="microstructure-wrapper" style={{ background: 'transparent' }}>
-        {showMissingFields && (
-          <ValidationPopup
-            missingFields={missingFields}
-            onClose={() => setShowMissingFields(false)}
-          />
-        )}
 
         {/* Entry Form Container */}
         <div className="microstructure-entry-container" style={{ background: 'transparent' }}>
@@ -203,13 +240,15 @@ const MicroStructure = () => {
             </Button>
           </div>
 
-          <div className="microstructure-form-grid">
+          <form className="microstructure-form-grid">
             <div className="microstructure-form-group">
               <label>Inspection Date *</label>
               <DatePicker
                 name="insDate"
                 value={formData.insDate}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                className={validationErrors.insDate ? 'invalid-input' : ''}
               />
             </div>
 
@@ -220,7 +259,9 @@ const MicroStructure = () => {
                 name="partName"
                 value={formData.partName}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: Engine Block"
+                className={validationErrors.partName ? 'invalid-input' : ''}
               />
             </div>
 
@@ -231,7 +272,9 @@ const MicroStructure = () => {
                 name="dateCodeHeatCode"
                 value={formData.dateCodeHeatCode}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 2024-HC-005"
+                className={validationErrors.dateCodeHeatCode ? 'invalid-input' : ''}
               />
             </div>
 
@@ -247,7 +290,9 @@ const MicroStructure = () => {
                 name="nodularityGraphiteType"
                 value={formData.nodularityGraphiteType}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 85% Type VI"
+                className={validationErrors.nodularityGraphiteType ? 'invalid-input' : ''}
               />
             </div>
 
@@ -258,7 +303,10 @@ const MicroStructure = () => {
                 name="countNos"
                 value={formData.countNos}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 150"
+                className={validationErrors.countNos ? 'invalid-input' : ''}
               />
             </div>
 
@@ -269,7 +317,9 @@ const MicroStructure = () => {
                 name="size"
                 value={formData.size}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 5-8 µm"
+                className={validationErrors.size ? 'invalid-input' : ''}
               />
             </div>
 
@@ -280,8 +330,11 @@ const MicroStructure = () => {
                 name="ferritePercent"
                 value={formData.ferritePercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 20"
+                className={validationErrors.ferritePercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -292,8 +345,11 @@ const MicroStructure = () => {
                 name="pearlitePercent"
                 value={formData.pearlitePercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 78"
+                className={validationErrors.pearlitePercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -304,8 +360,11 @@ const MicroStructure = () => {
                 name="carbidePercent"
                 value={formData.carbidePercent}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.01"
                 placeholder="e.g: 2"
+                className={validationErrors.carbidePercent ? 'invalid-input' : ''}
               />
             </div>
 
@@ -315,11 +374,13 @@ const MicroStructure = () => {
                 name="remarks"
                 value={formData.remarks}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 rows="3"
                 placeholder="Enter any additional notes or observations..."
+                className=""
               />
             </div>
-          </div>
+          </form>
 
           <div className="microstructure-submit-container">
             <Button onClick={handleSubmit} disabled={submitLoading} className="microstructure-submit-btn" type="button">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw, X } from 'lucide-react';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
-import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/Impact.css';
@@ -18,12 +17,11 @@ const Impact = () => {
 
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
-  const [showMissingFields, setShowMissingFields] = useState(false);
-  const [missingFields, setMissingFields] = useState([]);
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [validationErrors, setValidationErrors] = useState({});
   
   // Edit states
   const [showEditModal, setShowEditModal] = useState(false);
@@ -57,6 +55,42 @@ const Impact = () => {
       ...prev,
       [name]: value
     }));
+    
+    // Clear validation error when user starts typing
+    if (validationErrors[name]) {
+      setValidationErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[name];
+        return newErrors;
+      });
+    }
+  };
+
+  const handleBlur = (e) => {
+    const { name, value, type } = e.target;
+    
+    // Auto-format single digit numbers with leading zero
+    if (type === 'number' && value && !isNaN(value) && parseFloat(value) >= 0 && parseFloat(value) <= 9 && !value.includes('.') && value.length === 1) {
+      const formattedValue = '0' + value;
+      setFormData(prev => ({
+        ...prev,
+        [name]: formattedValue
+      }));
+    }
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form;
+      const inputs = Array.from(form.querySelectorAll('input, textarea'));
+      const currentIndex = inputs.indexOf(e.target);
+      const nextInput = inputs[currentIndex + 1];
+      
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
   };
 
   const handleEditChange = (e) => {
@@ -71,12 +105,20 @@ const Impact = () => {
     const required = ['dateOfInspection', 'partName', 'dateCode', 
                      'specification', 'observedValue'];
     const missing = required.filter(field => !formData[field]);
+    
+    // Set validation errors for missing fields
+    const errors = {};
+    missing.forEach(field => {
+      errors[field] = true;
+    });
+    setValidationErrors(errors);
 
     if (missing.length > 0) {
-      setMissingFields(missing);
-      setShowMissingFields(true);
       return;
     }
+    
+    // Clear validation errors if all fields are valid
+    setValidationErrors({});
 
     try {
       setSubmitLoading(true);
@@ -170,17 +212,12 @@ const Impact = () => {
       dateOfInspection: '', partName: '', dateCode: '', 
       specification: '', observedValue: '', remarks: ''
     });
+    setValidationErrors({});
   };
 
   return (
     <div className="page-container impact-container" style={{ background: 'transparent' }}>
       <div className="impact-wrapper" style={{ background: 'transparent' }}>
-        {showMissingFields && (
-          <ValidationPopup
-            missingFields={missingFields}
-            onClose={() => setShowMissingFields(false)}
-          />
-        )}
 
         {/* Entry Form Container */}
         <div className="impact-entry-container" style={{ background: 'transparent' }}>
@@ -198,13 +235,15 @@ const Impact = () => {
             </Button>
           </div>
 
-          <div className="impact-form-grid">
+          <form className="impact-form-grid">
             <div className="impact-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
                 name="dateOfInspection"
                 value={formData.dateOfInspection}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                className={validationErrors.dateOfInspection ? 'invalid-input' : ''}
               />
             </div>
 
@@ -215,7 +254,9 @@ const Impact = () => {
                 name="partName"
                 value={formData.partName}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: Crankshaft"
+                className={validationErrors.partName ? 'invalid-input' : ''}
               />
             </div>
 
@@ -226,7 +267,9 @@ const Impact = () => {
                 name="dateCode"
                 value={formData.dateCode}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: DC-2024-101"
+                className={validationErrors.dateCode ? 'invalid-input' : ''}
               />
             </div>
 
@@ -237,7 +280,9 @@ const Impact = () => {
                 name="specification"
                 value={formData.specification}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 placeholder="e.g: 60 J/cm2 (min)"
+                className={validationErrors.specification ? 'invalid-input' : ''}
               />
             </div>
 
@@ -248,8 +293,11 @@ const Impact = () => {
                 name="observedValue"
                 value={formData.observedValue}
                 onChange={handleChange}
+                onBlur={handleBlur}
+                onKeyDown={handleKeyDown}
                 step="0.1"
                 placeholder="e.g: 92,96"
+                className={validationErrors.observedValue ? 'invalid-input' : ''}
               />
             </div>
 
@@ -259,11 +307,13 @@ const Impact = () => {
                 name="remarks"
                 value={formData.remarks}
                 onChange={handleChange}
+                onKeyDown={handleKeyDown}
                 rows="3"
                 placeholder="Enter any additional notes or observations..."
+                className=""
               />
             </div>
-          </div>
+          </form>
 
           <div className="impact-submit-container">
             <Button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn" type="button">
