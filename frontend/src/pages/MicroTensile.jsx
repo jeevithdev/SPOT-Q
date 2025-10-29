@@ -187,7 +187,7 @@ const MicroTensile = () => {
   };
 
   return (
-    <div className="microtensile-container">
+    <div className="microtensile-container container">
       <div className="microtensile-wrapper">
         {showMissingFields && (
           <ValidationPopup
@@ -395,7 +395,7 @@ const MicroTensile = () => {
               <Loader />
             </div>
           ) : (
-            <div className="microtensile-table-container">
+            <div className="microtensile-table-container table-wrapper">
               <table className="microtensile-table">
                 <thead>
                   <tr>

@@ -181,7 +181,7 @@ const MicroStructure = () => {
   };
 
   return (
-    <div className="microstructure-container">
+    <div className="microstructure-container container">
       <div className="microstructure-wrapper">
         {showMissingFields && (
           <ValidationPopup
@@ -369,7 +369,7 @@ const MicroStructure = () => {
               <Loader />
             </div>
           ) : (
-            <div className="microstructure-table-container">
+            <div className="microstructure-table-container table-wrapper">
               <table className="microstructure-table">
                 <thead>
                   <tr>

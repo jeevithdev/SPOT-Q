@@ -177,7 +177,7 @@ const Impact = () => {
   };
 
   return (
-    <div className="page-container impact-container">
+    <div className="page-container impact-container container">
       <div className="impact-wrapper">
         {showMissingFields && (
           <ValidationPopup
@@ -339,7 +339,7 @@ const Impact = () => {
               <Loader />
             </div>
           ) : (
-            <div className="impact-table-container">
+            <div className="impact-table-container table-wrapper">
               <table className="impact-table">
                 <thead>
                   <tr>

@@ -473,7 +473,7 @@ const DmmSettingParametersCheckSheet = () => {
             <Button className="moulting-filter-btn">🔍 Filter</Button>
           </div>
 
-          <div className="moulting-table-wrapper">
+          <div className="moulting-table-wrapper table-wrapper">
             <table className="moulting-table">
               <thead>
                 <tr>

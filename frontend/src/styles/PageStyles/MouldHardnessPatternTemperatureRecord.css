@@ -1,201 +1,189 @@
-.page-container {/* Styles for Mould Hardness and Pattern Temperature Record page */
+/* Mould Hardness and Pattern Temperature Record Page Styles */
 
-  min-height: 100vh;.page-container {
-
-  background: #f8fafc;	min-height: 100vh;
-
-  padding: 1rem;	background-color: #f0f4f8;
-
-  font-family: Arial, sans-serif;	padding: 2rem;
-
-}	font-family: Arial, sans-serif;
-
+.page-container {
+  min-height: 100vh;
+  background-color: #f0f4f8;
+  padding: 2rem;
+  font-family: Arial, sans-serif;
 }
 
 .main-card {
-
-  max-width: 1200px;.main-card {
-
-  margin: 0 auto;	max-width: 1200px;
-
-  background: #ffffff;	margin: 0 auto;
-
-  border-radius: 12px;	background-color: white;
-
-  box-shadow: 0 6px 16px rgba(0,0,0,0.06);	box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-
-  padding: 1.25rem;	border-radius: 8px;
-
-}	overflow: hidden;
-
+  max-width: 1200px;
+  margin: 0 auto;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .header {
-
-  display: flex;.header {
-
-  align-items: center;	padding: 1.5rem;
-
-  justify-content: space-between;	border-bottom: 4px solid #3b82f6;
-
-  gap: 1rem;	background-color: #eff6ff;
-
-  margin-bottom: 1rem;	text-align: center;
-
-}}
-
-
-
-.header-title {.header-title {
-
-  font-size: 1.25rem;	font-size: 2rem;
-
-  font-weight: 800;	font-weight: bold;
-
-  margin: 0;	color: #3b82f6;
-
-  color: #0f172a;	margin: 0;
-
-}}
-
-
-
-.header-subtitle {.header-subtitle { font-size: 1.1rem; color: #555; margin-top: 0.5rem; }
-
-  margin: 0;
-
-  color: #475569;.section { padding: 1.5rem; border-bottom: 1px solid #ddd; }
-
-  font-weight: 600;
-
-}.section-title {
-
-	font-size: 1.2rem;
-
-.section {	font-weight: bold;
-
-  margin-top: 1rem;	color: #3b82f6;
-
-}	border-bottom: 2px solid #ccc;
-
-	padding-bottom: 0.5rem;
-
-.section-title {	margin-bottom: 1rem;
-
-  display: flex;	display: flex;
-
-  align-items: center;	align-items: center;
-
-  gap: 0.5rem;	gap: 0.5rem;
-
-  font-size: 1rem;}
-
-  font-weight: 700;
-
-  margin: 0 0 0.5rem 0;.table-wrapper { overflow-x: auto; margin-bottom: 1rem; width: 100%; }
-
-  color: #0f172a;
-
-}.table-base { width: 100%; border-collapse: collapse; min-width: 600px; }
-
-
-
-.split-section-grid {.table-head-cell {
-
-  display: grid;	background-color: #cfe2ff;
-
-  grid-template-columns: 1fr 1fr;	color: #1e40af;
-
-  gap: 1rem;	padding: 0.6rem;
-
-  align-items: start;	text-align: center;
-
-}	font-weight: 600;
-
-	border: 1px solid #aaa;
-
-.textarea-base {}
-
-  width: 100%;
-
-  min-height: 120px;.table-body-cell {
-
-  padding: 0.6rem;	padding: 0px;
-
-  border-radius: 8px;	text-align: center;
-
-  border: 1px solid #e6eef0;	border: 1px solid #eee;
-
-  font-size: 0.95rem;	font-size: 0.875rem;
-
-  box-sizing: border-box;	color: #333;
-
-}}
-
-
-
-.input-group {.table-body-cell--muted { color: #808080; font-weight: bold; }
-
-  display: flex;
-
-  gap: 0.5rem;.table-input { width: 100%; padding: 0.5rem; border: none; outline: none; font-size: 0.875rem; text-align: center; box-sizing: border-box; background-color: transparent; }
-
-  align-items: center;
-
-  margin-top: 0.5rem;.input-group { display: flex; align-items: center; gap: 1rem; margin-bottom: 1rem; }
-
-}.input-label { font-weight: 600; color: #1a202c; min-width: 120px; text-align: right; font-size: 0.9rem; }
-
-.input-base { padding: 0.3rem 0.6rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; outline: none; width: 150px; background-color: white; }
-
-.input-label {
-
-  font-weight: 600;.textarea-base { flex-grow: 1; padding: 0.5rem; border: 1px solid #ccc; border-radius: 4px; font-size: 0.9rem; outline: none; min-height: 120px; max-height: 200px; resize: vertical; }
-
-  margin-right: 0.5rem;
-
-}.split-section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; padding: 1.5rem; border-bottom: 1px solid #ddd; }
-
-
-
-.input-base {.button-group { padding: 1.5rem; display: flex; justify-content: flex-end; gap: 0.75rem; border-top: 1px solid #ddd; }
-
-  padding: 0.45rem 0.6rem;
-
-  border-radius: 6px;.base-button { display: flex; align-items: center; gap: 0.5rem; padding: 0.75rem 1.5rem; border: none; border-radius: 8px; cursor: pointer; font-size: 0.875rem; font-weight: 500; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-
-  border: 1px solid #e6eef0;.submit-button { background-color: #3b82f6; color: white; }
-
+  padding: 1.5rem;
+  border-bottom: 4px solid #3b82f6;
+  background-color: #eff6ff;
+  text-align: center;
 }
 
-.add-circle-btn { background-color: #808080; color: white; border: none; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; font-size: 18px; line-height: 28px; text-align: center; padding: 0; }
+.header-title {
+  font-size: 2rem;
+  font-weight: bold;
+  color: #3b82f6;
+  margin: 0;
+}
+
+.header-subtitle {
+  font-size: 1.1rem;
+  color: #555;
+  margin-top: 0.5rem;
+}
+
+.section {
+  padding: 1.5rem;
+  border-bottom: 1px solid #ddd;
+}
+
+.section-title {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: #3b82f6;
+  border-bottom: 2px solid #ccc;
+  padding-bottom: 0.5rem;
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.table-wrapper {
+  overflow-x: auto;
+  margin-bottom: 1rem;
+  width: 100%;
+}
+
+.table-base {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 600px;
+}
+
+.table-head-cell {
+  background-color: #cfe2ff;
+  color: #1e40af;
+  padding: 0.6rem;
+  text-align: center;
+  font-weight: 600;
+  border: 1px solid #aaa;
+}
+
+.table-body-cell {
+  padding: 0px;
+  text-align: center;
+  border: 1px solid #eee;
+  font-size: 0.875rem;
+  color: #333;
+}
+
+.table-body-cell--muted {
+  color: #808080;
+  font-weight: bold;
+}
 
 .table-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: none;
+  outline: none;
+  font-size: 0.875rem;
+  text-align: center;
+  box-sizing: border-box;
+  background-color: transparent;
+}
 
-  width: 100%;.controls-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 1rem; margin-bottom: 1.5rem; align-items: end; }
+.add-row-cell {
+  text-align: center;
+  padding: 0.6rem;
+}
 
-  padding: 0.35rem 0.45rem;.date-input { width: 100%; padding: 0.5rem; border-radius: 8px; border: 2px solid #cbd5e1; }
+.add-circle-btn {
+  background-color: #808080;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 28px;
+  height: 28px;
+  cursor: pointer;
+  font-size: 18px;
+  line-height: 28px;
+  text-align: center;
+  padding: 0;
+}
 
-  border: 1px solid #d1d5db;
+.split-section-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.5rem;
+  padding: 1.5rem;
+  border-bottom: 1px solid #ddd;
+}
 
-  border-radius: 4px;/* Report section table */
+.textarea-base {
+  width: 100%;
+  min-height: 120px;
+  padding: 0.6rem;
+  border-radius: 8px;
+  border: 1px solid #e6eef0;
+  font-size: 0.95rem;
+  box-sizing: border-box;
+}
 
-  box-sizing: border-box;.report-table { width: 100%; border-collapse: collapse; font-size: 0.875rem; min-width: 700px; }
-
-}.report-table thead { background: linear-gradient(135deg, #1e293b 0%, #334155 100%); color: white; }
-
-
-
-.button-group {.no-records { text-align: center; padding: 3rem; color: #94a3b8; font-style: italic; }
-
+.input-group {
   display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
 
-  justify-content: flex-end;/* small utility */
+.input-label {
+  font-weight: 600;
+  color: #1a202c;
+  min-width: 120px;
+  text-align: right;
+  font-size: 0.9rem;
+}
 
-  gap: 0.75rem;.muted { color: #94a3b8; }
+.input-base {
+  padding: 0.3rem 0.6rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  outline: none;
+  width: 150px;
+  background-color: white;
+}
 
-  margin-top: 1rem;
+.button-group {
+  padding: 1.5rem;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  border-top: 1px solid #ddd;
+}
 
+.base-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 500;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+}
+
+.submit-button {
+  background-color: #3b82f6;
+  color: white;
 }
 
 .add-reset {
@@ -209,56 +197,102 @@
   border: none;
 }
 
-.base-button {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  border: none;
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.submit-button {
-  background: linear-gradient(135deg, #5B9AA9 0%, #4A8494 100%);
-  color: white;
-}
-
 /* Report section styles */
-.report-card {
+.report-container {
   background: white;
   border-radius: 12px;
-  padding: 1.5rem;
-  margin-top: 1.5rem;
-  box-shadow: 0 4px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+  padding: 2rem;
+  margin-top: 2rem;
+}
+
+.report-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #e2e8f0;
+}
+
+.filter-icon {
+  color: #FF7F50;
+}
+
+.report-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
 }
 
 .report-filter-grid {
   display: grid;
   grid-template-columns: 1fr 1fr auto;
   gap: 1rem;
-  align-items: end;
-  margin-bottom: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.filter-label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.filter-input {
+  width: 100%;
+  padding: 0.5rem;
+  border-radius: 8px;
+  border: 2px solid #cbd5e1;
+}
+
+.filter-button {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.5rem;
+  background: linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  align-self: end;
+}
+
+.report-table-wrapper {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
 }
 
 .report-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.9rem;
+  font-size: 0.875rem;
   min-width: 700px;
 }
 
-.report-table th {
-  padding: 1rem 0.75rem;
-  text-align: left;
+.report-table-head {
   background: linear-gradient(135deg, #1e293b 0%, #334155 100%);
   color: white;
 }
 
-.report-empty {
+.report-table-head-cell {
+  padding: 1rem 0.75rem;
+  text-align: left;
+}
+
+.no-records {
   text-align: center;
   padding: 3rem;
   color: #94a3b8;
   font-style: italic;
+}
+
+/* small utility */
+.muted {
+  color: #94a3b8;
 }

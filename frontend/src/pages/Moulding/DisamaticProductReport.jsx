@@ -38,6 +38,9 @@ const MouldingReport = () => {
   const handleChange = (field, value) =>
     setFormData((prev) => ({ ...prev, [field]: value }));
 
+  const handleMainChange = (field, value) =>
+    setFormData((prev) => ({ ...prev, [field]: value }));
+
   const handleArrayChange = (arrayName, index, field, value) => {
     const updated = [...formData[arrayName]];
     updated[index] = { ...updated[index], [field]: value };
@@ -105,7 +108,7 @@ const MouldingReport = () => {
   );
 
     return (
-    <div className="disamatic-page-container">
+    <div className="disamatic-page-container container">
       <div className="disamatic-main-card">
 
                 {/* --- HEADER --- */}
@@ -248,7 +251,7 @@ const MouldingReport = () => {
             </Button>
           </div>
 
-          <div className="disamatic-table-wrapper">
+          <div className="disamatic-table-wrapper table-wrapper">
             <table className="disamatic-table">
               <thead>
                 <tr>

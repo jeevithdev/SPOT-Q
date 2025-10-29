@@ -175,7 +175,7 @@ const CupolaHolderLogSheet = () => {
   };
 
   return (
-    <div className="cupola-holder-container">
+    <div className="cupola-holder-container container">
       <div className="cupola-holder-wrapper">
         {showMissingFields && (
           <ValidationPopup
@@ -483,7 +483,7 @@ const CupolaHolderLogSheet = () => {
               <Loader />
             </div>
           ) : (
-            <div className="cupola-holder-table-container">
+            <div className="cupola-holder-table-container table-wrapper">
               <table className="cupola-holder-table">
                 <thead>
                   <tr>

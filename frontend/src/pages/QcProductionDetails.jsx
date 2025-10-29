@@ -194,7 +194,7 @@ const QcProductionDetails = () => {
   };
 
   return (
-    <div className="qcproduction-container">
+    <div className="qcproduction-container container">
       <div className="qcproduction-wrapper">
         {showMissingFields && (
           <ValidationPopup
@@ -436,7 +436,7 @@ const QcProductionDetails = () => {
               <Loader />
             </div>
           ) : (
-            <div className="qcproduction-table-container">
+            <div className="qcproduction-table-container table-wrapper">
               <table className="qcproduction-table">
                 <thead>
                   <tr>

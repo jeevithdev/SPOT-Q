@@ -206,7 +206,7 @@ const Process = () => {
   };
 
   return (
-    <div className="process-container">
+    <div className="process-container container">
       <div className="process-wrapper">
         {showMissingFields && (
           <ValidationPopup
@@ -506,7 +506,7 @@ const Process = () => {
               <Loader />
             </div>
           ) : (
-            <div className="process-table-container">
+            <div className="process-table-container table-wrapper">
               <table className="process-table">
                 <thead>
                   <tr>

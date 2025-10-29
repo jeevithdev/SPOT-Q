@@ -248,7 +248,7 @@ const MeltingLogSheet = () => {
   };
 
   return (
-    <div className="melting-log-container">
+    <div className="melting-log-container container">
       <div className="melting-log-wrapper">
         {showMissingFields && (
           <ValidationPopup
@@ -758,7 +758,7 @@ const MeltingLogSheet = () => {
               <Loader />
             </div>
           ) : (
-            <div className="melting-log-table-container">
+            <div className="melting-log-table-container table-wrapper">
               <table className="melting-log-table">
                 <thead>
                   <tr>

@@ -185,7 +185,7 @@ const Tensile = () => {
   };
 
   return (
-    <div className="page-container tensile-container">
+    <div className="page-container tensile-container container">
       <div className="tensile-wrapper">
         {showMissingFields && (
           <ValidationPopup
@@ -400,7 +400,7 @@ const Tensile = () => {
               <Loader />
             </div>
           ) : (
-            <div className="tensile-table-container">
+            <div className="tensile-table-container table-wrapper">
               <table className="tensile-table">
                 <thead>
                   <tr>

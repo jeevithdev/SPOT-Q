@@ -104,7 +104,11 @@ const MouldHardnessRecord = () => {
         <tbody>
           {formData.mouldHardnessTable.map((row, index) => (
             <tr key={index}>
+<<<<<<< Updated upstream
               <td className="table-body-cell" style={{ color: '#808080', fontWeight: 'bold' }}>
+=======
+              <td className="table-body-cell table-body-cell--muted">
+>>>>>>> Stashed changes
                 {index + 1}
               </td>
               <td className="table-body-cell">
@@ -159,22 +163,11 @@ const MouldHardnessRecord = () => {
           ))}
           {/* Add Row aligned under SNO */}
           <tr>
-            <td style={{ textAlign: 'center', padding: '0.6rem' }}>
+            <td className="add-row-cell">
               <Button
                 type="button"
                 onClick={addHardnessRow}
-                style={{
-                  backgroundColor: '#808080',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '28px',
-                  height: '28px',
-                  cursor: 'pointer',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  textAlign: 'center',
-                }}
+                className="add-circle-btn"
               >
                 +
               </Button>
@@ -200,7 +193,11 @@ const MouldHardnessRecord = () => {
         <tbody>
           {formData.patternTempTable.map((row, index) => (
             <tr key={index}>
+<<<<<<< Updated upstream
               <td className="table-body-cell" style={{ color: '#808080', fontWeight: 'bold' }}>
+=======
+              <td className="table-body-cell table-body-cell--muted">
+>>>>>>> Stashed changes
                 {row.sno}
               </td>
               <td className="table-body-cell">
@@ -231,22 +228,11 @@ const MouldHardnessRecord = () => {
           ))}
           {/* Add Row aligned under SNO */}
           <tr>
-            <td style={{ textAlign: 'center', padding: '0.6rem' }}>
+            <td className="add-row-cell">
               <Button
                 type="button"
                 onClick={addPatternTempRow}
-                style={{
-                  backgroundColor: '#808080',
-                  color: 'white',
-                  border: 'none',
-                  borderRadius: '50%',
-                  width: '28px',
-                  height: '28px',
-                  cursor: 'pointer',
-                  fontSize: '18px',
-                  lineHeight: '28px',
-                  textAlign: 'center',
-                }}
+                className="add-circle-btn"
               >
                 +
               </Button>
@@ -259,7 +245,7 @@ const MouldHardnessRecord = () => {
   );
 
   return (
-    <div className="page-container">
+    <div className="page-container container">
       <div className="main-card">
         <div className="header">
           <h1 className="header-title">MOULD HARDNESS AND PATTERN TEMPERATURE RECORD</h1>
@@ -340,84 +326,48 @@ const MouldHardnessRecord = () => {
         </form>
 
         {/* Report Section */}
-        <div style={{
-          background: 'white',
-          borderRadius: '12px',
-          boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
-          padding: '2rem',
-          marginTop: '2rem'
-        }}>
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '0.75rem',
-            marginBottom: '1.5rem',
-            paddingBottom: '1rem',
-            borderBottom: '2px solid #e2e8f0'
-          }}>
-            <Filter size={20} style={{ color: '#FF7F50' }} />
-            <h3 style={{ fontSize: '1.5rem', fontWeight: '700', color: '#1e293b', margin: 0 }}>
+        <div className="report-container">
+          <div className="report-header">
+            <Filter size={20} className="filter-icon" />
+            <h3 className="report-title">
               Mould Hardness & Pattern Temperature - Records
             </h3>
           </div>
 
-          <div style={{
-            display: 'grid',
-            gridTemplateColumns: '1fr 1fr auto',
-            gap: '1rem',
-            marginBottom: '1.5rem'
-          }}>
+          <div className="report-filter-grid">
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              <label className="filter-label">
                 Start Date
               </label>
-              <input type="date" style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '2px solid #cbd5e1' }} />
+              <input type="date" className="filter-input" />
             </div>
             <div>
-              <label style={{ display: 'block', fontSize: '0.875rem', fontWeight: '600', marginBottom: '0.5rem' }}>
+              <label className="filter-label">
                 End Date
               </label>
-              <input type="date" style={{ width: '100%', padding: '0.5rem', borderRadius: '8px', border: '2px solid #cbd5e1' }} />
+              <input type="date" className="filter-input" />
             </div>
-            <Button style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '0.5rem',
-              padding: '0.625rem 1.5rem',
-              background: 'linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: 'pointer',
-              fontSize: '0.875rem',
-              fontWeight: '600',
-              alignSelf: 'end'
-            }}>
+            <Button className="filter-button">
               <Filter size={18} />
               Filter
             </Button>
           </div>
 
-          <div style={{ overflowX: 'auto', borderRadius: '8px', border: '1px solid #e2e8f0' }}>
-            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', minWidth: '700px' }}>
-              <thead style={{ background: 'linear-gradient(135deg, #1e293b 0%, #334155 100%)', color: 'white' }}>
+          <div className="report-table-wrapper">
+            <table className="report-table">
+              <thead className="report-table-head">
                 <tr>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Date</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Shift</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Part Name</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Avg Hardness</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Avg Temp</th>
-                  <th style={{ padding: '1rem 0.75rem', textAlign: 'left' }}>Remarks</th>
+                  <th className="report-table-head-cell">Date</th>
+                  <th className="report-table-head-cell">Shift</th>
+                  <th className="report-table-head-cell">Part Name</th>
+                  <th className="report-table-head-cell">Avg Hardness</th>
+                  <th className="report-table-head-cell">Avg Temp</th>
+                  <th className="report-table-head-cell">Remarks</th>
                 </tr>
               </thead>
               <tbody>
                 <tr>
-                  <td colSpan="6" style={{
-                    textAlign: 'center',
-                    padding: '3rem',
-                    color: '#94a3b8',
-                    fontStyle: 'italic'
-                  }}>
+                  <td colSpan="6" className="no-records">
                     No records found. Submit entries above to see them here.
                   </td>
                 </tr>

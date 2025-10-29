@@ -3,15 +3,19 @@
 .login-container {
   display: flex;
   height: 100vh;
-  background-size: cover;
-  background-position: center;
+  width: 100vw;
+  background-image: url('/images/factory-bg.png') !important;
+  background-size: cover !important;
+  background-position: center !important;
+  background-repeat: no-repeat !important;
   backdrop-filter: brightness(0.7);
-  position: relative;
-}
-
-/* moved inline background-image from Login.jsx */
-.login-container {
-  background-image: url('/images/factory-bg.png');
+  position: fixed;
+  top: 0;
+  left: 0;
+  background-color: #f0f0f0; /* Fallback background color */
+  margin: 0;
+  padding: 0;
+  max-width: none;
 }
 
 /* Left side logo - positioned at top-left */
