@@ -8,11 +8,13 @@ import Loader from './src/Components/Loader';
 // Pages
 import MicroTensile from './src/pages/MicroTensile';
 import QcProductionDetails from './src/pages/QcProductionDetails';
+import QcProductionReport from './src/pages/QcProductionReport';
 import Process from './src/pages/Process';
 import MeltingLogSheet from './src/pages/Melting/MeltingLogSheet';
 import CupolaHolderLogSheet from './src/pages/Melting/CupolaHolderLogSheet';
 import Login from './src/pages/Login';
 import Tensile from './src/pages/Tensile';
+import TensileReport from './src/pages/TensileReport';
 import SandTestingRecord from './src/pages/SandLab/SandTestingRecord';
 import FoundarySandTestingNote from './src/pages/SandLab/FoundarySandTestingNote';
 import DisamaticProductReport from './src/pages/Moulding/DisamaticProductReport';
@@ -67,10 +69,13 @@ const App = () => {
 
           {/* Top-level pages */}
           <Route path="micro-tensile" element={<MicroTensile />} />
-          <Route path="qc-production-details" element={<QcProductionDetails />} />
           <Route path="micro-structure" element={<MicroStructure />} />
           <Route path="impact" element={<Impact />} />
           <Route path="process" element={<Process />} />
+
+          {/* QC Production Details */}
+          <Route path="qc-production-details/data-entry" element={<QcProductionDetails />} />
+          <Route path="qc-production-details/report" element={<QcProductionReport />} />
 
           {/* Melting */}
           <Route path="melting/melting-log-sheet" element={<MeltingLogSheet />} />
@@ -78,6 +83,7 @@ const App = () => {
 
           {/* Tensile */}
           <Route path="tensile" element={<Tensile />} />
+          <Route path="tensile/report" element={<TensileReport />} />
 
           {/* Sand Lab */}
           <Route path="sand-lab/sand-testing-record" element={<SandTestingRecord />} />
