@@ -1,5 +1,5 @@
 const express = require('express');
-const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/qcProductionController');
+const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/QcProduction');
 
 const router = express.Router();
 

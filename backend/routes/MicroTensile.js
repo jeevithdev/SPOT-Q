@@ -1,5 +1,5 @@
 const express = require('express');
-const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/microTensileController');
+const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/MicroTensile');
 
 const router = express.Router();
 

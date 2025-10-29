@@ -1,5 +1,5 @@
 const express = require('express');
-const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/impactController');
+const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/Impact');
 
 const router = express.Router();
 

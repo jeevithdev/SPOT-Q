@@ -1,5 +1,5 @@
 const express = require('express');
-const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/microStructureController');
+const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/MicroStructure');
 
 const router = express.Router();
 

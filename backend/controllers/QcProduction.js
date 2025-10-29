@@ -1,8 +1,8 @@
-const QCProductionReport = require('../models/QCProductionReport');
+const QcProduction = require('../models/QcProduction');
 
 exports.getAllEntries = async (req, res) => {
     try {
-        const entries = await QCProductionReport.find().sort({ createdAt: -1 });
+        const entries = await QcProduction.find().sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -13,25 +13,25 @@ exports.getAllEntries = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: error.message || 'Error fetching QC Production Report entries.'
+            message: error.message || 'Error fetching QcProduction entries.'
         });
     }
 };
 
 exports.createEntry = async (req, res) => {
     try {
-        const entry = await QCProductionReport.create(req.body);
+        const entry = await QcProduction.create(req.body);
 
         res.status(201).json({
             success: true,
             data: entry,
-            message: 'QC Production Report entry created successfully.'
+            message: 'QcProduction entry created successfully.'
         });
 
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: error.message || 'Error creating QC Production Report entry.',
+            message: error.message || 'Error creating QcProduction entry.',
             errors: error.errors
         });
     }
@@ -39,7 +39,7 @@ exports.createEntry = async (req, res) => {
 
 exports.updateEntry = async (req, res) => {
     try {
-        const entry = await QCProductionReport.findByIdAndUpdate(
+        const entry = await QcProduction.findByIdAndUpdate(
             req.params.id,
             req.body,
             { new: true, runValidators: true }
@@ -48,20 +48,20 @@ exports.updateEntry = async (req, res) => {
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'QC Production Report entry not found.'
+                message: 'QcProduction entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
             data: entry,
-            message: 'QC Production Report entry updated successfully.'
+            message: 'QcProduction entry updated successfully.'
         });
 
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: error.message || 'Error updating QC Production Report entry.',
+            message: error.message || 'Error updating QcProduction entry.',
             errors: error.errors
         });
     }
@@ -69,24 +69,24 @@ exports.updateEntry = async (req, res) => {
 
 exports.deleteEntry = async (req, res) => {
     try {
-        const entry = await QCProductionReport.findByIdAndDelete(req.params.id);
+        const entry = await QcProduction.findByIdAndDelete(req.params.id);
 
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'QC Production Report entry not found.'
+                message: 'QcProduction entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
-            message: 'QC Production Report entry deleted successfully.'
+            message: 'QcProduction entry deleted successfully.'
         });
 
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: error.message || 'Error deleting QC Production Report entry.'
+            message: error.message || 'Error deleting QcProduction entry.'
         });
     }
 };

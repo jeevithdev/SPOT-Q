@@ -1,5 +1,5 @@
 const express = require('express');
-const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/tensileController');
+const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/Tensile');
 
 const router = express.Router();
 

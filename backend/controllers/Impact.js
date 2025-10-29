@@ -1,8 +1,8 @@
-const ImpactTest = require('../models/ImpactTest');
+const Impact = require('../models/Impact');
 
 exports.getAllEntries = async (req, res) => {
     try {
-        const entries = await ImpactTest.find().sort({ createdAt: -1 });
+        const entries = await Impact.find().sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -13,25 +13,25 @@ exports.getAllEntries = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: error.message || 'Error fetching Impact Test entries.'
+            message: error.message || 'Error fetching Impact entries.'
         });
     }
 };
 
 exports.createEntry = async (req, res) => {
     try {
-        const entry = await ImpactTest.create(req.body);
+        const entry = await Impact.create(req.body);
 
         res.status(201).json({
             success: true,
             data: entry,
-            message: 'Impact Test entry created successfully.'
+            message: 'Impact entry created successfully.'
         });
 
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: error.message || 'Error creating Impact Test entry.',
+            message: error.message || 'Error creating Impact entry.',
             errors: error.errors
         });
     }
@@ -39,7 +39,7 @@ exports.createEntry = async (req, res) => {
 
 exports.updateEntry = async (req, res) => {
     try {
-        const entry = await ImpactTest.findByIdAndUpdate(
+        const entry = await Impact.findByIdAndUpdate(
             req.params.id,
             req.body,
             { new: true, runValidators: true }
@@ -48,20 +48,20 @@ exports.updateEntry = async (req, res) => {
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'Impact Test entry not found.'
+                message: 'Impact entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
             data: entry,
-            message: 'Impact Test entry updated successfully.'
+            message: 'Impact entry updated successfully.'
         });
 
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: error.message || 'Error updating Impact Test entry.',
+            message: error.message || 'Error updating Impact entry.',
             errors: error.errors
         });
     }
@@ -69,24 +69,24 @@ exports.updateEntry = async (req, res) => {
 
 exports.deleteEntry = async (req, res) => {
     try {
-        const entry = await ImpactTest.findByIdAndDelete(req.params.id);
+        const entry = await Impact.findByIdAndDelete(req.params.id);
 
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'Impact Test entry not found.'
+                message: 'Impact entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
-            message: 'Impact Test entry deleted successfully.'
+            message: 'Impact entry deleted successfully.'
         });
 
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: error.message || 'Error deleting Impact Test entry.'
+            message: error.message || 'Error deleting Impact entry.'
         });
     }
 };

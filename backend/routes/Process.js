@@ -1,9 +1,8 @@
 const express = require('express');
-const { getAllEntries, createEntry, updateEntry, deleteEntry } = require('../controllers/processLogController');
+const { getAllEntries, createEntry, updateEntry, deleteEntry } = require('../controllers/Process');
 
 const router = express.Router();
 
-// Define GET and POST routes
 router.route('/')
     .get(getAllEntries)
     .post(createEntry);

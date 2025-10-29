@@ -4,12 +4,9 @@ import { AuthContext } from './src/context/AuthContext';
 import { Navbar } from './src/Components/Navbar';
 import Dashboard from './src/Components/Dashboard';
 import Loader from './src/Components/Loader';
-
-// Pages
 import MicroTensile from './src/pages/MicroTensile';
 import QcProductionDetails from './src/pages/QcProductionDetails';
 import Process from './src/pages/Process';
-
 import MeltingLogSheet from './src/pages/Melting/MeltingLogSheet';
 import CupolaHolderLogSheet from './src/pages/Melting/CupolaHolderLogSheet';
 import Login from './src/pages/Login';

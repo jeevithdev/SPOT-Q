@@ -1,8 +1,8 @@
-const TensileTest = require('../models/TensileTest');
+const Tensile = require('../models/Tensile');
 
 exports.getAllEntries = async (req, res) => {
     try {
-        const entries = await TensileTest.find().sort({ createdAt: -1 });
+        const entries = await Tensile.find().sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -13,25 +13,25 @@ exports.getAllEntries = async (req, res) => {
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: error.message || 'Error fetching Tensile Test entries.'
+            message: error.message || 'Error fetching Tensile entries.'
         });
     }
 };
 
 exports.createEntry = async (req, res) => {
     try {
-        const entry = await TensileTest.create(req.body);
+        const entry = await Tensile.create(req.body);
 
         res.status(201).json({
             success: true,
             data: entry,
-            message: 'Tensile Test entry created successfully.'
+            message: 'Tensile entry created successfully.'
         });
 
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: error.message || 'Error creating Tensile Test entry.',
+            message: error.message || 'Error creating Tensile entry.',
             errors: error.errors
         });
     }
@@ -39,7 +39,7 @@ exports.createEntry = async (req, res) => {
 
 exports.updateEntry = async (req, res) => {
     try {
-        const entry = await TensileTest.findByIdAndUpdate(
+        const entry = await Tensile.findByIdAndUpdate(
             req.params.id,
             req.body,
             { new: true, runValidators: true }
@@ -48,20 +48,20 @@ exports.updateEntry = async (req, res) => {
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'Tensile Test entry not found.'
+                message: 'Tensile entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
             data: entry,
-            message: 'Tensile Test entry updated successfully.'
+            message: 'Tensile entry updated successfully.'
         });
 
     } catch (error) {
         res.status(400).json({
             success: false,
-            message: error.message || 'Error updating Tensile Test entry.',
+            message: error.message || 'Error updating Tensile entry.',
             errors: error.errors
         });
     }
@@ -69,24 +69,24 @@ exports.updateEntry = async (req, res) => {
 
 exports.deleteEntry = async (req, res) => {
     try {
-        const entry = await TensileTest.findByIdAndDelete(req.params.id);
+        const entry = await Tensile.findByIdAndDelete(req.params.id);
 
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'Tensile Test entry not found.'
+                message: 'Tensile entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
-            message: 'Tensile Test entry deleted successfully.'
+            message: 'Tensile entry deleted successfully.'
         });
 
     } catch (error) {
         res.status(500).json({
             success: false,
-            message: error.message || 'Error deleting Tensile Test entry.'
+            message: error.message || 'Error deleting Tensile entry.'
         });
     }
 };

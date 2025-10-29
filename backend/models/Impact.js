@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const ImpactTestSchema = new mongoose.Schema({
+const ImpactSchema = new mongoose.Schema({
     dateOfInspection: {
         type: Date, 
         required: true 
@@ -52,4 +52,4 @@ const ImpactTestSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('ImpactTest', ImpactTestSchema);
+module.exports = mongoose.model('Impact', ImpactSchema);

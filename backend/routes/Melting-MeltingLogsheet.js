@@ -1,9 +1,8 @@
 const express = require('express');
-const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/meltingLogController');
+const { createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/Melting-MeltingLogsheet');
 
 const router = express.Router();
 
-// Define GET and POST routes
 router.route('/')
     .get(getAllEntries)
     .post(createEntry);

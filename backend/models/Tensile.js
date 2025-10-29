@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const TensileTestSchema = new mongoose.Schema({
+const TensileSchema = new mongoose.Schema({
     dateOfInspection: { 
         type: Date, 
         required: true 
@@ -71,4 +71,4 @@ const TensileTestSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('TensileTest', TensileTestSchema);
+module.exports = mongoose.model('Tensile', TensileSchema);

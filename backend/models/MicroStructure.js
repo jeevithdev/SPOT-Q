@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const MicroStructureReportSchema = new mongoose.Schema({
+const MicroStructureSchema = new mongoose.Schema({
     
     insDate: { 
         type: Date,
@@ -68,4 +68,4 @@ const MicroStructureReportSchema = new mongoose.Schema({
         default: Date.now }
 });
 
-module.exports = mongoose.model('MicroStructureReport', MicroStructureReportSchema);
+module.exports = mongoose.model('MicroStructure', MicroStructureSchema);

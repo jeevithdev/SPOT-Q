@@ -1,4 +1,4 @@
-const CupolaHolderLog = require('../models/CupolaHolderLog');
+const CupolaHolderLog = require('../models/Melting-CupolaHolderLog');
 
 exports.getAllEntries = async (req, res) => {
     try {
@@ -14,7 +14,7 @@ exports.getAllEntries = async (req, res) => {
         console.error(error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Error fetching Cupola Holder Log entries.'
+            message: error.message || 'Error fetching CupolaHolderLog entries.'
         });
     }
 };
@@ -26,14 +26,14 @@ exports.createEntry = async (req, res) => {
         res.status(201).json({
             success: true,
             data: entry,
-            message: 'Cupola Holder Log entry created successfully.'
+            message: 'CupolaHolderLog entry created successfully.'
         });
 
     } catch (error) {
         console.error(error);
         res.status(400).json({
             success: false,
-            message: error.message || 'Error creating Cupola Holder Log entry.',
+            message: error.message || 'Error creating CupolaHolderLog entry.',
             errors: error.errors
         });
     }
@@ -50,21 +50,21 @@ exports.updateEntry = async (req, res) => {
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'Cupola Holder Log entry not found.'
+                message: 'CupolaHolderLog entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
             data: entry,
-            message: 'Cupola Holder Log entry updated successfully.'
+            message: 'CupolaHolderLog entry updated successfully.'
         });
 
     } catch (error) {
         console.error(error);
         res.status(400).json({
             success: false,
-            message: error.message || 'Error updating Cupola Holder Log entry.',
+            message: error.message || 'Error updating CupolaHolderLog entry.',
             errors: error.errors
         });
     }
@@ -77,20 +77,20 @@ exports.deleteEntry = async (req, res) => {
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'Cupola Holder Log entry not found.'
+                message: 'CupolaHolderLog entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
-            message: 'Cupola Holder Log entry deleted successfully.'
+            message: 'CupolaHolderLog entry deleted successfully.'
         });
 
     } catch (error) {
         console.error(error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Error deleting Cupola Holder Log entry.'
+            message: error.message || 'Error deleting CupolaHolderLog entry.'
         });
     }
 };

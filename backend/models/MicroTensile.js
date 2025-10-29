@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const MicroTensileTestSchema = new mongoose.Schema({
+const MicroTensileSchema = new mongoose.Schema({
 
     dateOfInspection: { 
         type: Date, 
@@ -75,4 +75,4 @@ const MicroTensileTestSchema = new mongoose.Schema({
     }
 });
 
-module.exports = mongoose.model('MicroTensileTest', MicroTensileTestSchema);
+module.exports = mongoose.model('MicroTensile', MicroTensileSchema);

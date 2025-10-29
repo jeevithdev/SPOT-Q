@@ -1,8 +1,8 @@
-const MeltingLog = require('../models/MeltingLog');
+const MeltingLogsheet = require('../models/Melting-MeltingLogsheet');
 
 exports.getAllEntries = async (req, res) => {
     try {
-        const entries = await MeltingLog.find().sort({ createdAt: -1 });
+        const entries = await MeltingLogsheet.find().sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -14,27 +14,26 @@ exports.getAllEntries = async (req, res) => {
         console.error(error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Error fetching Melting Log entries.'
+            message: error.message || 'Error fetching MeltingLogsheet entries.'
         });
     }
 };
 
 exports.createEntry = async (req, res) => {
     try {
-        const entry = await MeltingLog.create(req.body);
+        const entry = await MeltingLogsheet.create(req.body);
 
         res.status(201).json({
             success: true,
             data: entry,
-            message: 'Melting Log entry created successfully.'
+            message: 'MeltingLogsheet entry created successfully.'
         });
 
     } catch (error) {
-        // Handle validation errors or database errors (e.g., duplicate heatNo)
         console.error(error);
         res.status(400).json({
             success: false,
-            message: error.message || 'Error creating Melting Log entry.',
+            message: error.message || 'Error creating MeltingLogsheet entry.',
             errors: error.errors
         });
     }
@@ -42,7 +41,7 @@ exports.createEntry = async (req, res) => {
 
 exports.updateEntry = async (req, res) => {
     try {
-        const entry = await MeltingLog.findByIdAndUpdate(
+        const entry = await MeltingLogsheet.findByIdAndUpdate(
             req.params.id,
             req.body,
             { new: true, runValidators: true }
@@ -51,21 +50,21 @@ exports.updateEntry = async (req, res) => {
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'Melting Log entry not found.'
+                message: 'MeltingLogsheet entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
             data: entry,
-            message: 'Melting Log entry updated successfully.'
+            message: 'MeltingLogsheet entry updated successfully.'
         });
 
     } catch (error) {
         console.error(error);
         res.status(400).json({
             success: false,
-            message: error.message || 'Error updating Melting Log entry.',
+            message: error.message || 'Error updating MeltingLogsheet entry.',
             errors: error.errors
         });
     }
@@ -73,25 +72,25 @@ exports.updateEntry = async (req, res) => {
 
 exports.deleteEntry = async (req, res) => {
     try {
-        const entry = await MeltingLog.findByIdAndDelete(req.params.id);
+        const entry = await MeltingLogsheet.findByIdAndDelete(req.params.id);
 
         if (!entry) {
             return res.status(404).json({
                 success: false,
-                message: 'Melting Log entry not found.'
+                message: 'MeltingLogsheet entry not found.'
             });
         }
 
         res.status(200).json({
             success: true,
-            message: 'Melting Log entry deleted successfully.'
+            message: 'MeltingLogsheet entry deleted successfully.'
         });
 
     } catch (error) {
         console.error(error);
         res.status(500).json({
             success: false,
-            message: error.message || 'Error deleting Melting Log entry.'
+            message: error.message || 'Error deleting MeltingLogsheet entry.'
         });
     }
 };

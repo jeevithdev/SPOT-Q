@@ -1,6 +1,6 @@
 const mongoose = require('mongoose');
 
-const QCProductionReportSchema = new mongoose.Schema({
+const QcProductionSchema = new mongoose.Schema({
 
     date: { 
         type: Date, 
@@ -88,4 +88,4 @@ const QCProductionReportSchema = new mongoose.Schema({
          }
 });
 
-module.exports = mongoose.model('QCProductionReport', QCProductionReportSchema);
+module.exports = mongoose.model('QcProduction', QcProductionSchema);
