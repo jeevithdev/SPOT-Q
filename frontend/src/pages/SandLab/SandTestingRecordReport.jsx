@@ -1,37 +1,12 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-import { DatePicker, FilterButton, ResetButton, EditActionButton, DeleteActionButton } from '../../Components/Buttons';
+import { useNavigate } from 'react-router-dom';
+import { Filter, Trash2, ArrowLeft, RefreshCw } from 'lucide-react';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Sandlab/SandTestingRecord.css';
 
 const SandTestingRecordReport = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const SandTestingTabs = () => (
-    <div className="sand-testing-tabs-container">
-      <div className="sand-testing-tabs">
-        <Link
-          to="/sand-lab/sand-testing-record"
-          className={`sand-testing-tab ${isActive('/sand-lab/sand-testing-record') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/sand-lab/sand-testing-record/report"
-          className={`sand-testing-tab ${isActive('/sand-lab/sand-testing-record/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
+  const navigate = useNavigate();
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [items, setItems] = useState([]);
@@ -97,106 +72,125 @@ const SandTestingRecordReport = () => {
     }
   };
 
-  return (
-    <div className="sand-testing-container">
-      <div className="sand-testing-wrapper">
-        <SandTestingTabs />
-        <div className="sand-testing-report-container">
-          <h3 className="sand-testing-report-title">
-            Sand Testing Record - Report Card
-          </h3>
+  const handleResetFilter = () => {
+    setStartDate('');
+    setEndDate('');
+    setFilteredItems(items);
+  };
 
-          <div className="sandrec-report-filter-grid">
-            <div className="sand-testing-filter-group">
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>Start Date</label>
-              <DatePicker
-                name="startDate"
+  return (
+    <div className="sand-page-wrapper">
+      <div className="sand-container">
+        {/* Header */}
+        <div className="sand-header-section">
+          <div className="sand-header-content">
+            <h1 className="sand-page-title">SAND TESTING RECORDS</h1>
+            <p className="sand-page-subtitle">View and Manage Sand Testing Records</p>
+          </div>
+          <div className="sand-header-actions">
+            <button type="button" onClick={() => navigate('/sand-lab/sand-testing-record')} className="sand-back-btn">
+              <ArrowLeft size={18} />
+              Back to Form
+            </button>
+          </div>
+        </div>
+
+        {/* Filter Section */}
+        <div className="sand-filter-section">
+          <div className="sand-filter-grid">
+            <div className="sand-input-group">
+              <label className="sand-input-label">Start Date</label>
+              <input
+                type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                placeholder="Select start date"
+                className="sand-input-field"
               />
             </div>
 
-            <div className="sand-testing-filter-group">
-              <label style={{ display: 'block', fontWeight: 600, marginBottom: '0.5rem' }}>End Date</label>
-              <DatePicker
-                name="endDate"
+            <div className="sand-input-group">
+              <label className="sand-input-label">End Date</label>
+              <input
+                type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                placeholder="Select end date"
+                className="sand-input-field"
               />
             </div>
 
-            <div className="sand-testing-filter-actions" style={{ display: 'flex', gap: '0.5rem' }}>
-              <FilterButton onClick={handleFilter}>Filter</FilterButton>
-              <ResetButton onClick={fetchItems}>Refresh</ResetButton>
+            <div className="sand-filter-buttons">
+              <button onClick={handleFilter} className="sand-filter-btn">
+                <Filter size={18} />
+                Filter
+              </button>
+              <button onClick={handleResetFilter} className="sand-reset-filter-btn">
+                <RefreshCw size={18} />
+                Reset
+              </button>
             </div>
           </div>
+        </div>
 
+        {/* Report Table */}
+        <div className="sand-report-section">
           {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
+            <div className="sand-loader-container">
               <Loader />
             </div>
           ) : (
-            <div className="sandrec-report-table-wrapper">
-              <table className="sandrec-report-table">
-                <thead className="sandrec-report-table-head">
+            <div className="sand-table-container">
+              <table className="sand-report-table">
+                <thead>
                   <tr>
-                    <th className="sandrec-report-th">Date</th>
-                    <th className="sandrec-report-th">Permeability</th>
-                    <th className="sandrec-report-th">Moisture (%)</th>
-                    <th className="sandrec-report-th">Compactability (%)</th>
-                    <th className="sandrec-report-th">GCS FDY-A</th>
-                    <th className="sandrec-report-th">GCS FDY-B</th>
-                    <th className="sandrec-report-th">WTS</th>
-                    <th className="sandrec-report-th">Sand Temp BC (°C)</th>
-                    <th className="sandrec-report-th">New Sand (Kgs)</th>
-                    <th className="sandrec-report-th">Bentonite (Kgs)</th>
-                    <th className="sandrec-report-th">Actions</th>
+                    <th>Date</th>
+                    <th>S.No</th>
+                    <th>Time</th>
+                    <th>Mix No</th>
+                    <th>Permeability</th>
+                    <th>Moisture (%)</th>
+                    <th>Compactability (%)</th>
+                    <th>GCS FDY-A</th>
+                    <th>GCS FDY-B</th>
+                    <th>WTS</th>
+                    <th>Sand Temp BC</th>
+                    <th>New Sand (Kgs)</th>
+                    <th>Bentonite (Kgs)</th>
+                    <th>Item Name</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="11" className="sandrec-no-records">
-                        No records found
+                      <td colSpan="15" className="sand-no-data">
+                        No records found. {items.length === 0 ? 'Submit entries in the Data Entry form to see them here.' : 'Try adjusting your filter criteria.'}
                       </td>
                     </tr>
                   ) : (
                     filteredItems.map((item) => (
                       <tr key={item._id}>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {new Date(item.date).toLocaleDateString()}
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {item.testParameter?.permeability || '-'}
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {item.testParameter?.moisture || '-'}
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {item.testParameter?.compactability || '-'}
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {item.testParameter?.gcsFdyA || '-'}
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {item.testParameter?.gcsFdyB || '-'}
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {item.testParameter?.wts || '-'}
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {item.testParameter?.sandTempBC || '-'}
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {item.testParameter?.newSandKgs || '-'}
-                        </td>
-                        <td style={{ padding: '0.75rem', textAlign: 'left' }}>
-                          {item.testParameter?.bentoniteKgs || '-'}
-                        </td>
-                        <td style={{ padding: '0.75rem', display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                          <DeleteActionButton onClick={() => handleDelete(item._id)} />
+                        <td>{new Date(item.date).toLocaleDateString()}</td>
+                        <td>{item.testParameter?.sno || '-'}</td>
+                        <td>{item.testParameter?.time || '-'}</td>
+                        <td>{item.testParameter?.mixno || '-'}</td>
+                        <td>{item.testParameter?.permeability || '-'}</td>
+                        <td>{item.testParameter?.moisture || '-'}</td>
+                        <td>{item.testParameter?.compactability || '-'}</td>
+                        <td>{item.testParameter?.gcsFdyA || '-'}</td>
+                        <td>{item.testParameter?.gcsFdyB || '-'}</td>
+                        <td>{item.testParameter?.wts || '-'}</td>
+                        <td>{item.testParameter?.sandTemp?.BC || '-'}</td>
+                        <td>{item.testParameter?.newSandKgs || '-'}</td>
+                        <td>{item.testParameter?.bentonite?.Kgs || '-'}</td>
+                        <td className="sand-item-name">{item.testParameter?.itemName || '-'}</td>
+                        <td className="sand-actions-cell">
+                          <button
+                            onClick={() => handleDelete(item._id)}
+                            className="sand-delete-action-btn"
+                            title="Delete record"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </td>
                       </tr>
                     ))
