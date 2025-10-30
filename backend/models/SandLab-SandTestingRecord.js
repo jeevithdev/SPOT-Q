@@ -6,33 +6,23 @@ const SandTestingRecordSchema = new mongoose.Schema({
     required: true,
     default: Date.now,
   },
-  shiftI: {
-    rSand: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    nSand: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    mixingMode: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    bentonite: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    coalDustPremix: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    batchNo: {
+  sandShifts : {
+    shiftI: {
+      rSand: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      nSand: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      mixingMode: {
+        type: String,
+        trim: true,
+        default: "",
+      },
       bentonite: {
         type: String,
         trim: true,
@@ -43,35 +33,35 @@ const SandTestingRecordSchema = new mongoose.Schema({
         trim: true,
         default: "",
       },
+      batchNo: {
+        bentonite: {
+          type: String,
+          trim: true,
+          default: "",
+        },
+        coalDustPremix: {
+          type: String,
+          trim: true,
+          default: "",
+        }
+      }
     },
-  },
-  shiftII: {
-    rSand: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    nSand: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    mixingMode: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    bentonite: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    coalDustPremix: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    batchNo: {
+    shiftII: {
+      rSand: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      nSand: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      mixingMode: {
+        type: String,
+        trim: true,
+        default: "",
+      },
       bentonite: {
         type: String,
         trim: true,
@@ -82,35 +72,35 @@ const SandTestingRecordSchema = new mongoose.Schema({
         trim: true,
         default: "",
       },
+      batchNo: {
+        bentonite: {
+          type: String,
+          trim: true,
+          default: "",
+        },
+        coalDustPremix: {
+          type: String,
+          trim: true,
+          default: "",
+        }
+      }
     },
-  },
-  shiftIII: {
-    rSand: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    nSand: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    mixingMode: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    bentonite: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    coalDustPremix: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    batchNo: {
+    shiftIII: {
+      rSand: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      nSand: {
+        type: String,
+        trim: true,
+        default: "",
+      },
+      mixingMode: {
+        type: String,
+        trim: true,
+        default: "",
+      },
       bentonite: {
         type: String,
         trim: true,
@@ -121,9 +111,60 @@ const SandTestingRecordSchema = new mongoose.Schema({
         trim: true,
         default: "",
       },
-    },
+      batchNo: {
+        bentonite: {
+          type: String,
+          trim: true,
+          default: "",
+        },
+        coalDustPremix: {
+          type: String,
+          trim: true,
+          default: "",
+        }
+      }
+    }
   },
-  clayShiftI: {
+  
+  clayShifts: {
+    shiftI: {
+      totalClay: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    activeClay: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    deadClay: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    vcm: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    loi: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    afsNo: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    fines: {
+      type: String,
+      trim: true,
+      default: "",
+    }
+  },
+  ShiftII: {
     totalClay: {
       type: String,
       trim: true,
@@ -158,9 +199,9 @@ const SandTestingRecordSchema = new mongoose.Schema({
       type: String,
       trim: true,
       default: "",
-    },
+    }
   },
-  clayShiftII: {
+  ShiftIII: {
     totalClay: {
       type: String,
       trim: true,
@@ -195,276 +236,242 @@ const SandTestingRecordSchema = new mongoose.Schema({
       type: String,
       trim: true,
       default: "",
+    }
+  }
+},
+  mixshifts:{
+  ShiftI: {
+    mixno:{
+    start: {
+      type: String,
+      required: true,
+    },
+    end: {
+      type: String,
+      required: true,
+    },
+    total: {
+      type: String,
+      required: true,
+    }
+  },
+    numberOfMixRejected: {
+      type: Number,
+      required: true,
+    },
+    returnSandHopperLevel: {
+      type: Number,
+      required: true,
+    }
+  },
+  ShiftII: {
+    mixno:{
+      start: {
+        type: String,
+        required: true,
+      },
+      end: {
+        type: String,
+        required: true,
+      },
+      total: {
+        type: String,
+        required: true,
+      }
+    },
+    numberOfMixRejected: {
+      type: String,
+      trim: true,
+      default: "",
+    },
+    returnSandHopperLevel: {
+      type: Number,
+      required: true,
     },
   },
-  clayShiftIII: {
-    totalClay: {
-      type: String,
-      trim: true,
-      default: "",
+  ShiftIII: {
+    mixno:{
+      start: {
+        type: String,
+        required: true,
+      },
+      end: {
+        type: String,
+        required: true,
+      },
+      total: {
+        type: String,
+        required: true,
+      }
     },
-    activeClay: {
-      type: String,
-      trim: true,
-      default: "",
+    numberOfMixRejected: {
+      type: Number,
+      required: true,
     },
-    deadClay: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    vcm: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    loi: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    afsNo: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    fines: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-  },
-  mixNoShiftI: {
-    starterTime: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    endTime: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    totalMixingTime: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    mixRejected: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    hopper: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-  },
-  mixNoShiftII: {
-    starterTime: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    endTime: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    totalMixingTime: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    mixRejected: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    hopper: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-  },
-  mixNoShiftIII: {
-    starterTime: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    endTime: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    totalMixingTime: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    mixRejected: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    hopper: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-  },
+    returnSandHopperLevel: {
+      type: Number,
+      required: true,
+    }
+  }
+},
   sandLump: {
     type: String,
-    trim: true,
-    default: "",
+    required: true,
   },
   newSandWt: {
     type: String,
-    trim: true,
-    default: "",
+    required: true,
   },
-  shiftIFriability: {
-    type: String,
-    trim: true,
-    default: "",
-  },
-  shiftIIFriability: {
-    type: String,
-    trim: true,
-    default: "",
-  },
-  shiftIIIFriability: {
-    type: String,
-    trim: true,
-    default: "",
-  },
-  testParameter: {
-    permeability: {
+
+  sandFriability: {
+    shiftI: {
       type: String,
-      trim: true,
-      default: "",
+      required :true,
+    },
+    shiftII: {
+      type: String,
+      required :true,
+    },
+    shiftIII: {
+      type: String,
+      required :true,
+    }
+},
+testParameter: {
+  sno:{
+    type: Number,
+    required: true,
+  },
+  time:{
+    type: Number,
+    required: true,
+  },
+  mixno:{
+    type: Number,
+    required: true,
+  },
+  permeability: {
+      type: Number,
+      required: true,
     },
     gcsFdyA: {
-      type: String,
-      trim: true,
-      default: "",
+      type: Number,
+      required: true,
     },
     gcsFdyB: {
-      type: String,
-      trim: true,
-      default: "",
+      type: Number,
+      required: true,
     },
     wts: {
-      type: String,
-      trim: true,
-      default: "",
+      type: Number,
+      required: true,
     },
     moisture: {
-      type: String,
-      trim: true,
-      default: "",
+      type: Number,
+      required: true,
     },
     compactability: {
-      type: String,
-      trim: true,
-      default: "",
+      type: Number,
+      required: true,
     },
     compressibility: {
-      type: String,
-      trim: true,
-      default: "",
+      type: Number,
+      required: true,
     },
     waterLitre: {
-      type: String,
-      trim: true,
-      default: "",
+      type: Number,
+      required: true,
     },
-    sandTempBC: {
-      type: String,
-      trim: true,
-      default: "",
+    sandTemp: {
+    BC: {
+      type: Number,
+      required: true,
     },
-    sandTempWU: {
-      type: String,
-      trim: true,
-      default: "",
+    WU: {
+      type: Number,
+      required: true,
     },
-    sandTempSSU: {
-      type: String,
-      trim: true,
-      default: "",
-    },
+    SSUmax: {
+      type: Number,
+      required: true,
+    }
+  },
     newSandKgs: {
-      type: String,
-      trim: true,
-      default: "",
+      type: Number,
+      required: true,
     },
-    bentoniteKgs: {
-      type: String,
-      trim: true,
-      default: "",
+    mould : {
+      type: Number,
+      required: true,
     },
-    bentonitePercent: {
-      type: String,
-      trim: true,
-      default: "",
+
+    bentoniteWithPremix: {
+      Kgs: {
+      type: Number,
+      required: true,
     },
-    premixKgs: {
-      type: String,
-      trim: true,
-      default: "",
+    Percent: {
+      type: Number,
+      required: true,
+    }
+  },
+  bentonite : {
+    Kgs: {
+    type: Number,
+    required: true,
+  },
+  Percent: {
+    type: Number,
+    required: true,
+  }
+},
+premix:{
+  Kgs: {
+    type: Number,
+    required: true,
     },
-    premixPercent: {
-      type: String,
-      trim: true,
-      default: "",
+    Percent: {
+    type: Number,
+    required: true,
+    }
+  },
+coalDust:{
+  Kgs: {
+      type: Number,
+      required: true,
     },
-    coalDustKgs: {
-      type: String,
-      trim: true,
-      default: "",
-    },
-    coalDustPercent: {
-      type: String,
-      trim: true,
-      default: "",
-    },
+    Percent: {
+      type: Number,
+      required: true,
+    }
+  },
     lc: {
-      type: String,
-      trim: true,
-      default: "Lc",
+      type: Number,
+      required: true,
     },
-    lcCompactSMCAt: {
-      type: String,
-      trim: true,
-      default: "",
+    CompactabilitySettings: {
+      type: Number,
+      required: true,
     },
-    mouldStrengthSNCAt: {
-      type: String,
-      trim: true,
-      default: "",
+    mouldStrength: {
+      type: Number,
+      required: true,
     },
-    shearStrength: {
-      type: String,
-      trim: true,
-      default: "",
+    shearStrengthSetting: {
+      type: Number,
+      required: true,
     },
-    preparedSand: {
-      type: String,
-      trim: true,
-      default: "",
+    preparedSandlumps: {
+      type: Number,
+      required: true,
     },
     itemName: {
       type: String,
-      trim: true,
-      default: "",
+      required: true,
     },
     remarks: {
       type: String,
-      trim: true,
-      default: "",
+      required: true,
     },
   },
 });

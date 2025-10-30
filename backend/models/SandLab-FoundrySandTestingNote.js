@@ -20,10 +20,12 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
   },
   compactibilitySetting: { 
     type: String, 
+    required: true,
     trim: true 
   },
   shearStrengthSetting: { 
-    type: String, 
+    type: String,
+    required: true,
     trim: true 
   },
 
@@ -78,6 +80,7 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
   // --- 3. Sieve Test Data ---
   test1: {
     sieveSize: { 
+      wtRetainedsandpercent: {
       1700: { 
         type: String, 
         trim: true 
@@ -123,8 +126,11 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
         trim: true 
       }
     }
-  },
-  test2: {sieveSize: { 
+  }
+},
+  test2: {
+    sieveSize: { 
+      wtRetainedsandpercent: {
       1700: { 
         type: String, 
         trim: true 
@@ -170,6 +176,7 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
         trim: true 
       }
     }
+  }
   },
 
   // --- 4. Metal Filter Test Data ---
