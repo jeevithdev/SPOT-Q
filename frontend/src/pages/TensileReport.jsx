@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Filter, RefreshCw, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/TensileReport.css';
 
 const TensileReport = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const TensileTabs = () => (
-    <div className="tensile-tabs-container">
-      <div className="tensile-tabs">
-        <Link
-          to="/tensile"
-          className={`tensile-tab ${isActive('/tensile') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/tensile/report"
-          className={`tensile-tab ${isActive('/tensile/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [items, setItems] = useState([]);
@@ -143,7 +117,6 @@ const TensileReport = () => {
   return (
     <div className="tensile-container">
       <div className="tensile-wrapper">
-        <TensileTabs />
 
         {/* Report Container */}
         <div className="tensile-report-container">

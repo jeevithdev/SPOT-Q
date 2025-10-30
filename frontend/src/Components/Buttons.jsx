@@ -1,6 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
-import { Settings, Save, Filter, RefreshCw, Edit2, Trash2 } from 'lucide-react';
+import { Settings, Save, Filter, RefreshCw, Edit2, Trash2, FileText } from 'lucide-react';
 import CustomDatePicker from './CustomDatePicker';
 import '../styles/ComponentStyles/Buttons.css';
 
@@ -227,6 +227,16 @@ export const ResetButton = ({ onClick, disabled, children, icon = true }) => (
   </ResetButtonWrapper>
 );
 
+// Reset Form Button - For entry page headers
+export const ResetFormButton = ({ onClick, disabled, children }) => (
+  <ResetFormButtonWrapper>
+    <button onClick={onClick} disabled={disabled}>
+      <RefreshCw size={18} />
+      {children || 'Reset Form'}
+    </button>
+  </ResetFormButtonWrapper>
+);
+
 // Edit Action Button - For table action columns
 export const EditActionButton = ({ onClick, disabled }) => (
   <EditActionButtonWrapper>
@@ -244,6 +254,28 @@ export const DeleteActionButton = ({ onClick, disabled }) => (
     </button>
   </DeleteActionButtonWrapper>
 );
+
+// View Report Button - For navigating to report pages (top-right corner)
+export const ViewReportButton = ({ onClick, to }) => {
+  const handleClick = () => {
+    if (to) {
+      window.location.href = to;
+    } else if (onClick) {
+      onClick();
+    }
+  };
+
+  return (
+    <ViewReportButtonWrapper>
+      <button onClick={handleClick} title="View Reports">
+        <div className="icon-container">
+          <FileText size={24} />
+        </div>
+        <span className="button-text">View Reports</span>
+      </button>
+    </ViewReportButtonWrapper>
+  );
+};
 
 const StyledWrapper = styled.div`
   button {
@@ -859,6 +891,177 @@ const DeleteActionButtonWrapper = styled.div`
     width: 16px;
     height: 16px;
     stroke-width: 2;
+  }
+`;
+
+// View Report Button Wrapper - Top right corner floating button
+const ViewReportButtonWrapper = styled.div`
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 999;
+
+  button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    min-width: 100px;
+  }
+
+  button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  }
+
+  button:active {
+    transform: translateY(-1px);
+  }
+
+  .icon-container {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .button-text {
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 1024px) {
+    top: 70px;
+    right: 15px;
+
+    button {
+      padding: 10px 14px;
+      min-width: 90px;
+    }
+
+    .icon-container {
+      width: 36px;
+      height: 36px;
+    }
+
+    .button-text {
+      font-size: 11px;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    top: 60px;
+    right: 10px;
+
+    button {
+      padding: 8px 12px;
+      min-width: 80px;
+      gap: 6px;
+    }
+
+    .icon-container {
+      width: 32px;
+      height: 32px;
+    }
+
+    .button-text {
+      font-size: 10px;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    top: 50px;
+    right: 8px;
+
+    button {
+      padding: 6px 10px;
+      min-width: 70px;
+      gap: 4px;
+    }
+
+    .icon-container {
+      width: 28px;
+      height: 28px;
+    }
+
+    .button-text {
+      font-size: 9px;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+`;
+
+// Reset Form Button Wrapper - For entry page headers
+const ResetFormButtonWrapper = styled.div`
+  display: inline-block;
+
+  button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.25rem;
+    background: linear-gradient(135deg, #163442 0%, #1f4f5d 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    transition: all 0.3s ease;
+    box-shadow: 0 2px 4px rgba(22, 52, 66, 0.2);
+  }
+
+  button:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(22, 52, 66, 0.3);
+    background: linear-gradient(135deg, #1f4f5d 0%, #2a6575 100%);
+  }
+
+  button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
   }
 `;
 

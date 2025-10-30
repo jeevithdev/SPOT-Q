@@ -47,24 +47,15 @@
 }
 
 .impact-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef3 100%);
+  width: 100%;
+  padding: 1.5rem;
+  background: transparent;
 }
 
-.impact-wrapper {
-  max-width: 1400px;
+.impact-content {
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-}
-
-/* Entry Container */
-.impact-entry-container {
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
-  padding: 2rem;
-  margin-bottom: 2rem;
 }
 
 /* Report Container */

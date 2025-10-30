@@ -47,24 +47,15 @@
 }
 
 .qcproduction-container {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  padding: 2rem 1rem;
+  width: 100%;
+  padding: 1.5rem;
+  background: transparent;
 }
 
-.qcproduction-wrapper {
-  max-width: 1280px;
+.qcproduction-content {
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-}
-
-/* Entry Container */
-.qcproduction-entry-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-  padding: 2rem;
-  margin-bottom: 2rem;
 }
 
 .qcproduction-header {

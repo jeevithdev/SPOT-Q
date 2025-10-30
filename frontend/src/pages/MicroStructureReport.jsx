@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Filter, RefreshCw, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroStructureReport.css';
 
 const MicroStructureReport = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const MicroStructureTabs = () => (
-    <div className="microstructure-tabs-container">
-      <div className="microstructure-tabs">
-        <Link
-          to="/micro-structure"
-          className={`microstructure-tab ${isActive('/micro-structure') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/micro-structure/report"
-          className={`microstructure-tab ${isActive('/micro-structure/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [items, setItems] = useState([]);
@@ -139,7 +113,6 @@ const MicroStructureReport = () => {
   return (
     <div className="microstructure-container">
       <div className="microstructure-wrapper">
-        <MicroStructureTabs />
 
         {/* Report Container */}
         <div className="microstructure-report-container">

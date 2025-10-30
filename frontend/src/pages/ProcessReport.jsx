@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Filter, RefreshCw, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/ProcessReport.css';
 
 const ProcessReport = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const ProcessTabs = () => (
-    <div className="process-tabs-container">
-      <div className="process-tabs">
-        <Link
-          to="/process"
-          className={`process-tab ${isActive('/process') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/process/report"
-          className={`process-tab ${isActive('/process/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
   const [items, setItems] = useState([]);
@@ -170,8 +144,6 @@ const ProcessReport = () => {
 
   return (
     <div className="process-report-container container">
-      <ProcessTabs />
-      
       <div className="process-report-wrapper">
         <div className="process-report-title">
           <Filter size={28} color="#FF7F50" />

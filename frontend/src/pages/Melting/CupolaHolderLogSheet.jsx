@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Save, Filter, RefreshCw, X } from 'lucide-react';
-import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../../Components/Buttons';
+import { Button, DatePicker, EditActionButton, DeleteActionButton, ViewReportButton } from '../../Components/Buttons';
 import ValidationPopup from '../../Components/ValidationPopup';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
@@ -176,6 +176,7 @@ const CupolaHolderLogSheet = () => {
 
   return (
     <div className="cupola-holder-container container">
+      <ViewReportButton to="/cupola-holder-log/report" />
       <div className="cupola-holder-wrapper">
         {showMissingFields && (
           <ValidationPopup

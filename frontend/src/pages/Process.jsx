@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { ViewReportButton, ResetFormButton } from '../Components/Buttons';
 import '../styles/PageStyles/Process.css';
 
 export default function ProcessControl() {
@@ -59,17 +60,17 @@ export default function ProcessControl() {
   };
 
   return (
-    <div className="process-container" style={{ background: 'transparent' }}>
-      <div className="process-wrapper" style={{ background: 'transparent' }}>
-        <div className="process-entry-container" style={{ background: 'transparent' }}>
-          <div className="process-header">
+    <div className="process-container">
+      <ViewReportButton to="/process/report" />
+      <div className="process-content">
+        <div className="process-header">
             <div className="process-header-text">
               <div>
                 <h2>PROCESS CONTROL</h2>
                 <div style={{color:'#64748b'}}>Manufacturing Process Parameters Monitoring</div>
               </div>
             </div>
-            <button onClick={handleReset} className="process-reset-btn">Reset Form</button>
+            <ResetFormButton onClick={handleReset} />
           </div>
 
           <div className="process-form-grid">
@@ -182,11 +183,9 @@ export default function ProcessControl() {
             </div>
           </div>
 
-            <div className="process-submit-container" style={{display: 'flex', justifyContent: 'flex-end'}}>
-            <button onClick={handleSubmit} className="process-submit-btn">Submit Entry</button>
-          </div>
+        <div className="process-submit-container">
+          <button onClick={handleSubmit} className="process-submit-btn">Submit Entry</button>
         </div>
-
       </div>
     </div>
   );

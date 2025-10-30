@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Filter, RefreshCw, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroTensileReport.css';
 
 const MicroTensileReport = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const MicroTensileTabs = () => (
-    <div className="microtensile-tabs-container">
-      <div className="microtensile-tabs">
-        <Link
-          to="/micro-tensile"
-          className={`microtensile-tab ${isActive('/micro-tensile') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/micro-tensile/report"
-          className={`microtensile-tab ${isActive('/micro-tensile/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [items, setItems] = useState([]);
@@ -147,8 +121,6 @@ const MicroTensileReport = () => {
 
   return (
     <div className="microtensile-report-container container">
-      <MicroTensileTabs />
-      
       <div className="microtensile-report-wrapper">
         <div className="microtensile-report-title">
           <Filter size={20} style={{ color: '#FF7F50' }} />

@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button, DatePicker } from '../Components/Buttons';
+import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/Tensile.css';
 
 const Tensile = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const TensileTabs = () => (
-    <div className="tensile-tabs-container">
-      <div className="tensile-tabs">
-        <Link
-          to="/tensile"
-          className={`tensile-tab ${isActive('/tensile') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/tensile/report"
-          className={`tensile-tab ${isActive('/tensile/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     item: '',
@@ -153,11 +127,8 @@ const Tensile = () => {
 
   return (
     <div className="tensile-container">
-      <div className="tensile-wrapper">
-        <TensileTabs />
-
-        {/* Entry Form Container */}
-        <div className="tensile-entry-container">
+      <ViewReportButton to="/tensile/report" />
+      <div className="tensile-content">
           <div className="tensile-header">
             <div className="tensile-header-text">
               <h2>
@@ -165,7 +136,8 @@ const Tensile = () => {
                 Tensile Test - Entry Form
               </h2>
               <p>Record tensile test measurements and analysis</p>
-          </div>
+            </div>
+            <ResetFormButton onClick={handleReset} />
           </div>
 
           {/* Entry Form */}
@@ -367,12 +339,11 @@ const Tensile = () => {
             </div>
           </form>
 
-          <div className="tensile-submit-container">
-            <Button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
-              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-              {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </Button>
-          </div>
+        <div className="tensile-submit-container">
+          <Button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
+            {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+            {submitLoading ? 'Saving...' : 'Submit Entry'}
+          </Button>
         </div>
       </div>
     </div>

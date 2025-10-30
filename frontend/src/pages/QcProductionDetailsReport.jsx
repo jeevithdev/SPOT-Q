@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Filter, RefreshCw, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/QcProductionDetailsReport.css';
 
 const QcProductionReport = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const QcProductionTabs = () => (
-    <div className="qcproduction-tabs-container">
-      <div className="qcproduction-tabs">
-        <Link
-          to="/qc-production-details/data-entry"
-          className={`qcproduction-tab ${isActive('/qc-production-details/data-entry') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/qc-production-details/report"
-          className={`qcproduction-tab ${isActive('/qc-production-details/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [items, setItems] = useState([]);
@@ -150,7 +124,6 @@ const QcProductionReport = () => {
 
   return (
     <div className="qcproduction-container">
-      <QcProductionTabs />
       <div className="qcproduction-wrapper">
 
         {/* Report Container */}

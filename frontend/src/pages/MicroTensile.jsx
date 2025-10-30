@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, X } from 'lucide-react';
-import { Button, DatePicker } from '../Components/Buttons';
+import { Save, X } from 'lucide-react';
+import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
@@ -77,8 +77,9 @@ const MicroTensile = () => {
   };
 
   return (
-    <div className="microtensile-container container">
-      <div className="microtensile-wrapper">
+    <div className="microtensile-container">
+      <ViewReportButton to="/micro-tensile/report" />
+      <div className="microtensile-content">
         {showMissingFields && (
           <ValidationPopup
             missingFields={missingFields}
@@ -93,10 +94,7 @@ const MicroTensile = () => {
               <Save size={24} style={{ color: '#5B9AA9' }} />
               <h2>Micro Tensile Test - Entry Form</h2>
             </div>
-            <Button onClick={handleReset} className="microtensile-reset-btn" variant="secondary">
-              <RefreshCw size={18} />
-              Reset
-            </Button>
+            <ResetFormButton onClick={handleReset} />
           </div>
 
           <div className="microtensile-form-grid">
@@ -245,8 +243,6 @@ const MicroTensile = () => {
             </Button>
           </div>
         </div>
-
-
       </div>
     </div>
   );

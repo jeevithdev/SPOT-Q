@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { Filter, RefreshCw, X } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/ImpactReport.css';
 
 const ImpactReport = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const ImpactTabs = () => (
-    <div className="impact-tabs-container">
-      <div className="impact-tabs">
-        <Link
-          to="/impact"
-          className={`impact-tab ${isActive('/impact') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/impact/report"
-          className={`impact-tab ${isActive('/impact/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [startDate, setStartDate] = useState(null);
   const [endDate, setEndDate] = useState(null);
   const [items, setItems] = useState([]);
@@ -138,7 +112,6 @@ const ImpactReport = () => {
 
   return (
     <div className="impact-container">
-      <ImpactTabs />
       <div className="impact-wrapper">
 
         {/* Report Container */}

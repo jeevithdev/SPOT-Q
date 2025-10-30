@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button, DatePicker } from '../Components/Buttons';
+import { Save } from 'lucide-react';
+import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroStructure.css';
 
 const MicroStructure = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const MicroStructureTabs = () => (
-    <div className="microstructure-tabs-container">
-      <div className="microstructure-tabs">
-        <Link
-          to="/micro-structure"
-          className={`microstructure-tab ${isActive('/micro-structure') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/micro-structure/report"
-          className={`microstructure-tab ${isActive('/micro-structure/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [formData, setFormData] = useState({
     disa: '',
     insDate: '',
@@ -176,20 +150,14 @@ const MicroStructure = () => {
 
   return (
     <div className="microstructure-container">
-      <div className="microstructure-wrapper">
-        <MicroStructureTabs />
-
-        {/* Entry Form Container */}
-        <div className="microstructure-entry-container">
+      <ViewReportButton to="/micro-structure/report" />
+      <div className="microstructure-content">
           <div className="microstructure-header">
             <div className="microstructure-header-text">
               <Save size={24} style={{ color: '#5B9AA9' }} />
               <h2>Micro Structure - Entry Form</h2>
             </div>
-            <Button onClick={handleReset} className="microstructure-reset-btn" variant="secondary">
-              <RefreshCw size={18} />
-              Reset
-            </Button>
+            <ResetFormButton onClick={handleReset} />
           </div>
 
           <form className="microstructure-form-grid">
@@ -379,16 +347,12 @@ const MicroStructure = () => {
             </div>
           </form>
 
-          <div className="microstructure-submit-container">
-            <Button onClick={handleSubmit} disabled={submitLoading} className="microstructure-submit-btn" type="button">
-              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-              {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </Button>
-          </div>
+        <div className="microstructure-submit-container">
+          <Button onClick={handleSubmit} disabled={submitLoading} className="microstructure-submit-btn" type="button">
+            {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+            {submitLoading ? 'Saving...' : 'Submit Entry'}
+          </Button>
         </div>
-
-
-
       </div>
     </div>
   );

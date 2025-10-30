@@ -36,93 +36,111 @@
 
 /* === Base Layout === */
 .microstructure-container {
-  display: flex;
-  justify-content: center;
-  padding: 2rem;
-  background: #f8fafc;
-  color: #1e293b;
-  min-height: 100vh;
+  width: 100%;
+  padding: 1.5rem;
+  background: transparent;
 }
 
-.microstructure-wrapper {
-  display: flex;
-  flex-direction: column;
-  gap: 2rem;
+.microstructure-content {
   width: 100%;
   max-width: 1200px;
+  margin: 0 auto;
 }
 
 /* === Header Section === */
 .microstructure-header {
   display: flex;
-  align-items: center;
   justify-content: space-between;
-  margin-bottom: 1.2rem;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin-bottom: 2rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 2px solid #e2e8f0;
 }
 
 .microstructure-header-text {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.75rem;
 }
 
 .microstructure-header-text h2 {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #334155;
+  font-size: 1.875rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
 }
 
 .microstructure-reset-btn {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  background: linear-gradient(135deg, #163442 0%, #1f4f5d 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(22, 52, 66, 0.2);
+}
+
+.microstructure-reset-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(22, 52, 66, 0.3);
+  background: linear-gradient(135deg, #1f4f5d 0%, #2a6575 100%);
 }
 
 /* === Form Grid === */
 .microstructure-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem 1.5rem;
-  background: #ffffff;
-  padding: 1.5rem;
-  border-radius: 12px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.08);
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 1.25rem;
+  align-items: start;
+  row-gap: 1rem;
+}
+
+.microstructure-form-group {
+  display: flex;
+  flex-direction: column;
+  min-height: 78px;
 }
 
 .microstructure-form-group label {
   display: block;
-  font-size: 0.95rem;
-  font-weight: 500;
-  margin-bottom: 0.4rem;
-  color: #475569;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
 }
 
 .microstructure-form-group input,
-.microstructure-form-group textarea,
-.microstructure-form-group select {
+.microstructure-form-group select,
+.microstructure-form-group textarea {
   width: 100%;
-  padding: 0.55rem 0.8rem;
-  border: 1.8px solid #cbd5e1;
+  padding: 0.625rem 0.875rem;
+  border: 2px solid #cbd5e1;
   border-radius: 8px;
-  font-size: 0.95rem;
-  color: #334155;
-  background: #fff;
-  outline: none;
-  transition: all 0.2s ease-in-out;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  background: white;
 }
 
-/* Show up/down arrows for number inputs */
-.microstructure-form-group input[type="number"]::-webkit-inner-spin-button,
-.microstructure-form-group input[type="number"]::-webkit-outer-spin-button {
-  opacity: 1;
-  height: auto;
-}
-
-/* Focused Inputs */
 .microstructure-form-group input:focus,
+.microstructure-form-group select:focus,
 .microstructure-form-group textarea:focus {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+  outline: none;
+  border-color: #5B9AA9;
+  box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
+}
+
+.microstructure-form-group textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-family: inherit;
 }
 
 /* Invalid Input (red border for required fields) */
@@ -134,39 +152,50 @@
 /* Section Header */
 .section-header {
   grid-column: 1 / -1;
-  margin-top: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
   border-top: 2px solid #e2e8f0;
-  padding-top: 1rem;
 }
 
 .section-header h3 {
-  color: #475569;
-  font-size: 1.05rem;
-  font-weight: 600;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
 }
 
 /* === Submit Button === */
 .microstructure-submit-container {
+  margin-top: 2rem;
   display: flex;
-  justify-content: flex-end;
-  margin-top: 1rem;
+  justify-content: center;
 }
 
 .microstructure-submit-btn {
-  background: #2563eb;
-  color: white;
-  font-weight: 500;
-  padding: 0.6rem 1.3rem;
-  border-radius: 8px;
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
+  padding: 0.875rem 2.5rem;
+  background: linear-gradient(135deg, #5B9AA9 0%, #4A8494 100%);
+  color: white;
   border: none;
-  transition: background 0.2s ease-in-out;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 600;
+  box-shadow: 0 4px 6px rgba(91, 154, 169, 0.3);
+  transition: all 0.3s ease;
 }
 
-.microstructure-submit-btn:hover {
-  background: #1d4ed8;
+.microstructure-submit-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(91, 154, 169, 0.4);
+  background: linear-gradient(135deg, #4A8494 0%, #3A6B7A 100%);
+}
+
+.microstructure-submit-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 /* === Report Section === */

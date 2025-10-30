@@ -1,37 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button, DatePicker } from '../Components/Buttons';
+import { Save } from 'lucide-react';
+import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/Impact.css';
 
 const Impact = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const ImpactTabs = () => (
-    <div className="impact-tabs-container">
-      <div className="impact-tabs">
-        <Link
-          to="/impact"
-          className={`impact-tab ${isActive('/impact') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/impact/report"
-          className={`impact-tab ${isActive('/impact/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     partName: '',
@@ -146,11 +120,8 @@ const Impact = () => {
 
   return (
     <div className="impact-container">
-      <ImpactTabs />
-      <div className="impact-wrapper">
-
-        {/* Entry Form Container */}
-        <div className="impact-entry-container">
+      <ViewReportButton to="/impact/report" />
+      <div className="impact-content">
           <div className="impact-header">
             <div className="impact-header-text">
               <h2>
@@ -159,10 +130,7 @@ const Impact = () => {
               </h2>
               <p>Record impact test measurements and specifications</p>
             </div>
-            <Button onClick={handleReset} className="impact-reset-btn" variant="secondary">
-              <RefreshCw size={18} />
-              Reset
-            </Button>
+            <ResetFormButton onClick={handleReset} />
           </div>
 
           <form className="impact-form-grid">
@@ -245,14 +213,12 @@ const Impact = () => {
             </div>
           </form>
 
-          <div className="impact-submit-container">
-            <Button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn" type="button">
-              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-              {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </Button>
-          </div>
+        <div className="impact-submit-container">
+          <Button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn" type="button">
+            {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+            {submitLoading ? 'Saving...' : 'Submit Entry'}
+          </Button>
         </div>
-
       </div>
     </div>
   );

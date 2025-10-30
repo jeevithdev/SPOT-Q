@@ -1,37 +1,11 @@
 import React, { useState } from 'react';
-import { Save, RefreshCw } from 'lucide-react';
-import { Link, useLocation } from 'react-router-dom';
-import { Button, DatePicker } from '../Components/Buttons';
+import { Save } from 'lucide-react';
+import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/QcProductionDetails.css';
 
 const QcProductionDetails = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const QcProductionTabs = () => (
-    <div className="qcproduction-tabs-container">
-      <div className="qcproduction-tabs">
-        <Link
-          to="/qc-production-details/data-entry"
-          className={`qcproduction-tab ${isActive('/qc-production-details/data-entry') ? 'active' : ''}`}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/qc-production-details/report"
-          className={`qcproduction-tab ${isActive('/qc-production-details/report') ? 'active' : ''}`}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
-
   const [formData, setFormData] = useState({
     date: '',
     partName: '',
@@ -154,20 +128,14 @@ const QcProductionDetails = () => {
 
   return (
     <div className="qcproduction-container">
-      <QcProductionTabs />
-      <div className="qcproduction-wrapper">
-
-        {/* Entry Form Container */}
-        <div className="qcproduction-entry-container">
+      <ViewReportButton to="/qc-production-details/report" />
+      <div className="qcproduction-content">
           <div className="qcproduction-header">
             <div className="qcproduction-header-text">
               <Save size={24} style={{ color: '#5B9AA9' }} />
               <h2>QC Production Details - Entry Form</h2>
             </div>
-            <Button onClick={handleReset} className="qcproduction-reset-btn" variant="secondary">
-              <RefreshCw size={18} />
-              Reset
-            </Button>
+            <ResetFormButton onClick={handleReset} />
           </div>
 
           <form className="qcproduction-form-grid">
@@ -422,15 +390,12 @@ const QcProductionDetails = () => {
             </div>
           </form>
 
-          <div className="qcproduction-submit-container">
-            <Button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">
-              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-              {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </Button>
-          </div>
+        <div className="qcproduction-submit-container">
+          <Button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">
+            {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+            {submitLoading ? 'Saving...' : 'Submit Entry'}
+          </Button>
         </div>
-
-
       </div>
     </div>
   );

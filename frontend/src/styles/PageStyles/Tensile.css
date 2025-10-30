@@ -47,22 +47,15 @@
 }
 
 .tensile-container {
-  min-height: 100vh;
+  width: 100%;
+  padding: 1.5rem;
+  background: transparent;
 }
 
-.tensile-wrapper {
-  max-width: 1400px;
+.tensile-content {
+  width: 100%;
+  max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
-}
-
-/* Entry Container */
-.tensile-entry-container {
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: 1px solid #e2e8f0;
-  padding: 2rem;
-  margin-bottom: 2rem;
 }
 
 /* Report Container */
