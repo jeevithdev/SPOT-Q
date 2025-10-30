@@ -1,11 +1,37 @@
 import React, { useState, useEffect } from 'react';
-import { Save, Filter, RefreshCw, X } from 'lucide-react';
-import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
+import { Save, RefreshCw } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
+import { Button, DatePicker } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/Impact.css';
 
 const Impact = () => {
+  const location = useLocation();
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  const ImpactTabs = () => (
+    <div className="impact-tabs-container">
+      <div className="impact-tabs">
+        <Link
+          to="/impact"
+          className={`impact-tab ${isActive('/impact') ? 'active' : ''}`}
+        >
+          Data Entry
+        </Link>
+        <Link
+          to="/impact/report"
+          className={`impact-tab ${isActive('/impact/report') ? 'active' : ''}`}
+        >
+          Report
+        </Link>
+      </div>
+    </div>
+  );
+
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     partName: '',
@@ -15,39 +41,9 @@ const Impact = () => {
     remarks: ''
   });
 
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [items, setItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  
-  // Edit states
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [editFormData, setEditFormData] = useState({});
-  const [editLoading, setEditLoading] = useState(false);
 
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
-    try {
-      setLoading(true);
-      const data = await api.get('/v1/impact-tests');
-      
-      if (data.success) {
-        setItems(data.data || []);
-        setFilteredItems(data.data || []);
-      }
-    } catch (error) {
-      console.error('Error fetching impact tests:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -130,7 +126,6 @@ const Impact = () => {
           dateOfInspection: '', partName: '', dateCode: '', 
           specification: '', observedValue: '', remarks: ''
         });
-        fetchItems();
       }
     } catch (error) {
       console.error('Error creating impact test:', error);
@@ -140,72 +135,6 @@ const Impact = () => {
     }
   };
 
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setEditFormData({
-      dateOfInspection: item.dateOfInspection ? new Date(item.dateOfInspection).toISOString().split('T')[0] : '',
-      partName: item.partName || '',
-      dateCode: item.dateCode || '',
-      specification: item.specification || '',
-      observedValue: item.observedValue || '',
-      remarks: item.remarks || ''
-    });
-    setShowEditModal(true);
-  };
-
-  const handleUpdate = async () => {
-    try {
-      setEditLoading(true);
-      const data = await api.put(`/v1/impact-tests/${editingItem._id}`, editFormData);
-      
-      if (data.success) {
-        alert('Impact test entry updated successfully!');
-        setShowEditModal(false);
-        setEditingItem(null);
-        fetchItems();
-      }
-    } catch (error) {
-      console.error('Error updating impact test:', error);
-      alert('Failed to update entry: ' + error.message);
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const data = await api.delete(`/v1/impact-tests/${id}`);
-      
-      if (data.success) {
-        alert('Impact test entry deleted successfully!');
-        fetchItems();
-      }
-    } catch (error) {
-      console.error('Error deleting impact test:', error);
-      alert('Failed to delete entry: ' + error.message);
-    }
-  };
-
-  const handleFilter = () => {
-    if (!startDate || !endDate) {
-      setFilteredItems(items);
-      return;
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    const filtered = items.filter(item => {
-      const itemDate = new Date(item.dateOfInspection);
-      return itemDate >= start && itemDate <= end;
-    });
-    
-    setFilteredItems(filtered);
-  };
 
   const handleReset = () => {
     setFormData({
@@ -216,11 +145,12 @@ const Impact = () => {
   };
 
   return (
-    <div className="page-container impact-container" style={{ background: 'transparent' }}>
-      <div className="impact-wrapper" style={{ background: 'transparent' }}>
+    <div className="impact-container">
+      <ImpactTabs />
+      <div className="impact-wrapper">
 
         {/* Entry Form Container */}
-        <div className="impact-entry-container" style={{ background: 'transparent' }}>
+        <div className="impact-entry-container">
           <div className="impact-header">
             <div className="impact-header-text">
               <h2>
@@ -323,181 +253,6 @@ const Impact = () => {
           </div>
         </div>
 
-        {/* Report Container */}
-        <div className="impact-report-container" style={{ background: 'transparent' }}>
-          <h3 className="impact-report-title">
-            <Filter size={28} style={{ color: '#FF7F50' }} />
-            Impact Test - Report Card
-          </h3>
-
-          <div className="impact-filter-grid">
-            <div className="impact-filter-group">
-              <label>Start Date</label>
-              <DatePicker
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                placeholder="Select start date"
-              />
-            </div>
-
-            <div className="impact-filter-group">
-              <label>End Date</label>
-              <DatePicker
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                placeholder="Select end date"
-              />
-            </div>
-
-            <div className="impact-filter-btn-container">
-              <Button onClick={handleFilter} className="impact-filter-btn" type="button">
-                <Filter size={18} />
-                Filter
-              </Button>
-            </div>
-          </div>
-
-          {loading ? (
-            <div className="impact-loader-container">
-              <Loader />
-            </div>
-          ) : (
-            <div className="impact-table-container">
-              <table className="impact-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Part Name</th>
-                    <th>Date Code</th>
-                    <th>Specification</th>
-                    <th>Observed Value</th>
-                    <th>Remarks</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.length === 0 ? (
-                    <tr>
-                      <td colSpan="9" className="impact-no-records">
-                        No records found
-                      </td>
-                    </tr>
-                  ) : (
-                    filteredItems.map((item, index) => (
-                      <tr key={item._id || index}>
-                        <td>{new Date(item.dateOfInspection).toLocaleDateString()}</td>
-                        <td>{item.partName}</td>
-                        <td>{item.dateCode}</td>
-                        <td>{item.specification}</td>
-                        <td>{item.observedValue}</td>
-                        <td>{item.remarks || '-'}</td>
-                        <td style={{ minWidth: '100px' }}>
-                          <EditActionButton onClick={() => handleEdit(item)} />
-                          <DeleteActionButton onClick={() => handleDelete(item._id)} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Edit Modal */}
-        {showEditModal && (
-          <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Edit Impact Test Entry</h2>
-                <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
-                  <X size={24} />
-                </button>
-              </div>
-              
-              <div className="modal-body">
-                <div className="impact-form-grid">
-                  <div className="impact-form-group">
-                    <label>Date of Inspection *</label>
-                    <DatePicker
-                      name="dateOfInspection"
-                      value={editFormData.dateOfInspection}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="impact-form-group">
-                    <label>Part Name *</label>
-                    <input
-                      type="text"
-                      name="partName"
-                      value={editFormData.partName}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="impact-form-group">
-                    <label>Date Code *</label>
-                    <input
-                      type="text"
-                      name="dateCode"
-                      value={editFormData.dateCode}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="impact-form-group">
-                    <label>Specification *</label>
-                    <input
-                      type="text"
-                      name="specification"
-                      value={editFormData.specification}
-                      onChange={handleEditChange}
-                    />
-                  </div>
-
-                  <div className="impact-form-group">
-                    <label>Observed Value *</label>
-                    <input
-                      type="number"
-                      name="observedValue"
-                      value={editFormData.observedValue}
-                      onChange={handleEditChange}
-                      step="0.1"
-                    />
-                  </div>
-
-                  <div className="impact-form-group full-width">
-                    <label>Remarks</label>
-                    <textarea
-                      name="remarks"
-                      value={editFormData.remarks}
-                      onChange={handleEditChange}
-                      rows="3"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button 
-                  className="modal-cancel-btn" 
-                  onClick={() => setShowEditModal(false)}
-                  disabled={editLoading}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="modal-submit-btn" 
-                  onClick={handleUpdate}
-                  disabled={editLoading}
-                >
-                  {editLoading ? 'Updating...' : 'Update Entry'}
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

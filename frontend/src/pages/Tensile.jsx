@@ -1,16 +1,42 @@
 import React, { useState, useEffect } from 'react';
 import { Save } from 'lucide-react';
+import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker } from '../Components/Buttons';
 import Loader from '../Components/Loader';
-import TensileTabs from '../Components/TensileTabs';
 import api from '../utils/api';
 import '../styles/PageStyles/Tensile.css';
 
 const Tensile = () => {
+  const location = useLocation();
+
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
+
+  const TensileTabs = () => (
+    <div className="tensile-tabs-container">
+      <div className="tensile-tabs">
+        <Link
+          to="/tensile"
+          className={`tensile-tab ${isActive('/tensile') ? 'active' : ''}`}
+        >
+          Data Entry
+        </Link>
+        <Link
+          to="/tensile/report"
+          className={`tensile-tab ${isActive('/tensile/report') ? 'active' : ''}`}
+        >
+          Report
+        </Link>
+      </div>
+    </div>
+  );
+
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     item: '',
-    dateHeatCode: '',
+    date: '',
+    heatCode: '',
     dia: '',
     lo: '',
     li: '',
@@ -80,7 +106,7 @@ const Tensile = () => {
   };
 
   const handleSubmit = async () => {
-    const required = ['dateOfInspection', 'item', 'dateHeatCode', 'dia', 'lo', 'li', 
+    const required = ['dateOfInspection', 'item', 'date', 'heatCode', 'dia', 'lo', 'li', 
                      'breakingLoad', 'yieldLoad', 'uts', 'ys', 'elongation', 'testedBy' ];
     const missing = required.filter(field => !formData[field]);
     
@@ -105,7 +131,7 @@ const Tensile = () => {
       if (data.success) {
         alert('Tensile test entry created successfully!');
         setFormData({
-          dateOfInspection: '', item: '', dateHeatCode: '', dia: '', lo: '', li: '',
+          dateOfInspection: '', item: '', date: '', heatCode: '', dia: '', lo: '', li: '',
           breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', testedBy: '', remarks: ''
         });
       }
@@ -119,7 +145,7 @@ const Tensile = () => {
 
   const handleReset= () => {
     setFormData({
-      dateOfInspection: '', item: '', dateHeatCode: '', dia: '', lo: '', li: '',
+      dateOfInspection: '', item: '', date: '', heatCode: '', dia: '', lo: '', li: '',
       breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', testedBy: '', remarks: ''
     });
     setValidationErrors({});
@@ -169,15 +195,28 @@ const Tensile = () => {
             </div>
 
             <div className="tensile-form-group">
-              <label>Date & Heat Code *</label>
+              <label>Date *</label>
               <input
                 type="text"
-                name="dateHeatCode"
-                value={formData.dateHeatCode}
+                name="date"
+                value={formData.date}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g: 2024-HC-001"
-                className={validationErrors.dateHeatCode ? 'invalid-input' : ''}
+                placeholder="e.g: 2024-10-30"
+                className={validationErrors.date ? 'invalid-input' : ''}
+              />
+            </div>
+
+            <div className="tensile-form-group">
+              <label>Heat Code *</label>
+              <input
+                type="text"
+                name="heatCode"
+                value={formData.heatCode}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g: HC-001"
+                className={validationErrors.heatCode ? 'invalid-input' : ''}
               />
             </div>
 
