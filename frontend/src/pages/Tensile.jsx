@@ -117,8 +117,7 @@ const Tensile = () => {
     }
   };
 
-
-  const handleReset = () => {
+  const handleReset= () => {
     setFormData({
       dateOfInspection: '', item: '', dateHeatCode: '', dia: '', lo: '', li: '',
       breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', testedBy: '', remarks: ''
@@ -140,7 +139,7 @@ const Tensile = () => {
                 Tensile Test - Entry Form
               </h2>
               <p>Record tensile test measurements and analysis</p>
-            </div>
+          </div>
           </div>
 
           {/* Entry Form */}

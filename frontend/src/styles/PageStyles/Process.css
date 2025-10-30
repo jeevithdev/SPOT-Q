@@ -71,11 +71,14 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
   gap: 1.25rem;
+  align-items: start;
+  row-gap: 1rem; /* Reduced from 1.25rem to 1rem to tighten vertical spacing */
 }
 
 .process-form-group {
   display: flex;
   flex-direction: column;
+  min-height: 78px; /* Adjust this value based on your layout */
 }
 
 .process-form-group label {
@@ -481,4 +484,69 @@
   .modal-footer {
     padding: 1rem 1.5rem;
   }
+}
+
+/* Add these new styles */
+.process-form-group.stream-inoculant {
+  min-width: 220px;
+  flex: 1;
+}
+
+.process-form-group.stream-inoculant label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #334155;
+  margin-bottom: 0.5rem;
+}
+
+.process-form-group.stream-inoculant input.stream-input {
+  width: 100%;
+  min-width: 220px;
+  padding: 0.625rem 0.875rem;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  transition: all 0.3s ease;
+  background: white;
+}
+
+.process-form-group.stream-inoculant input.stream-input:focus {
+  outline: none;
+  border-color: #5B9AA9;
+  box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
+}
+
+.section-header {
+  grid-column: 1 / -1;
+  margin-top: 0; /* Changed from 1rem to 0 */
+  margin-bottom: 0.5rem;
+  border-top: none; /* Added to ensure no top spacing */
+  padding-top: 0; /* Added to ensure no top spacing */
+}
+
+.section-header h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #334155;
+  padding-bottom: 0.5rem;
+  border-bottom: 2px solid #e2e8f0;
+  margin-top: 0; /* Added to remove top margin */
+}
+
+/* Remove up/down arrow buttons from number inputs */
+
+/* For Chrome, Edge, Safari */
+input[type=number]::-webkit-inner-spin-button,
+input[type=number]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* For Firefox */
+input[type=number] {
+  -moz-appearance: textfield;
 }

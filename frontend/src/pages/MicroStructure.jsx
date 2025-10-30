@@ -279,10 +279,10 @@ const MicroStructure = () => {
             </div>
 
             {/* Micro Structure Section */}
-            <div className="section-separator">
-              <h4 className="section-title">Micro Structure Details</h4>
+            <div className="section-header">
+              <h3>Micro Structure Details </h3>
             </div>
-
+            
             <div className="microstructure-form-group">
               <label>Nodularity % / Graphite Type *</label>
               <input

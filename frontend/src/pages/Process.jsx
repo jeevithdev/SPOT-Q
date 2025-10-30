@@ -1,711 +1,316 @@
-import React, { useState, useEffect } from 'react';
-import { Save, Filter, RefreshCw, X } from 'lucide-react';
-import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
-import ValidationPopup from '../Components/ValidationPopup';
-import Loader from '../Components/Loader';
-import api from '../utils/api';
+import React, { useState, useRef } from 'react';
+import { Filter } from 'lucide-react';
 import '../styles/PageStyles/Process.css';
 
-const Process = () => {
+export default function ProcessControl() {
   const [formData, setFormData] = useState({
-    date: '',
-    partName: '',
-    heatCode: '',
-    qtyOfMoulds: '',
-    cPercent: '',
-    siPercent: '',
-    mnPercent: '',
-    pPercent: '',
-    sPercent: '',
-    mgFlPercent: '',
-    cuPercent: '',
-    crPercent: '',
-    timeOfPouring: '',
-    pouringTemperature: '',
-    resMgConvertorPercent: '',
-    recMgPercent: '',
-    streamInoculantGmsSec: '',
-    pTimeSec: '',
-    remarks: ''
+    partNameDateHeatCode: '', quantityOfMoulds: '', metalCompositionC: '', metalCompositionSi: '',
+    metalCompositionMn: '', metalCompositionP: '', metalCompositionS: '', metalCompositionMgFL: '',
+    metalCompositionCr: '', metalCompositionCu: '', timeOfPouring: '', pouringTemperature: '',
+    ppCode: '', treatmentNo: '', fcNoHeatNo: '', conNo: '', tappingTime: '', correctiveAdditionC: '',
+    correctiveAdditionSi: '', correctiveAdditionMn: '', correctiveAdditionS: '', correctiveAdditionCr: '',
+    correctiveAdditionCu: '', correctiveAdditionSn: '', tappingWt: '', mg: '', resMgConvertor: '',
+    recOfMg: '', streamInnoculantPTime: '', remarks: ''
   });
 
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
-  const [showMissingFields, setShowMissingFields] = useState(false);
-  const [missingFields, setMissingFields] = useState([]);
-  const [items, setItems] = useState([]);
-  const [filteredItems, setFilteredItems] = useState([]);
-  const [submitLoading, setSubmitLoading] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+  // start with an empty records array
+  const [records, setRecords] = useState([]);
+
+  const inputRefs = useRef({});
+  const fieldOrder = ['partNameDateHeatCode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
+    'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCr',
+    'metalCompositionCu', 'timeOfPouring', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNoHeatNo', 'conNo',
+    'tappingTime', 'correctiveAdditionC', 'correctiveAdditionSi', 'correctiveAdditionMn', 'correctiveAdditionS',
+    'correctiveAdditionCr', 'correctiveAdditionCu', 'correctiveAdditionSn', 'tappingWt', 'mg', 'resMgConvertor',
+    'recOfMg', 'streamInnoculantPTime', 'remarks'];
+
+  const handleChange = (e) => setFormData({...formData, [e.target.name]: e.target.value});
   
-  // Edit states
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [editFormData, setEditFormData] = useState({});
-  const [editLoading, setEditLoading] = useState(false);
-
-  useEffect(() => {
-    fetchItems();
-  }, []);
-
-  const fetchItems = async () => {
-    try {
-      setLoading(true);
-      const data = await api.get('/v1/process-records');
-      
-      if (data.success) {
-        setItems(data.data || []);
-        setFilteredItems(data.data || []);
+  const handleKeyDown = (e, field) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const idx = fieldOrder.indexOf(field);
+      if (idx < fieldOrder.length - 1) {
+        inputRefs.current[fieldOrder[idx + 1]]?.focus();
       }
-    } catch (error) {
-      console.error('Error fetching process records:', error);
-    } finally {
-      setLoading(false);
     }
   };
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+  const parsePartInfo = (combined) => {
+    const parts = (combined || '').split(' / ').map(p => p.trim());
+    return {partName: parts[0] || '', date: parts[1] || '', heatCode: parts[2] || ''};
   };
 
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
-  const handleSubmit = async () => {
-    const required = ['date', 'partName', 'heatCode', 'qtyOfMoulds', 'cPercent', 'siPercent', 
-                     'mnPercent', 'pPercent', 'sPercent', 'mgFlPercent', 'cuPercent', 'crPercent',
-                     'timeOfPouring', 'pouringTemperature'];
-    const missing = required.filter(field => !formData[field]);
-
-    if (missing.length > 0) {
-      setMissingFields(missing);
-      setShowMissingFields(true);
-      return;
-    }
-
-    try {
-      setSubmitLoading(true);
-      const data = await api.post('/v1/process-records', formData);
-      
-      if (data.success) {
-        alert('Process record created successfully!');
-        setFormData({
-          date: '', partName: '', heatCode: '', qtyOfMoulds: '',
-          cPercent: '', siPercent: '', mnPercent: '', pPercent: '', sPercent: '',
-          mgFlPercent: '', cuPercent: '', crPercent: '', timeOfPouring: '',
-          pouringTemperature: '', resMgConvertorPercent: '', recMgPercent: '',
-          streamInoculantGmsSec: '', pTimeSec: '', remarks: ''
-        });
-        fetchItems();
-      }
-    } catch (error) {
-      console.error('Error creating process record:', error);
-      alert('Failed to create entry: ' + error.message);
-    } finally {
-      setSubmitLoading(false);
-    }
-  };
-
-  const handleEdit = (item) => {
-    setEditingItem(item);
-    setEditFormData({
-      date: item.date ? new Date(item.date).toISOString().split('T')[0] : '',
-      partName: item.partName || '',
-      heatCode: item.heatCode || '',
-      qtyOfMoulds: item.qtyOfMoulds || '',
-      cPercent: item.cPercent || '',
-      siPercent: item.siPercent || '',
-      mnPercent: item.mnPercent || '',
-      pPercent: item.pPercent || '',
-      sPercent: item.sPercent || '',
-      mgFlPercent: item.mgFlPercent || '',
-      cuPercent: item.cuPercent || '',
-      crPercent: item.crPercent || '',
-      timeOfPouring: item.timeOfPouring || '',
-      pouringTemperature: item.pouringTemperature || '',
-      resMgConvertorPercent: item.resMgConvertorPercent || '',
-      recMgPercent: item.recMgPercent || '',
-      streamInoculantGmsSec: item.streamInoculantGmsSec || '',
-      pTimeSec: item.pTimeSec || '',
-      remarks: item.remarks || ''
-    });
-    setShowEditModal(true);
-  };
-
-  const handleUpdate = async () => {
-    try {
-      setEditLoading(true);
-      const data = await api.put(`/v1/process-records/${editingItem._id}`, editFormData);
-      
-      if (data.success) {
-        alert('Process record updated successfully!');
-        setShowEditModal(false);
-        setEditingItem(null);
-        fetchItems();
-      }
-    } catch (error) {
-      console.error('Error updating process record:', error);
-      alert('Failed to update entry: ' + error.message);
-    } finally {
-      setEditLoading(false);
-    }
-  };
-
-  const handleDelete = async (id) => {
-    if (!window.confirm('Are you sure you want to delete this entry? This action cannot be undone.')) {
-      return;
-    }
-
-    try {
-      const data = await api.delete(`/v1/process-records/${id}`);
-      
-      if (data.success) {
-        alert('Process record deleted successfully!');
-        fetchItems();
-      }
-    } catch (error) {
-      console.error('Error deleting process record:', error);
-      alert('Failed to delete entry: ' + error.message);
-    }
-  };
-
-  const handleFilter = () => {
-    if (!startDate || !endDate) {
-      setFilteredItems(items);
-      return;
-    }
-
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    const filtered = items.filter(item => {
-      const itemDate = new Date(item.date);
-      return itemDate >= start && itemDate <= end;
-    });
-    
-    setFilteredItems(filtered);
+  const handleSubmit = () => {
+    // parse combined PartName / Date / HeatCode and store separately in the record
+    const info = parsePartInfo(formData.partNameDateHeatCode);
+    const newRecord = {
+      ...formData,
+      partName: info.partName,
+      date: info.date,
+      heatCode: info.heatCode
+    };
+    setRecords(prev => [...prev, newRecord]);
+    alert('Form submitted successfully! Record added to the table below.');
+    handleReset();
   };
 
   const handleReset = () => {
-    setFormData({
-      date: '', partName: '', heatCode: '', qtyOfMoulds: '',
-      cPercent: '', siPercent: '', mnPercent: '', pPercent: '', sPercent: '',
-      mgFlPercent: '', cuPercent: '', crPercent: '', timeOfPouring: '',
-      pouringTemperature: '', resMgConvertorPercent: '', recMgPercent: '',
-      streamInoculantGmsSec: '', pTimeSec: '', remarks: ''
-    });
+    const resetData = {};
+    Object.keys(formData).forEach(key => resetData[key] = '');
+    setFormData(resetData);
+    inputRefs.current.partNameDateHeatCode?.focus();
   };
 
   return (
-    <div className="process-container container">
-      <div className="process-wrapper">
-        {showMissingFields && (
-          <ValidationPopup
-            missingFields={missingFields}
-            onClose={() => setShowMissingFields(false)}
-          />
-        )}
-
-        {/* Entry Form Container */}
-        <div className="process-entry-container">
+    <div className="process-container" style={{ background: 'transparent' }}>
+      <div className="process-wrapper" style={{ background: 'transparent' }}>
+        <div className="process-entry-container" style={{ background: 'transparent' }}>
           <div className="process-header">
             <div className="process-header-text">
-              <Save size={24} style={{ color: '#5B9AA9' }} />
-              <h2>Process Record - Entry Form</h2>
+              <div>
+                <h2>PROCESS CONTROL</h2>
+                <div style={{color:'#64748b'}}>Manufacturing Process Parameters Monitoring</div>
+              </div>
             </div>
-            <Button onClick={handleReset} className="process-reset-btn" variant="secondary">
-              <RefreshCw size={18} />
-              Reset
-            </Button>
+            <button onClick={handleReset} className="process-reset-btn">Reset Form</button>
           </div>
 
           <div className="process-form-grid">
-            {/* Basic Information */}
             <div className="process-form-group">
-              <label>Date *</label>
-              <DatePicker
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-              />
+              <label>Part Name / Date / Heat Code</label>
+              <input ref={el => inputRefs.current.partNameDateHeatCode = el} type="text" name="partNameDateHeatCode" value={formData.partNameDateHeatCode} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'partNameDateHeatCode')} placeholder="e.g., ABC-123 / 29-10-2025 / HC-001" />
             </div>
 
             <div className="process-form-group">
-              <label>Part Name *</label>
-              <input
+              <label>Qty. Of Moulds</label>
+              <input ref={el => inputRefs.current.quantityOfMoulds = el} type="number" name="quantityOfMoulds" value={formData.quantityOfMoulds} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'quantityOfMoulds')} placeholder="Enter quantity" />
+            </div>
+
+            <div className="section-header">
+              <h3>Metal Composition (%)</h3>
+            </div>
+
+            {['C', 'Si', 'Mn', 'P', 'S', 'MgFL', 'Cr', 'Cu'].map(el => (
+              <div className="process-form-group" key={el}>
+                <label>{el === 'MgFL' ? 'Mg F/L' : el}</label>
+                <input ref={r => inputRefs.current[`metalComposition${el}`] = r} type="number" name={`metalComposition${el}`} step="0.001" value={formData[`metalComposition${el}`]} onChange={handleChange} onKeyDown={e => handleKeyDown(e, `metalComposition${el}`)} placeholder="%" />
+              </div>
+            ))}
+
+            <div className="process-form-group">
+              <label>Time of Pouring</label>
+              <input ref={el => inputRefs.current.timeOfPouring = el} type="time" name="timeOfPouring" value={formData.timeOfPouring} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'timeOfPouring')} />
+            </div>
+
+            <div className="process-form-group">
+              <label>Pouring Temp (°C)</label>
+              <input ref={el => inputRefs.current.pouringTemperature = el} type="number" name="pouringTemperature" step="0.01" value={formData.pouringTemperature} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'pouringTemperature')} placeholder="e.g., 1450" />
+            </div>
+
+            <div className="process-form-group">
+              <label>PP Code</label>
+              <input ref={el => inputRefs.current.ppCode = el} type="text" name="ppCode" value={formData.ppCode} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'ppCode')} placeholder="Enter PP code" />
+            </div>
+
+            <div className="process-form-group">
+              <label>Treatment No</label>
+              <input ref={el => inputRefs.current.treatmentNo = el} type="text" name="treatmentNo" value={formData.treatmentNo} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'treatmentNo')} placeholder="Enter treatment no" />
+            </div>
+
+            <div className="process-form-group">
+              <label>F/C No. / Heat No</label>
+              <input ref={el => inputRefs.current.fcNoHeatNo = el} type="text" name="fcNoHeatNo" value={formData.fcNoHeatNo} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'fcNoHeatNo')} placeholder="Enter F/C No./Heat No" />
+            </div>
+
+            <div className="process-form-group">
+              <label>Con No</label>
+              <input ref={el => inputRefs.current.conNo = el} type="text" name="conNo" value={formData.conNo} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'conNo')} placeholder="Enter con no" />
+            </div>
+
+            <div className="process-form-group">
+              <label>Tapping Time</label>
+              <input ref={el => inputRefs.current.tappingTime = el} type="time" name="tappingTime" value={formData.tappingTime} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'tappingTime')} />
+            </div>
+
+            <div className="section-header">
+              <h3>Corrective Addition (Kgs)</h3>
+            </div>
+
+            {['C', 'Si', 'Mn', 'S', 'Cr', 'Cu', 'Sn'].map(el => (
+              <div className="process-form-group" key={`add-${el}`}>
+                <label>{el}</label>
+                <input ref={r => inputRefs.current[`correctiveAddition${el}`] = r} type="number" name={`correctiveAddition${el}`} step="0.01" value={formData[`correctiveAddition${el}`]} onChange={handleChange} onKeyDown={e => handleKeyDown(e, `correctiveAddition${el}`)} placeholder="Kgs" />
+              </div>
+            ))}
+
+            <div className="process-form-group">
+              <label>Tapping Wt (Kgs)</label>
+              <input ref={el => inputRefs.current.tappingWt = el} type="number" name="tappingWt" step="0.01" value={formData.tappingWt} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'tappingWt')} placeholder="Enter weight" />
+            </div>
+
+            <div className="process-form-group">
+              <label>Mg (Kgs)</label>
+              <input ref={el => inputRefs.current.mg = el} type="number" name="mg" step="0.01" value={formData.mg} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'mg')} placeholder="Enter Mg" />
+            </div>
+
+            <div className="process-form-group">
+              <label>Res. Mg. Convertor (%)</label>
+              <input ref={el => inputRefs.current.resMgConvertor = el} type="number" name="resMgConvertor" step="0.01" value={formData.resMgConvertor} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'resMgConvertor')} placeholder="Enter %" />
+            </div>
+
+            <div className="process-form-group">
+              <label>Rec. Of Mg (%)</label>
+              <input ref={el => inputRefs.current.recOfMg = el} type="number" name="recOfMg" step="0.01" value={formData.recOfMg} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'recOfMg')} placeholder="Enter %" />
+            </div>
+
+            <div className="process-form-group stream-inoculant">
+              <label title="Stream Inoculant (gm/Sec) / P.Time (sec)">
+                Stream Inoculant (gm/Sec) / P.Time (sec)
+              </label>
+              <input 
+                ref={el => inputRefs.current.streamInnoculantPTime = el}
                 type="text"
-                name="partName"
-                value={formData.partName}
+                name="streamInnoculantPTime"
+                value={formData.streamInnoculantPTime}
                 onChange={handleChange}
-                placeholder="e.g: Cylinder Head"
+                onKeyDown={e => handleKeyDown(e, 'streamInnoculantPTime')}
+                placeholder="e.g., 5.5 / 120"
+                className="stream-input"
               />
             </div>
 
-            <div className="process-form-group">
-              <label>Heat Code *</label>
-              <input
-                type="text"
-                name="heatCode"
-                value={formData.heatCode}
-                onChange={handleChange}
-                placeholder="e.g: HC-2024-001"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Qty of Moulds *</label>
-              <input
-                type="number"
-                name="qtyOfMoulds"
-                value={formData.qtyOfMoulds}
-                onChange={handleChange}
-                placeholder="e.g: 100"
-              />
-            </div>
-
-            {/* Metal Composition Section */}
-            <div className="section-separator">
-              <h4 className="section-title">Metal Composition (%)</h4>
-            </div>
-
-            <div className="process-form-group">
-              <label>C (Carbon) % *</label>
-              <input
-                type="number"
-                name="cPercent"
-                value={formData.cPercent}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="e.g: 3.5"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Si (Silicon) % *</label>
-              <input
-                type="number"
-                name="siPercent"
-                value={formData.siPercent}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="e.g: 2.5"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Mn (Manganese) % *</label>
-              <input
-                type="number"
-                name="mnPercent"
-                value={formData.mnPercent}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="e.g: 0.5"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>P (Phosphorus) % *</label>
-              <input
-                type="number"
-                name="pPercent"
-                value={formData.pPercent}
-                onChange={handleChange}
-                step="0.001"
-                placeholder="e.g: 0.05"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>S (Sulfur) % *</label>
-              <input
-                type="number"
-                name="sPercent"
-                value={formData.sPercent}
-                onChange={handleChange}
-                step="0.001"
-                placeholder="e.g: 0.02"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Mg (F/L) % *</label>
-              <input
-                type="number"
-                name="mgFlPercent"
-                value={formData.mgFlPercent}
-                onChange={handleChange}
-                step="0.001"
-                placeholder="e.g: 0.045"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Cu (Copper) % *</label>
-              <input
-                type="number"
-                name="cuPercent"
-                value={formData.cuPercent}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="e.g: 0.8"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Cr (Chromium) % *</label>
-              <input
-                type="number"
-                name="crPercent"
-                value={formData.crPercent}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="e.g: 0.1"
-              />
-            </div>
-
-            {/* Pouring Details Section */}
-            <div className="section-separator">
-              <h4 className="section-title">Pouring Details</h4>
-            </div>
-
-            <div className="process-form-group">
-              <label>Time of Pouring *</label>
-              <input
-                type="time"
-                name="timeOfPouring"
-                value={formData.timeOfPouring}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Pouring Temperature (°C) *</label>
-              <input
-                type="number"
-                name="pouringTemperature"
-                value={formData.pouringTemperature}
-                onChange={handleChange}
-                placeholder="e.g: 1450"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Res. Mg Convertor %</label>
-              <input
-                type="number"
-                name="resMgConvertorPercent"
-                value={formData.resMgConvertorPercent}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="e.g: 0.035"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Rec. of Mg %</label>
-              <input
-                type="number"
-                name="recMgPercent"
-                value={formData.recMgPercent}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="e.g: 0.04"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>Stream Inoculant (gms/sec)</label>
-              <input
-                type="number"
-                name="streamInoculantGmsSec"
-                value={formData.streamInoculantGmsSec}
-                onChange={handleChange}
-                step="0.1"
-                placeholder="e.g: 5.5"
-              />
-            </div>
-
-            <div className="process-form-group">
-              <label>P.Time (sec)</label>
-              <input
-                type="number"
-                name="pTimeSec"
-                value={formData.pTimeSec}
-                onChange={handleChange}
-                placeholder="e.g: 30"
-              />
-            </div>
-
-            {/* Remarks */}
-            <div className="process-form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="process-form-group" style={{gridColumn: '1 / -1'}}>
               <label>Remarks</label>
-              <textarea
-                name="remarks"
-                value={formData.remarks}
-                onChange={handleChange}
-                rows="3"
-                placeholder="Enter any additional notes or observations..."
-              />
+              <textarea ref={el => inputRefs.current.remarks = el} name="remarks" value={formData.remarks} onChange={handleChange} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }}} rows="4" placeholder="Enter any additional notes..." />
             </div>
           </div>
 
-          <div className="process-submit-container">
-            <Button onClick={handleSubmit} disabled={submitLoading} className="process-submit-btn" type="button">
-              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-              {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </Button>
+            <div className="process-submit-container" style={{display: 'flex', justifyContent: 'flex-end'}}>
+            <button onClick={handleSubmit} className="process-submit-btn">Submit Entry</button>
           </div>
         </div>
 
-        {/* Report Container */}
-        <div className="process-report-container">
+        <div className="process-report-container" style={{marginTop: '1.5rem', background: 'transparent'}}>
           <div className="process-report-title">
-            <Filter size={20} style={{ color: '#FF7F50' }} />
+            <Filter size={28} color="#FF7F50" />
             <h3>Process Record - Report</h3>
           </div>
 
           <div className="process-filter-grid">
             <div className="process-filter-group">
               <label>Start Date</label>
-              <DatePicker
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                placeholder="Select start date"
-              />
+              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
             </div>
 
             <div className="process-filter-group">
               <label>End Date</label>
-              <DatePicker
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                placeholder="Select end date"
-              />
+              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
             </div>
 
             <div className="process-filter-btn-container">
-              <Button onClick={handleFilter} className="process-filter-btn" type="button">
-                <Filter size={18} />
-                Filter
-              </Button>
+              <button onClick={() => console.log('Filter', startDate, endDate)} className="process-filter-btn"><Filter size={16} /> Filter</button>
             </div>
           </div>
 
-          {loading ? (
-            <div className="process-loader-container">
-              <Loader />
-            </div>
-          ) : (
-            <div className="process-table-container table-wrapper">
-              <table className="process-table">
-                <thead>
-                  <tr>
-                    <th>Date</th>
-                    <th>Part Name</th>
-                    <th>Heat Code</th>
-                    <th>Qty Moulds</th>
-                    <th>C %</th>
-                    <th>Si %</th>
-                    <th>Mn %</th>
-                    <th>P %</th>
-                    <th>S %</th>
-                    <th>Mg(F/L) %</th>
-                    <th>Cu %</th>
-                    <th>Cr %</th>
-                    <th>Pour Time</th>
-                    <th>Pour Temp</th>
-                    <th>Res.Mg %</th>
-                    <th>Rec.Mg %</th>
-                    <th>Stream In.</th>
-                    <th>P.Time</th>
-                    <th>Remarks</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredItems.length === 0 ? (
-                    <tr>
-                      <td colSpan="20" className="process-no-records">
-                        No records found
-                      </td>
+          <div className="process-table-container">
+            <table className="process-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Part Name</th>
+                  <th>Heat Code</th>
+                  <th>Qty Moulds</th>
+                  <th>C %</th>
+                  <th>Si %</th>
+                  <th>Mn %</th>
+                  <th>P %</th>
+                  <th>S %</th>
+                  <th>Mg(F/L) %</th>
+                  <th>Cu %</th>
+                  <th>Cr %</th>
+                  <th>Pour Time</th>
+                  <th>Pour Temp</th>
+                  <th>PP Code</th>
+                  <th>Treatment No</th>
+                  <th>F/C No</th>
+                  <th>Con No</th>
+                  <th>Tap Time</th>
+                  <th>C (Kg)</th>
+                  <th>Si (Kg)</th>
+                  <th>Mn (Kg)</th>
+                  <th>S (Kg)</th>
+                  <th>Cr (Kg)</th>
+                  <th>Cu (Kg)</th>
+                  <th>Sn (Kg)</th>
+                  <th>Tap Wt</th>
+                  <th>Mg (Kg)</th>
+                  <th>Res Mg %</th>
+                  <th>Rec Mg %</th>
+                  <th>Stream/P.Time</th>
+                  <th>Remarks</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {records.length === 0 && (
+                  <tr><td colSpan={33} className="process-no-records">No records found</td></tr>
+                )}
+                {records.map((r, i) => {
+                  // prefer stored separate fields, fallback to parsing combined if missing
+                  const info = {
+                    partName: r.partName || parsePartInfo(r.partNameDateHeatCode).partName,
+                    date: r.date || parsePartInfo(r.partNameDateHeatCode).date,
+                    heatCode: r.heatCode || parsePartInfo(r.partNameDateHeatCode).heatCode
+                  };
+                  return (
+                    <tr key={i}>
+                      <td>{info.date}</td>
+                      <td>{info.partName}</td>
+                      <td>{info.heatCode}</td>
+                      <td>{r.quantityOfMoulds}</td>
+                      <td>{r.metalCompositionC}</td>
+                      <td>{r.metalCompositionSi}</td>
+                      <td>{r.metalCompositionMn}</td>
+                      <td>{r.metalCompositionP}</td>
+                      <td>{r.metalCompositionS}</td>
+                      <td>{r.metalCompositionMgFL}</td>
+                      <td>{r.metalCompositionCu}</td>
+                      <td>{r.metalCompositionCr}</td>
+                      <td>{r.timeOfPouring}</td>
+                      <td>{r.pouringTemperature}</td>
+                      <td>{r.ppCode}</td>
+                      <td>{r.treatmentNo}</td>
+                      <td>{r.fcNoHeatNo}</td>
+                      <td>{r.conNo}</td>
+                      <td>{r.tappingTime}</td>
+                      <td>{r.correctiveAdditionC}</td>
+                      <td>{r.correctiveAdditionSi}</td>
+                      <td>{r.correctiveAdditionMn}</td>
+                      <td>{r.correctiveAdditionS}</td>
+                      <td>{r.correctiveAdditionCr}</td>
+                      <td>{r.correctiveAdditionCu}</td>
+                      <td>{r.correctiveAdditionSn}</td>
+                      <td>{r.tappingWt}</td>
+                      <td>{r.mg}</td>
+                      <td>{r.resMgConvertor}</td>
+                      <td>{r.recOfMg}</td>
+                      <td>{r.streamInnoculantPTime}</td>
+                      <td>{r.remarks}</td> 
+                       <td style={{ minWidth: '100px' }}>
+                                                <EditActionButton onClick={() => handleEdit(item)} />
+                                                <DeleteActionButton onClick={() => handleDelete(item._id)} />
+                                              </td>
                     </tr>
-                  ) : (
-                    filteredItems.map((item, index) => (
-                      <tr key={item._id || index}>
-                        <td>{new Date(item.date).toLocaleDateString()}</td>
-                        <td>{item.partName}</td>
-                        <td>{item.heatCode}</td>
-                        <td>{item.qtyOfMoulds}</td>
-                        <td>{item.cPercent}</td>
-                        <td>{item.siPercent}</td>
-                        <td>{item.mnPercent}</td>
-                        <td>{item.pPercent}</td>
-                        <td>{item.sPercent}</td>
-                        <td>{item.mgFlPercent}</td>
-                        <td>{item.cuPercent}</td>
-                        <td>{item.crPercent}</td>
-                        <td>{item.timeOfPouring}</td>
-                        <td>{item.pouringTemperature}°C</td>
-                        <td>{item.resMgConvertorPercent || '-'}</td>
-                        <td>{item.recMgPercent || '-'}</td>
-                        <td>{item.streamInoculantGmsSec || '-'}</td>
-                        <td>{item.pTimeSec || '-'}</td>
-                        <td>{item.remarks || '-'}</td>
-                        <td style={{ minWidth: '100px' }}>
-                          <EditActionButton onClick={() => handleEdit(item)} />
-                          <DeleteActionButton onClick={() => handleDelete(item._id)} />
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-
-        {/* Edit Modal */}
-        {showEditModal && (
-          <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-            <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-              <div className="modal-header">
-                <h2>Edit Process Record</h2>
-                <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
-                  <X size={24} />
-                </button>
-              </div>
-              
-              <div className="modal-body">
-                <div className="process-form-grid">
-                  <div className="process-form-group">
-                    <label>Date *</label>
-                    <DatePicker name="date" value={editFormData.date} onChange={handleEditChange} />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Part Name *</label>
-                    <input type="text" name="partName" value={editFormData.partName} onChange={handleEditChange} />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Heat Code *</label>
-                    <input type="text" name="heatCode" value={editFormData.heatCode} onChange={handleEditChange} />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Qty of Moulds *</label>
-                    <input type="number" name="qtyOfMoulds" value={editFormData.qtyOfMoulds} onChange={handleEditChange} />
-                  </div>
-
-                  <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>Metal Composition (%)</h4>
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>C %</label>
-                    <input type="number" name="cPercent" value={editFormData.cPercent} onChange={handleEditChange} step="0.01" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Si %</label>
-                    <input type="number" name="siPercent" value={editFormData.siPercent} onChange={handleEditChange} step="0.01" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Mn %</label>
-                    <input type="number" name="mnPercent" value={editFormData.mnPercent} onChange={handleEditChange} step="0.01" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>P %</label>
-                    <input type="number" name="pPercent" value={editFormData.pPercent} onChange={handleEditChange} step="0.001" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>S %</label>
-                    <input type="number" name="sPercent" value={editFormData.sPercent} onChange={handleEditChange} step="0.001" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Mg (F/L) %</label>
-                    <input type="number" name="mgFlPercent" value={editFormData.mgFlPercent} onChange={handleEditChange} step="0.001" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Cu %</label>
-                    <input type="number" name="cuPercent" value={editFormData.cuPercent} onChange={handleEditChange} step="0.01" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Cr %</label>
-                    <input type="number" name="crPercent" value={editFormData.crPercent} onChange={handleEditChange} step="0.01" />
-                  </div>
-
-                  <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-                    <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>Pouring Details</h4>
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Time of Pouring</label>
-                    <input type="time" name="timeOfPouring" value={editFormData.timeOfPouring} onChange={handleEditChange} />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Pouring Temperature (°C)</label>
-                    <input type="number" name="pouringTemperature" value={editFormData.pouringTemperature} onChange={handleEditChange} />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Res. Mg Convertor %</label>
-                    <input type="number" name="resMgConvertorPercent" value={editFormData.resMgConvertorPercent} onChange={handleEditChange} step="0.01" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Rec. of Mg %</label>
-                    <input type="number" name="recMgPercent" value={editFormData.recMgPercent} onChange={handleEditChange} step="0.01" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>Stream Inoculant (gms/sec)</label>
-                    <input type="number" name="streamInoculantGmsSec" value={editFormData.streamInoculantGmsSec} onChange={handleEditChange} step="0.1" />
-                  </div>
-
-                  <div className="process-form-group">
-                    <label>P.Time (sec)</label>
-                    <input type="number" name="pTimeSec" value={editFormData.pTimeSec} onChange={handleEditChange} />
-                  </div>
-
-                  <div className="process-form-group" style={{ gridColumn: '1 / -1' }}>
-                    <label>Remarks</label>
-                    <textarea name="remarks" value={editFormData.remarks} onChange={handleEditChange} rows="3" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="modal-footer">
-                <button className="modal-cancel-btn" onClick={() => setShowEditModal(false)} disabled={editLoading}>
-                  Cancel
-                </button>
-                <button className="modal-submit-btn" onClick={handleUpdate} disabled={editLoading}>
-                  {editLoading ? 'Updating...' : 'Update Entry'}
-                </button>
-              </div>
-            </div>
+                  );
+                })}
+              </tbody>
+            </table>
           </div>
-        )}
+        </div>
       </div>
     </div>
   );
-};
-
-export default Process;
+}
