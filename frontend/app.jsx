@@ -18,7 +18,9 @@ import Login from './src/pages/Login';
 import Tensile from './src/pages/Tensile';
 import TensileReport from './src/pages/TensileReport';
 import SandTestingRecord from './src/pages/SandLab/SandTestingRecord';
+import SandTestingRecordReport from './src/pages/SandLab/SandTestingRecordReport';
 import FoundarySandTestingNote from './src/pages/SandLab/FoundarySandTestingNote';
+import FoundrySandTestingReport from './src/pages/SandLab/FoundrySandTestingReport';
 import DisamaticProductReport from './src/pages/Moulding/DisamaticProductReport';
 import MouldHardnessPatternTemperatureRecord from './src/pages/Moulding/MouldHardnessPatternTemperatureRecord';
 import MouldingPage3 from './src/pages/MouldingPage3';
@@ -91,7 +93,9 @@ const App = () => {
 
           {/* Sand Lab */}
           <Route path="sand-lab/sand-testing-record" element={<SandTestingRecord />} />
+          <Route path="sand-lab/sand-testing-record/report" element={<SandTestingRecordReport />} />
           <Route path="sand-lab/foundry-sand-testing-note" element={<FoundarySandTestingNote />} />
+          <Route path="sand-lab/foundry-sand-testing-note/report" element={<FoundrySandTestingReport />} />
 
           {/* Moulding */}
           <Route path="moulding/disamatic-product-report" element={<DisamaticProductReport />} />

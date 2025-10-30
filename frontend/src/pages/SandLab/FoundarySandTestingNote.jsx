@@ -1,378 +1,533 @@
-import React, { useState } from 'react';
-import { FlaskConical, Save, X, Factory, FileText, Filter } from 'lucide-react';
-import Button, { DatePicker } from '../../Components/Buttons';
-import '../../styles/PageStyles/Sandlab/FoundarySandTestingNote.css';
+import React, { useState } from "react";
+import { FlaskConical, Factory } from "lucide-react";
+import { Link, useLocation } from 'react-router-dom';
+import { DatePicker, SubmitButton, ResetButton } from '../../Components/Buttons';
+import api from '../../utils/api';
 
-// Styles are moved to CSS file: FoundarySandTestingNote.css
+export default function FoundrySandTestingNote() {
+  // Form state
+  const [formData, setFormData] = useState({
+    sandPlant: "",
+    date: "",
+    compactabilitySetting: "",
+    shift: "",
+    shearMouldStrengthSetting: "",
+    parameters: {
+      totalClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
+      activeClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
+      deadClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
+      vcm: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
+      loi: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }]
+    },
+    sieveTesting: {
+      data: [],
+      total: {
+        wtRetainedTest1: "",
+        wtRetainedTest2: "",
+        productTest1: "",
+        productTest2: ""
+      }
+    },
+    testResults: {
+      compactibility: { test1: "", test2: "" },
+      permeability: { test1: "", test2: "" },
+      gcs: { test1: "", test2: "" },
+      wts: { test1: "", test2: "" },
+      moisture: { test1: "", test2: "" },
+      bentonite: { test1: "", test2: "" },
+      coalDust: { test1: "", test2: "" },
+      hopperLevel: { test1: "", test2: "" },
+      shearStrength: { test1: "", test2: "" },
+      dustCollectorSetting: { test1: "", test2: "" },
+      returnSandMoisture: { test1: "", test2: "" },
+      afsNo: { test1: "", test2: "" },
+      fines: { test1: "", test2: "" },
+      gd: { test1: "", test2: "" }
+    },
+    remarks: ""
+  });
 
+  // Handle form save
+  const handleSave = async () => {
+    try {
+      const response = await api.post('/v1/foundry-sand-testing', formData);
+      if (response.success) {
+        alert('Data saved successfully');
+      }
+    } catch (error) {
+      alert('Error saving data: ' + error.message);
+    }
+  };
 
-// --- 2. REUSABLE ATOMIC COMPONENTS (Unchanged Logic/Tabs) ---
+  // Handle form field changes
+  const handleInputChange = (section, field, value) => {
+    setFormData(prev => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value
+      }
+    }));
+  };
 
-const LabeledInput = ({ label, value, onChange, field, suffix, inputStyle = {}, tabIndex }) => (
-    <div className="foundry-labeled-input">
-        <label className="foundry-bottom-label">{label}</label>
-        <div className="foundry-bottom-value">
-            <input
-                type="text"
-                value={value}
-                onChange={(e) => onChange(field, e.target.value)}
-                className="foundry-bottom-input"
-                style={inputStyle}
-                tabIndex={tabIndex}
-            />
-            {suffix && <span className="foundry-bottom-suffix">{suffix}</span>}
-        </div>
-    </div>
-);
-
-const TestTable = ({ data, handleTestChange }) => {
-    const fields = [
-        { label: 'Total clay', f1: 'totalClay', f2: 'totalClayMod', startTab: 10 },
-        { label: 'Active clay', f1: 'activeClay', f2: 'activeClayMod', startTab: 14 },
-        { label: 'Dead clay', f1: 'deadClay', f2: 'deadClayMod', startTab: 18 },
-        { label: 'VCM', f1: 'vcm', f2: 'vcmMod', startTab: 22 },
-        { label: 'LOI', f1: 'loi', f2: 'loiMod', startTab: 26 },
-    ];
-
-    return (
-        <div className="foundry-table-wrapper table-wrapper">
-            <table className="foundry-table-base">
-                <thead>
-                    <tr>
-                        <th className="foundry-table-head-cell foundry-table-head-cell--25">Parameters</th>
-                        <th colSpan="2" className="foundry-table-head-cell foundry-table-head-cell--375">TEST-1</th>
-                        <th colSpan="2" className="foundry-table-head-cell foundry-table-head-cell--375 foundry-no-border-right">TEST-2</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {fields.map(({ label, f1, f2, startTab }, index) => (
-                        <tr key={label} className={index % 2 === 0 ? 'foundry-table-row-even' : ''}>
-                            <td className="foundry-table-body-cell foundry-table-body-cell-left">{label}</td>
-                            
-                            {/* TEST-1 */}
-                            <td className="foundry-table-body-cell">
-                                <input type="text" value={data.test1[f1]} onChange={(e) => handleTestChange(1, f1, e.target.value)} className="foundry-input-base" tabIndex={startTab} />
-                            </td>
-                            <td className="foundry-table-body-cell">
-                                <span className="foundry-percent-label">% = </span>
-                                <input type="text" value={data.test1[f2]} onChange={(e) => handleTestChange(1, f2, e.target.value)} className="foundry-input-base foundry-input-small" tabIndex={startTab + 1} />
-                            </td>
-                            
-                            {/* TEST-2 */}
-                            <td className="foundry-table-body-cell">
-                                <input type="text" value={data.test2[f1]} onChange={(e) => handleTestChange(2, f1, e.target.value)} className="foundry-input-base" tabIndex={startTab + 2} />
-                            </td>
-                            <td className="foundry-table-body-cell foundry-no-border-right">
-                                <span className="foundry-percent-label">% = </span>
-                                <input type="text" value={data.test2[f2]} onChange={(e) => handleTestChange(2, f2, e.target.value)} className="foundry-input-base foundry-input-small" tabIndex={startTab + 3} />
-                            </td>
-                        </tr>
-                    ))}
-                </tbody>
-            </table>
-        </div>
-    );
-};
-
-const SieveTestTable = ({ data, handleSieveChange, handleSieveTotalChange }) => {
-    return (
-        <div className="foundry-table-wrapper table-wrapper">
-            <h2 className="foundry-table-title">Sieve Testing</h2>
-            <table className="foundry-table-base">
-                <thead>
-                    <tr className="foundry-sieve-header-row">
-                        <th rowSpan="2" className="foundry-table-head-cell foundry-head-size">Sieve size (Mic)</th>
-                        <th colSpan="2" className="foundry-table-head-cell foundry-head-percent">% Wt retained sand</th>
-                        <th rowSpan="2" className="foundry-table-head-cell foundry-head-mf">MF</th>
-                        <th colSpan="2" className="foundry-table-head-cell foundry-head-product">Product</th>
-                    </tr>
-                    <tr className="foundry-sieve-header-row">
-                        <th className="foundry-table-head-cell foundry-head-sub">TEST-1</th>
-                        <th className="foundry-table-head-cell foundry-head-sub">TEST-2</th>
-                        <th className="foundry-table-head-cell foundry-head-sub">TEST-1</th>
-                        <th className="foundry-table-head-cell foundry-head-sub">TEST-2</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {data.sieveTest.map((row, index) => (
-                        <tr key={row.sieveSize} className={index % 2 === 0 ? 'foundry-table-row-even' : ''}>
-                            <td className="foundry-table-body-left">{row.sieveSize}</td>
-
-                            {/* % Wt retained sand TEST-1 (Tab: 30-34, 35-39, etc.) */}
-                            <td className="foundry-input-cell">
-                                <input type="text" value={row.test1Retained} onChange={(e) => handleSieveChange(index, 'test1Retained', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5} />
-                            </td>
-                            {/* % Wt retained sand TEST-2 */}
-                            <td className="foundry-input-cell">
-                                <input type="text" value={row.test2Retained} onChange={(e) => handleSieveChange(index, 'test2Retained', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5 + 1} />
-                            </td>
-
-                            {/* MF */}
-                            <td className="foundry-input-cell">
-                                <input type="text" value={row.mf} onChange={(e) => handleSieveChange(index, 'mf', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5 + 2} />
-                            </td>
-
-                            {/* Product TEST-1 */}
-                            <td className="foundry-input-cell">
-                                <input type="text" value={row.product1} onChange={(e) => handleSieveChange(index, 'product1', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5 + 3} />
-                            </td>
-                            {/* Product TEST-2 */}
-                            <td className="foundry-input-cell foundry-no-border-right">
-                                <input type="text" value={row.product2} onChange={(e) => handleSieveChange(index, 'product2', e.target.value)} className="foundry-input-base" tabIndex={30 + index * 5 + 4} />
-                            </td>
-                        </tr>
-                    ))}
-                    {/* Totals Row (Tab Indices 85-89) */}
-                    <tr className="foundry-total-row">
-                        <td className="foundry-table-body-left foundry-total-label">Total</td>
-                        <td className="foundry-input-cell"><input type="text" value={data.sieveTestTotals.test1Total} onChange={(e) => handleSieveTotalChange('test1Total', e.target.value)} className="foundry-input-base" tabIndex={85} /></td>
-                        <td className="foundry-input-cell"><input type="text" value={data.sieveTestTotals.test2Total} onChange={(e) => handleSieveTotalChange('test2Total', e.target.value)} className="foundry-input-base" tabIndex={86} /></td>
-                        <td className="foundry-input-cell"><input type="text" value={data.sieveTestTotals.mfTotal} onChange={(e) => handleSieveTotalChange('mfTotal', e.target.value)} className="foundry-input-base" tabIndex={87} /></td>
-                        <td className="foundry-input-cell"><input type="text" value={data.sieveTestTotals.productTotal1} onChange={(e) => handleSieveTotalChange('productTotal1', e.target.value)} className="foundry-input-base" tabIndex={88} /></td>
-                         <td className="foundry-input-cell foundry-no-border-right"><input type="text" value={data.sieveTestTotals.productTotal2} onChange={(e) => handleSieveTotalChange('productTotal2', e.target.value)} className="foundry-input-base" tabIndex={89} /></td>
-                    </tr>
-                </tbody>
-            </table>
-        </div>
-    );
-};
-
-
-// --- 3. MAIN COMPONENT (Updated handleSubmit/handleKeyDown) ---
-const FoundrySandTestingNote = () => {
-    
-    // Initial State (All empty strings for user input)
-    const [formData, setFormData] = useState({
-        sandPlant: '', compactibilitySetting: '', shearStrengthSetting: '', 
-        date: new Date().toISOString().split('T')[0], // Default today's date
-        shift: '',
-        test1: { totalClay: '', totalClayMod: '', activeClay: '', activeClayMod: '', deadClay: '', deadClayMod: '', vcm: '', vcmMod: '', loi: '', loiMod: '', },
-        test2: { totalClay: '', totalClayMod: '', activeClay: '', activeClayMod: '', deadClay: '', deadClayMod: '', vcm: '', vcmMod: '', loi: '', loiMod: '', },
-        sieveTest: [
-            { sieveSize: '1700', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '850', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '600', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '425', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '300', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '212', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '150', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '106', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '75', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '53', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: 'pan', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' },
-        ],
-        sieveTestTotals: { test1Total: '', test2Total: '', mfTotal: '', productTotal1: '', productTotal2: '' },
-        compactability: '', permeability: '', gcs: '', wts: '', moisture: '', bentonite: '', coalDust: '', hopperLevel: '', shearStrength: '', setting: '', returnSand: '', newSand: '', remarks: '',
-        afsNo: '', afsNo2: '', fines: '', fines2: '', gd: '', gd2: '',
+  // Handle clearing form
+  const handleClear = () => {
+    setFormData({
+      sandPlant: "",
+      date: "",
+      compactabilitySetting: "",
+      shift: "",
+      shearMouldStrengthSetting: "",
+      parameters: {
+        totalClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
+        activeClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
+        deadClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
+        vcm: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
+        loi: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }]
+      },
+      sieveTesting: {
+        data: [],
+        total: {
+          wtRetainedTest1: "",
+          wtRetainedTest2: "",
+          productTest1: "",
+          productTest2: ""
+        }
+      },
+      testResults: {
+        compactibility: { test1: "", test2: "" },
+        permeability: { test1: "", test2: "" },
+        gcs: { test1: "", test2: "" },
+        wts: { test1: "", test2: "" },
+        moisture: { test1: "", test2: "" },
+        bentonite: { test1: "", test2: "" },
+        coalDust: { test1: "", test2: "" },
+        hopperLevel: { test1: "", test2: "" },
+        shearStrength: { test1: "", test2: "" },
+        dustCollectorSetting: { test1: "", test2: "" },
+        returnSandMoisture: { test1: "", test2: "" },
+        afsNo: { test1: "", test2: "" },
+        fines: { test1: "", test2: "" },
+        gd: { test1: "", test2: "" }
+      },
+      remarks: ""
     });
+  };
+  const location = useLocation();
 
-    // --- STATE HANDLERS (Unchanged) ---
-    const handleMainChange = (field, value) => setFormData(prev => ({ ...prev, [field]: value }));
-    const handleTestChange = (testNum, field, value) => setFormData(prev => ({ ...prev, [`test${testNum}`]: { ...prev[`test${testNum}`], [field]: value } }));
-    const handleSieveChange = (rowIndex, field, value) => {
-        const updatedSieveTest = [...formData.sieveTest];
-        updatedSieveTest[rowIndex] = { ...updatedSieveTest[rowIndex], [field]: value };
-        setFormData(prev => ({ ...prev, sieveTest: updatedSieveTest }));
-    };
-    const handleSieveTotalChange = (field, value) => setFormData(prev => ({ ...prev, sieveTestTotals: { ...prev.sieveTestTotals, [field]: value } }));
+  const isActive = (path) => {
+    return location.pathname === path;
+  };
 
-    // --- FORM SUBMISSION HANDLER ---
-    const handleSubmit = (e) => {
-        e.preventDefault(); // <-- The logic to prevent Enter key submission is primarily here
-        console.log('Foundry Sand Testing Data Submitted:', formData);
-        alert('Foundry Sand Testing Note Submitted!');
-    };
+  // Inline styles for tabs (keeps everything inside this file — no external CSS)
+  const foundryContainerStyle = {
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh',
+    backgroundColor: '#f0f4f8',
+  };
 
-    const handleReset = () => {
-        if (window.confirm('Are you sure you want to reset the entire form?')) {
-            // Reset logic...
-            setFormData({
-                sandPlant: '', compactibilitySetting: '', shearStrengthSetting: '', date: new Date().toISOString().split('T')[0], shift: '',
-                test1: { totalClay: '', totalClayMod: '', activeClay: '', activeClayMod: '', deadClay: '', deadClayMod: '', vcm: '', vcmMod: '', loi: '', loiMod: '' },
-                test2: { totalClay: '', totalClayMod: '', activeClay: '', activeClayMod: '', deadClay: '', deadClayMod: '', vcm: '', vcmMod: '', loi: '', loiMod: '' },
-                sieveTest: [
-                    { sieveSize: '1700', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '850', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '600', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '425', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '300', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '212', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '150', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '106', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '75', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: '53', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' }, { sieveSize: 'pan', test1Retained: '', test2Retained: '', mf: '', product1: '', product2: '' },
-                ],
-                sieveTestTotals: { test1Total: '', test2Total: '', mfTotal: '', productTotal1: '', productTotal2: '' },
-                compactability: '', permeability: '', gcs: '', wts: '', moisture: '', bentonite: '', coalDust: '', hopperLevel: '', shearStrength: '', setting: '', returnSand: '', newSand: '', remarks: '',
-                afsNo: '', afsNo2: '', fines: '', fines2: '', gd: '', gd2: '',
-            });
-        }
-    };
+  const foundryWrapperStyle = {
+    flex: 1,
+    padding: '1rem',
+  };
 
-    // --- KEYDOWN HANDLER ---
-    // This function intercepts the Enter keypress to ensure it only moves to the next field (via Tab),
-    // and doesn't trigger form submission unless it's on a button of type 'submit'.
-    const handleKeyDown = (e) => {
-        if (e.key === 'Enter') {
-            e.preventDefault(); // Prevents the default action (form submission)
-            
-            // Manually trigger the tab action
-            const currentTabIndex = parseInt(e.target.tabIndex);
-            if (!isNaN(currentTabIndex)) {
-                const nextTabIndex = currentTabIndex + 1;
-                const nextElement = document.querySelector(`[tabIndex="${nextTabIndex}"]`);
-                if (nextElement) {
-                    nextElement.focus();
-                } else if (currentTabIndex < 200) {
-                     // If the element doesn't exist (e.g., end of a section), jump to the next logical block start
-                    const nextBlockStart = [6, 10, 30, 90, 110, 200].find(index => index > currentTabIndex);
-                    if (nextBlockStart) {
-                        document.querySelector(`[tabIndex="${nextBlockStart}"]`)?.focus();
-                    }
-                }
-            }
-        }
-    };
+  const tabsContainerStyle = {
+    backgroundColor: '#fff',
+    borderBottom: '1px solid #e2e8f0',
+    padding: '0 2rem',
+  };
 
+  const tabsStyle = {
+    display: 'flex',
+    gap: '1rem',
+    marginBottom: '-1px',
+  };
 
-    // --- JSX RENDERING ---
+  const tabStyle = {
+    padding: '0.75rem 1.5rem',
+    textDecoration: 'none',
+    color: '#64748b',
+    borderBottom: '2px solid transparent',
+    fontWeight: 500,
+    transition: 'all 0.2s ease',
+  };
 
-    return (
-        <div className="foundry-page-container container">
-            <div className="foundry-main-card">
+  const tabActiveStyle = {
+    color: '#1e293b',
+    borderBottomColor: '#1e293b',
+  };
 
-                {/* --- HEADER --- */}
-                <div className="foundry-header">
-                    <div className="foundry-header-info-grid">
-                        <Factory size={24} className="foundry-factory-icon" />
-                        <span className="foundry-sakthi">SAKTHI AUTO</span>
-                    </div>
-                    <div className="foundry-header-center">
-                        <h1 className="foundry-header-title">FOUNDRY SAND TESTING NOTE</h1>
-                    </div>
-                    {/* Header Input Fields (Tab Indices 1-5) */}
-                    <div className="foundry-header-grid">
-                        <span className="foundry-header-label">SAND PLANT:</span>
-                        <input type="text" value={formData.sandPlant} placeholder="e.g. DISA" onChange={(e) => handleMainChange('sandPlant', e.target.value)} className="foundry-header-input" tabIndex={1} onKeyDown={handleKeyDown} />
+  const FoundrySandTestingTabs = () => (
+    <div style={tabsContainerStyle}>
+      <div style={tabsStyle}>
+        <Link
+          to="/sand-lab/foundry-sand-testing-note"
+          style={isActive('/sand-lab/foundry-sand-testing-note') ? { ...tabStyle, ...tabActiveStyle } : tabStyle}
+        >
+          Data Entry
+        </Link>
+        <Link
+          to="/sand-lab/foundry-sand-testing-note/report"
+          style={isActive('/sand-lab/foundry-sand-testing-note/report') ? { ...tabStyle, ...tabActiveStyle } : tabStyle}
+        >
+          Report
+        </Link>
+      </div>
+    </div>
+  );
+  const sieveData = [
+    { size: 1700, mf: 5 },
+    { size: 850, mf: 10 },
+    { size: 600, mf: 20 },
+    { size: 425, mf: 30 },
+    { size: 300, mf: 40 },
+    { size: 212, mf: 50 },
+    { size: 150, mf: 70 },
+    { size: 106, mf: 100 },
+    { size: 75, mf: 140 },
+    { size: 53, mf: 200 },
+    { size: "Pan", mf: 300 },
+  ];
 
-                        <span className="foundry-header-label">DATE:</span>
-                        <DatePicker name="date" value={formData.date} onChange={(e) => handleMainChange('date', e.target.value)} className="foundry-header-input" />
+  // ===== STYLES =====
+  const container = {
+    fontFamily: "Segoe UI, Arial, sans-serif",
+    padding: "2rem",
+    width: "100%",
+    maxWidth: "1400px",
+    margin: "0 auto",
+    minHeight: "100vh",
+    background: "#f0f4f8",
+    color: "#1e1e1e",
+  };
 
-                        <span className="foundry-header-label">COMPACTIBILITY SETTING:</span>
-                        <input type="text" value={formData.compactibilitySetting} placeholder="e.g. J.C. mode" onChange={(e) => handleMainChange('compactibilitySetting', e.target.value)} className="foundry-header-input" tabIndex={3} onKeyDown={handleKeyDown} />
+  const headerBox = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: "#1e293b",
+    borderRadius: "12px",
+    padding: "1rem",
+    marginBottom: "1.5rem",
+    color: "white",
+    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
+  };
 
-                        <span className="foundry-header-label">SHIFT:</span>
-                        <input type="text" value={formData.shift} placeholder="e.g. 2nd Shift" onChange={(e) => handleMainChange('shift', e.target.value)} className="foundry-header-input" tabIndex={4} onKeyDown={handleKeyDown} />
+  const title = {
+    fontSize: "1.5rem",
+    fontWeight: "700",
+    letterSpacing: "0.5px",
+    margin: "0 0.75rem",
+    color: "white",
+  };
 
-                        <span className="foundry-header-label">SHEAR/MOULD STRENGTH SETTING:</span>
-                        <input type="text" value={formData.shearStrengthSetting} placeholder="e.g. MP.VOX 2" onChange={(e) => handleMainChange('shearStrengthSetting', e.target.value)} className="foundry-header-input" tabIndex={5} onKeyDown={handleKeyDown} />
-                    </div>
-                </div>
+  const subHeader = {
+    display: "grid",
+    gridTemplateColumns: "auto 1fr auto 1fr",
+    rowGap: "10px",
+    columnGap: "8px",
+    fontSize: "14px",
+    alignItems: "center",
+    marginBottom: "15px",
+  };
 
-                {/* IMPORTANT: The form onSubmit={handleSubmit} is now the primary mechanism to prevent Enter key submission. */}
-                <form onSubmit={handleSubmit} className="foundry-form-content">
+  const label = {
+    fontWeight: "bold",
+    color: "#1e293b",
+  };
 
-                    {/* --- 1. CLAY/VCM/LOI TABLES (Tab Indices 10-29) --- */}
-                    <TestTable data={formData} handleTestChange={(testNum, field, value) => { handleTestChange(testNum, field, value); }} />
+  const input = {
+    border: "1px solid #cbd5e1",
+    borderRadius: "6px",
+    height: "32px",
+    width: "100%",
+    padding: "0 0.75rem",
+    backgroundColor: "#fff",
+    fontSize: "0.9rem",
+    color: "#1e293b",
+  };
 
-                    {/* --- 2. SIEVE TESTING TABLE (Tab Indices 30-89) --- */}
-                    <SieveTestTable data={formData} handleSieveChange={handleSieveChange} handleSieveTotalChange={handleSieveTotalChange} />
+  const table = {
+    width: "100%",
+    borderCollapse: "collapse",
+    fontSize: "0.9rem",
+    marginTop: "1rem",
+    border: "1px solid #e2e8f0",
+    background: "white",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
+  };
 
-                    {/* --- 3. BOTTOM PARAMETER SECTION --- */}
-                    <div className="foundry-bottom-grid">
-                        
-                        {/* Left Column: Main Parameters (Tab Indices 90-101) */}
-                        <div className="foundry-bottom-column">
-                            <h3 className="foundry-bottom-title"><FlaskConical size={20} className="foundry-icon-teal" />Main Parameters</h3>
-                            <LabeledInput label="Compactability" value={formData.compactability} onChange={handleMainChange} field="compactability" suffix="%" tabIndex={90} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="Permeability" value={formData.permeability} onChange={handleMainChange} field="permeability" tabIndex={91} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="GCS" value={formData.gcs} onChange={handleMainChange} field="gcs" suffix="gm/cm²" tabIndex={92} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="WTS" value={formData.wts} onChange={handleMainChange} field="wts" suffix="N/cm²" tabIndex={93} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="Moisture" value={formData.moisture} onChange={handleMainChange} field="moisture" suffix="%" tabIndex={94} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="Bentonite" value={formData.bentonite} onChange={handleMainChange} field="bentonite" suffix="kg" tabIndex={95} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="Coal Dust" value={formData.coalDust} onChange={handleMainChange} field="coalDust" suffix="kg" tabIndex={96} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="Hopper Level" value={formData.hopperLevel} onChange={handleMainChange} field="hopperLevel" suffix="%" tabIndex={97} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="Shear Strength" value={formData.shearStrength} onChange={handleMainChange} field="shearStrength" tabIndex={98} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="Setting" value={formData.setting} onChange={handleMainChange} field="setting" suffix="sec" tabIndex={99} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="Return Sand" value={formData.returnSand} onChange={handleMainChange} field="returnSand" suffix="%" tabIndex={100} onKeyDown={handleKeyDown} />
-                            <LabeledInput label="New Sand" value={formData.newSand} onChange={handleMainChange} field="newSand" suffix="kg" tabIndex={101} onKeyDown={handleKeyDown} />
-                        </div>
+  const th = {
+    border: "1px solid #94a3b8",
+    padding: "0.75rem",
+    textAlign: "center",
+    fontWeight: "600",
+    color: "white",
+    background: "#1e293b",
+  };
 
-                        {/* Right Column: Additional Data & Remarks (Tab Indices 110-117) */}
-                        <div className="foundry-bottom-column">
-                            <h3 className="foundry-bottom-title"><FileText size={20} className="foundry-icon-teal" />Additional Data</h3>
-                            
-                            {/* AFS No */}
-                            <div className="foundry-bottom-row">
-                                <label className="foundry-bottom-label">AFS No.</label>
-                                <div className="foundry-bottom-value">
-                                    <input type="text" value={formData.afsNo} onChange={(e) => handleMainChange('afsNo', e.target.value)} className="foundry-bottom-input" tabIndex={110} onKeyDown={handleKeyDown} />
-                                    <input type="text" value={formData.afsNo2} onChange={(e) => handleMainChange('afsNo2', e.target.value)} className="foundry-bottom-input" tabIndex={111} onKeyDown={handleKeyDown} />
-                                </div>
-                            </div>
-                            
-                            {/* Fines */}
-                            <div className="foundry-bottom-row">
-                                <label className="foundry-bottom-label">Fines</label>
-                                <div className="foundry-bottom-value">
-                                    <input type="text" value={formData.fines} onChange={(e) => handleMainChange('fines', e.target.value)} className="foundry-bottom-input" tabIndex={112} onKeyDown={handleKeyDown} />
-                                    <input type="text" value={formData.fines2} onChange={(e) => handleMainChange('fines2', e.target.value)} className="foundry-bottom-input" tabIndex={113} onKeyDown={handleKeyDown} />
-                                </div>
-                            </div>
+  const td = {
+    border: "1px solid #e2e8f0",
+    padding: "0.75rem",
+    textAlign: "center",
+    color: "#475569",
+    backgroundColor: "white",
+  };
 
-                            {/* GD */}
-                            <div className="foundry-bottom-row">
-                                <label className="foundry-bottom-label">GD</label>
-                                <div className="foundry-bottom-value">
-                                    <input type="text" value={formData.gd} onChange={(e) => handleMainChange('gd', e.target.value)} className="foundry-bottom-input" tabIndex={114} onKeyDown={handleKeyDown} />
-                                    <input type="text" value={formData.gd2} onChange={(e) => handleMainChange('gd2', e.target.value)} className="foundry-bottom-input" tabIndex={115} onKeyDown={handleKeyDown} />
-                                </div>
-                            </div>
+  const altTableHeader = {
+    ...th,
+    background: "#52525b",
+  };
 
-                            {/* Remarks */}
-                            <div className="foundry-bottom-remarks">
-                                <label className="foundry-bottom-label foundry-remarks-label">Remarks:</label>
-                                <textarea value={formData.remarks} onChange={(e) => handleMainChange('remarks', e.target.value)} rows="4" className="foundry-bottom-input foundry-remarks-textarea" tabIndex={116} onKeyDown={handleKeyDown}></textarea>
-                            </div>
-                        </div>
-                    </div>
+  const sectionTitle = {
+    fontWeight: "bold",
+    textAlign: "center",
+    marginTop: "25px",
+    marginBottom: "6px",
+    fontSize: "15.5px",
+    color: "#111827",
+  };
 
-                    {/* --- SUBMIT BUTTONS (Tab Indices 200/201) --- */}
-                    <div className="foundry-button-group">
-                        <Button type="button" onClick={handleReset} className="foundry-base-btn foundry-reset-btn" tabIndex={200}>
-                            <X size={18} /> Reset Form
-                        </Button>
-                        <Button type="submit" className="foundry-base-btn foundry-submit-btn" tabIndex={201}>
-                            <Save size={20} /> Save Foundry Record
-                        </Button>
-                    </div>
+  const percentBox = {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
+  };
 
-                </form>
+  const remarkBox = {
+    width: "100%",
+    height: "60px",
+    border: "1px solid #bbb",
+    borderRadius: "6px",
+    marginTop: "4px",
+    padding: "6px",
+    background: "#fff",
+  };
 
-                {/* Report Section */}
-                <div className="foundry-report-container">
-                    <div className="foundry-report-header">
-                        <Filter size={20} className="foundry-filter-icon" />
-                        <h3 className="foundry-report-title">Foundry Sand Testing Note - Report</h3>
-                    </div>
+  const buttonRow = {
+    display: "flex",
+    justifyContent: "space-between",
+    marginTop: "18px",
+  };
 
-                    <div className="foundry-report-filter-grid">
-                        <div>
-                            <label className="foundry-filter-label">Start Date</label>
-                            <DatePicker placeholder="Select start date" />
-                        </div>
-                        <div>
-                            <label className="foundry-filter-label">End Date</label>
-                            <DatePicker placeholder="Select end date" />
-                        </div>
-                        <Button className="foundry-filter-btn"><Filter size={18} /> Filter</Button>
-                    </div>
+  const button = (bg) => ({
+    border: "none",
+    background: bg,
+    color: "white",
+    padding: "0.75rem 1.25rem",
+    borderRadius: "8px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "0.5rem",
+    fontWeight: "600",
+    fontSize: "0.9rem",
+    transition: "all 0.2s ease",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+  });
 
-                    <div className="foundry-report-table-wrapper">
-                        <table className="foundry-report-table">
-                            <thead className="foundry-report-table-head">
-                                <tr>
-                                    <th className="foundry-report-th">Date</th>
-                                    <th className="foundry-report-th">Sand Type</th>
-                                    <th className="foundry-report-th">Moisture %</th>
-                                    <th className="foundry-report-th">Comp. Strength</th>
-                                    <th className="foundry-report-th">Permeability</th>
-                                    <th className="foundry-report-th">Remarks</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td colSpan="6" className="foundry-no-records">No records found. Submit entries above to see them here.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
+  // ===== RENDER =====
+  return (
+    <div style={foundryContainerStyle}>
+      <div style={foundryWrapperStyle}>
+        <FoundrySandTestingTabs />
+        <div style={container}>
+          {/* Header Box */}
+          <div style={headerBox}>
+            <Factory color="white" size={24} />
+            <div style={title}>FOUNDRY SAND TESTING NOTE</div>
+            <FlaskConical color="white" size={24} />
+          </div>
 
-            </div>
+      {/* Sub Header */}
+      <div style={subHeader}>
+        <span style={label}>SAND PLANT:</span>
+        <input 
+          style={input} 
+          placeholder="e.g. DISA" 
+          value={formData.sandPlant}
+          onChange={(e) => handleInputChange("sandPlant", "", e.target.value)}
+        />
+        <span style={label}>DATE:</span>
+        <div style={{ gridColumn: 'span 1' }}>
+          <DatePicker
+            name="date"
+            value={formData.date}
+            onChange={(e) => handleInputChange("date", "", e.target.value)}
+          />
         </div>
-    );
-};
+        <span style={label}>COMPACTABILITY SETTING:</span>
+        <input 
+          style={input} 
+          placeholder="e.g. J.C. mode"
+          value={formData.compactabilitySetting} 
+          onChange={(e) => handleInputChange("compactabilitySetting", "", e.target.value)}
+        />
+        <span style={label}>SHIFT:</span>
+        <input 
+          style={input} 
+          placeholder="e.g. 2nd Shift"
+          value={formData.shift}
+          onChange={(e) => handleInputChange("shift", "", e.target.value)}
+        />
+        <span style={label}>SHEAR/MOULD STRENGTH SETTING:</span>
+        <input 
+          style={input} 
+          placeholder="e.g. MP.VOX"
+          value={formData.shearMouldStrengthSetting}
+          onChange={(e) => handleInputChange("shearMouldStrengthSetting", "", e.target.value)}
+        />
+      </div>
 
-export default FoundrySandTestingNote;
+      {/* Parameters Table */}
+      <div style={sectionTitle}>PARAMETERS</div>
+      <table style={table}>
+        <thead>
+          <tr>
+            <th style={th}>Parameter</th>
+            <th style={th}>TEST-1</th>
+            <th style={th}>TEST-2</th>
+          </tr>
+        </thead>
+        <tbody>
+          {["Total Clay", "Active Clay", "Dead Clay", "VCM", "LOI"].map(
+            (param, i) => (
+              <tr key={i}>
+                <td style={td}>{param}</td>
+                {[1, 2].map((t) => (
+                  <td key={t} style={td}>
+                    <div style={percentBox}>
+                      <input style={{ ...input, width: "45%" }} />
+                      <span>% =</span>
+                      <input style={{ ...input, width: "35%" }} />
+                    </div>
+                  </td>
+                ))}
+              </tr>
+            )
+          )}
+        </tbody>
+      </table>
+
+      {/* Sieve Testing */}
+      <div style={sectionTitle}>SIEVE TESTING</div>
+      <table style={table}>
+        <thead>
+          <tr>
+            <th rowSpan="2" style={altTableHeader}>
+              Sieve size (Mic)
+            </th>
+            <th colSpan="2" style={altTableHeader}>
+              % Wt retained sand
+            </th>
+            <th rowSpan="2" style={altTableHeader}>
+              MF
+            </th>
+            <th colSpan="2" style={altTableHeader}>
+              Product
+            </th>
+          </tr>
+          <tr>
+            <th style={altTableHeader}>TEST-1</th>
+            <th style={altTableHeader}>TEST-2</th>
+            <th style={altTableHeader}>TEST-1</th>
+            <th style={altTableHeader}>TEST-2</th>
+          </tr>
+        </thead>
+        <tbody>
+          {sieveData.map((row, i) => (
+            <tr key={i}>
+              <td style={td}>{row.size}</td>
+              <td style={td}>
+                <input style={input} />
+              </td>
+              <td style={td}>
+                <input style={input} />
+              </td>
+              <td style={td}>{row.mf}</td>
+              <td style={td}>
+                <input style={input} />
+              </td>
+              <td style={td}>
+                <input style={input} />
+              </td>
+            </tr>
+          ))}
+          <tr>
+            <td style={{ ...td, fontWeight: "bold" }}>Total</td>
+            <td style={td}>
+              <input style={input} />
+            </td>
+            <td style={td}>
+              <input style={input} />
+            </td>
+            <td style={td}></td>
+            <td style={td}>
+              <input style={input} />
+            </td>
+            <td style={td}>
+              <input style={input} />
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      {/* Test Results */}
+      <div style={sectionTitle}>TEST RESULTS</div>
+      <table style={table}>
+        <thead>
+          <tr>
+            <th style={th}>Parameter</th>
+            <th style={th}>TEST-1</th>
+            <th style={th}>TEST-2</th>
+          </tr>
+        </thead>
+        <tbody>
+          {[
+            ["Compactibility", "%"],
+            ["Permeability", ""],
+            ["GCS", "gm/cm²"],
+            ["WTS", "N/cm²"],
+            ["Moisture", "%"],
+            ["Bentonite", "kg"],
+            ["Coal Dust", "kg"],
+            ["Hopper Level", "%"],
+            ["Shear Strength", "sec"],
+            ["Dust Collector Setting", ""],
+            ["Return Sand Moisture", "%"],
+            ["AFS No", ""],
+            ["Fines", "%"],
+            ["GD", ""],
+          ].map(([param, unit], i) => (
+            <tr key={i}>
+              <td style={td}>{param}</td>
+              {[1, 2].map((t) => (
+                <td key={t} style={td}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
+                    <input style={{ ...input, width: "60%" }} /> {unit}
+                  </div>
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+
+      {/* Remarks */}
+      <div style={{ marginTop: "20px" }}>
+        <strong style={{ color: "#1f2937" }}>Remarks:</strong>
+        <textarea style={remarkBox} />
+      </div>
+
+      {/* Buttons */}
+      <div style={buttonRow}>
+          <ResetButton onClick={handleClear}>Clear</ResetButton>
+          <SubmitButton onClick={handleSave}>Save</SubmitButton>
+        </div>
+        </div>
+      </div>
+    </div>
+  );
+}

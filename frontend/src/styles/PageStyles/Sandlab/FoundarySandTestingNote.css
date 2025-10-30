@@ -2,17 +2,18 @@
 
 .foundry-page-container {
   min-height: 100vh;
-  background-color: #f0f4f8;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8eef3 100%);
   padding: 2rem;
   font-family: Arial, sans-serif;
 }
 
 .foundry-main-card {
-  max-width: 1280px;
+  max-width: 1400px;
   margin: 0 auto;
   background-color: white;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
   overflow: hidden;
 }
 
@@ -284,20 +285,17 @@
 
 /* Report Section */
 .foundry-report-container {
+  padding: 2rem;
   background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-  padding: 1.5rem;
-  margin-top: 1.25rem;
 }
 
 .foundry-report-header {
   display: flex;
   align-items: center;
   gap: 0.75rem;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 1px solid #e6eef0;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid #f1f5f9;
 }
 
 .foundry-filter-icon {
@@ -305,8 +303,9 @@
 }
 
 .foundry-report-title {
-  font-size: 1.1rem;
+  font-size: 1.5rem;
   font-weight: 700;
+  color: #1e293b;
   margin: 0;
 }
 
@@ -318,6 +317,12 @@
   align-items: end;
 }
 
+.foundry-filter-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 .foundry-filter-label {
   display: block;
   font-weight: 600;
@@ -327,12 +332,21 @@
 .foundry-filter-btn {
   display: inline-flex;
   align-items: center;
+  justify-content: center;
   gap: 0.5rem;
-  padding: 0.6rem 1rem;
+  padding: 0.625rem 1.5rem;
   background: linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%);
   color: white;
   border-radius: 8px;
   border: none;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  box-shadow: 0 2px 6px rgba(255, 127, 80, 0.3);
+  transition: all 0.3s ease;
+  width: 100%;
+  min-height: 42px;
 }
 
 .foundry-report-table-wrapper {
