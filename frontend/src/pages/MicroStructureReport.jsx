@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
-import '../styles/PageStyles/MicroStructure.css';
+import '../styles/PageStyles/MicroStructureReport.css';
 
 const MicroStructureReport = () => {
   const location = useLocation();

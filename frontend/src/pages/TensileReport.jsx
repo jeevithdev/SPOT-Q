@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
-import '../styles/PageStyles/Tensile.css';
+import '../styles/PageStyles/TensileReport.css';
 
 const TensileReport = () => {
   const location = useLocation();

@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
-import '../styles/PageStyles/Impact.css';
+import '../styles/PageStyles/ImpactReport.css';
 
 const ImpactReport = () => {
   const location = useLocation();

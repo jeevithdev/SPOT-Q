@@ -1,5 +1,4 @@
 import React, { useState, useRef } from 'react';
-import { Filter } from 'lucide-react';
 import '../styles/PageStyles/Process.css';
 
 export default function ProcessControl() {
@@ -13,10 +12,6 @@ export default function ProcessControl() {
     recOfMg: '', streamInnoculantPTime: '', remarks: ''
   });
 
-  const [startDate, setStartDate] = useState('');
-  const [endDate, setEndDate] = useState('');
-  // start with an empty records array
-  const [records, setRecords] = useState([]);
 
   const inputRefs = useRef({});
   const fieldOrder = ['partNameDateHeatCode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
@@ -52,8 +47,7 @@ export default function ProcessControl() {
       date: info.date,
       heatCode: info.heatCode
     };
-    setRecords(prev => [...prev, newRecord]);
-    alert('Form submitted successfully! Record added to the table below.');
+    alert('Form submitted successfully! Record added.');
     handleReset();
   };
 
@@ -193,123 +187,6 @@ export default function ProcessControl() {
           </div>
         </div>
 
-        <div className="process-report-container" style={{marginTop: '1.5rem', background: 'transparent'}}>
-          <div className="process-report-title">
-            <Filter size={28} color="#FF7F50" />
-            <h3>Process Record - Report</h3>
-          </div>
-
-          <div className="process-filter-grid">
-            <div className="process-filter-group">
-              <label>Start Date</label>
-              <input type="date" value={startDate} onChange={e => setStartDate(e.target.value)} />
-            </div>
-
-            <div className="process-filter-group">
-              <label>End Date</label>
-              <input type="date" value={endDate} onChange={e => setEndDate(e.target.value)} />
-            </div>
-
-            <div className="process-filter-btn-container">
-              <button onClick={() => console.log('Filter', startDate, endDate)} className="process-filter-btn"><Filter size={16} /> Filter</button>
-            </div>
-          </div>
-
-          <div className="process-table-container">
-            <table className="process-table">
-              <thead>
-                <tr>
-                  <th>Date</th>
-                  <th>Part Name</th>
-                  <th>Heat Code</th>
-                  <th>Qty Moulds</th>
-                  <th>C %</th>
-                  <th>Si %</th>
-                  <th>Mn %</th>
-                  <th>P %</th>
-                  <th>S %</th>
-                  <th>Mg(F/L) %</th>
-                  <th>Cu %</th>
-                  <th>Cr %</th>
-                  <th>Pour Time</th>
-                  <th>Pour Temp</th>
-                  <th>PP Code</th>
-                  <th>Treatment No</th>
-                  <th>F/C No</th>
-                  <th>Con No</th>
-                  <th>Tap Time</th>
-                  <th>C (Kg)</th>
-                  <th>Si (Kg)</th>
-                  <th>Mn (Kg)</th>
-                  <th>S (Kg)</th>
-                  <th>Cr (Kg)</th>
-                  <th>Cu (Kg)</th>
-                  <th>Sn (Kg)</th>
-                  <th>Tap Wt</th>
-                  <th>Mg (Kg)</th>
-                  <th>Res Mg %</th>
-                  <th>Rec Mg %</th>
-                  <th>Stream/P.Time</th>
-                  <th>Remarks</th>
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {records.length === 0 && (
-                  <tr><td colSpan={33} className="process-no-records">No records found</td></tr>
-                )}
-                {records.map((r, i) => {
-                  // prefer stored separate fields, fallback to parsing combined if missing
-                  const info = {
-                    partName: r.partName || parsePartInfo(r.partNameDateHeatCode).partName,
-                    date: r.date || parsePartInfo(r.partNameDateHeatCode).date,
-                    heatCode: r.heatCode || parsePartInfo(r.partNameDateHeatCode).heatCode
-                  };
-                  return (
-                    <tr key={i}>
-                      <td>{info.date}</td>
-                      <td>{info.partName}</td>
-                      <td>{info.heatCode}</td>
-                      <td>{r.quantityOfMoulds}</td>
-                      <td>{r.metalCompositionC}</td>
-                      <td>{r.metalCompositionSi}</td>
-                      <td>{r.metalCompositionMn}</td>
-                      <td>{r.metalCompositionP}</td>
-                      <td>{r.metalCompositionS}</td>
-                      <td>{r.metalCompositionMgFL}</td>
-                      <td>{r.metalCompositionCu}</td>
-                      <td>{r.metalCompositionCr}</td>
-                      <td>{r.timeOfPouring}</td>
-                      <td>{r.pouringTemperature}</td>
-                      <td>{r.ppCode}</td>
-                      <td>{r.treatmentNo}</td>
-                      <td>{r.fcNoHeatNo}</td>
-                      <td>{r.conNo}</td>
-                      <td>{r.tappingTime}</td>
-                      <td>{r.correctiveAdditionC}</td>
-                      <td>{r.correctiveAdditionSi}</td>
-                      <td>{r.correctiveAdditionMn}</td>
-                      <td>{r.correctiveAdditionS}</td>
-                      <td>{r.correctiveAdditionCr}</td>
-                      <td>{r.correctiveAdditionCu}</td>
-                      <td>{r.correctiveAdditionSn}</td>
-                      <td>{r.tappingWt}</td>
-                      <td>{r.mg}</td>
-                      <td>{r.resMgConvertor}</td>
-                      <td>{r.recOfMg}</td>
-                      <td>{r.streamInnoculantPTime}</td>
-                      <td>{r.remarks}</td> 
-                       <td style={{ minWidth: '100px' }}>
-                                                <EditActionButton onClick={() => handleEdit(item)} />
-                                                <DeleteActionButton onClick={() => handleDelete(item._id)} />
-                                              </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        </div>
       </div>
     </div>
   );
