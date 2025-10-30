@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { DatePicker, SubmitButton, ResetButton } from '../../Components/Buttons';
+import api from '../../utils/api';
 import '../../styles/PageStyles/Sandlab/SandTestingRecord.css';
 
 const SandTestingRecord = () => {
@@ -31,118 +32,150 @@ const SandTestingRecord = () => {
 
   const [formData, setFormData] = useState({
     date: new Date().toISOString().split('T')[0],
-    shiftData: {
-      shift1: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', batchNo: '' },
-      shift2: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', batchNo: '' },
-      shift3: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', batchNo: '' },
-
-      clay: {
-        totalClayI: '', totalClayII: '', totalClayIII: '',
-        activeClayI: '', activeClayII: '', activeClayIII: '',
-        deadClayI: '', deadClayII: '', deadClayIII: '',
-        vcmI: '', vcmII: '', vcmIII: '',
-        loiI: '', loiII: '', loiIII: '',
-        afsNoI: '', afsNoII: '', afsNoIII: '',
-        finesI: '', finesII: '', finesIII: '',
-      },
-
-      mixRun: {
-        start1: '', end1: '', total1: '', rejected1: '', hopper1: '',
-        start2: '', end2: '', total2: '', rejected2: '', hopper2: '',
-        start3: '', end3: '', total3: '', rejected3: '', hopper3: '',
-        overallStart: '', overallEnd: '', overallTotal: '', overallRejected: '', overallHopper: ''
-      },
-
-      friability: { shiftI: '', shiftII: '', shiftIII: '' },
-
-      sandLumps: {
-        sandLumpsI: '', sandLumpsII: '', sandLumpsIII: '', sandLumpsTotal: '',
-        newSandWtI: '', newSandWtII: '', newSandWtIII: '', newSandWtTotal: ''
-      }
+    shiftI: {
+      rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '',
+      batchNo: { bentonite: '', coalDustPremix: '' }
     },
-
-    time: '', mixNo: '', permeability: '', gcsFdyA: '', gcsFdyB: '', wts: '',
-    moisture: '', compactability: '', compressibility: '', waterLitre: '',
-    sandTempBC: '', sandTempWU: '', sandTempSSU: '', newSandKgs: '',
-    bentoniteKgs: '', bentonitePercent: '', premixKgs: '', premixPercent: '',
-    coalDustKgs: '', coalDustPercent: '',
-    bentoniteDropdown: '',
-    premixDropdown: '',
-    lcDropdown: '',
-    lcValue: '',
-    mouldDropdown: '',
-    mouldValue: '',
-    lcCompactSMC: '', lcCompactAt1: '',
-    mouldStrengthSMC: '', shearStrengthAt: '', preparedSandLumps: '',
-    itemName: '', remarks: ''
+    shiftII: {
+      rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '',
+      batchNo: { bentonite: '', coalDustPremix: '' }
+    },
+    shiftIII: {
+      rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '',
+      batchNo: { bentonite: '', coalDustPremix: '' }
+    },
+    clayShiftI: {
+      totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: ''
+    },
+    clayShiftII: {
+      totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: ''
+    },
+    clayShiftIII: {
+      totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: ''
+    },
+    mixNoShiftI: {
+      starterTime: '', endTime: '', totalMixingTime: '', mixRejected: '', hopper: ''
+    },
+    mixNoShiftII: {
+      starterTime: '', endTime: '', totalMixingTime: '', mixRejected: '', hopper: ''
+    },
+    mixNoShiftIII: {
+      starterTime: '', endTime: '', totalMixingTime: '', mixRejected: '', hopper: ''
+    },
+    sandLump: '',
+    newSandWt: '',
+    shiftIFriability: '',
+    shiftIIFriability: '',
+    shiftIIIFriability: '',
+    testParameter: {
+      permeability: '', gcsFdyA: '', gcsFdyB: '', wts: '', moisture: '',
+      compactability: '', compressibility: '', waterLitre: '', sandTempBC: '',
+      sandTempWU: '', sandTempSSU: '', newSandKgs: '', bentoniteKgs: '',
+      bentonitePercent: '', premixKgs: '', premixPercent: '', coalDustKgs: '',
+      coalDustPercent: '', lc: 'Lc', lcCompactSMCAt: '', mouldStrengthSNCAt: '',
+      shearStrength: '', preparedSand: '', itemName: '', remarks: ''
+    }
   });
 
-  const [selectedGcsType, setSelectedGcsType] = useState('FDY-A');
+  const [submitLoading, setSubmitLoading] = useState(false);
 
-  const handleMainChange = (field, value) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-  };
-
-  const handleShiftDataChange = (section, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      shiftData: {
-        ...prev.shiftData,
-        [section]: { ...prev.shiftData[section], [field]: value }
+  const handleChange = (section, field, value, nestedField = null) => {
+    setFormData(prev => {
+      if (nestedField) {
+        return {
+          ...prev,
+          [section]: {
+            ...prev[section],
+            [field]: {
+              ...prev[section][field],
+              [nestedField]: value
+            }
+          }
+        };
+      } else if (section) {
+        return {
+          ...prev,
+          [section]: {
+            ...prev[section],
+            [field]: value
+          }
+        };
+      } else {
+        return {
+          ...prev,
+          [field]: value
+        };
       }
-    }));
+    });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    console.log('Form Data:', formData);
-    alert('Sand Testing Record Submitted!');
+    setSubmitLoading(true);
+
+    try {
+      const response = await api.post('/v1/sand-testing-records', formData);
+      if (response.success) {
+        alert('Sand Testing Record saved successfully!');
+        handleReset();
+      } else {
+        alert('Error: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Error saving sand testing record:', error);
+      alert('Failed to save sand testing record. Please try again.');
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   const handleReset = () => {
     if (!window.confirm('Are you sure you want to reset the entire form?')) return;
     setFormData({
       date: new Date().toISOString().split('T')[0],
-      // Reset all fields to empty values...
-      shiftData: {
-        shift1: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', batchNo: '' },
-        shift2: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', batchNo: '' },
-        shift3: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', batchNo: '' },
-        clay: {
-          totalClayI: '', totalClayII: '', totalClayIII: '',
-          activeClayI: '', activeClayII: '', activeClayIII: '',
-          deadClayI: '', deadClayII: '', deadClayIII: '',
-          vcmI: '', vcmII: '', vcmIII: '',
-          loiI: '', loiII: '', loiIII: '',
-          afsNoI: '', afsNoII: '', afsNoIII: '',
-          finesI: '', finesII: '', finesIII: '',
-        },
-        mixRun: {
-          start1: '', end1: '', total1: '', rejected1: '', hopper1: '',
-          start2: '', end2: '', total2: '', rejected2: '', hopper2: '',
-          start3: '', end3: '', total3: '', rejected3: '', hopper3: '',
-          overallStart: '', overallEnd: '', overallTotal: '', overallRejected: '', overallHopper: ''
-        },
-        friability: { shiftI: '', shiftII: '', shiftIII: '' },
-        sandLumps: {
-          sandLumpsI: '', sandLumpsII: '', sandLumpsIII: '', sandLumpsTotal: '',
-          newSandWtI: '', newSandWtII: '', newSandWtIII: '', newSandWtTotal: ''
-        }
+      shiftI: {
+        rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '',
+        batchNo: { bentonite: '', coalDustPremix: '' }
       },
-      time: '', mixNo: '', permeability: '', gcsFdyA: '', gcsFdyB: '', wts: '',
-      moisture: '', compactability: '', compressibility: '', waterLitre: '',
-      sandTempBC: '', sandTempWU: '', sandTempSSU: '', newSandKgs: '',
-      bentoniteKgs: '', bentonitePercent: '', premixKgs: '', premixPercent: '',
-      coalDustKgs: '', coalDustPercent: '',
-      bentoniteDropdown: '',
-      premixDropdown: '',
-      lcDropdown: '',
-      lcValue: '',
-      mouldDropdown: '',
-      mouldValue: '',
-      lcCompactSMC: '', lcCompactAt1: '',
-      mouldStrengthSMC: '', shearStrengthAt: '', preparedSandLumps: '',
-      itemName: '', remarks: ''
+      shiftII: {
+        rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '',
+        batchNo: { bentonite: '', coalDustPremix: '' }
+      },
+      shiftIII: {
+        rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '',
+        batchNo: { bentonite: '', coalDustPremix: '' }
+      },
+      clayShiftI: {
+        totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: ''
+      },
+      clayShiftII: {
+        totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: ''
+      },
+      clayShiftIII: {
+        totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: ''
+      },
+      mixNoShiftI: {
+        starterTime: '', endTime: '', totalMixingTime: '', mixRejected: '', hopper: ''
+      },
+      mixNoShiftII: {
+        starterTime: '', endTime: '', totalMixingTime: '', mixRejected: '', hopper: ''
+      },
+      mixNoShiftIII: {
+        starterTime: '', endTime: '', totalMixingTime: '', mixRejected: '', hopper: ''
+      },
+      sandLump: '',
+      newSandWt: '',
+      shiftIFriability: '',
+      shiftIIFriability: '',
+      shiftIIIFriability: '',
+      testParameter: {
+        permeability: '', gcsFdyA: '', gcsFdyB: '', wts: '', moisture: '',
+        compactability: '', compressibility: '', waterLitre: '', sandTempBC: '',
+        sandTempWU: '', sandTempSSU: '', newSandKgs: '', bentoniteKgs: '',
+        bentonitePercent: '', premixKgs: '', premixPercent: '', coalDustKgs: '',
+        coalDustPercent: '', lc: 'Lc', lcCompactSMCAt: '', mouldStrengthSNCAt: '',
+        shearStrength: '', preparedSand: '', itemName: '', remarks: ''
+      }
     });
   };
 
@@ -162,135 +195,99 @@ const SandTestingRecord = () => {
               <DatePicker
                 name="date"
                 value={formData.date}
-                onChange={(e) => handleMainChange('date', e.target.value)}
+                onChange={(e) => handleChange(null, 'date', e.target.value)}
               />
             </div>
           </div>
 
           <form onSubmit={handleSubmit} className="sand-testing-form">
+            {/* Shift Data */}
             <div className="grid-top">
-              {/* Shift summaries (3 columns) */}
-              <div className="table-box">
-                <div className="table-header">Shift 1</div>
-                <div style={{ padding: '0.75rem' }}>
-                  <label className="label">Remaining Sand (kgs)</label>
-                  <input className="input-field" value={formData.shiftData.shift1.rSand} onChange={(e) => handleShiftDataChange('shift1', 'rSand', e.target.value)} />
-                  <label className="label">New Sand (kgs)</label>
-                  <input className="input-field" value={formData.shiftData.shift1.nSand} onChange={(e) => handleShiftDataChange('shift1', 'nSand', e.target.value)} />
-                  <label className="label">Mixing Mode</label>
-                  <input className="input-field" value={formData.shiftData.shift1.mixingMode} onChange={(e) => handleShiftDataChange('shift1', 'mixingMode', e.target.value)} />
-                  <label className="label">Bentonite (kgs)</label>
-                  <input className="input-field" value={formData.shiftData.shift1.bentonite} onChange={(e) => handleShiftDataChange('shift1', 'bentonite', e.target.value)} />
+              {['I', 'II', 'III'].map((shift) => (
+                <div key={shift} className="table-box">
+                  <div className="table-header">Shift {shift}</div>
+                  <div style={{ padding: '0.75rem' }}>
+                    <label className="label">Remaining Sand (kgs)</label>
+                    <input className="input-field" value={formData[`shift${shift}`].rSand} 
+                      onChange={(e) => handleChange(`shift${shift}`, 'rSand', e.target.value)} />
+                    
+                    <label className="label">New Sand (kgs)</label>
+                    <input className="input-field" value={formData[`shift${shift}`].nSand} 
+                      onChange={(e) => handleChange(`shift${shift}`, 'nSand', e.target.value)} />
+                    
+                    <label className="label">Mixing Mode</label>
+                    <input className="input-field" value={formData[`shift${shift}`].mixingMode} 
+                      onChange={(e) => handleChange(`shift${shift}`, 'mixingMode', e.target.value)} />
+                    
+                    <label className="label">Bentonite (kgs)</label>
+                    <input className="input-field" value={formData[`shift${shift}`].bentonite} 
+                      onChange={(e) => handleChange(`shift${shift}`, 'bentonite', e.target.value)} />
+                    
+                    <label className="label">Coal Dust Premix</label>
+                    <input className="input-field" value={formData[`shift${shift}`].coalDustPremix} 
+                      onChange={(e) => handleChange(`shift${shift}`, 'coalDustPremix', e.target.value)} />
+                  </div>
                 </div>
-              </div>
-
-              <div className="table-box">
-                <div className="table-header">Shift 2</div>
-                <div style={{ padding: '0.75rem' }}>
-                  <label className="label">Remaining Sand (kgs)</label>
-                  <input className="input-field" value={formData.shiftData.shift2.rSand} onChange={(e) => handleShiftDataChange('shift2', 'rSand', e.target.value)} />
-                  <label className="label">New Sand (kgs)</label>
-                  <input className="input-field" value={formData.shiftData.shift2.nSand} onChange={(e) => handleShiftDataChange('shift2', 'nSand', e.target.value)} />
-                  <label className="label">Mixing Mode</label>
-                  <input className="input-field" value={formData.shiftData.shift2.mixingMode} onChange={(e) => handleShiftDataChange('shift2', 'mixingMode', e.target.value)} />
-                  <label className="label">Bentonite (kgs)</label>
-                  <input className="input-field" value={formData.shiftData.shift2.bentonite} onChange={(e) => handleShiftDataChange('shift2', 'bentonite', e.target.value)} />
-                </div>
-              </div>
-
-              <div className="table-box">
-                <div className="table-header">Shift 3</div>
-                <div style={{ padding: '0.75rem' }}>
-                  <label className="label">Remaining Sand (kgs)</label>
-                  <input className="input-field" value={formData.shiftData.shift3.rSand} onChange={(e) => handleShiftDataChange('shift3', 'rSand', e.target.value)} />
-                  <label className="label">New Sand (kgs)</label>
-                  <input className="input-field" value={formData.shiftData.shift3.nSand} onChange={(e) => handleShiftDataChange('shift3', 'nSand', e.target.value)} />
-                  <label className="label">Mixing Mode</label>
-                  <input className="input-field" value={formData.shiftData.shift3.mixingMode} onChange={(e) => handleShiftDataChange('shift3', 'mixingMode', e.target.value)} />
-                  <label className="label">Bentonite (kgs)</label>
-                  <input className="input-field" value={formData.shiftData.shift3.bentonite} onChange={(e) => handleShiftDataChange('shift3', 'bentonite', e.target.value)} />
-                </div>
-              </div>
+              ))}
             </div>
 
+            {/* Clay Data */}
             <div className="grid-mid">
-              {/* Clay parameters and AFS/Fines */}
               <div>
-                <div className="table-header">Clay / Fractions</div>
+                <div className="table-header">Clay Parameters</div>
                 <div style={{ padding: '0.75rem', display: 'grid', gap: '0.5rem' }}>
-                  <div className="field-container">
-                    <label className="label">Total Clay I</label>
-                    <input className="input-field" value={formData.shiftData.clay.totalClayI} onChange={(e) => handleShiftDataChange('clay', 'totalClayI', e.target.value)} />
-                  </div>
-                  <div className="field-container">
-                    <label className="label">Total Clay II</label>
-                    <input className="input-field" value={formData.shiftData.clay.totalClayII} onChange={(e) => handleShiftDataChange('clay', 'totalClayII', e.target.value)} />
-                  </div>
-                  <div className="field-container">
-                    <label className="label">Total Clay III</label>
-                    <input className="input-field" value={formData.shiftData.clay.totalClayIII} onChange={(e) => handleShiftDataChange('clay', 'totalClayIII', e.target.value)} />
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0.5rem' }}>
-                    <div className="field-container">
-                      <label className="label">AFS No I</label>
-                      <input className="input-field" value={formData.shiftData.clay.afsNoI} onChange={(e) => handleShiftDataChange('clay', 'afsNoI', e.target.value)} />
+                  {['totalClay', 'activeClay', 'deadClay', 'vcm', 'loi', 'afsNo', 'fines'].map((param) => (
+                    <div key={param} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                      <label className="label">{param.replace(/([A-Z])/g, ' $1').trim()}</label>
+                      <input className="input-field" placeholder="Shift I"
+                        value={formData.clayShiftI[param]} 
+                        onChange={(e) => handleChange('clayShiftI', param, e.target.value)} />
+                      <input className="input-field" placeholder="Shift II"
+                        value={formData.clayShiftII[param]} 
+                        onChange={(e) => handleChange('clayShiftII', param, e.target.value)} />
                     </div>
-                    <div className="field-container">
-                      <label className="label">Fines I (%)</label>
-                      <input className="input-field" value={formData.shiftData.clay.finesI} onChange={(e) => handleShiftDataChange('clay', 'finesI', e.target.value)} />
-                    </div>
-                  </div>
+                  ))}
                 </div>
               </div>
 
+              {/* Mix Run Data */}
               <div>
                 <div className="table-header">Mix Run Summary</div>
                 <div style={{ padding: '0.75rem', display: 'grid', gap: '0.5rem' }}>
-                  <div className="three-col-row">
-                    <div className="field-container">
-                      <label className="label">Start 1</label>
-                      <input className="input-field" value={formData.shiftData.mixRun.start1} onChange={(e) => handleShiftDataChange('mixRun', 'start1', e.target.value)} />
+                  {['starterTime', 'endTime', 'totalMixingTime', 'mixRejected', 'hopper'].map((param) => (
+                    <div key={param} style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: '0.5rem' }}>
+                      <label className="label">{param.replace(/([A-Z])/g, ' $1').trim()}</label>
+                      <input className="input-field" placeholder="Shift I"
+                        value={formData.mixNoShiftI[param]} 
+                        onChange={(e) => handleChange('mixNoShiftI', param, e.target.value)} />
+                      <input className="input-field" placeholder="Shift II"
+                        value={formData.mixNoShiftII[param]} 
+                        onChange={(e) => handleChange('mixNoShiftII', param, e.target.value)} />
                     </div>
-                    <div className="field-container">
-                      <label className="label">End 1</label>
-                      <input className="input-field" value={formData.shiftData.mixRun.end1} onChange={(e) => handleShiftDataChange('mixRun', 'end1', e.target.value)} />
-                    </div>
-                    <div className="field-container">
-                      <label className="label">Total 1</label>
-                      <input className="input-field" value={formData.shiftData.mixRun.total1} onChange={(e) => handleShiftDataChange('mixRun', 'total1', e.target.value)} />
-                    </div>
-                  </div>
-                  <div className="three-col-row">
-                    <div className="field-container">
-                      <label className="label">Rejected 1</label>
-                      <input className="input-field" value={formData.shiftData.mixRun.rejected1} onChange={(e) => handleShiftDataChange('mixRun', 'rejected1', e.target.value)} />
-                    </div>
-                    <div className="field-container">
-                      <label className="label">Hopper 1</label>
-                      <input className="input-field" value={formData.shiftData.mixRun.hopper1} onChange={(e) => handleShiftDataChange('mixRun', 'hopper1', e.target.value)} />
-                    </div>
-                    <div></div>
-                  </div>
+                  ))}
                 </div>
               </div>
             </div>
 
+            {/* Test Parameters */}
             <div className="grid-main">
-              {/* Measurements and production info */}
               <div>
-                <div className="table-header">General Measurements</div>
+                <div className="table-header">Test Parameters</div>
                 <div style={{ padding: '0.75rem', display: 'grid', gap: '0.5rem' }}>
                   <div className="field-container">
                     <label className="label">Permeability</label>
-                    <input className="input-field" value={formData.permeability} onChange={(e) => handleMainChange('permeability', e.target.value)} />
+                    <input className="input-field" value={formData.testParameter.permeability} 
+                      onChange={(e) => handleChange('testParameter', 'permeability', e.target.value)} />
                   </div>
                   <div className="field-container">
                     <label className="label">Moisture (%)</label>
-                    <input className="input-field" value={formData.moisture} onChange={(e) => handleMainChange('moisture', e.target.value)} />
+                    <input className="input-field" value={formData.testParameter.moisture} 
+                      onChange={(e) => handleChange('testParameter', 'moisture', e.target.value)} />
                   </div>
                   <div className="field-container">
                     <label className="label">Compactability (%)</label>
-                    <input className="input-field" value={formData.compactability} onChange={(e) => handleMainChange('compactability', e.target.value)} />
+                    <input className="input-field" value={formData.testParameter.compactability} 
+                      onChange={(e) => handleChange('testParameter', 'compactability', e.target.value)} />
                   </div>
                 </div>
               </div>
@@ -299,42 +296,45 @@ const SandTestingRecord = () => {
                 <div className="table-header">Temperatures & Weights</div>
                 <div style={{ padding: '0.75rem', display: 'grid', gap: '0.5rem' }}>
                   <div className="field-container">
-                    <label className="label">Sand Temp (BC °C)</label>
-                    <input className="input-field" value={formData.sandTempBC} onChange={(e) => handleMainChange('sandTempBC', e.target.value)} />
+                    <label className="label">Sand Temp BC (°C)</label>
+                    <input className="input-field" value={formData.testParameter.sandTempBC} 
+                      onChange={(e) => handleChange('testParameter', 'sandTempBC', e.target.value)} />
                   </div>
                   <div className="field-container">
                     <label className="label">New Sand (Kgs)</label>
-                    <input className="input-field" value={formData.newSandKgs} onChange={(e) => handleMainChange('newSandKgs', e.target.value)} />
+                    <input className="input-field" value={formData.testParameter.newSandKgs} 
+                      onChange={(e) => handleChange('testParameter', 'newSandKgs', e.target.value)} />
                   </div>
                   <div className="field-container">
                     <label className="label">Bentonite (Kgs)</label>
-                    <input className="input-field" value={formData.bentoniteKgs} onChange={(e) => handleMainChange('bentoniteKgs', e.target.value)} />
+                    <input className="input-field" value={formData.testParameter.bentoniteKgs} 
+                      onChange={(e) => handleChange('testParameter', 'bentoniteKgs', e.target.value)} />
                   </div>
                 </div>
               </div>
 
               <div>
-                <div className="table-header">Other</div>
+                <div className="table-header">Remarks</div>
                 <div style={{ padding: '0.75rem', display: 'grid', gap: '0.5rem' }}>
                   <div className="field-container">
-                    <label className="label">Premix (Kgs)</label>
-                    <input className="input-field" value={formData.premixKgs} onChange={(e) => handleMainChange('premixKgs', e.target.value)} />
-                  </div>
-                  <div className="field-container">
-                    <label className="label">Coal Dust (Kgs)</label>
-                    <input className="input-field" value={formData.coalDustKgs} onChange={(e) => handleMainChange('coalDustKgs', e.target.value)} />
+                    <label className="label">Item Name</label>
+                    <input className="input-field" value={formData.testParameter.itemName} 
+                      onChange={(e) => handleChange('testParameter', 'itemName', e.target.value)} />
                   </div>
                   <div className="field-container">
                     <label className="label">Remarks</label>
-                    <textarea className="textarea" value={formData.remarks} onChange={(e) => handleMainChange('remarks', e.target.value)} />
+                    <textarea className="textarea" rows="3" value={formData.testParameter.remarks} 
+                      onChange={(e) => handleChange('testParameter', 'remarks', e.target.value)} />
                   </div>
                 </div>
               </div>
             </div>
 
             <div className="button-group">
-              <ResetButton onClick={handleReset}>Reset Form</ResetButton>
-              <SubmitButton onClick={handleSubmit}>Save Sand Record</SubmitButton>
+              <ResetButton onClick={handleReset} disabled={submitLoading}>Reset Form</ResetButton>
+              <SubmitButton onClick={handleSubmit} disabled={submitLoading} loading={submitLoading}>
+                {submitLoading ? 'Saving...' : 'Save Sand Record'}
+              </SubmitButton>
             </div>
           </form>
         </div>

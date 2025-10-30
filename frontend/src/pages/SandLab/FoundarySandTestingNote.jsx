@@ -5,44 +5,50 @@ import { DatePicker, SubmitButton, ResetButton } from '../../Components/Buttons'
 import api from '../../utils/api';
 
 export default function FoundrySandTestingNote() {
-  // Form state
+  // Form state - Matching backend schema exactly
   const [formData, setFormData] = useState({
-    sandPlant: "",
-    date: "",
-    compactabilitySetting: "",
+    date: new Date().toISOString().split('T')[0],
     shift: "",
-    shearMouldStrengthSetting: "",
-    parameters: {
-      totalClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
-      activeClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
-      deadClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
-      vcm: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
-      loi: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }]
+    sandPlant: "",
+    compactibilitySetting: "",
+    shearStrengthSetting: "",
+    clayTests: {
+      test1: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" },
+      test2: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" }
     },
-    sieveTesting: {
-      data: [],
-      total: {
-        wtRetainedTest1: "",
-        wtRetainedTest2: "",
-        productTest1: "",
-        productTest2: ""
+    test1: {
+      sieveSize: {
+        1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+        150: "", 106: "", 75: "", pan: "", total: ""
       }
     },
-    testResults: {
-      compactibility: { test1: "", test2: "" },
-      permeability: { test1: "", test2: "" },
-      gcs: { test1: "", test2: "" },
-      wts: { test1: "", test2: "" },
-      moisture: { test1: "", test2: "" },
-      bentonite: { test1: "", test2: "" },
-      coalDust: { test1: "", test2: "" },
-      hopperLevel: { test1: "", test2: "" },
-      shearStrength: { test1: "", test2: "" },
-      dustCollectorSetting: { test1: "", test2: "" },
-      returnSandMoisture: { test1: "", test2: "" },
-      afsNo: { test1: "", test2: "" },
-      fines: { test1: "", test2: "" },
-      gd: { test1: "", test2: "" }
+    test2: {
+      sieveSize: {
+        1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+        150: "", 106: "", 75: "", pan: "", total: ""
+      }
+    },
+    mfTest: {
+      mf: {
+        5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
+        100: "", 140: "", 200: "", pan: "", total: ""
+      }
+    },
+    parameters: {
+      test1: {
+        gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+        mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+        hopperLevel: "", returnSand: ""
+      },
+      test2: {
+        gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+        mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+        hopperLevel: "", returnSand: ""
+      }
+    },
+    additionalData: {
+      test1: { afsNo: "", fines: "", gd: "" },
+      test2: { afsNo: "", fines: "", gd: "" }
     },
     remarks: ""
   });
@@ -50,65 +56,94 @@ export default function FoundrySandTestingNote() {
   // Handle form save
   const handleSave = async () => {
     try {
-      const response = await api.post('/v1/foundry-sand-testing', formData);
+      const response = await api.post('/v1/foundry-sand-testing-notes', formData);
       if (response.success) {
-        alert('Data saved successfully');
+        alert('Foundry Sand Testing Note saved successfully!');
+        handleClear();
+      } else {
+        alert('Error: ' + response.message);
       }
     } catch (error) {
-      alert('Error saving data: ' + error.message);
+      console.error('Error saving:', error);
+      alert('Failed to save. Please try again.');
     }
   };
 
   // Handle form field changes
-  const handleInputChange = (section, field, value) => {
-    setFormData(prev => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value
-      }
-    }));
+  const handleInputChange = (section, field, value, subField = null) => {
+    if (subField) {
+      setFormData(prev => ({
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: {
+            ...prev[section][field],
+            [subField]: value
+          }
+        }
+      }));
+    } else if (field) {
+      setFormData(prev => ({
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value
+        }
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [section]: value
+      }));
+    }
   };
 
   // Handle clearing form
   const handleClear = () => {
+    if (!window.confirm('Are you sure you want to clear all fields?')) return;
     setFormData({
-      sandPlant: "",
-      date: "",
-      compactabilitySetting: "",
+      date: new Date().toISOString().split('T')[0],
       shift: "",
-      shearMouldStrengthSetting: "",
-      parameters: {
-        totalClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
-        activeClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
-        deadClay: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
-        vcm: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }],
-        loi: [{ test1: { value: "", calculated: "" }, test2: { value: "", calculated: "" } }]
+      sandPlant: "",
+      compactibilitySetting: "",
+      shearStrengthSetting: "",
+      clayTests: {
+        test1: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" },
+        test2: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" }
       },
-      sieveTesting: {
-        data: [],
-        total: {
-          wtRetainedTest1: "",
-          wtRetainedTest2: "",
-          productTest1: "",
-          productTest2: ""
+      test1: {
+        sieveSize: {
+          1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+          150: "", 106: "", 75: "", pan: "", total: ""
         }
       },
-      testResults: {
-        compactibility: { test1: "", test2: "" },
-        permeability: { test1: "", test2: "" },
-        gcs: { test1: "", test2: "" },
-        wts: { test1: "", test2: "" },
-        moisture: { test1: "", test2: "" },
-        bentonite: { test1: "", test2: "" },
-        coalDust: { test1: "", test2: "" },
-        hopperLevel: { test1: "", test2: "" },
-        shearStrength: { test1: "", test2: "" },
-        dustCollectorSetting: { test1: "", test2: "" },
-        returnSandMoisture: { test1: "", test2: "" },
-        afsNo: { test1: "", test2: "" },
-        fines: { test1: "", test2: "" },
-        gd: { test1: "", test2: "" }
+      test2: {
+        sieveSize: {
+          1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+          150: "", 106: "", 75: "", pan: "", total: ""
+        }
+      },
+      mfTest: {
+        mf: {
+          5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
+          100: "", 140: "", 200: "", pan: "", total: ""
+        }
+      },
+      parameters: {
+        test1: {
+          gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+          mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+          hopperLevel: "", returnSand: ""
+        },
+        test2: {
+          gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+          mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+          hopperLevel: "", returnSand: ""
+        }
+      },
+      additionalData: {
+        test1: { afsNo: "", fines: "", gd: "" },
+        test2: { afsNo: "", fines: "", gd: "" }
       },
       remarks: ""
     });
@@ -355,29 +390,29 @@ export default function FoundrySandTestingNote() {
           <DatePicker
             name="date"
             value={formData.date}
-            onChange={(e) => handleInputChange("date", "", e.target.value)}
+            onChange={(e) => handleInputChange("date", null, e.target.value)}
           />
         </div>
         <span style={label}>COMPACTABILITY SETTING:</span>
         <input 
           style={input} 
           placeholder="e.g. J.C. mode"
-          value={formData.compactabilitySetting} 
-          onChange={(e) => handleInputChange("compactabilitySetting", "", e.target.value)}
+          value={formData.compactibilitySetting} 
+          onChange={(e) => handleInputChange("compactibilitySetting", null, e.target.value)}
         />
         <span style={label}>SHIFT:</span>
         <input 
           style={input} 
           placeholder="e.g. 2nd Shift"
           value={formData.shift}
-          onChange={(e) => handleInputChange("shift", "", e.target.value)}
+          onChange={(e) => handleInputChange("shift", null, e.target.value)}
         />
         <span style={label}>SHEAR/MOULD STRENGTH SETTING:</span>
         <input 
           style={input} 
           placeholder="e.g. MP.VOX"
-          value={formData.shearMouldStrengthSetting}
-          onChange={(e) => handleInputChange("shearMouldStrengthSetting", "", e.target.value)}
+          value={formData.shearStrengthSetting}
+          onChange={(e) => handleInputChange("shearStrengthSetting", null, e.target.value)}
         />
       </div>
 

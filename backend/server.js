@@ -24,6 +24,8 @@ const meltingLogsheetRoutes = require('./routes/Melting-MeltingLogsheet');
 const cupolaHolderLogRoutes = require('./routes/Melting-CupolaHolderLog');
 const dmmSettingParametersRoutes = require('./routes/Moulding-DmmSettingParameters');
 const dismaticProductReportRoutes = require('./routes/Moulding-DismaticProductReportDISA');
+const sandTestingRecordRoutes = require('./routes/SandLab-SandTestingRecord');
+const foundrySandTestingNoteRoutes = require('./routes/SandLab-FoundrySandTestingNote');
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
@@ -50,6 +52,10 @@ app.use('/api/v1/cupola-holder-logs', cupolaHolderLogRoutes);
 // Moulding Routes
 app.use('/api/v1/dmm-settings', dmmSettingParametersRoutes);
 app.use('/api/v1/dismatic-reports', dismaticProductReportRoutes);
+
+// SandLab Routes
+app.use('/api/v1/sand-testing-records', sandTestingRecordRoutes);
+app.use('/api/v1/foundry-sand-testing-notes', foundrySandTestingNoteRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

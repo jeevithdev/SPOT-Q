@@ -62,13 +62,17 @@ const FoundrySandTestingReport = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const response = await api.get('/v1/foundry-sand-testing');
+      const response = await api.get('/v1/foundry-sand-testing-notes');
       if (response.success) {
         setItems(response.data || []);
         setFilteredItems(response.data || []);
+      } else {
+        console.error('Error:', response.message);
+        alert('Failed to fetch records');
       }
     } catch (error) {
       console.error('Error fetching foundry sand testing records:', error);
+      alert('Failed to fetch records');
     } finally {
       setLoading(false);
     }
@@ -101,12 +105,16 @@ const FoundrySandTestingReport = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this record?')) {
       try {
-        const response = await api.delete('/v1/foundry-sand-testing/' + id);
+        const response = await api.delete(`/v1/foundry-sand-testing-notes/${id}`);
         if (response.success) {
+          alert('Record deleted successfully');
           await fetchItems();
+        } else {
+          alert('Failed to delete record');
         }
       } catch (error) {
         console.error('Error deleting record:', error);
+        alert('Failed to delete record');
       }
     }
   };
@@ -182,24 +190,18 @@ const FoundrySandTestingReport = () => {
                     filteredItems.map((item) => (
                       <tr key={item._id}>
                         <td className="foundry-table-body-cell">{new Date(item.date).toLocaleDateString()}</td>
-                        <td className="foundry-table-body-cell">{item.sandPlant}</td>
-                        <td className="foundry-table-body-cell">{item.shift}</td>
-                        <td className="foundry-table-body-cell">{item.totalClay}</td>
-                        <td className="foundry-table-body-cell">{item.activeClay}</td>
-                        <td className="foundry-table-body-cell">{item.deadClay}</td>
-                        <td className="foundry-table-body-cell">{item.vcm}</td>
-                        <td className="foundry-table-body-cell">{item.loi}</td>
-                        <td className="foundry-table-body-cell">{item.afsNo}</td>
-                        <td className="foundry-table-body-cell">{item.compactibility}</td>
-                        <td className="foundry-table-body-cell">{item.permeability}</td>
-                        <td className="foundry-table-body-cell">{item.gcs}</td>
+                        <td className="foundry-table-body-cell">{item.sandPlant || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.shift || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.totalClay || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.activeClay || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.deadClay || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.vcm || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.loi || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.additionalData?.test1?.afsNo || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.compactibilitySetting || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.parameters?.test1?.permeability || '-'}</td>
+                        <td className="foundry-table-body-cell">{item.parameters?.test1?.gcs || '-'}</td>
                         <td className="foundry-table-body-cell" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                          <EditActionButton
-                            onClick={() => {
-                              setEditingItem(item);
-                              setShowEditModal(true);
-                            }}
-                          />
                           <DeleteActionButton onClick={() => handleDelete(item._id)} />
                         </td>
                       </tr>
