@@ -44,10 +44,13 @@ const QcProductionDetails = () => {
     mgPercent: '',
     cuPercent: '',
     crPercent: '',
-    nodularityGraphiteType: '',
+    nodularity: '',
+    graphiteType: '',
     pearliteFerrite: '',
     hardnessBHN: '',
-    tsYsEl: ''
+    ts: '',
+    ys: '',
+    el: ''
   });
 
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -102,7 +105,7 @@ const QcProductionDetails = () => {
   const handleSubmit = async () => {
     const required = ['date', 'partName', 'noOfMoulds', 'cPercent', 'siPercent', 'mnPercent',
                      'pPercent', 'sPercent', 'mgPercent', 'cuPercent', 'crPercent',
-                     'nodularityGraphiteType', 'pearliteFerrite', 'hardnessBHN', 'tsYsEl'];
+                     'nodularity', 'graphiteType', 'pearliteFerrite', 'hardnessBHN', 'ts', 'ys', 'el'];
     const missing = required.filter(field => !formData[field]);
     
     // Set validation errors for missing fields
@@ -128,7 +131,7 @@ const QcProductionDetails = () => {
         setFormData({
           date: '', partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
           pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
-          nodularityGraphiteType: '', pearliteFerrite: '', hardnessBHN: '', tsYsEl: ''
+          nodularity: '', graphiteType: '', pearliteFerrite: '', hardnessBHN: '', ts: '', ys: '', el: ''
         });
       }
     } catch (error) {
@@ -144,7 +147,7 @@ const QcProductionDetails = () => {
     setFormData({
       date: '', partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
       pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
-      nodularityGraphiteType: '', pearliteFerrite: '', hardnessBHN: '', tsYsEl: ''
+      nodularity: '', graphiteType: '', pearliteFerrite: '', hardnessBHN: '', ts: '', ys: '', el: ''
     });
     setValidationErrors({});
   };
@@ -327,15 +330,28 @@ const QcProductionDetails = () => {
             </div>
 
             <div className="qcproduction-form-group">
-              <label>Nodularity / Graphite Type *</label>
+              <label>Nodularity *</label>
               <input
                 type="text"
-                name="nodularityGraphiteType"
-                value={formData.nodularityGraphiteType}
+                name="nodularity"
+                value={formData.nodularity}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g: 85%"
+                className={validationErrors.nodularity ? 'invalid-input' : ''}
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>Graphite Type *</label>
+              <input
+                type="text"
+                name="graphiteType"
+                value={formData.graphiteType}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 placeholder="e.g: Type VI"
-                className={validationErrors.nodularityGraphiteType ? 'invalid-input' : ''}
+                className={validationErrors.graphiteType ? 'invalid-input' : ''}
               />
             </div>
 
@@ -367,15 +383,41 @@ const QcProductionDetails = () => {
             </div>
 
             <div className="qcproduction-form-group">
-              <label>TS/YS/EL *</label>
+              <label>TS (Tensile Strength) *</label>
               <input
                 type="text"
-                name="tsYsEl"
-                value={formData.tsYsEl}
+                name="ts"
+                value={formData.ts}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g: 550/460/18"
-                className={validationErrors.tsYsEl ? 'invalid-input' : ''}
+                placeholder="e.g: 550"
+                className={validationErrors.ts ? 'invalid-input' : ''}
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>YS (Yield Strength) *</label>
+              <input
+                type="text"
+                name="ys"
+                value={formData.ys}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g: 460"
+                className={validationErrors.ys ? 'invalid-input' : ''}
+              />
+            </div>
+
+            <div className="qcproduction-form-group">
+              <label>EL (Elongation) *</label>
+              <input
+                type="text"
+                name="el"
+                value={formData.el}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g: 18"
+                className={validationErrors.el ? 'invalid-input' : ''}
               />
             </div>
           </form>

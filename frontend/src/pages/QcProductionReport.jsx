@@ -51,7 +51,7 @@ const QcProductionReport = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const data = await api.get('/v1/qcproduction');
+      const data = await api.get('/v1/qc-reports');
       if (data.success) {
         setItems(data.data);
         setFilteredItems(data.data);
@@ -95,10 +95,13 @@ const QcProductionReport = () => {
       mgPercent: item.mgPercent || '',
       cuPercent: item.cuPercent || '',
       crPercent: item.crPercent || '',
-      nodularityGraphiteType: item.nodularityGraphiteType || '',
+      nodularity: item.nodularity || '',
+      graphiteType: item.graphiteType || '',
       pearliteFerrite: item.pearliteFerrite || '',
       hardnessBHN: item.hardnessBHN || '',
-      tsYsEl: item.tsYsEl || ''
+      ts: item.ts || '',
+      ys: item.ys || '',
+      el: item.el || ''
     });
     setShowEditModal(true);
   };
@@ -114,7 +117,7 @@ const QcProductionReport = () => {
   const handleUpdate = async () => {
     try {
       setEditLoading(true);
-      const data = await api.put(`/v1/qcproduction/${editingItem._id}`, editFormData);
+      const data = await api.put(`/v1/qc-reports/${editingItem._id}`, editFormData);
       
       if (data.success) {
         alert('QC production entry updated successfully!');
@@ -133,7 +136,7 @@ const QcProductionReport = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
       try {
-        const data = await api.delete(`/v1/qcproduction/${id}`);
+        const data = await api.delete(`/v1/qc-reports/${id}`);
         if (data.success) {
           alert('QC production entry deleted successfully!');
           fetchItems();
@@ -213,16 +216,19 @@ const QcProductionReport = () => {
                     <th>Cu %</th>
                     <th>Cr %</th>
                     <th>Nodularity</th>
+                    <th>Graphite Type</th>
                     <th>P/F</th>
                     <th>BHN</th>
-                    <th>TS/YS/EL</th>
+                    <th>TS</th>
+                    <th>YS</th>
+                    <th>EL</th>
                     <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="16" className="qcproduction-no-records">
+                      <td colSpan="19" className="qcproduction-no-records">
                         No records found
                       </td>
                     </tr>
@@ -240,10 +246,13 @@ const QcProductionReport = () => {
                         <td>{item.mgPercent}</td>
                         <td>{item.cuPercent}</td>
                         <td>{item.crPercent}</td>
-                        <td>{item.nodularityGraphiteType}</td>
+                        <td>{item.nodularity}</td>
+                        <td>{item.graphiteType}</td>
                         <td>{item.pearliteFerrite}</td>
                         <td>{item.hardnessBHN}</td>
-                        <td>{item.tsYsEl}</td>
+                        <td>{item.ts}</td>
+                        <td>{item.ys}</td>
+                        <td>{item.el}</td>
                         <td style={{ minWidth: '100px' }}>
                           <EditActionButton onClick={() => handleEdit(item)} />
                           <DeleteActionButton onClick={() => handleDelete(item._id)} />
@@ -315,8 +324,12 @@ const QcProductionReport = () => {
                     <input type="number" name="crPercent" value={editFormData.crPercent} onChange={handleEditChange} step="0.01" />
                   </div>
                   <div className="qcproduction-form-group">
-                    <label>Nodularity / Graphite Type *</label>
-                    <input type="text" name="nodularityGraphiteType" value={editFormData.nodularityGraphiteType} onChange={handleEditChange} />
+                    <label>Nodularity *</label>
+                    <input type="text" name="nodularity" value={editFormData.nodularity} onChange={handleEditChange} />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>Graphite Type *</label>
+                    <input type="text" name="graphiteType" value={editFormData.graphiteType} onChange={handleEditChange} />
                   </div>
                   <div className="qcproduction-form-group">
                     <label>Pearlite Ferrite *</label>
@@ -327,8 +340,16 @@ const QcProductionReport = () => {
                     <input type="number" name="hardnessBHN" value={editFormData.hardnessBHN} onChange={handleEditChange} />
                   </div>
                   <div className="qcproduction-form-group">
-                    <label>TS/YS/EL *</label>
-                    <input type="text" name="tsYsEl" value={editFormData.tsYsEl} onChange={handleEditChange} />
+                    <label>TS (Tensile Strength) *</label>
+                    <input type="text" name="ts" value={editFormData.ts} onChange={handleEditChange} />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>YS (Yield Strength) *</label>
+                    <input type="text" name="ys" value={editFormData.ys} onChange={handleEditChange} />
+                  </div>
+                  <div className="qcproduction-form-group">
+                    <label>EL (Elongation) *</label>
+                    <input type="text" name="el" value={editFormData.el} onChange={handleEditChange} />
                   </div>
                 </div>
               </div>

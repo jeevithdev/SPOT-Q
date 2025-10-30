@@ -77,7 +77,8 @@ const TensileReport = () => {
     setEditFormData({
       dateOfInspection: item.dateOfInspection,
       item: item.item,
-      dateHeatCode: item.dateHeatCode,
+      date: item.date,
+      heatCode: item.heatCode,
       dia: item.dia,
       lo: item.lo,
       li: item.li,
@@ -186,8 +187,9 @@ const TensileReport = () => {
               <table className="tensile-table">
                 <thead>
                   <tr>
-                    <th>Date</th>
+                    <th>Inspection Date</th>
                     <th>Item</th>
+                    <th>Date</th>
                     <th>Heat Code</th>
                     <th>Dia(mm)</th>
                     <th>Lo(mm)</th>
@@ -205,7 +207,7 @@ const TensileReport = () => {
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="13" className="tensile-no-records">
+                      <td colSpan="15" className="tensile-no-records">
                         No records found
                       </td>
                     </tr>
@@ -214,7 +216,8 @@ const TensileReport = () => {
                       <tr key={item._id || index}>
                         <td>{new Date(item.dateOfInspection).toLocaleDateString()}</td>
                         <td>{item.item}</td>
-                        <td>{item.dateHeatCode}</td>
+                        <td>{item.date}</td>
+                        <td>{item.heatCode}</td>
                         <td>{item.dia}</td>
                         <td>{item.lo}</td>
                         <td>{item.li}</td>
@@ -272,13 +275,24 @@ const TensileReport = () => {
                   </div>
 
                   <div className="tensile-form-group">
-                    <label>Date & Heat Code *</label>
+                    <label>Date *</label>
                     <input
                       type="text"
-                      name="dateHeatCode"
-                      value={editFormData.dateHeatCode}
+                      name="date"
+                      value={editFormData.date}
                       onChange={handleEditChange}
-                      placeholder="e.g: 2024-HC-001"
+                      placeholder="e.g: 2024-10-30"
+                    />
+                  </div>
+
+                  <div className="tensile-form-group">
+                    <label>Heat Code *</label>
+                    <input
+                      type="text"
+                      name="heatCode"
+                      value={editFormData.heatCode}
+                      onChange={handleEditChange}
+                      placeholder="e.g: HC-001"
                     />
                   </div>
 
