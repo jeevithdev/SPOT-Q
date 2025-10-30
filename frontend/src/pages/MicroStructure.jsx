@@ -33,10 +33,13 @@ const MicroStructure = () => {
   );
 
   const [formData, setFormData] = useState({
+    disa: '',
     insDate: '',
     partName: '',
-    dateCodeHeatCode: '',
-    nodularityGraphiteType: '',
+    dateCode: '',
+    heatCode: '',
+    nodularity: '',
+    graphiteType: '',
     countNos: '',
     size: '',
     ferritePercent: '',
@@ -48,6 +51,7 @@ const MicroStructure = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
 
+  const disaOptions = ['DISA I', 'DISA II', 'DISA III', 'DISA IV'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -83,7 +87,7 @@ const MicroStructure = () => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const form = e.target.form;
-      const inputs = Array.from(form.querySelectorAll('input, textarea'));
+      const inputs = Array.from(form.querySelectorAll('input, textarea, select'));
       const currentIndex = inputs.indexOf(e.target);
       const nextInput = inputs[currentIndex + 1];
       
@@ -102,7 +106,7 @@ const MicroStructure = () => {
   };
 
   const handleSubmit = async () => {
-    const required = ['insDate', 'partName', 'dateCodeHeatCode', 'nodularityGraphiteType',
+    const required = ['disa', 'insDate', 'partName', 'dateCode','heatCode', 'nodularity','graphiteType',
                      'countNos', 'size', 'ferritePercent', 'pearlitePercent', 'carbidePercent'];
     const missing = required.filter(field => !formData[field]);
     
@@ -127,8 +131,19 @@ const MicroStructure = () => {
       if (data.success) {
         alert('Micro structure report created successfully!');
         setFormData({
-          insDate: '', partName: '', dateCodeHeatCode: '', nodularityGraphiteType: '',
-          countNos: '', size: '', ferritePercent: '', pearlitePercent: '', carbidePercent: '', remarks: ''
+          disa: '',
+          insDate: '', 
+          partName: '', 
+          dateCode:'', 
+          heatCode: '', 
+          nodularity:'', 
+          graphiteType: '',
+          countNos: '', 
+          size: '', 
+          ferritePercent: '', 
+          pearlitePercent: '', 
+          carbidePercent: '', 
+          remarks: ''
         });
       }
     } catch (error) {
@@ -142,8 +157,19 @@ const MicroStructure = () => {
 
   const handleReset = () => {
     setFormData({
-      insDate: '', partName: '', dateCodeHeatCode: '', nodularityGraphiteType: '',
-      countNos: '', size: '', ferritePercent: '', pearlitePercent: '', carbidePercent: '', remarks: ''
+      disa: '',
+      insDate: '', 
+      partName: '', 
+      dateCode:'', 
+      heatCode: '', 
+      nodularity: '', 
+      graphiteType: '',
+      countNos: '', 
+      size: '', 
+      ferritePercent: '', 
+      pearlitePercent: '', 
+      carbidePercent: '', 
+      remarks: ''
     });
     setValidationErrors({});
   };
@@ -167,6 +193,24 @@ const MicroStructure = () => {
           </div>
 
           <form className="microstructure-form-grid">
+            <div className="microstructure-form-group">
+              <label>DISA *</label>
+              <select
+                name="disa"
+                value={formData.disa}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                className={validationErrors.disa ? 'invalid-input' : ''}
+              >
+                <option value="">Select DISA</option>
+                {disaOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="microstructure-form-group">
               <label>Inspection Date *</label>
               <DatePicker
@@ -192,15 +236,28 @@ const MicroStructure = () => {
             </div>
 
             <div className="microstructure-form-group">
-              <label>Date Code & Heat Code *</label>
+              <label>Date Code *</label>
               <input
                 type="text"
-                name="dateCodeHeatCode"
-                value={formData.dateCodeHeatCode}
+                name="dateCode"
+                value={formData.dateCode}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 placeholder="e.g: 2024-HC-005"
-                className={validationErrors.dateCodeHeatCode ? 'invalid-input' : ''}
+                className={validationErrors.dateCode ? 'invalid-input' : ''}
+              />
+            </div>
+
+            <div className="microstructure-form-group">
+              <label>Heat Code *</label>
+              <input
+                type="text"
+                name="heatCode"
+                value={formData.heatCode}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g: 2024-HC-005"
+                className={validationErrors.heatCode ? 'invalid-input' : ''}
               />
             </div>
 
@@ -210,15 +267,29 @@ const MicroStructure = () => {
             </div>
             
             <div className="microstructure-form-group">
-              <label>Nodularity % / Graphite Type *</label>
+              <label>Nodularity % *</label>
               <input
                 type="text"
-                name="nodularityGraphiteType"
-                value={formData.nodularityGraphiteType}
+                name="nodularity"
+                value={formData.nodularity}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
                 placeholder="e.g: 85% Type VI"
-                className={validationErrors.nodularityGraphiteType ? 'invalid-input' : ''}
+                className={validationErrors.nodularity ? 'invalid-input' : ''}
+              />
+            </div>
+
+             
+            <div className="microstructure-form-group">
+              <label>GraphiteType *</label>
+              <input
+                type="text"
+                name="graphiteType"
+                value={formData.graphiteType}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g: 85% Type VI"
+                className={validationErrors.graphiteType ? 'invalid-input' : ''}
               />
             </div>
 

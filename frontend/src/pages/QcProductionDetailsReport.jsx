@@ -4,7 +4,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
-import '../styles/PageStyles/QcProductionDetails.css';
+import '../styles/PageStyles/QcProductionDetailsReport.css';
 
 const QcProductionReport = () => {
   const location = useLocation();

@@ -1,3 +1,39 @@
+/* Tab Styles */
+.microstructure-tabs-container {
+  margin-bottom: 2rem;
+  border-bottom: 2px solid #e2e8f0;
+  background: white;
+  border-radius: 8px 8px 0 0;
+}
+
+.microstructure-tabs {
+  display: flex;
+  gap: 0;
+  padding: 0 1rem;
+}
+
+.microstructure-tab {
+  padding: 1rem 2rem;
+  text-decoration: none;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 1rem;
+  border-bottom: 3px solid transparent;
+  transition: all 0.3s ease;
+  position: relative;
+  margin-bottom: -2px;
+}
+
+.microstructure-tab:hover {
+  color: #334155;
+}
+
+.microstructure-tab.active {
+  color: #2563eb;
+  border-bottom-color: #2563eb;
+  font-weight: 600;
+}
+
 /* === Base Layout === */
 .microstructure-container {
   display: flex;

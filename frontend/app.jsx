@@ -7,13 +7,17 @@ import Loader from './src/Components/Loader';
 
 // Pages
 import MicroTensile from './src/pages/MicroTensile';
+import MicroTensileReport from './src/pages/MicroTensileReport';
 import MicroStructure from './src/pages/MicroStructure';
 import MicroStructureReport from './src/pages/MicroStructureReport';
 import QcProductionDetails from './src/pages/QcProductionDetails';
-import QcProductionReport from './src/pages/QcProductionReport';
+import QcProductionDetailsReport from './src/pages/QcProductionDetailsReport';
 import Process from './src/pages/Process';
+import ProcessReport from './src/pages/ProcessReport';
 import MeltingLogSheet from './src/pages/Melting/MeltingLogSheet';
+import MeltingLogSheetReport from './src/pages/Melting/MeltingLogSheetReport';
 import CupolaHolderLogSheet from './src/pages/Melting/CupolaHolderLogSheet';
+import CupolaHolderLogSheetReport from './src/pages/Melting/CupolaHolderLogSheetReport';
 import Login from './src/pages/Login';
 import Tensile from './src/pages/Tensile';
 import TensileReport from './src/pages/TensileReport';
@@ -73,19 +77,23 @@ const App = () => {
 
           {/* Top-level pages */}
           <Route path="micro-tensile" element={<MicroTensile />} />
+          <Route path="micro-tensile/report" element={<MicroTensileReport />} />
           <Route path="micro-structure" element={<MicroStructure />} />
           <Route path="micro-structure/report" element={<MicroStructureReport />} />
           <Route path="impact" element={<Impact />} />
           <Route path="impact/report" element={<ImpactReport />} />
           <Route path="process" element={<Process />} />
+          <Route path="process/report" element={<ProcessReport />} />
 
           {/* QC Production Details */}
           <Route path="qc-production-details/data-entry" element={<QcProductionDetails />} />
-          <Route path="qc-production-details/report" element={<QcProductionReport />} />
+          <Route path="qc-production-details/report" element={<QcProductionDetailsReport />} />
 
           {/* Melting */}
           <Route path="melting/melting-log-sheet" element={<MeltingLogSheet />} />
+          <Route path="melting/melting-log-sheet/report" element={<MeltingLogSheetReport />} />
           <Route path="melting/cupola-holder-log-sheet" element={<CupolaHolderLogSheet />} />
+          <Route path="melting/cupola-holder-log-sheet/report" element={<CupolaHolderLogSheetReport />} />
 
           {/* Tensile */}
           <Route path="tensile" element={<Tensile />} />
