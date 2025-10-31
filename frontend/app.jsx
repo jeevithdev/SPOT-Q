@@ -25,9 +25,10 @@ import SandTestingRecord from './src/pages/SandLab/SandTestingRecord';
 import SandTestingRecordReport from './src/pages/SandLab/SandTestingRecordReport';
 import FoundarySandTestingNote from './src/pages/SandLab/FoundarySandTestingNote';
 import FoundrySandTestingReport from './src/pages/SandLab/FoundrySandTestingReport';
+import DisamaticProduct from './src/pages/Moulding/DisamaticProduct';
 import DisamaticProductReport from './src/pages/Moulding/DisamaticProductReport';
-import MouldHardnessPatternTemperatureRecord from './src/pages/Moulding/MouldHardnessPatternTemperatureRecord';
-import MouldingPage3 from './src/pages/MouldingPage3';
+import DmmSettingParameters from './src/pages/Moulding/DmmSettingParameters';
+import DmmSettingParametersReport from './src/pages/Moulding/DmmSettingParametersReport';
 import AdminDashboard from './src/Components/AdminDashboard';
 import Impact from './src/pages/Impact';
 import ImpactReport from './src/pages/ImpactReport';
@@ -106,9 +107,10 @@ const App = () => {
           <Route path="sand-lab/foundry-sand-testing-note/report" element={<FoundrySandTestingReport />} />
 
           {/* Moulding */}
-          <Route path="moulding/disamatic-product-report" element={<DisamaticProductReport />} />
-          <Route path="moulding/mould-hardness-pattern-temperature-record" element={<MouldHardnessPatternTemperatureRecord />} />
-          <Route path="moulding/dmm-setting-parameters" element={<MouldingPage3 />} />
+          <Route path="moulding/disamatic-product-report" element={<DisamaticProduct />} />
+          <Route path="moulding/disamatic-product-report/report" element={<DisamaticProductReport />} />
+          <Route path="moulding/dmm-setting-parameters" element={<DmmSettingParameters />} />
+          <Route path="moulding/dmm-setting-parameters/report" element={<DmmSettingParametersReport />} />
         </Route>
 
         {/* Fallback */}

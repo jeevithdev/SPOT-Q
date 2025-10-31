@@ -1,9 +1,9 @@
-import SandTestingRecord from '../models/SandLab-SandTestingRecord.js';
+const SandTestingRecord = require('../models/SandLab-SandTestingRecord');
 
 // @desc    Get all sand testing record entries
 // @route   GET /api/sand-testing-records
 // @access  Private
-export const getAllEntries = async (req, res) => {
+const getAllEntries = async (req, res) => {
     try {
         const { 
             startDate, 
@@ -56,7 +56,7 @@ export const getAllEntries = async (req, res) => {
 // @desc    Get single sand testing record entry by ID
 // @route   GET /api/sand-testing-records/:id
 // @access  Private
-export const getEntryById = async (req, res) => {
+const getEntryById = async (req, res) => {
     try {
         const entry = await SandTestingRecord.findById(req.params.id);
 
@@ -83,7 +83,7 @@ export const getEntryById = async (req, res) => {
 // @desc    Get sand testing records by date
 // @route   GET /api/sand-testing-records/date/:date
 // @access  Private
-export const getEntriesByDate = async (req, res) => {
+const getEntriesByDate = async (req, res) => {
     try {
         const { date } = req.params;
         const startOfDay = new Date(date);
@@ -116,7 +116,7 @@ export const getEntriesByDate = async (req, res) => {
 // @desc    Create new sand testing record entry
 // @route   POST /api/sand-testing-records
 // @access  Private
-export const createEntry = async (req, res) => {
+const createEntry = async (req, res) => {
     try {
         // Validate required fields
         const requiredFields = ['testParameter'];
@@ -149,7 +149,7 @@ export const createEntry = async (req, res) => {
 // @desc    Update sand testing record entry
 // @route   PUT /api/sand-testing-records/:id
 // @access  Private
-export const updateEntry = async (req, res) => {
+const updateEntry = async (req, res) => {
     try {
         const entry = await SandTestingRecord.findByIdAndUpdate(
             req.params.id,
@@ -186,7 +186,7 @@ export const updateEntry = async (req, res) => {
 // @desc    Partially update sand testing record entry
 // @route   PATCH /api/sand-testing-records/:id
 // @access  Private
-export const patchEntry = async (req, res) => {
+const patchEntry = async (req, res) => {
     try {
         const entry = await SandTestingRecord.findByIdAndUpdate(
             req.params.id,
@@ -222,7 +222,7 @@ export const patchEntry = async (req, res) => {
 // @desc    Delete sand testing record entry
 // @route   DELETE /api/sand-testing-records/:id
 // @access  Private
-export const deleteEntry = async (req, res) => {
+const deleteEntry = async (req, res) => {
     try {
         const entry = await SandTestingRecord.findByIdAndDelete(req.params.id);
 
@@ -250,7 +250,7 @@ export const deleteEntry = async (req, res) => {
 // @desc    Delete multiple sand testing record entries
 // @route   DELETE /api/sand-testing-records/bulk
 // @access  Private
-export const bulkDeleteEntries = async (req, res) => {
+const bulkDeleteEntries = async (req, res) => {
     try {
         const { ids } = req.body;
 
@@ -282,7 +282,7 @@ export const bulkDeleteEntries = async (req, res) => {
 // @desc    Get statistics for sand testing records
 // @route   GET /api/sand-testing-records/stats
 // @access  Private
-export const getStats = async (req, res) => {
+const getStats = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;
 
@@ -326,5 +326,17 @@ export const getStats = async (req, res) => {
             message: error.message || 'Error fetching statistics.'
         });
     }
+};
+
+module.exports = {
+    getAllEntries,
+    getEntryById,
+    getEntriesByDate,
+    createEntry,
+    updateEntry,
+    patchEntry,
+    deleteEntry,
+    bulkDeleteEntries,
+    getStats
 };
 

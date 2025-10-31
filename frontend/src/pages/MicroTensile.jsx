@@ -77,27 +77,28 @@ const MicroTensile = () => {
   };
 
   return (
-    <div className="microtensile-container">
-      <ViewReportButton to="/micro-tensile/report" />
-      <div className="microtensile-content">
-        {showMissingFields && (
-          <ValidationPopup
-            missingFields={missingFields}
-            onClose={() => setShowMissingFields(false)}
-          />
-        )}
+    <>
+      {showMissingFields && (
+        <ValidationPopup
+          missingFields={missingFields}
+          onClose={() => setShowMissingFields(false)}
+        />
+      )}
 
-        {/* Entry Form Container */}
-        <div className="microtensile-entry-container">
-          <div className="microtensile-header">
-            <div className="microtensile-header-text">
-              <Save size={24} style={{ color: '#5B9AA9' }} />
-              <h2>Micro Tensile Test - Entry Form</h2>
-            </div>
-            <ResetFormButton onClick={handleReset} />
-          </div>
+      <div className="microtensile-header">
+        <div className="microtensile-header-text">
+          <h2>
+            <Save size={28} style={{ color: '#5B9AA9' }} />
+            Micro Tensile Test - Entry Form
+          </h2>
+        </div>
+        <div className="microtensile-header-buttons">
+          <ViewReportButton to="/micro-tensile/report" />
+          <ResetFormButton onClick={handleReset} />
+        </div>
+      </div>
 
-          <div className="microtensile-form-grid">
+      <div className="microtensile-form-grid">
             <div className="microtensile-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
@@ -236,15 +237,13 @@ const MicroTensile = () => {
             </div>
           </div>
 
-          <div className="microtensile-submit-container">
-            <Button onClick={handleSubmit} disabled={submitLoading} className="microtensile-submit-btn" type="button">
-              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-              {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </Button>
-          </div>
-        </div>
+      <div className="microtensile-submit-container">
+        <Button onClick={handleSubmit} disabled={submitLoading} className="microtensile-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+          {submitLoading ? 'Saving...' : 'Submit Entry'}
+        </Button>
       </div>
-    </div>
+    </>
   );
 };
 

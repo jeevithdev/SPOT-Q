@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import App from './app.jsx';
 import { AuthProvider } from './src/context/AuthContext';
 import './app.css';
-import './src/styles/ComponentStyles/responsive.css';
 import Button from './src/Components/Buttons';
 
 // Error Boundary Component

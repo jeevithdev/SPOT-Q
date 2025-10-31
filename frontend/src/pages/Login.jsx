@@ -56,9 +56,10 @@ const Login = () => {
           <form onSubmit={handleSubmit}>
             <div className="form-row">
               <label className="form-label">Employee ID</label>
+              
               <input
                 type="text"
-                placeholder="Employee ID"
+                placeholder="Enter Employee ID"
                 required
                 value={employeeId}
                 onChange={(e) => setEmployeeId(e.target.value.toUpperCase())}

@@ -1,75 +1,62 @@
 import React, { useState } from "react";
-import { FlaskConical, Factory } from "lucide-react";
-import { Link, useLocation } from 'react-router-dom';
-import { DatePicker, SubmitButton, ResetButton } from '../../Components/Buttons';
+import { useNavigate } from 'react-router-dom';
+import { Save } from 'lucide-react';
+import { ViewReportButton, ResetFormButton, SubmitButton } from '../../Components/Buttons';
 import api from '../../utils/api';
+import '../../styles/PageStyles/Sandlab/FoundarySandTestingNote.css';
 
-export default function FoundrySandTestingNote() {
-  // Form state - Matching backend schema exactly
-  const [formData, setFormData] = useState({
-    date: new Date().toISOString().split('T')[0],
-    shift: "",
-    sandPlant: "",
-    compactibilitySetting: "",
-    shearStrengthSetting: "",
-    clayTests: {
-      test1: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" },
-      test2: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" }
-    },
+const initialFormData = {
+  date: new Date().toISOString().split('T')[0],
+  shift: "",
+  sandPlant: "",
+  compactibilitySetting: "",
+  shearStrengthSetting: "",
+  clayTests: {
+    test1: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" },
+    test2: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" }
+  },
+  test1: {
+    sieveSize: {
+      1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+      150: "", 106: "", 75: "", pan: "", total: ""
+    }
+  },
+  test2: {
+    sieveSize: {
+      1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+      150: "", 106: "", 75: "", pan: "", total: ""
+    }
+  },
+  mfTest: {
+    mf: {
+      5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
+      100: "", 140: "", 200: "", pan: "", total: ""
+    }
+  },
+  parameters: {
     test1: {
-      sieveSize: {
-        1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
-        150: "", 106: "", 75: "", pan: "", total: ""
-      }
+      gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+      mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+      hopperLevel: "", returnSand: ""
     },
     test2: {
-      sieveSize: {
-        1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
-        150: "", 106: "", 75: "", pan: "", total: ""
-      }
-    },
-    mfTest: {
-      mf: {
-        5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
-        100: "", 140: "", 200: "", pan: "", total: ""
-      }
-    },
-    parameters: {
-      test1: {
-        gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
-        mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
-        hopperLevel: "", returnSand: ""
-      },
-      test2: {
-        gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
-        mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
-        hopperLevel: "", returnSand: ""
-      }
-    },
-    additionalData: {
-      test1: { afsNo: "", fines: "", gd: "" },
-      test2: { afsNo: "", fines: "", gd: "" }
-    },
-    remarks: ""
-  });
-
-  // Handle form save
-  const handleSave = async () => {
-    try {
-      const response = await api.post('/v1/foundry-sand-testing-notes', formData);
-      if (response.success) {
-        alert('Foundry Sand Testing Note saved successfully!');
-        handleClear();
-      } else {
-        alert('Error: ' + response.message);
-      }
-    } catch (error) {
-      console.error('Error saving:', error);
-      alert('Failed to save. Please try again.');
+      gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+      mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+      hopperLevel: "", returnSand: ""
     }
-  };
+  },
+  additionalData: {
+    test1: { afsNo: "", fines: "", gd: "" },
+    test2: { afsNo: "", fines: "", gd: "" }
+  },
+  remarks: ""
+};
 
-  // Handle form field changes
+export default function FoundrySandTestingNote() {
+  const navigate = useNavigate();
+  const [formData, setFormData] = useState(initialFormData);
+  const [loading, setLoading] = useState(false);
+
   const handleInputChange = (section, field, value, subField = null) => {
     if (subField) {
       setFormData(prev => ({
@@ -98,119 +85,33 @@ export default function FoundrySandTestingNote() {
     }
   };
 
-  // Handle clearing form
+  const handleSave = async () => {
+    try {
+      setLoading(true);
+      const response = await api.post('/v1/foundry-sand-testing-notes', formData);
+      if (response.success) {
+        alert('Foundry Sand Testing Note saved successfully!');
+        handleClear();
+      } else {
+        alert('Error: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Error saving:', error);
+      alert('Failed to save. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleClear = () => {
-    if (!window.confirm('Are you sure you want to clear all fields?')) return;
-    setFormData({
-      date: new Date().toISOString().split('T')[0],
-      shift: "",
-      sandPlant: "",
-      compactibilitySetting: "",
-      shearStrengthSetting: "",
-      clayTests: {
-        test1: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" },
-        test2: { totalClay: "", activeClay: "", deadClay: "", vcm: "", loi: "" }
-      },
-      test1: {
-        sieveSize: {
-          1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
-          150: "", 106: "", 75: "", pan: "", total: ""
-        }
-      },
-      test2: {
-        sieveSize: {
-          1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
-          150: "", 106: "", 75: "", pan: "", total: ""
-        }
-      },
-      mfTest: {
-        mf: {
-          5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
-          100: "", 140: "", 200: "", pan: "", total: ""
-        }
-      },
-      parameters: {
-        test1: {
-          gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
-          mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
-          hopperLevel: "", returnSand: ""
-        },
-        test2: {
-          gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
-          mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
-          hopperLevel: "", returnSand: ""
-        }
-      },
-      additionalData: {
-        test1: { afsNo: "", fines: "", gd: "" },
-        test2: { afsNo: "", fines: "", gd: "" }
-      },
-      remarks: ""
-    });
-  };
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
+    if (!window.confirm('Are you sure you want to reset the entire form?')) return;
+    setFormData(initialFormData);
   };
 
-  // Inline styles for tabs (keeps everything inside this file — no external CSS)
-  const foundryContainerStyle = {
-    display: 'flex',
-    flexDirection: 'column',
-    minHeight: '100vh',
-    backgroundColor: '#f0f4f8',
+  const handleViewReport = () => {
+    navigate('/sand-lab/foundry-sand-testing-note/report');
   };
 
-  const foundryWrapperStyle = {
-    flex: 1,
-    padding: '1rem',
-  };
-
-  const tabsContainerStyle = {
-    backgroundColor: '#fff',
-    borderBottom: '1px solid #e2e8f0',
-    padding: '0 2rem',
-  };
-
-  const tabsStyle = {
-    display: 'flex',
-    gap: '1rem',
-    marginBottom: '-1px',
-  };
-
-  const tabStyle = {
-    padding: '0.75rem 1.5rem',
-    textDecoration: 'none',
-    color: '#64748b',
-    borderBottom: '2px solid transparent',
-    fontWeight: 500,
-    transition: 'all 0.2s ease',
-  };
-
-  const tabActiveStyle = {
-    color: '#1e293b',
-    borderBottomColor: '#1e293b',
-  };
-
-  const FoundrySandTestingTabs = () => (
-    <div style={tabsContainerStyle}>
-      <div style={tabsStyle}>
-        <Link
-          to="/sand-lab/foundry-sand-testing-note"
-          style={isActive('/sand-lab/foundry-sand-testing-note') ? { ...tabStyle, ...tabActiveStyle } : tabStyle}
-        >
-          Data Entry
-        </Link>
-        <Link
-          to="/sand-lab/foundry-sand-testing-note/report"
-          style={isActive('/sand-lab/foundry-sand-testing-note/report') ? { ...tabStyle, ...tabActiveStyle } : tabStyle}
-        >
-          Report
-        </Link>
-      </div>
-    </div>
-  );
   const sieveData = [
     { size: 1700, mf: 5 },
     { size: 850, mf: 10 },
@@ -225,344 +126,313 @@ export default function FoundrySandTestingNote() {
     { size: "Pan", mf: 300 },
   ];
 
-  // ===== STYLES =====
-  const container = {
-    fontFamily: "Segoe UI, Arial, sans-serif",
-    padding: "2rem",
-    width: "100%",
-    maxWidth: "1400px",
-    margin: "0 auto",
-    minHeight: "100vh",
-    background: "#f0f4f8",
-    color: "#1e1e1e",
-  };
-
-  const headerBox = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: "#1e293b",
-    borderRadius: "12px",
-    padding: "1rem",
-    marginBottom: "1.5rem",
-    color: "white",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.1)",
-  };
-
-  const title = {
-    fontSize: "1.5rem",
-    fontWeight: "700",
-    letterSpacing: "0.5px",
-    margin: "0 0.75rem",
-    color: "white",
-  };
-
-  const subHeader = {
-    display: "grid",
-    gridTemplateColumns: "auto 1fr auto 1fr",
-    rowGap: "10px",
-    columnGap: "8px",
-    fontSize: "14px",
-    alignItems: "center",
-    marginBottom: "15px",
-  };
-
-  const label = {
-    fontWeight: "bold",
-    color: "#1e293b",
-  };
-
-  const input = {
-    border: "1px solid #cbd5e1",
-    borderRadius: "6px",
-    height: "32px",
-    width: "100%",
-    padding: "0 0.75rem",
-    backgroundColor: "#fff",
-    fontSize: "0.9rem",
-    color: "#1e293b",
-  };
-
-  const table = {
-    width: "100%",
-    borderCollapse: "collapse",
-    fontSize: "0.9rem",
-    marginTop: "1rem",
-    border: "1px solid #e2e8f0",
-    background: "white",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.1)",
-  };
-
-  const th = {
-    border: "1px solid #94a3b8",
-    padding: "0.75rem",
-    textAlign: "center",
-    fontWeight: "600",
-    color: "white",
-    background: "#1e293b",
-  };
-
-  const td = {
-    border: "1px solid #e2e8f0",
-    padding: "0.75rem",
-    textAlign: "center",
-    color: "#475569",
-    backgroundColor: "white",
-  };
-
-  const altTableHeader = {
-    ...th,
-    background: "#52525b",
-  };
-
-  const sectionTitle = {
-    fontWeight: "bold",
-    textAlign: "center",
-    marginTop: "25px",
-    marginBottom: "6px",
-    fontSize: "15.5px",
-    color: "#111827",
-  };
-
-  const percentBox = {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "4px",
-  };
-
-  const remarkBox = {
-    width: "100%",
-    height: "60px",
-    border: "1px solid #bbb",
-    borderRadius: "6px",
-    marginTop: "4px",
-    padding: "6px",
-    background: "#fff",
-  };
-
-  const buttonRow = {
-    display: "flex",
-    justifyContent: "space-between",
-    marginTop: "18px",
-  };
-
-  const button = (bg) => ({
-    border: "none",
-    background: bg,
-    color: "white",
-    padding: "0.75rem 1.25rem",
-    borderRadius: "8px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "0.5rem",
-    fontWeight: "600",
-    fontSize: "0.9rem",
-    transition: "all 0.2s ease",
-    boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-  });
-
-  // ===== RENDER =====
   return (
-    <div style={foundryContainerStyle}>
-      <div style={foundryWrapperStyle}>
-        <FoundrySandTestingTabs />
-        <div style={container}>
-          {/* Header Box */}
-          <div style={headerBox}>
-            <Factory color="white" size={24} />
-            <div style={title}>FOUNDRY SAND TESTING NOTE</div>
-            <FlaskConical color="white" size={24} />
+    <>
+      {/* Header */}
+      <div className="foundry-header">
+        <div className="foundry-header-text">
+          <h2>
+            <Save size={28} style={{ color: '#5B9AA9' }} />
+            Foundry Sand Testing Note
+          </h2>
+        </div>
+        <div className="foundry-header-buttons">
+          <ViewReportButton onClick={handleViewReport} />
+          <ResetFormButton onClick={handleClear} disabled={loading} />
+        </div>
+      </div>
+
+        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+          {/* Basic Info Section */}
+          <div className="foundry-section">
+            <h3 className="foundry-section-title">Basic Information</h3>
+            <div className="foundry-form-grid">
+              <div className="foundry-form-group">
+                <label>Sand Plant</label>
+                <input
+                  type="text"
+                  placeholder="e.g. DISA"
+                  value={formData.sandPlant}
+                  onChange={(e) => handleInputChange("sandPlant", "", e.target.value)}
+                />
+              </div>
+              <div className="foundry-form-group">
+                <label>Date</label>
+                <input
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => handleInputChange("date", null, e.target.value)}
+                />
+              </div>
+              <div className="foundry-form-group">
+                <label>Shift</label>
+                <input
+                  type="text"
+                  placeholder="e.g. 2nd Shift"
+                  value={formData.shift}
+                  onChange={(e) => handleInputChange("shift", null, e.target.value)}
+                />
+              </div>
+              <div className="foundry-form-group">
+                <label>Compactability Setting</label>
+                <input
+                  type="text"
+                  placeholder="e.g. J.C. mode"
+                  value={formData.compactibilitySetting}
+                  onChange={(e) => handleInputChange("compactibilitySetting", null, e.target.value)}
+                />
+              </div>
+              <div className="foundry-form-group">
+                <label>Shear/Mould Strength Setting</label>
+                <input
+                  type="text"
+                  placeholder="e.g. MP.VOX"
+                  value={formData.shearStrengthSetting}
+                  onChange={(e) => handleInputChange("shearStrengthSetting", null, e.target.value)}
+                />
+              </div>
+            </div>
           </div>
 
-      {/* Sub Header */}
-      <div style={subHeader}>
-        <span style={label}>SAND PLANT:</span>
-        <input 
-          style={input} 
-          placeholder="e.g. DISA" 
-          value={formData.sandPlant}
-          onChange={(e) => handleInputChange("sandPlant", "", e.target.value)}
-        />
-        <span style={label}>DATE:</span>
-        <div style={{ gridColumn: 'span 1' }}>
-          <DatePicker
-            name="date"
-            value={formData.date}
-            onChange={(e) => handleInputChange("date", null, e.target.value)}
-          />
-        </div>
-        <span style={label}>COMPACTABILITY SETTING:</span>
-        <input 
-          style={input} 
-          placeholder="e.g. J.C. mode"
-          value={formData.compactibilitySetting} 
-          onChange={(e) => handleInputChange("compactibilitySetting", null, e.target.value)}
-        />
-        <span style={label}>SHIFT:</span>
-        <input 
-          style={input} 
-          placeholder="e.g. 2nd Shift"
-          value={formData.shift}
-          onChange={(e) => handleInputChange("shift", null, e.target.value)}
-        />
-        <span style={label}>SHEAR/MOULD STRENGTH SETTING:</span>
-        <input 
-          style={input} 
-          placeholder="e.g. MP.VOX"
-          value={formData.shearStrengthSetting}
-          onChange={(e) => handleInputChange("shearStrengthSetting", null, e.target.value)}
-        />
+          {/* Clay Parameters */}
+          <div className="foundry-section">
+            <h3 className="foundry-section-title">Clay Parameters</h3>
+            <div className="foundry-table-wrapper">
+              <table className="foundry-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {["totalClay", "activeClay", "deadClay", "vcm", "loi"].map((param) => (
+                    <tr key={param}>
+                      <td>{param.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={formData.clayTests.test1[param]}
+                          onChange={(e) => handleInputChange("clayTests", "test1", e.target.value, param)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={formData.clayTests.test2[param]}
+                          onChange={(e) => handleInputChange("clayTests", "test2", e.target.value, param)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Sieve Testing */}
+          <div className="foundry-section">
+            <h3 className="foundry-section-title">Sieve Testing</h3>
+            <div className="foundry-table-wrapper">
+              <table className="foundry-table">
+                <thead>
+                  <tr>
+                    <th rowSpan="2">Sieve size (Mic)</th>
+                    <th colSpan="2">% Wt retained sand</th>
+                    <th rowSpan="2">MF</th>
+                    <th colSpan="2">Product</th>
+                  </tr>
+                  <tr>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {sieveData.map((row) => (
+                    <tr key={row.size}>
+                      <td>{row.size}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter %"
+                          value={formData.test1.sieveSize[row.size] || ''}
+                          onChange={(e) => handleInputChange("test1", "sieveSize", e.target.value, row.size)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter %"
+                          value={formData.test2.sieveSize[row.size] || ''}
+                          onChange={(e) => handleInputChange("test2", "sieveSize", e.target.value, row.size)}
+                        />
+                      </td>
+                      <td>{row.mf}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Product"
+                          value={formData.mfTest.mf[row.mf] || ''}
+                          onChange={(e) => handleInputChange("mfTest", "mf", e.target.value, row.mf)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Product"
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="foundry-table-total">
+                    <td><strong>Total</strong></td>
+                    <td>
+                      <input
+                        type="text"
+                        placeholder="Total"
+                        value={formData.test1.sieveSize.total}
+                        onChange={(e) => handleInputChange("test1", "sieveSize", e.target.value, "total")}
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        placeholder="Total"
+                        value={formData.test2.sieveSize.total}
+                        onChange={(e) => handleInputChange("test2", "sieveSize", e.target.value, "total")}
+                      />
+                    </td>
+                    <td></td>
+                    <td>
+                      <input
+                        type="text"
+                        placeholder="Total"
+                        value={formData.mfTest.mf.total}
+                        onChange={(e) => handleInputChange("mfTest", "mf", e.target.value, "total")}
+                      />
+                    </td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Test Parameters */}
+          <div className="foundry-section">
+            <h3 className="foundry-section-title">Test Parameters</h3>
+            <div className="foundry-table-wrapper">
+              <table className="foundry-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { key: "gcs", label: "GCS" },
+                    { key: "bentonitePremix", label: "Bentonite Premix" },
+                    { key: "premixCoaldust", label: "Premix Coaldust" },
+                    { key: "lcCompactSmcat", label: "LC Compact SMCAT" },
+                    { key: "mouldStrengthSncat", label: "Mould Strength SNCAT" },
+                    { key: "permeability", label: "Permeability" },
+                    { key: "wts", label: "WTS" },
+                    { key: "moisture", label: "Moisture" },
+                    { key: "hopperLevel", label: "Hopper Level" },
+                    { key: "returnSand", label: "Return Sand" }
+                  ].map((param) => (
+                    <tr key={param.key}>
+                      <td>{param.label}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={formData.parameters.test1[param.key]}
+                          onChange={(e) => handleInputChange("parameters", "test1", e.target.value, param.key)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={formData.parameters.test2[param.key]}
+                          onChange={(e) => handleInputChange("parameters", "test2", e.target.value, param.key)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Additional Data */}
+          <div className="foundry-section">
+            <h3 className="foundry-section-title">Additional Data</h3>
+            <div className="foundry-table-wrapper">
+              <table className="foundry-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {["afsNo", "fines", "gd"].map((param) => (
+                    <tr key={param}>
+                      <td>{param.toUpperCase()}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={formData.additionalData.test1[param]}
+                          onChange={(e) => handleInputChange("additionalData", "test1", e.target.value, param)}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={formData.additionalData.test2[param]}
+                          onChange={(e) => handleInputChange("additionalData", "test2", e.target.value, param)}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Remarks */}
+          <div className="foundry-section">
+            <h3 className="foundry-section-title">Remarks</h3>
+            <div className="foundry-form-group">
+              <label>Remarks</label>
+              <textarea
+                value={formData.remarks}
+                onChange={(e) => handleInputChange("remarks", null, e.target.value)}
+                placeholder="Enter any additional remarks..."
+                rows="4"
+              />
+            </div>
+          </div>
+
+        {/* Submit Button */}
+      <div className="foundry-submit-container">
+        <SubmitButton onClick={handleSave} loading={loading}>
+          {loading ? 'Saving...' : 'Submit Entry'}
+        </SubmitButton>
       </div>
-
-      {/* Parameters Table */}
-      <div style={sectionTitle}>PARAMETERS</div>
-      <table style={table}>
-        <thead>
-          <tr>
-            <th style={th}>Parameter</th>
-            <th style={th}>TEST-1</th>
-            <th style={th}>TEST-2</th>
-          </tr>
-        </thead>
-        <tbody>
-          {["Total Clay", "Active Clay", "Dead Clay", "VCM", "LOI"].map(
-            (param, i) => (
-              <tr key={i}>
-                <td style={td}>{param}</td>
-                {[1, 2].map((t) => (
-                  <td key={t} style={td}>
-                    <div style={percentBox}>
-                      <input style={{ ...input, width: "45%" }} />
-                      <span>% =</span>
-                      <input style={{ ...input, width: "35%" }} />
-                    </div>
-                  </td>
-                ))}
-              </tr>
-            )
-          )}
-        </tbody>
-      </table>
-
-      {/* Sieve Testing */}
-      <div style={sectionTitle}>SIEVE TESTING</div>
-      <table style={table}>
-        <thead>
-          <tr>
-            <th rowSpan="2" style={altTableHeader}>
-              Sieve size (Mic)
-            </th>
-            <th colSpan="2" style={altTableHeader}>
-              % Wt retained sand
-            </th>
-            <th rowSpan="2" style={altTableHeader}>
-              MF
-            </th>
-            <th colSpan="2" style={altTableHeader}>
-              Product
-            </th>
-          </tr>
-          <tr>
-            <th style={altTableHeader}>TEST-1</th>
-            <th style={altTableHeader}>TEST-2</th>
-            <th style={altTableHeader}>TEST-1</th>
-            <th style={altTableHeader}>TEST-2</th>
-          </tr>
-        </thead>
-        <tbody>
-          {sieveData.map((row, i) => (
-            <tr key={i}>
-              <td style={td}>{row.size}</td>
-              <td style={td}>
-                <input style={input} />
-              </td>
-              <td style={td}>
-                <input style={input} />
-              </td>
-              <td style={td}>{row.mf}</td>
-              <td style={td}>
-                <input style={input} />
-              </td>
-              <td style={td}>
-                <input style={input} />
-              </td>
-            </tr>
-          ))}
-          <tr>
-            <td style={{ ...td, fontWeight: "bold" }}>Total</td>
-            <td style={td}>
-              <input style={input} />
-            </td>
-            <td style={td}>
-              <input style={input} />
-            </td>
-            <td style={td}></td>
-            <td style={td}>
-              <input style={input} />
-            </td>
-            <td style={td}>
-              <input style={input} />
-            </td>
-          </tr>
-        </tbody>
-      </table>
-
-      {/* Test Results */}
-      <div style={sectionTitle}>TEST RESULTS</div>
-      <table style={table}>
-        <thead>
-          <tr>
-            <th style={th}>Parameter</th>
-            <th style={th}>TEST-1</th>
-            <th style={th}>TEST-2</th>
-          </tr>
-        </thead>
-        <tbody>
-          {[
-            ["Compactibility", "%"],
-            ["Permeability", ""],
-            ["GCS", "gm/cm²"],
-            ["WTS", "N/cm²"],
-            ["Moisture", "%"],
-            ["Bentonite", "kg"],
-            ["Coal Dust", "kg"],
-            ["Hopper Level", "%"],
-            ["Shear Strength", "sec"],
-            ["Dust Collector Setting", ""],
-            ["Return Sand Moisture", "%"],
-            ["AFS No", ""],
-            ["Fines", "%"],
-            ["GD", ""],
-          ].map(([param, unit], i) => (
-            <tr key={i}>
-              <td style={td}>{param}</td>
-              {[1, 2].map((t) => (
-                <td key={t} style={td}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: "6px" }}>
-                    <input style={{ ...input, width: "60%" }} /> {unit}
-                  </div>
-                </td>
-              ))}
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {/* Remarks */}
-      <div style={{ marginTop: "20px" }}>
-        <strong style={{ color: "#1f2937" }}>Remarks:</strong>
-        <textarea style={remarkBox} />
-      </div>
-
-      {/* Buttons */}
-      <div style={buttonRow}>
-          <ResetButton onClick={handleClear}>Clear</ResetButton>
-          <SubmitButton onClick={handleSave}>Save</SubmitButton>
-        </div>
-        </div>
-      </div>
-    </div>
+      </form>
+    </>
   );
 }

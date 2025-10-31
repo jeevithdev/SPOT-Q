@@ -149,18 +149,21 @@ const MicroStructure = () => {
   };
 
   return (
-    <div className="microstructure-container">
-      <ViewReportButton to="/micro-structure/report" />
-      <div className="microstructure-content">
-          <div className="microstructure-header">
-            <div className="microstructure-header-text">
-              <Save size={24} style={{ color: '#5B9AA9' }} />
-              <h2>Micro Structure - Entry Form</h2>
-            </div>
-            <ResetFormButton onClick={handleReset} />
-          </div>
+    <>
+      <div className="microstructure-header">
+        <div className="microstructure-header-text">
+          <h2>
+            <Save size={28} style={{ color: '#5B9AA9' }} />
+            Micro Structure - Entry Form
+          </h2>
+        </div>
+        <div className="microstructure-header-buttons">
+          <ViewReportButton to="/micro-structure/report" />
+          <ResetFormButton onClick={handleReset} />
+        </div>
+      </div>
 
-          <form className="microstructure-form-grid">
+      <form className="microstructure-form-grid">
             <div className="microstructure-form-group">
               <label>DISA *</label>
               <select
@@ -345,16 +348,15 @@ const MicroStructure = () => {
                 className=""
               />
             </div>
-          </form>
+      </form>
 
-        <div className="microstructure-submit-container">
-          <Button onClick={handleSubmit} disabled={submitLoading} className="microstructure-submit-btn" type="button">
-            {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-            {submitLoading ? 'Saving...' : 'Submit Entry'}
-          </Button>
-        </div>
+      <div className="microstructure-submit-container">
+        <Button onClick={handleSubmit} disabled={submitLoading} className="microstructure-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+          {submitLoading ? 'Saving...' : 'Submit Entry'}
+        </Button>
       </div>
-    </div>
+    </>
   );
 };
 

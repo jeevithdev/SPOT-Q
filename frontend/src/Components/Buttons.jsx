@@ -256,7 +256,7 @@ export const DeleteActionButton = ({ onClick, disabled }) => (
 );
 
 // View Report Button - For navigating to report pages (top-right corner)
-export const ViewReportButton = ({ onClick, to }) => {
+export const ViewReportButton = ({ onClick, to, children, icon }) => {
   const handleClick = () => {
     if (to) {
       window.location.href = to;
@@ -265,13 +265,16 @@ export const ViewReportButton = ({ onClick, to }) => {
     }
   };
 
+  const IconComponent = icon || FileText;
+  const buttonText = children || "View Reports";
+
   return (
     <ViewReportButtonWrapper>
-      <button onClick={handleClick} title="View Reports">
+      <button onClick={handleClick} title={buttonText}>
         <div className="icon-container">
-          <FileText size={24} />
+          <IconComponent size={24} />
         </div>
-        <span className="button-text">View Reports</span>
+        <span className="button-text">{buttonText}</span>
       </button>
     </ViewReportButtonWrapper>
   );

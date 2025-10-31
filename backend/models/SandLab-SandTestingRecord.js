@@ -1,4 +1,4 @@
-import mongoose from "mongoose";
+const mongoose = require('mongoose');
 
 const SandTestingRecordSchema = new mongoose.Schema({
   date: {
@@ -475,4 +475,4 @@ coalDust:{
     },
   },
 });
-export default mongoose.model("SandTestingRecord", SandTestingRecordSchema);
+module.exports = mongoose.model("SandTestingRecord", SandTestingRecordSchema);

@@ -127,18 +127,21 @@ const QcProductionDetails = () => {
   };
 
   return (
-    <div className="qcproduction-container">
-      <ViewReportButton to="/qc-production-details/report" />
-      <div className="qcproduction-content">
-          <div className="qcproduction-header">
-            <div className="qcproduction-header-text">
-              <Save size={24} style={{ color: '#5B9AA9' }} />
-              <h2>QC Production Details - Entry Form</h2>
-            </div>
-            <ResetFormButton onClick={handleReset} />
-          </div>
+    <>
+      <div className="qcproduction-header">
+        <div className="qcproduction-header-text">
+          <h2>
+            <Save size={28} style={{ color: '#5B9AA9' }} />
+            QC Production Details - Entry Form
+          </h2>
+        </div>
+        <div className="qcproduction-header-buttons">
+          <ViewReportButton to="/qc-production-details/report" />
+          <ResetFormButton onClick={handleReset} />
+        </div>
+      </div>
 
-          <form className="qcproduction-form-grid">
+      <form className="qcproduction-form-grid">
             <div className="qcproduction-form-group">
               <label>Date *</label>
               <DatePicker
@@ -388,16 +391,15 @@ const QcProductionDetails = () => {
                 className={validationErrors.el ? 'invalid-input' : ''}
               />
             </div>
-          </form>
+      </form>
 
-        <div className="qcproduction-submit-container">
-          <Button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">
-            {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-            {submitLoading ? 'Saving...' : 'Submit Entry'}
-          </Button>
-        </div>
+      <div className="qcproduction-submit-container">
+        <Button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+          {submitLoading ? 'Saving...' : 'Submit Entry'}
+        </Button>
       </div>
-    </div>
+    </>
   );
 };
 

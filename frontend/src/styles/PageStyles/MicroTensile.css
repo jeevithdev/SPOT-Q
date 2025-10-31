@@ -1,39 +1,41 @@
-/* MicroTensile Page Styles */
-
-.microtensile-container {
-  width: 100%;
-  padding: 1.5rem;
-  background: transparent;
-}
-
-.microtensile-content {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-}
+/* Micro Tensile Test - Entry Page Styles */
 
 .microtensile-header {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  margin: 0 0 1.5rem 0;
+  padding: 0 0 1rem 0;
   border-bottom: 2px solid #e2e8f0;
 }
 
+.microtensile-header-buttons {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .microtensile-header-text {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
 }
 
 .microtensile-header-text h2 {
-  font-size: 1.875rem;
+  font-size: 1.625rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  line-height: 1;
 }
 
 .microtensile-reset-btn {
@@ -61,7 +63,7 @@
 .microtensile-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.25rem;
+  gap: 1rem;
 }
 
 .microtensile-form-group {

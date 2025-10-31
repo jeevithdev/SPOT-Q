@@ -1,5 +1,5 @@
-import express from 'express';
-import { 
+const express = require('express');
+const { 
     createEntry, 
     getAllEntries, 
     getEntryById,
@@ -9,7 +9,7 @@ import {
     deleteEntry,
     bulkDeleteEntries,
     getStats
-} from '../controllers/SandLab-SandTestingRecord.js';
+} = require('../controllers/SandLab-SandTestingRecord');
 
 const router = express.Router();
 
@@ -34,5 +34,5 @@ router.route('/:id')
     .patch(patchEntry)
     .delete(deleteEntry);
 
-export default router;
+module.exports = router;
 

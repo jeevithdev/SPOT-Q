@@ -1,75 +1,41 @@
-/* Tab Styles */
-.microstructure-tabs-container {
-  margin-bottom: 2rem;
-  border-bottom: 2px solid #e2e8f0;
-  background: white;
-  border-radius: 8px 8px 0 0;
-}
+/* Micro Structure - Entry Page Styles */
 
-.microstructure-tabs {
-  display: flex;
-  gap: 0;
-  padding: 0 1rem;
-}
-
-.microstructure-tab {
-  padding: 1rem 2rem;
-  text-decoration: none;
-  color: #64748b;
-  font-weight: 500;
-  font-size: 1rem;
-  border-bottom: 3px solid transparent;
-  transition: all 0.3s ease;
-  position: relative;
-  margin-bottom: -2px;
-}
-
-.microstructure-tab:hover {
-  color: #334155;
-}
-
-.microstructure-tab.active {
-  color: #2563eb;
-  border-bottom-color: #2563eb;
-  font-weight: 600;
-}
-
-/* === Base Layout === */
-.microstructure-container {
-  width: 100%;
-  padding: 1.5rem;
-  background: transparent;
-}
-
-.microstructure-content {
-  width: 100%;
-  max-width: 1200px;
-  margin: 0 auto;
-}
-
-/* === Header Section === */
 .microstructure-header {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  margin-bottom: 2rem;
-  padding-bottom: 1.5rem;
+  margin: 0 0 1.5rem 0;
+  padding: 0 0 1rem 0;
   border-bottom: 2px solid #e2e8f0;
 }
 
+.microstructure-header-buttons {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+}
+
 .microstructure-header-text {
+  flex: 1;
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  margin: 0;
+  padding: 0;
 }
 
 .microstructure-header-text h2 {
-  font-size: 1.875rem;
+  font-size: 1.625rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  line-height: 1;
 }
 
 .microstructure-reset-btn {
@@ -98,9 +64,7 @@
 .microstructure-form-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1.25rem;
-  align-items: start;
-  row-gap: 1rem;
+  gap: 1rem;
 }
 
 .microstructure-form-group {

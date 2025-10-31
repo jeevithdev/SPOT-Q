@@ -15,7 +15,6 @@ const navItems = [
     department: 'Moulding',
     dropdown: [
       { name: 'DISAMATIC PRODUCT REPORT', path: '/moulding/disamatic-product-report' },
-      { name: 'MOULD HARDNESS AND PATTERN TEMPERATURE RECORD', path: '/moulding/mould-hardness-pattern-temperature-record' },
       { name: 'DMM SETTING PARAMETERS CHECK SHEET', path: '/moulding/dmm-setting-parameters' },
     ],
   },

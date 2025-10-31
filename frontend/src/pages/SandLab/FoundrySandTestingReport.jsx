@@ -1,59 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { DatePicker, FilterButton, ResetButton, EditActionButton, DeleteActionButton } from '../../Components/Buttons';
+import { Filter } from 'lucide-react';
+import { FilterButton, DatePicker, DeleteActionButton } from '../../Components/Buttons';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
-import '../../styles/PageStyles/Sandlab/FoundarySandTestingNote.css';
+import '../../styles/PageStyles/Sandlab/FoundarySandTestingNoteReport.css';
 
 const FoundrySandTestingReport = () => {
-  const location = useLocation();
-
-  const isActive = (path) => {
-    return location.pathname === path;
-  };
-
-  const FoundrySandTestingTabs = () => {
-    const tabStyle = {
-      padding: '0.75rem 1.5rem',
-      textDecoration: 'none',
-      color: '#64748b',
-      borderBottom: '2px solid transparent',
-      fontWeight: 500,
-      transition: 'all 0.2s ease',
-    };
-
-    const tabActiveStyle = {
-      color: '#1e293b',
-      borderBottomColor: '#1e293b',
-    };
-
-    return (
-      <div style={{ backgroundColor: '#fff', borderBottom: '1px solid #e2e8f0', padding: '0 2rem' }}>
-        <div style={{ display: 'flex', gap: '1rem', marginBottom: '-1px' }}>
-          <Link
-            to="/sand-lab/foundry-sand-testing-note"
-            style={isActive('/sand-lab/foundry-sand-testing-note') ? { ...tabStyle, ...tabActiveStyle } : tabStyle}
-          >
-            Data Entry
-          </Link>
-          <Link
-            to="/sand-lab/foundry-sand-testing-note/report"
-            style={isActive('/sand-lab/foundry-sand-testing-note/report') ? { ...tabStyle, ...tabActiveStyle } : tabStyle}
-          >
-            Report
-          </Link>
-        </div>
-      </div>
-    );
-  };
-
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [showEditModal, setShowEditModal] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -109,8 +66,6 @@ const FoundrySandTestingReport = () => {
         if (response.success) {
           alert('Record deleted successfully');
           await fetchItems();
-        } else {
-          alert('Failed to delete record');
         }
       } catch (error) {
         console.error('Error deleting record:', error);
@@ -120,88 +75,78 @@ const FoundrySandTestingReport = () => {
   };
 
   return (
-    <div className="foundry-page-container">
-      <div className="foundry-main-card">
-        <FoundrySandTestingTabs />
-        <div className="foundry-report-container">
-          <div className="foundry-report-header">
-            <h3 className="foundry-report-title">Foundry Sand Testing - Report</h3>
+    <div className="foundry-report-container">
+      <div className="foundry-report-content">
+        {/* Header */}
+        <div className="foundry-report-header">
+          <div className="foundry-report-header-text">
+            <Filter size={24} />
+            <h2>Foundry Sand Testing Note - Reports</h2>
           </div>
+        </div>
 
-          <div className="foundry-report-filter-grid">
+        {/* Filter Section */}
+        <div className="foundry-filter-section">
+          <div className="foundry-filter-grid">
             <div className="foundry-filter-group">
-              <label className="foundry-filter-label">Start Date</label>
+              <label>Start Date</label>
               <DatePicker
-                name="startDate"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
+                name="startDate"
                 placeholder="Select start date"
               />
             </div>
-
             <div className="foundry-filter-group">
-              <label className="foundry-filter-label">End Date</label>
+              <label>End Date</label>
               <DatePicker
-                name="endDate"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
+                name="endDate"
                 placeholder="Select end date"
               />
             </div>
-
-            <div className="foundry-filter-actions" style={{ display: 'flex', gap: '0.5rem' }}>
-              <FilterButton onClick={handleFilter}>Filter</FilterButton>
-              <ResetButton onClick={fetchItems}>Refresh</ResetButton>
-            </div>
           </div>
+          <div className="foundry-filter-actions">
+            <FilterButton onClick={handleFilter}>
+              Apply Filter
+            </FilterButton>
+          </div>
+        </div>
 
-          {loading ? (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '2rem' }}>
-              <Loader />
-            </div>
-          ) : (
-            <div className="foundry-report-table-wrapper">
-              <table className="foundry-report-table">
-                <thead className="foundry-report-table-head">
+        {/* Table Section */}
+        {loading ? (
+          <Loader />
+        ) : (
+          <div className="foundry-table-container">
+            <div className="foundry-table-wrapper">
+              <table className="foundry-table">
+                <thead>
                   <tr>
-                    <th className="foundry-report-th">Date</th>
-                    <th className="foundry-report-th">Sand Plant</th>
-                    <th className="foundry-report-th">Shift</th>
-                    <th className="foundry-report-th">Total Clay (%)</th>
-                    <th className="foundry-report-th">Active Clay (%)</th>
-                    <th className="foundry-report-th">Dead Clay (%)</th>
-                    <th className="foundry-report-th">VCM (%)</th>
-                    <th className="foundry-report-th">LOI (%)</th>
-                    <th className="foundry-report-th">AFS No.</th>
-                    <th className="foundry-report-th">Compactibility (%)</th>
-                    <th className="foundry-report-th">Permeability</th>
-                    <th className="foundry-report-th">GCS (gm/cm²)</th>
-                    <th className="foundry-report-th">Actions</th>
+                    <th>Date</th>
+                    <th>Shift</th>
+                    <th>Sand Plant</th>
+                    <th>Compactability Setting</th>
+                    <th>Shear Strength Setting</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="13" className="foundry-no-records">
-                        No records found
+                      <td colSpan="6" className="foundry-no-data">
+                        No records found. Submit entries to see them here.
                       </td>
                     </tr>
                   ) : (
                     filteredItems.map((item) => (
                       <tr key={item._id}>
-                        <td className="foundry-table-body-cell">{new Date(item.date).toLocaleDateString()}</td>
-                        <td className="foundry-table-body-cell">{item.sandPlant || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.shift || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.totalClay || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.activeClay || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.deadClay || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.vcm || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.clayTests?.test1?.loi || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.additionalData?.test1?.afsNo || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.compactibilitySetting || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.parameters?.test1?.permeability || '-'}</td>
-                        <td className="foundry-table-body-cell">{item.parameters?.test1?.gcs || '-'}</td>
-                        <td className="foundry-table-body-cell" style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                        <td>{item.date ? new Date(item.date).toLocaleDateString() : '-'}</td>
+                        <td>{item.shift || '-'}</td>
+                        <td>{item.sandPlant || '-'}</td>
+                        <td>{item.compactibilitySetting || '-'}</td>
+                        <td>{item.shearStrengthSetting || '-'}</td>
+                        <td className="foundry-table-actions">
                           <DeleteActionButton onClick={() => handleDelete(item._id)} />
                         </td>
                       </tr>
@@ -210,8 +155,8 @@ const FoundrySandTestingReport = () => {
                 </tbody>
               </table>
             </div>
-          )}
-        </div>
+          </div>
+        )}
       </div>
     </div>
   );

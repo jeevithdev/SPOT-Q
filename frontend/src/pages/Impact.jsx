@@ -119,21 +119,21 @@ const Impact = () => {
   };
 
   return (
-    <div className="impact-container">
-      <ViewReportButton to="/impact/report" />
-      <div className="impact-content">
-          <div className="impact-header">
-            <div className="impact-header-text">
-              <h2>
-                <Save size={28} style={{ color: '#5B9AA9' }} />
-                Impact Test - Entry Form
-              </h2>
-              <p>Record impact test measurements and specifications</p>
-            </div>
-            <ResetFormButton onClick={handleReset} />
-          </div>
+    <>
+      <div className="impact-header">
+        <div className="impact-header-text">
+          <h2>
+            <Save size={28} style={{ color: '#5B9AA9' }} />
+            Impact Test - Entry Form
+          </h2>
+        </div>
+        <div className="impact-header-buttons">
+          <ViewReportButton to="/impact/report" />
+          <ResetFormButton onClick={handleReset} />
+        </div>
+      </div>
 
-          <form className="impact-form-grid">
+      <form className="impact-form-grid">
             <div className="impact-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
@@ -211,16 +211,15 @@ const Impact = () => {
                 className=""
               />
             </div>
-          </form>
+      </form>
 
-        <div className="impact-submit-container">
-          <Button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn" type="button">
-            {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-            {submitLoading ? 'Saving...' : 'Submit Entry'}
-          </Button>
-        </div>
+      <div className="impact-submit-container">
+        <Button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+          {submitLoading ? 'Saving...' : 'Submit Entry'}
+        </Button>
       </div>
-    </div>
+    </>
   );
 };
 

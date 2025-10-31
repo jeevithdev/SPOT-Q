@@ -1,4 +1,5 @@
 import React, { useState, useRef } from 'react';
+import { Save } from 'lucide-react';
 import { ViewReportButton, ResetFormButton } from '../Components/Buttons';
 import '../styles/PageStyles/Process.css';
 
@@ -60,20 +61,21 @@ export default function ProcessControl() {
   };
 
   return (
-    <div className="process-container">
-      <ViewReportButton to="/process/report" />
-      <div className="process-content">
-        <div className="process-header">
-            <div className="process-header-text">
-              <div>
-                <h2>PROCESS CONTROL</h2>
-                <div style={{color:'#64748b'}}>Manufacturing Process Parameters Monitoring</div>
-              </div>
-            </div>
-            <ResetFormButton onClick={handleReset} />
-          </div>
+    <>
+      <div className="process-header">
+        <div className="process-header-text">
+          <h2>
+            <Save size={28} style={{ color: '#5B9AA9' }} />
+            Process Control - Entry Form
+          </h2>
+        </div>
+        <div className="process-header-buttons">
+          <ViewReportButton to="/process/report" />
+          <ResetFormButton onClick={handleReset} />
+        </div>
+      </div>
 
-          <div className="process-form-grid">
+      <div className="process-form-grid">
             <div className="process-form-group">
               <label>Part Name / Date / Heat Code</label>
               <input ref={el => inputRefs.current.partNameDateHeatCode = el} type="text" name="partNameDateHeatCode" value={formData.partNameDateHeatCode} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'partNameDateHeatCode')} placeholder="e.g., ABC-123 / 29-10-2025 / HC-001" />
@@ -181,12 +183,11 @@ export default function ProcessControl() {
               <label>Remarks</label>
               <textarea ref={el => inputRefs.current.remarks = el} name="remarks" value={formData.remarks} onChange={handleChange} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }}} rows="4" placeholder="Enter any additional notes..." />
             </div>
-          </div>
-
-        <div className="process-submit-container">
-          <button onClick={handleSubmit} className="process-submit-btn">Submit Entry</button>
-        </div>
       </div>
-    </div>
+
+      <div className="process-submit-container">
+        <button onClick={handleSubmit} className="process-submit-btn">Submit Entry</button>
+      </div>
+    </>
   );
 }

@@ -126,22 +126,22 @@ const Tensile = () => {
   };
 
   return (
-    <div className="tensile-container">
-      <ViewReportButton to="/tensile/report" />
-      <div className="tensile-content">
-          <div className="tensile-header">
-            <div className="tensile-header-text">
-              <h2>
-                <Save size={28} style={{ color: '#5B9AA9' }} />
-                Tensile Test - Entry Form
-              </h2>
-              <p>Record tensile test measurements and analysis</p>
-            </div>
-            <ResetFormButton onClick={handleReset} />
-          </div>
+    <>
+      <div className="tensile-header">
+        <div className="tensile-header-text">
+          <h2>
+            <Save size={28} style={{ color: '#5B9AA9' }} />
+            Tensile Test - Entry Form
+          </h2>
+        </div>
+        <div className="tensile-header-buttons">
+          <ViewReportButton to="/tensile/report" />
+          <ResetFormButton onClick={handleReset} />
+        </div>
+      </div>
 
-          {/* Entry Form */}
-          <form className="tensile-form-grid">
+      {/* Entry Form */}
+      <form className="tensile-form-grid">
             <div className="tensile-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
@@ -337,16 +337,15 @@ const Tensile = () => {
                 className=""
               />
             </div>
-          </form>
+      </form>
 
-        <div className="tensile-submit-container">
-          <Button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
-            {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-            {submitLoading ? 'Saving...' : 'Submit Entry'}
-          </Button>
-        </div>
+      <div className="tensile-submit-container">
+        <Button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+          {submitLoading ? 'Saving...' : 'Submit Entry'}
+        </Button>
       </div>
-    </div>
+    </>
   );
 };
 
