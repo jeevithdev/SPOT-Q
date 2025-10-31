@@ -1,11 +1,65 @@
 /* DMM Setting Parameters Report - Report Page Styles */
 
+/* Back to Entry Button */
+.dmm-report-back-btn {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 10px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  font-weight: 600;
+  font-family: 'Poppins', sans-serif;
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  z-index: 100;
+}
+
+.dmm-report-back-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.dmm-report-back-btn:active {
+  transform: translateY(0);
+}
+
+.dmm-report-back-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+}
+
+.dmm-report-back-btn svg {
+  width: 16px;
+  height: 16px;
+  color: white;
+}
+
+.dmm-report-back-text {
+  font-size: 0.813rem;
+  font-weight: 600;
+  color: white;
+}
+
 .dmm-page-container {
   max-width: 1400px;
   margin: 0 auto;
   padding: 20px;
   padding-top: 20px;
   padding-right: 180px; /* Space for floating button */
+  position: relative;
 }
 
 .dmm-content {

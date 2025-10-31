@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
-import { Save, X } from 'lucide-react';
-import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
+import { Save, X, RefreshCw, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DatePicker } from '../Components/Buttons';
 import ValidationPopup from '../Components/ValidationPopup';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroTensile.css';
 
 const MicroTensile = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     item: '',
@@ -93,8 +95,12 @@ const MicroTensile = () => {
           </h2>
         </div>
         <div className="microtensile-header-buttons">
-          <ViewReportButton to="/micro-tensile/report" />
-          <ResetFormButton onClick={handleReset} />
+          <button className="microtensile-view-report-btn" onClick={() => navigate('/micro-tensile/report')} type="button">
+            <div className="microtensile-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="microtensile-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
@@ -238,10 +244,17 @@ const MicroTensile = () => {
           </div>
 
       <div className="microtensile-submit-container">
-        <Button onClick={handleSubmit} disabled={submitLoading} className="microtensile-submit-btn" type="button">
-          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+        <button onClick={handleSubmit} disabled={submitLoading} className="microtensile-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </Button>
+        </button>
+      </div>
+
+      <div className="microtensile-reset-container">
+        <button onClick={handleReset} className="microtensile-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
       </div>
     </>
   );

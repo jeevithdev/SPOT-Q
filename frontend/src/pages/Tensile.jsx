@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
-import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
+import { Save, RefreshCw, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DatePicker } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/Tensile.css';
 
 const Tensile = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     item: '',
@@ -135,8 +137,12 @@ const Tensile = () => {
           </h2>
         </div>
         <div className="tensile-header-buttons">
-          <ViewReportButton to="/tensile/report" />
-          <ResetFormButton onClick={handleReset} />
+          <button className="tensile-view-report-btn" onClick={() => navigate('/tensile/report')} type="button">
+            <div className="tensile-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="tensile-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
@@ -340,10 +346,17 @@ const Tensile = () => {
       </form>
 
       <div className="tensile-submit-container">
-        <Button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
-          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+        <button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </Button>
+        </button>
+      </div>
+
+      <div className="tensile-reset-container">
+        <button onClick={handleReset} className="tensile-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
       </div>
     </>
   );

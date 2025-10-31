@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Edit2 } from "lucide-react";
-import { FilterButton, ViewReportButton } from '../../Components/Buttons';
+import { FilterButton } from '../../Components/Buttons';
 import '../../styles/PageStyles/Moulding/DmmSettingParametersReport.css';
 
 const DmmSettingParametersReport = () => {
@@ -26,9 +26,12 @@ const DmmSettingParametersReport = () => {
 
   return (
     <div className="dmm-page-container">
-      <ViewReportButton onClick={handleBackToEntry} icon={Edit2}>
-        Data Entry
-      </ViewReportButton>
+      <button className="dmm-report-back-btn" onClick={handleBackToEntry} type="button">
+        <div className="dmm-report-back-icon">
+          <Edit2 size={16} />
+        </div>
+        <span className="dmm-report-back-text">Data Entry</span>
+      </button>
       
       <div className="dmm-content">
         <div className="dmm-title section-header" style={{ marginBottom: '2rem' }}>

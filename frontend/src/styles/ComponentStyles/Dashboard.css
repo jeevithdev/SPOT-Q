@@ -8,6 +8,7 @@
   width: 100%;
   max-width: 100vw;
   overflow-x: hidden;
+  position: relative;
 }
 
 @media (min-width: 768px) {
@@ -50,6 +51,82 @@
 .dashboard-page-content {
   display: block;
   width: 100%;
+  position: relative;
+  min-height: calc(100vh - var(--navbar-height, 75px) - var(--spacing-md, 1rem) * 2);
+  padding-bottom: 80px;
+}
+
+/* Reset button wrapper - ensure it positions relative to dashboard container */
+.dashboard-page-container [class*="ResetFormButtonWrapper"],
+.dashboard-page-container [class*="ResetButtonWrapper"],
+.dashboard-page-content [class*="ResetFormButtonWrapper"],
+.dashboard-page-content [class*="ResetButtonWrapper"] {
+  position: absolute !important;
+  bottom: 20px !important;
+  left: 20px !important;
+  z-index: 100 !important;
+}
+
+/* View report button wrapper - ensure it positions relative to dashboard container */
+.dashboard-page-container [class*="ViewReportButtonWrapper"],
+.dashboard-page-content [class*="ViewReportButtonWrapper"] {
+  position: absolute !important;
+  top: 20px !important;
+  right: 20px !important;
+  z-index: 100 !important;
+}
+
+/* Ensure header containers don't interfere with absolute positioning of buttons */
+.dashboard-page-container .process-header,
+.dashboard-page-container .impact-header,
+.dashboard-page-container .tensile-header,
+.dashboard-page-container .microtensile-header,
+.dashboard-page-container .microstructure-header,
+.dashboard-page-container .qcproduction-header,
+.dashboard-page-container .cupola-holder-header,
+.dashboard-page-container .melting-log-header,
+.dashboard-page-container .sand-header,
+.dashboard-page-container .foundry-header,
+.dashboard-page-container .disamatic-header,
+.dashboard-page-container .dmm-header {
+  position: static;
+  z-index: 1;
+}
+
+/* Ensure header buttons container doesn't constrain absolute positioning */
+.dashboard-page-container .process-header-buttons,
+.dashboard-page-container .impact-header-buttons,
+.dashboard-page-container .tensile-header-buttons,
+.dashboard-page-container .microtensile-header-buttons,
+.dashboard-page-container .microstructure-header-buttons,
+.dashboard-page-container .qcproduction-header-buttons,
+.dashboard-page-container .cupola-holder-header-buttons,
+.dashboard-page-container .melting-log-header-buttons,
+.dashboard-page-container .sand-header-buttons,
+.dashboard-page-container .foundry-header-buttons,
+.dashboard-page-container .disamatic-header-buttons,
+.dashboard-page-container .dmm-header-buttons {
+  position: static;
+}
+
+/* Reset button specific positioning */
+.dashboard-page-container [class*="ResetFormButtonWrapper"],
+.dashboard-page-container [class*="ResetButtonWrapper"],
+.dashboard-page-content [class*="ResetFormButtonWrapper"],
+.dashboard-page-content [class*="ResetButtonWrapper"] {
+  bottom: 20px !important;
+  left: 20px !important;
+  top: auto !important;
+  right: auto !important;
+}
+
+/* View report button specific positioning */
+.dashboard-page-container [class*="ViewReportButtonWrapper"],
+.dashboard-page-content [class*="ViewReportButtonWrapper"] {
+  top: 20px !important;
+  right: 20px !important;
+  bottom: auto !important;
+  left: auto !important;
 }
 
 /* Example styles for individual content cards within the dashboard-page-content */

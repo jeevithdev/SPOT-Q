@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Save, RefreshCw } from 'lucide-react';
-import { Button, DatePicker, ViewReportButton } from '../../Components/Buttons';
+import { Save, RefreshCw, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DatePicker } from '../../Components/Buttons';
 import ValidationPopup from '../../Components/ValidationPopup';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Melting/CupolaHolderLogSheet.css';
 
 const CupolaHolderLogSheet = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     date: '',
     heatNo: '',
@@ -97,15 +99,16 @@ const CupolaHolderLogSheet = () => {
           </h2>
         </div>
         <div className="cupola-holder-header-buttons">
-          <ViewReportButton to="/melting/cupola-holder-log-sheet/report" />
-          <Button onClick={handleReset} className="cupola-holder-reset-btn" variant="secondary">
-            <RefreshCw size={18} />
-            Reset
-          </Button>
+          <button className="cupola-holder-view-report-btn" onClick={() => navigate('/melting/cupola-holder-log-sheet/report')} type="button">
+            <div className="cupola-holder-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="cupola-holder-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
-          <div className="cupola-holder-form-grid">
+      <div className="cupola-holder-form-grid">
             {/* Basic Information */}
             <div className="cupola-holder-form-group">
               <label>Date *</label>
@@ -347,16 +350,23 @@ const CupolaHolderLogSheet = () => {
             </div>
           </div>
 
-          <div className="cupola-holder-submit-container">
-            <Button
-              onClick={handleSubmit}
-              disabled={submitLoading}
-              className="cupola-holder-submit-btn"
-              type="button"
-            >
-              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
-              {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </Button>
+      <div className="cupola-holder-submit-container">
+        <button
+          onClick={handleSubmit}
+          disabled={submitLoading}
+          className="cupola-holder-submit-btn"
+          type="button"
+        >
+          {submitLoading ? <Loader size={20} /> : <Save size={18} />}
+          {submitLoading ? 'Saving...' : 'Submit Entry'}
+        </button>
+      </div>
+
+      <div className="cupola-holder-reset-container">
+        <button onClick={handleReset} className="cupola-holder-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
       </div>
     </>
   );

@@ -1,7 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Save } from "lucide-react";
-import { ViewReportButton, SubmitButton, ResetFormButton } from '../../Components/Buttons';
+import { Save, RefreshCw, FileText } from "lucide-react";
 import '../../styles/PageStyles/Moulding/DmmSettingParameters.css';
 
 const initialRow = {
@@ -339,12 +338,16 @@ const DmmSettingParameters = () => {
         <div className="dmm-header-text">
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
-            DMM Setting Parameters Check Sheet
+            DMM Setting Parameters Check Sheet - Entry Form
           </h2>
         </div>
         <div className="dmm-header-buttons">
-          <ViewReportButton onClick={handleViewReport} />
-          <ResetFormButton onClick={handleReset} />
+          <button className="dmm-view-report-btn" onClick={handleViewReport} type="button">
+            <div className="dmm-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="dmm-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
@@ -456,11 +459,19 @@ const DmmSettingParameters = () => {
 
         {/* Submit Button */}
         <div className="dmm-submit-container">
-          <SubmitButton onClick={handleSubmit}>
+          <button onClick={handleSubmit} className="dmm-submit-btn" type="button">
+            <Save size={18} />
             Submit Entry
-          </SubmitButton>
+          </button>
         </div>
       </form>
+
+      <div className="dmm-reset-container">
+        <button onClick={handleReset} className="dmm-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
+      </div>
     </>
   );
 };

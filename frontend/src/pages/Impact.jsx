@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
-import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
+import { Save, RefreshCw, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DatePicker } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/Impact.css';
 
 const Impact = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     partName: '',
@@ -128,8 +130,12 @@ const Impact = () => {
           </h2>
         </div>
         <div className="impact-header-buttons">
-          <ViewReportButton to="/impact/report" />
-          <ResetFormButton onClick={handleReset} />
+          <button className="impact-view-report-btn" onClick={() => navigate('/impact/report')} type="button">
+            <div className="impact-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="impact-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
@@ -214,10 +220,17 @@ const Impact = () => {
       </form>
 
       <div className="impact-submit-container">
-        <Button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn" type="button">
-          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+        <button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </Button>
+        </button>
+      </div>
+
+      <div className="impact-reset-container">
+        <button onClick={handleReset} className="impact-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
       </div>
     </>
   );

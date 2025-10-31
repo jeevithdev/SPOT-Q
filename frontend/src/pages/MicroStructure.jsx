@@ -1,11 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Save } from 'lucide-react';
-import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
+import { Save, RefreshCw, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DatePicker } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroStructure.css';
 
 const MicroStructure = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     disa: '',
     insDate: '',
@@ -158,8 +160,12 @@ const MicroStructure = () => {
           </h2>
         </div>
         <div className="microstructure-header-buttons">
-          <ViewReportButton to="/micro-structure/report" />
-          <ResetFormButton onClick={handleReset} />
+          <button className="microstructure-view-report-btn" onClick={() => navigate('/micro-structure/report')} type="button">
+            <div className="microstructure-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="microstructure-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
@@ -351,10 +357,17 @@ const MicroStructure = () => {
       </form>
 
       <div className="microstructure-submit-container">
-        <Button onClick={handleSubmit} disabled={submitLoading} className="microstructure-submit-btn" type="button">
-          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+        <button onClick={handleSubmit} disabled={submitLoading} className="microstructure-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </Button>
+        </button>
+      </div>
+
+      <div className="microstructure-reset-container">
+        <button onClick={handleReset} className="microstructure-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
       </div>
     </>
   );

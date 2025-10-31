@@ -1,9 +1,10 @@
 import React, { useState, useRef } from 'react';
-import { Save } from 'lucide-react';
-import { ViewReportButton, ResetFormButton } from '../Components/Buttons';
+import { Save, RefreshCw, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 import '../styles/PageStyles/Process.css';
 
 export default function ProcessControl() {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     partNameDateHeatCode: '', quantityOfMoulds: '', metalCompositionC: '', metalCompositionSi: '',
     metalCompositionMn: '', metalCompositionP: '', metalCompositionS: '', metalCompositionMgFL: '',
@@ -70,8 +71,12 @@ export default function ProcessControl() {
           </h2>
         </div>
         <div className="process-header-buttons">
-          <ViewReportButton to="/process/report" />
-          <ResetFormButton onClick={handleReset} />
+          <button className="process-view-report-btn" onClick={() => navigate('/process/report')} type="button">
+            <div className="process-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="process-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
@@ -186,7 +191,17 @@ export default function ProcessControl() {
       </div>
 
       <div className="process-submit-container">
-        <button onClick={handleSubmit} className="process-submit-btn">Submit Entry</button>
+        <button onClick={handleSubmit} className="process-submit-btn" type="button">
+          <Save size={18} />
+          Submit Entry
+        </button>
+      </div>
+
+      <div className="process-reset-container">
+        <button onClick={handleReset} className="process-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
       </div>
     </>
   );

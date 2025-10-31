@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
-import { Save } from 'lucide-react';
-import { Button, DatePicker, ViewReportButton, ResetFormButton } from '../Components/Buttons';
+import { Save, RefreshCw, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DatePicker } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/QcProductionDetails.css';
 
 const QcProductionDetails = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     date: '',
     partName: '',
@@ -136,8 +138,16 @@ const QcProductionDetails = () => {
           </h2>
         </div>
         <div className="qcproduction-header-buttons">
-          <ViewReportButton to="/qc-production-details/report" />
-          <ResetFormButton onClick={handleReset} />
+          <button 
+            className="qcproduction-view-report-btn" 
+            onClick={() => navigate('/qc-production-details/report')} 
+            type="button"
+          >
+            <div className="qcproduction-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="qcproduction-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
@@ -394,10 +404,17 @@ const QcProductionDetails = () => {
       </form>
 
       <div className="qcproduction-submit-container">
-        <Button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">
-          {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+        <button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">
+          {submitLoading ? <Loader size={20} /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </Button>
+        </button>
+      </div>
+
+      <div className="qcproduction-reset-container">
+        <button onClick={handleReset} className="qcproduction-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
       </div>
     </>
   );

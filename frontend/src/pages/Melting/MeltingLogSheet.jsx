@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
-import { Save, RefreshCw } from 'lucide-react';
-import { Button, DatePicker, ViewReportButton } from '../../Components/Buttons';
+import { Save, RefreshCw, FileText } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { DatePicker } from '../../Components/Buttons';
 import ValidationPopup from '../../Components/ValidationPopup';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Melting/MeltingLogSheet.css';
 
 const MeltingLogSheet = () => {
+  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     date: '',
     heatNo: '',
@@ -169,15 +171,16 @@ const MeltingLogSheet = () => {
           </h2>
         </div>
         <div className="melting-log-header-buttons">
-          <ViewReportButton to="/melting/melting-log-sheet/report" />
-          <Button onClick={handleReset} className="melting-log-reset-btn" variant="secondary">
-            <RefreshCw size={18} />
-            Reset
-          </Button>
+          <button className="melting-log-view-report-btn" onClick={() => navigate('/melting/melting-log-sheet/report')} type="button">
+            <div className="melting-log-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="melting-log-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
-          <div className="melting-log-form-grid">
+      <div className="melting-log-form-grid">
             {/* Basic Information */}
             <div className="melting-log-form-group">
               <label>Date *</label>
@@ -614,15 +617,22 @@ const MeltingLogSheet = () => {
           </div>
 
           <div className="melting-log-submit-container">
-            <Button
+            <button
               onClick={handleSubmit}
               disabled={submitLoading}
               className="melting-log-submit-btn"
               type="button"
             >
-              {submitLoading ? <Loader size={20} /> : <Save size={20} />}
+              {submitLoading ? <Loader size={20} /> : <Save size={18} />}
               {submitLoading ? 'Saving...' : 'Submit Entry'}
-            </Button>
+            </button>
+          </div>
+
+      <div className="melting-log-reset-container">
+        <button onClick={handleReset} className="melting-log-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
       </div>
 
     </>

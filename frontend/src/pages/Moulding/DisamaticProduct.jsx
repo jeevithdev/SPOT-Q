@@ -1,8 +1,7 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Save } from "lucide-react";
+import { Save, RefreshCw, FileText } from "lucide-react";
 import Select from "react-select";
-import { SubmitButton, ViewReportButton, ResetFormButton } from "../../Components/Buttons";
 import "../../styles/PageStyles/Moulding/DisamaticProduct.css";
 
 const memberOptions = [
@@ -76,12 +75,16 @@ const DisamaticProduct = () => {
         <div className="disamatic-header-text">
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
-            Disamatic Production Report DISA
+            Disamatic Production Report DISA - Entry Form
           </h2>
         </div>
         <div className="disamatic-header-buttons">
-          <ViewReportButton onClick={handleViewReport} />
-          <ResetFormButton onClick={handleReset} />
+          <button className="disamatic-view-report-btn" onClick={handleViewReport} type="button">
+            <div className="disamatic-view-report-icon">
+              <FileText size={16} />
+            </div>
+            <span className="disamatic-view-report-text">View Reports</span>
+          </button>
         </div>
       </div>
 
@@ -310,11 +313,19 @@ const DisamaticProduct = () => {
 
         {/* Submit Button */}
         <div className="disamatic-submit-container">
-          <SubmitButton onClick={handleSubmit}>
+          <button onClick={handleSubmit} className="disamatic-submit-btn" type="button">
+            <Save size={18} />
             Submit Entry
-          </SubmitButton>
+          </button>
         </div>
       </form>
+
+      <div className="disamatic-reset-container">
+        <button onClick={handleReset} className="disamatic-reset-btn">
+          <RefreshCw size={18} />
+          Reset
+        </button>
+      </div>
     </>
   );
 };
