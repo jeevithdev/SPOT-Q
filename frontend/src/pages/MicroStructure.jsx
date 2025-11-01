@@ -188,6 +188,11 @@ const MicroStructure = () => {
               </select>
             </div>
 
+            {/* Micro Structure Section */}
+            <div className="section-header" style={{ gridColumn: '1 / -1' }}>
+              <h3>Micro Structure Details</h3>
+            </div>
+
             <div className="microstructure-form-group">
               <label>Inspection Date *</label>
               <DatePicker
@@ -236,11 +241,6 @@ const MicroStructure = () => {
                 placeholder="e.g: 2024-HC-005"
                 className={validationErrors.heatCode ? 'invalid-input' : ''}
               />
-            </div>
-
-            {/* Micro Structure Section */}
-            <div className="section-header">
-              <h3>Micro Structure Details </h3>
             </div>
             
             <div className="microstructure-form-group">

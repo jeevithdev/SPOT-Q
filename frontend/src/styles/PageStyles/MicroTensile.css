@@ -154,6 +154,49 @@
   min-height: 80px;
 }
 
+/* Disa Checkboxes */
+.microtensile-disa-checkboxes {
+  display: flex;
+  gap: 1.5rem;
+  flex-wrap: wrap;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border: 2px solid #e2e8f0;
+  border-radius: 8px;
+}
+
+.microtensile-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  transition: all 0.2s ease;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #334155;
+}
+
+.microtensile-checkbox-label:hover {
+  background: #f1f5f9;
+}
+
+.microtensile-checkbox-label input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  cursor: pointer;
+  accent-color: #5B9AA9;
+}
+
+.microtensile-checkbox-label input[type="checkbox"]:checked {
+  accent-color: #5B9AA9;
+}
+
+.microtensile-checkbox-label span {
+  user-select: none;
+}
+
 /* Submit Button Container - Positioned at bottom right corner (Primary Action) */
 .microtensile-submit-container {
   position: absolute;

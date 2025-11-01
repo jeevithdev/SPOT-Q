@@ -1,128 +1,233 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, RefreshCw, FileText } from 'lucide-react';
-import api from '../../utils/api';
+import { Save, FileText, Plus, Trash2, RefreshCw } from 'lucide-react';
+import CustomDatePicker from '../../Components/CustomDatePicker';
 import '../../styles/PageStyles/Sandlab/SandTestingRecord.css';
-
-const initialFormData = {
-  date: new Date().toISOString().split('T')[0],
-  sandShifts: {
-    shiftI: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', batchNo: { bentonite: '' } },
-    shiftII: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', batchNo: { coalDust: '', Premix: '' } },
-    shiftIII: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', batchNo: { coalDust: '', Premix: '' } }
-  },
-  clayShifts: {
-    shiftI: { totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: '' },
-    ShiftII: { totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: '' },
-    ShiftIII: { totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: '' }
-  },
-  mixshifts: {
-    ShiftI: { mixno: { start: '', end: '', total: '' }, numberOfMixRejected: '', returnSandHopperLevel: '' },
-    ShiftII: { mixno: { start: '', end: '', total: '' }, numberOfMixRejected: '', returnSandHopperLevel: '' },
-    ShiftIII: { mixno: { start: '', end: '', total: '' }, numberOfMixRejected: '', returnSandHopperLevel: '' }
-  },
-  sandLump: '',
-  newSandWt: '',
-  sandFriability: { shiftI: '', shiftII: '', shiftIII: '' },
-  testParameter: {
-    sno: '', time: '', mixno: '', permeability: '', gcsFdyA: '', gcsFdyB: '', wts: '', moisture: '',
-    compactability: '', compressibility: '', waterLitre: '', sandTemp: { BC: '', WU: '', SSUmax: '' },
-    newSandKgs: '', mould: '', bentoniteWithPremix: { Kgs: '', Percent: '' },
-    bentonite: { Kgs: '', Percent: '' }, premix: { Kgs: '', Percent: '' },
-    coalDust: { Kgs: '', Percent: '' }, lc: '', CompactabilitySettings: '',
-    mouldStrength: '', shearStrengthSetting: '', preparedSandlumps: '', itemName: '', remarks: ''
-  }
-};
 
 const SandTestingRecord = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState(initialFormData);
-  const [submitLoading, setSubmitLoading] = useState(false);
+  const [formData, setFormData] = useState({
+    disa: '',
+    date: '',
+    // Table 1
+    rSandShiftI: '',
+    rSandShiftII: '',
+    rSandShiftIII: '',
+    nSandShiftI: '',
+    nSandShiftII: '',
+    nSandShiftIII: '',
+    mixingModeShiftI: '',
+    mixingModeShiftII: '',
+    mixingModeShiftIII: '',
+    bentoniteShiftI: '',
+    bentoniteShiftII: '',
+    bentoniteShiftIII: '',
+    coalDustPremixShiftI: '',
+    coalDustPremixShiftII: '',
+    coalDustPremixShiftIII: '',
+    batchNoShiftI: '',
+    batchNoShiftIBentonite: false,
+    batchNoShiftII: '',
+    batchNoShiftIICoalDust: false,
+    batchNoShiftIIPremix: false,
+    batchNoShiftIII: '',
+    batchNoShiftIIICoalDust: false,
+    batchNoShiftIIIPremix: false,
+    // Table 2
+    totalClayShiftI: '',
+    totalClayShiftII: '',
+    totalClayShiftIII: '',
+    activeClayShiftI: '',
+    activeClayShiftII: '',
+    activeClayShiftIII: '',
+    deadClayShiftI: '',
+    deadClayShiftII: '',
+    deadClayShiftIII: '',
+    vcmShiftI: '',
+    vcmShiftII: '',
+    vcmShiftIII: '',
+    loiShiftI: '',
+    loiShiftII: '',
+    loiShiftIII: '',
+    afsNoShiftI: '',
+    afsNoShiftII: '',
+    afsNoShiftIII: '',
+    finesShiftI: '',
+    finesShiftII: '',
+    finesShiftIII: '',
+    // Table 3 - Form fields (single entry)
+    table3Time: '',
+    table3MixNo: '',
+    table3Permeability: '',
+    table3Gcs: '',
+    table3Wts: '',
+    table3Moisture: '',
+    table3Compactability: '',
+    table3Compressibility: '',
+    table3WaterLitre: '',
+    table3SandTempBC: '',
+    table3SandTempWU: '',
+    table3SandTempSSU: '',
+    // G.C.S. Checkpoint selection
+    gcsFdyA: false,
+    gcsFdyB: false,
+    // Table 4
+    mixNoStartShiftI: '',
+    mixNoEndShiftI: '',
+    mixNoTotalShiftI: '',
+    mixNoStartShiftII: '',
+    mixNoEndShiftII: '',
+    mixNoTotalShiftII: '',
+    mixNoStartShiftIII: '',
+    mixNoEndShiftIII: '',
+    mixNoTotalShiftIII: '',
+    mixRejectedShiftI: '',
+    mixRejectedShiftII: '',
+    mixRejectedShiftIII: '',
+    hopperLevelShiftI: '',
+    hopperLevelShiftII: '',
+    hopperLevelShiftIII: '',
+    // Table 4 Totals
+    mixNoEndTotal: '',
+    mixNoTotalSum: '',
+    mixRejectedTotal: '',
+    // Table 5
+    sandLumps: '',
+    sandLumpsValue: '',
+    newSandWt: '',
+    newSandWtValue: '',
+    preparedSandFriabilityI: '',
+    preparedSandFriabilityII: '',
+    preparedSandFriabilityIII: '',
+    // Table 6 - Array of rows
+    table6Rows: [{
+      title1: '',
+      title2: '',
+      title3: '',
+      title4: '',
+      title5: '',
+      title6: '',
+      title7: '',
+      title8: '',
+      title9: '',
+      title10: ''
+    }],
+    // Table 6 Bentonite checkboxes
+    bentonitePremix060120: false,
+    bentonitePremix080220: false,
+    // Table 6 Checkpoints checkboxes
+    checkpointsPremix: false,
+    checkpointsCoalDust: false,
+    // Table 6 Title 6 checkboxes
+    title6LC: false,
+    title6SMC42: false,
+    title6At140: false,
+    // Table 6 Title 7 checkboxes
+    title7MouldStrength: false,
+    title7ShearStrength: false
+  });
 
-  const handleChange = (section, field, value, nestedField = null, deepNested = null) => {
-    setFormData(prev => {
-      if (deepNested) {
-        return {
-          ...prev,
-          [section]: {
-            ...prev[section],
-            [field]: {
-              ...prev[section][field],
-              [nestedField]: {
-                ...prev[section][field][nestedField],
-                [deepNested]: value
-              }
-            }
-          }
-        };
-      } else if (nestedField) {
-        return {
-          ...prev,
-          [section]: {
-            ...prev[section],
-            [field]: {
-              ...prev[section][field],
-              [nestedField]: value
-            }
-          }
-        };
-      } else if (section) {
-        return {
-          ...prev,
-          [section]: {
-            ...prev[section],
-            [field]: value
-          }
-        };
-      } else {
-        return {
-          ...prev,
-          [field]: value
-        };
-      }
-    });
+  const disaOptions = ['DISA I', 'DISA II', 'DISA III', 'DISA IV'];
+
+  const handleChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitLoading(true);
+  const table3InputRefs = useRef({});
 
-    try {
-      const response = await api.post('/v1/sand-testing-records', formData);
-      if (response.success) {
-        alert('Sand Testing Record saved successfully!');
-        handleReset();
+  const handleTable3Submit = () => {
+    // Handle Table 3 form submission
+    alert('Table 3 entry submitted successfully!');
+    handleTable3Reset();
+  };
+
+  const handleTable3Reset = () => {
+    setFormData(prev => ({
+      ...prev,
+      table3Time: '',
+      table3MixNo: '',
+      table3Permeability: '',
+      table3Gcs: '',
+      table3Wts: '',
+      table3Moisture: '',
+      table3Compactability: '',
+      table3Compressibility: '',
+      table3WaterLitre: '',
+      table3SandTempBC: '',
+      table3SandTempWU: '',
+      table3SandTempSSU: '',
+      gcsFdyA: false,
+      gcsFdyB: false,
+    }));
+    table3InputRefs.current.table3Time?.focus();
+  };
+
+  const handleTable3KeyDown = (e, field) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const fieldOrder = ['table3Time', 'table3MixNo', 'table3Permeability', 'table3Gcs', 
+                          'table3Wts', 'table3Moisture', 'table3Compactability', 'table3Compressibility',
+                          'table3WaterLitre', 'table3SandTempBC', 'table3SandTempWU', 'table3SandTempSSU'];
+      const idx = fieldOrder.indexOf(field);
+      if (idx < fieldOrder.length - 1) {
+        table3InputRefs.current[fieldOrder[idx + 1]]?.focus();
       } else {
-        alert('Error: ' + response.message);
+        handleTable3Submit();
       }
-    } catch (error) {
-      console.error('Error saving sand testing record:', error);
-      alert('Failed to save sand testing record. Please try again.');
-    } finally {
-      setSubmitLoading(false);
     }
   };
 
-  const handleReset = () => {
-    if (!window.confirm('Are you sure you want to reset the entire form?')) return;
-    setFormData(initialFormData);
+  const handleTable6Change = (index, field, value) => {
+    setFormData(prev => {
+      const newRows = [...prev.table6Rows];
+      newRows[index] = {
+        ...newRows[index],
+        [field]: value
+      };
+      return {
+        ...prev,
+        table6Rows: newRows
+      };
+    });
+  };
+
+  const addTable6Row = () => {
+    setFormData(prev => ({
+      ...prev,
+      table6Rows: [
+        ...prev.table6Rows,
+        {
+          title1: '',
+          title2: '',
+          title3: '',
+          title4: '',
+          title5: '',
+          title6: '',
+          title7: '',
+          title8: '',
+          title9: '',
+          title10: ''
+        }
+      ]
+    }));
+  };
+
+  const removeTable6Row = (index) => {
+    if (formData.table6Rows.length > 1) {
+      setFormData(prev => ({
+        ...prev,
+        table6Rows: prev.table6Rows.filter((_, i) => i !== index)
+      }));
+    }
   };
 
   const handleViewReport = () => {
     navigate('/sand-lab/sand-testing-record/report');
   };
-
-  const InputField = ({ label, value, onChange, type = "text", placeholder = "" }) => (
-    <div className="sand-form-group">
-      <label>{label}</label>
-      <input
-        type={type}
-        value={value}
-        onChange={onChange}
-        placeholder={placeholder}
-      />
-    </div>
-  );
 
   return (
     <>
@@ -144,237 +249,1256 @@ const SandTestingRecord = () => {
         </div>
       </div>
 
-        <form onSubmit={handleSubmit} className="sand-form-grid">
-          {/* Date Section */}
+      {/* Form Section */}
+      <form className="sand-form-grid">
           <h3 className="sand-section-title">Basic Information</h3>
-          <InputField label="Date" type="date" value={formData.date}
-            onChange={(e) => handleChange(null, 'date', e.target.value)} />
+        
+        <div className="sand-form-group">
+          <label>Disa</label>
+          <select
+            name="disa"
+            value={formData.disa}
+            onChange={handleChange}
+          >
+            <option value="">Select DISA</option>
+            {disaOptions.map((option) => (
+              <option key={option} value={option}>
+                {option}
+              </option>
+            ))}
+          </select>
+        </div>
 
-          {/* Shift I */}
-          <h3 className="sand-section-title">Shift I - Sand Data</h3>
-          <InputField label="Remaining Sand (kgs)" value={formData.sandShifts.shiftI.rSand}
-            onChange={(e) => handleChange('sandShifts', 'shiftI', e.target.value, 'rSand')} placeholder="0" />
-          <InputField label="New Sand (kgs)" value={formData.sandShifts.shiftI.nSand}
-            onChange={(e) => handleChange('sandShifts', 'shiftI', e.target.value, 'nSand')} placeholder="0" />
-          <InputField label="Mixing Mode" value={formData.sandShifts.shiftI.mixingMode}
-            onChange={(e) => handleChange('sandShifts', 'shiftI', e.target.value, 'mixingMode')} placeholder="Enter mode" />
-          <InputField label="Bentonite (kgs)" value={formData.sandShifts.shiftI.bentonite}
-            onChange={(e) => handleChange('sandShifts', 'shiftI', e.target.value, 'bentonite')} placeholder="0" />
-          <InputField label="Coal Dust Premix" value={formData.sandShifts.shiftI.coalDustPremix}
-            onChange={(e) => handleChange('sandShifts', 'shiftI', e.target.value, 'coalDustPremix')} placeholder="Enter value" />
-          <InputField label="Bentonite Batch No" value={formData.sandShifts.shiftI.batchNo.bentonite}
-            onChange={(e) => handleChange('sandShifts', 'shiftI', e.target.value, 'batchNo', 'bentonite')} placeholder="Batch number" />
+        <div className="sand-form-group">
+          <label>Date</label>
+          <CustomDatePicker
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+          />
+        </div>
 
-          {/* Shift II */}
-          <h3 className="sand-section-title">Shift II - Sand Data</h3>
-          <InputField label="Remaining Sand (kgs)" value={formData.sandShifts.shiftII.rSand}
-            onChange={(e) => handleChange('sandShifts', 'shiftII', e.target.value, 'rSand')} placeholder="0" />
-          <InputField label="New Sand (kgs)" value={formData.sandShifts.shiftII.nSand}
-            onChange={(e) => handleChange('sandShifts', 'shiftII', e.target.value, 'nSand')} placeholder="0" />
-          <InputField label="Mixing Mode" value={formData.sandShifts.shiftII.mixingMode}
-            onChange={(e) => handleChange('sandShifts', 'shiftII', e.target.value, 'mixingMode')} placeholder="Enter mode" />
-          <InputField label="Bentonite (kgs)" value={formData.sandShifts.shiftII.bentonite}
-            onChange={(e) => handleChange('sandShifts', 'shiftII', e.target.value, 'bentonite')} placeholder="0" />
-          <InputField label="Coal Dust Premix" value={formData.sandShifts.shiftII.coalDustPremix}
-            onChange={(e) => handleChange('sandShifts', 'shiftII', e.target.value, 'coalDustPremix')} placeholder="Enter value" />
-          <InputField label="Coal Dust Batch No" value={formData.sandShifts.shiftII.batchNo.coalDust}
-            onChange={(e) => handleChange('sandShifts', 'shiftII', e.target.value, 'batchNo', 'coalDust')} placeholder="Batch number" />
-          <InputField label="Premix Batch No" value={formData.sandShifts.shiftII.batchNo.Premix}
-            onChange={(e) => handleChange('sandShifts', 'shiftII', e.target.value, 'batchNo', 'Premix')} placeholder="Batch number" />
+        {/* Table 1 */}
+        <h3 className="sand-section-title">Table 1</h3>
+        <div className="sand-table-wrapper" style={{ gridColumn: '1 / -1' }}>
+          <table className="sand-table">
+            <thead>
+              <tr>
+                <th>Shift</th>
+                <th>I</th>
+                <th>II</th>
+                <th>III</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>R. Sand (Kgs./Mix)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="rSandShiftI"
+                    value={formData.rSandShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="rSandShiftII"
+                    value={formData.rSandShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="rSandShiftIII"
+                    value={formData.rSandShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>N. Sand (Kgs./Mould)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="nSandShiftI"
+                    value={formData.nSandShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="nSandShiftII"
+                    value={formData.nSandShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="nSandShiftIII"
+                    value={formData.nSandShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Mixing Mode</td>
+                <td>
+                  <input
+                    type="text"
+                    name="mixingModeShiftI"
+                    value={formData.mixingModeShiftI}
+                    onChange={handleChange}
+                    placeholder="Enter mode"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    name="mixingModeShiftII"
+                    value={formData.mixingModeShiftII}
+                    onChange={handleChange}
+                    placeholder="Enter mode"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    name="mixingModeShiftIII"
+                    value={formData.mixingModeShiftIII}
+                    onChange={handleChange}
+                    placeholder="Enter mode"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Bentonite (kgs./Mix)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="bentoniteShiftI"
+                    value={formData.bentoniteShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="bentoniteShiftII"
+                    value={formData.bentoniteShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="bentoniteShiftIII"
+                    value={formData.bentoniteShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Coal Dust / Premix (Kgs./Mix)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="coalDustPremixShiftI"
+                    value={formData.coalDustPremixShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="coalDustPremixShiftII"
+                    value={formData.coalDustPremixShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="coalDustPremixShiftIII"
+                    value={formData.coalDustPremixShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Batch No.</td>
+                <td>
+                  <div className="batch-no-container">
+                    <div className="batch-checkbox-item">
+                      <input
+                        type="checkbox"
+                        name="batchNoShiftIBentonite"
+                        checked={formData.batchNoShiftIBentonite}
+                        onChange={handleChange}
+                        id="batchNoShiftIBentonite"
+                      />
+                      <label htmlFor="batchNoShiftIBentonite">Bentonite</label>
+                    </div>
+                    <input
+                      type="text"
+                      name="batchNoShiftI"
+                      value={formData.batchNoShiftI}
+                      onChange={handleChange}
+                      placeholder="Enter batch no"
+                    />
+                  </div>
+                </td>
+                <td>
+                  <div className="batch-no-container">
+                    <div className="batch-checkboxes">
+                      <div className="batch-checkbox-item">
+                        <input
+                          type="checkbox"
+                          name="batchNoShiftIICoalDust"
+                          checked={formData.batchNoShiftIICoalDust}
+                          onChange={handleChange}
+                          id="batchNoShiftIICoalDust"
+                        />
+                        <label htmlFor="batchNoShiftIICoalDust">Coal Dust</label>
+                      </div>
+                      <div className="batch-checkbox-item">
+                        <input
+                          type="checkbox"
+                          name="batchNoShiftIIPremix"
+                          checked={formData.batchNoShiftIIPremix}
+                          onChange={handleChange}
+                          id="batchNoShiftIIPremix"
+                        />
+                        <label htmlFor="batchNoShiftIIPremix">Premix</label>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      name="batchNoShiftII"
+                      value={formData.batchNoShiftII}
+                      onChange={handleChange}
+                      placeholder="Enter batch no"
+                    />
+                  </div>
+                </td>
+                <td>
+                  <div className="batch-no-container">
+                    <div className="batch-checkboxes">
+                      <div className="batch-checkbox-item">
+                        <input
+                          type="checkbox"
+                          name="batchNoShiftIIICoalDust"
+                          checked={formData.batchNoShiftIIICoalDust}
+                          onChange={handleChange}
+                          id="batchNoShiftIIICoalDust"
+                        />
+                        <label htmlFor="batchNoShiftIIICoalDust">Coal Dust</label>
+                      </div>
+                      <div className="batch-checkbox-item">
+                        <input
+                          type="checkbox"
+                          name="batchNoShiftIIIPremix"
+                          checked={formData.batchNoShiftIIIPremix}
+                          onChange={handleChange}
+                          id="batchNoShiftIIIPremix"
+                        />
+                        <label htmlFor="batchNoShiftIIIPremix">Premix</label>
+                      </div>
+                    </div>
+                    <input
+                      type="text"
+                      name="batchNoShiftIII"
+                      value={formData.batchNoShiftIII}
+                      onChange={handleChange}
+                      placeholder="Enter batch no"
+                    />
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-          {/* Shift III */}
-          <h3 className="sand-section-title">Shift III - Sand Data</h3>
-          <InputField label="Remaining Sand (kgs)" value={formData.sandShifts.shiftIII.rSand}
-            onChange={(e) => handleChange('sandShifts', 'shiftIII', e.target.value, 'rSand')} placeholder="0" />
-          <InputField label="New Sand (kgs)" value={formData.sandShifts.shiftIII.nSand}
-            onChange={(e) => handleChange('sandShifts', 'shiftIII', e.target.value, 'nSand')} placeholder="0" />
-          <InputField label="Mixing Mode" value={formData.sandShifts.shiftIII.mixingMode}
-            onChange={(e) => handleChange('sandShifts', 'shiftIII', e.target.value, 'mixingMode')} placeholder="Enter mode" />
-          <InputField label="Bentonite (kgs)" value={formData.sandShifts.shiftIII.bentonite}
-            onChange={(e) => handleChange('sandShifts', 'shiftIII', e.target.value, 'bentonite')} placeholder="0" />
-          <InputField label="Coal Dust Premix" value={formData.sandShifts.shiftIII.coalDustPremix}
-            onChange={(e) => handleChange('sandShifts', 'shiftIII', e.target.value, 'coalDustPremix')} placeholder="Enter value" />
-          <InputField label="Coal Dust Batch No" value={formData.sandShifts.shiftIII.batchNo.coalDust}
-            onChange={(e) => handleChange('sandShifts', 'shiftIII', e.target.value, 'batchNo', 'coalDust')} placeholder="Batch number" />
-          <InputField label="Premix Batch No" value={formData.sandShifts.shiftIII.batchNo.Premix}
-            onChange={(e) => handleChange('sandShifts', 'shiftIII', e.target.value, 'batchNo', 'Premix')} placeholder="Batch number" />
+        {/* Table 2 */}
+        <h3 className="sand-section-title">Table 2</h3>
+        <div className="sand-table-wrapper" style={{ gridColumn: '1 / -1' }}>
+          <table className="sand-table">
+            <thead>
+              <tr>
+                <th>Shift</th>
+                <th>I</th>
+                <th>II</th>
+                <th>III</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>Total Clay (11.0 - 14.5 %)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="totalClayShiftI"
+                    value={formData.totalClayShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="totalClayShiftII"
+                    value={formData.totalClayShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="totalClayShiftIII"
+                    value={formData.totalClayShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Active Clay (8.5 - 11.0%)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="activeClayShiftI"
+                    value={formData.activeClayShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="activeClayShiftII"
+                    value={formData.activeClayShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="activeClayShiftIII"
+                    value={formData.activeClayShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Dead Clay (2.0 - 4.0 %)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="deadClayShiftI"
+                    value={formData.deadClayShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="deadClayShiftII"
+                    value={formData.deadClayShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="deadClayShiftIII"
+                    value={formData.deadClayShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>V.C.M (2.0 - 3.2 %)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="vcmShiftI"
+                    value={formData.vcmShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="vcmShiftII"
+                    value={formData.vcmShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="vcmShiftIII"
+                    value={formData.vcmShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>L.O.I (4.5 - 6.0 %)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="loiShiftI"
+                    value={formData.loiShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="loiShiftII"
+                    value={formData.loiShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="loiShiftIII"
+                    value={formData.loiShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>AFS No. (Min. 48)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="afsNoShiftI"
+                    value={formData.afsNoShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="afsNoShiftII"
+                    value={formData.afsNoShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="afsNoShiftIII"
+                    value={formData.afsNoShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>Fines (10% Max)</td>
+                <td>
+                  <input
+                    type="number"
+                    name="finesShiftI"
+                    value={formData.finesShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="finesShiftII"
+                    value={formData.finesShiftII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="finesShiftIII"
+                    value={formData.finesShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                    step="0.1"
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
 
-          {/* Clay Parameters */}
-          <h3 className="sand-section-title">Clay Parameters - All Shifts</h3>
-          <InputField label="Total Clay - Shift I" value={formData.clayShifts.shiftI.totalClay}
-            onChange={(e) => handleChange('clayShifts', 'shiftI', e.target.value, 'totalClay')} placeholder="0" />
-          <InputField label="Total Clay - Shift II" value={formData.clayShifts.ShiftII.totalClay}
-            onChange={(e) => handleChange('clayShifts', 'ShiftII', e.target.value, 'totalClay')} placeholder="0" />
-          <InputField label="Total Clay - Shift III" value={formData.clayShifts.ShiftIII.totalClay}
-            onChange={(e) => handleChange('clayShifts', 'ShiftIII', e.target.value, 'totalClay')} placeholder="0" />
-          <InputField label="Active Clay - Shift I" value={formData.clayShifts.shiftI.activeClay}
-            onChange={(e) => handleChange('clayShifts', 'shiftI', e.target.value, 'activeClay')} placeholder="0" />
-          <InputField label="Active Clay - Shift II" value={formData.clayShifts.ShiftII.activeClay}
-            onChange={(e) => handleChange('clayShifts', 'ShiftII', e.target.value, 'activeClay')} placeholder="0" />
-          <InputField label="Active Clay - Shift III" value={formData.clayShifts.ShiftIII.activeClay}
-            onChange={(e) => handleChange('clayShifts', 'ShiftIII', e.target.value, 'activeClay')} placeholder="0" />
-          <InputField label="Dead Clay - Shift I" value={formData.clayShifts.shiftI.deadClay}
-            onChange={(e) => handleChange('clayShifts', 'shiftI', e.target.value, 'deadClay')} placeholder="0" />
-          <InputField label="Dead Clay - Shift II" value={formData.clayShifts.ShiftII.deadClay}
-            onChange={(e) => handleChange('clayShifts', 'ShiftII', e.target.value, 'deadClay')} placeholder="0" />
-          <InputField label="Dead Clay - Shift III" value={formData.clayShifts.ShiftIII.deadClay}
-            onChange={(e) => handleChange('clayShifts', 'ShiftIII', e.target.value, 'deadClay')} placeholder="0" />
-          <InputField label="VCM - Shift I" value={formData.clayShifts.shiftI.vcm}
-            onChange={(e) => handleChange('clayShifts', 'shiftI', e.target.value, 'vcm')} placeholder="0" />
-          <InputField label="VCM - Shift II" value={formData.clayShifts.ShiftII.vcm}
-            onChange={(e) => handleChange('clayShifts', 'ShiftII', e.target.value, 'vcm')} placeholder="0" />
-          <InputField label="VCM - Shift III" value={formData.clayShifts.ShiftIII.vcm}
-            onChange={(e) => handleChange('clayShifts', 'ShiftIII', e.target.value, 'vcm')} placeholder="0" />
-          <InputField label="LOI - Shift I" value={formData.clayShifts.shiftI.loi}
-            onChange={(e) => handleChange('clayShifts', 'shiftI', e.target.value, 'loi')} placeholder="0" />
-          <InputField label="LOI - Shift II" value={formData.clayShifts.ShiftII.loi}
-            onChange={(e) => handleChange('clayShifts', 'ShiftII', e.target.value, 'loi')} placeholder="0" />
-          <InputField label="LOI - Shift III" value={formData.clayShifts.ShiftIII.loi}
-            onChange={(e) => handleChange('clayShifts', 'ShiftIII', e.target.value, 'loi')} placeholder="0" />
-          <InputField label="AFS No - Shift I" value={formData.clayShifts.shiftI.afsNo}
-            onChange={(e) => handleChange('clayShifts', 'shiftI', e.target.value, 'afsNo')} placeholder="0" />
-          <InputField label="AFS No - Shift II" value={formData.clayShifts.ShiftII.afsNo}
-            onChange={(e) => handleChange('clayShifts', 'ShiftII', e.target.value, 'afsNo')} placeholder="0" />
-          <InputField label="AFS No - Shift III" value={formData.clayShifts.ShiftIII.afsNo}
-            onChange={(e) => handleChange('clayShifts', 'ShiftIII', e.target.value, 'afsNo')} placeholder="0" />
-          <InputField label="Fines - Shift I" value={formData.clayShifts.shiftI.fines}
-            onChange={(e) => handleChange('clayShifts', 'shiftI', e.target.value, 'fines')} placeholder="0" />
-          <InputField label="Fines - Shift II" value={formData.clayShifts.ShiftII.fines}
-            onChange={(e) => handleChange('clayShifts', 'ShiftII', e.target.value, 'fines')} placeholder="0" />
-          <InputField label="Fines - Shift III" value={formData.clayShifts.ShiftIII.fines}
-            onChange={(e) => handleChange('clayShifts', 'ShiftIII', e.target.value, 'fines')} placeholder="0" />
+        {/* Table 3 - Form Layout */}
+        <div className="sand-table3-form-wrapper" style={{ gridColumn: '1 / -1', position: 'relative', marginBottom: '2rem' }}>
+          <h3 className="sand-section-title">Table 3</h3>
+          
+          <div className="sand-table3-form-grid">
+            {/* G.C.S. Checkpoints */}
+            <div className="sand-form-group" style={{ gridColumn: '1 / -1' }}>
+              <label>G.C.S. (Gm/cm²) Checkpoints</label>
+              <div className="sand-checkbox-group">
+                <label className="sand-checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="gcsFdyA"
+                    checked={formData.gcsFdyA}
+                    onChange={handleChange}
+                  />
+                  <span>FDY - A (Min 1800)</span>
+                </label>
+                <label className="sand-checkbox-label">
+                  <input
+                    type="checkbox"
+                    name="gcsFdyB"
+                    checked={formData.gcsFdyB}
+                    onChange={handleChange}
+                  />
+                  <span>FDY - B (Min 1900)</span>
+                </label>
+              </div>
+            </div>
 
-          {/* Mix Shifts */}
-          <h3 className="sand-section-title">Mix Shifts - Timing & Hopper Levels</h3>
-          {['ShiftI', 'ShiftII', 'ShiftIII'].map((shift) => (
-            <React.Fragment key={shift}>
-              <InputField label={`${shift} - Start Mix`} value={formData.mixshifts[shift].mixno.start}
-                onChange={(e) => handleChange('mixshifts', shift, e.target.value, 'mixno', 'start')} placeholder="Start" />
-              <InputField label={`${shift} - End Mix`} value={formData.mixshifts[shift].mixno.end}
-                onChange={(e) => handleChange('mixshifts', shift, e.target.value, 'mixno', 'end')} placeholder="End" />
-              <InputField label={`${shift} - Total`} value={formData.mixshifts[shift].mixno.total}
-                onChange={(e) => handleChange('mixshifts', shift, e.target.value, 'mixno', 'total')} placeholder="Total" />
-              <InputField label={`${shift} - Mix Rejected`} type="number" value={formData.mixshifts[shift].numberOfMixRejected}
-                onChange={(e) => handleChange('mixshifts', shift, e.target.value, 'numberOfMixRejected')} placeholder="0" />
-              <InputField label={`${shift} - Hopper Level`} type="number" value={formData.mixshifts[shift].returnSandHopperLevel}
-                onChange={(e) => handleChange('mixshifts', shift, e.target.value, 'returnSandHopperLevel')} placeholder="0" />
-            </React.Fragment>
-          ))}
-
-          {/* Sand Properties */}
-          <h3 className="sand-section-title">Sand Properties</h3>
-          <InputField label="Sand Lump" value={formData.sandLump}
-            onChange={(e) => handleChange(null, 'sandLump', e.target.value)} placeholder="Enter value" />
-          <InputField label="New Sand Weight" value={formData.newSandWt}
-            onChange={(e) => handleChange(null, 'newSandWt', e.target.value)} placeholder="0" />
-          <InputField label="Friability - Shift I" value={formData.sandFriability.shiftI}
-            onChange={(e) => handleChange('sandFriability', 'shiftI', e.target.value)} placeholder="0" />
-          <InputField label="Friability - Shift II" value={formData.sandFriability.shiftII}
-            onChange={(e) => handleChange('sandFriability', 'shiftII', e.target.value)} placeholder="0" />
-          <InputField label="Friability - Shift III" value={formData.sandFriability.shiftIII}
-            onChange={(e) => handleChange('sandFriability', 'shiftIII', e.target.value)} placeholder="0" />
-
-          {/* Test Parameters */}
-          <h3 className="sand-section-title">Test Parameters</h3>
-          <InputField label="S.No" type="number" value={formData.testParameter.sno}
-            onChange={(e) => handleChange('testParameter', 'sno', e.target.value)} placeholder="0" />
-          <InputField label="Time" type="number" value={formData.testParameter.time}
-            onChange={(e) => handleChange('testParameter', 'time', e.target.value)} placeholder="0" />
-          <InputField label="Mix No" type="number" value={formData.testParameter.mixno}
-            onChange={(e) => handleChange('testParameter', 'mixno', e.target.value)} placeholder="0" />
-          <InputField label="Mould" type="number" value={formData.testParameter.mould}
-            onChange={(e) => handleChange('testParameter', 'mould', e.target.value)} placeholder="0" />
-          <InputField label="Permeability" type="number" value={formData.testParameter.permeability}
-            onChange={(e) => handleChange('testParameter', 'permeability', e.target.value)} placeholder="0" />
-          <InputField label="GCS FDY-A" type="number" value={formData.testParameter.gcsFdyA}
-            onChange={(e) => handleChange('testParameter', 'gcsFdyA', e.target.value)} placeholder="0" />
-          <InputField label="GCS FDY-B" type="number" value={formData.testParameter.gcsFdyB}
-            onChange={(e) => handleChange('testParameter', 'gcsFdyB', e.target.value)} placeholder="0" />
-          <InputField label="WTS" type="number" value={formData.testParameter.wts}
-            onChange={(e) => handleChange('testParameter', 'wts', e.target.value)} placeholder="0" />
-          <InputField label="Moisture (%)" type="number" value={formData.testParameter.moisture}
-            onChange={(e) => handleChange('testParameter', 'moisture', e.target.value)} placeholder="0" />
-          <InputField label="Compactability (%)" type="number" value={formData.testParameter.compactability}
-            onChange={(e) => handleChange('testParameter', 'compactability', e.target.value)} placeholder="0" />
-          <InputField label="Compressibility" type="number" value={formData.testParameter.compressibility}
-            onChange={(e) => handleChange('testParameter', 'compressibility', e.target.value)} placeholder="0" />
-          <InputField label="Water (Litre)" type="number" value={formData.testParameter.waterLitre}
-            onChange={(e) => handleChange('testParameter', 'waterLitre', e.target.value)} placeholder="0" />
-          <InputField label="Sand Temp BC (°C)" type="number" value={formData.testParameter.sandTemp.BC}
-            onChange={(e) => handleChange('testParameter', 'sandTemp', e.target.value, 'BC')} placeholder="0" />
-          <InputField label="Sand Temp WU (°C)" type="number" value={formData.testParameter.sandTemp.WU}
-            onChange={(e) => handleChange('testParameter', 'sandTemp', e.target.value, 'WU')} placeholder="0" />
-          <InputField label="Sand Temp SSUmax (°C)" type="number" value={formData.testParameter.sandTemp.SSUmax}
-            onChange={(e) => handleChange('testParameter', 'sandTemp', e.target.value, 'SSUmax')} placeholder="0" />
-          <InputField label="New Sand (Kgs)" type="number" value={formData.testParameter.newSandKgs}
-            onChange={(e) => handleChange('testParameter', 'newSandKgs', e.target.value)} placeholder="0" />
-          <InputField label="Bentonite w/ Premix (Kgs)" type="number" value={formData.testParameter.bentoniteWithPremix.Kgs}
-            onChange={(e) => handleChange('testParameter', 'bentoniteWithPremix', e.target.value, 'Kgs')} placeholder="0" />
-          <InputField label="Bentonite w/ Premix (%)" type="number" value={formData.testParameter.bentoniteWithPremix.Percent}
-            onChange={(e) => handleChange('testParameter', 'bentoniteWithPremix', e.target.value, 'Percent')} placeholder="0" />
-          <InputField label="Bentonite (Kgs)" type="number" value={formData.testParameter.bentonite.Kgs}
-            onChange={(e) => handleChange('testParameter', 'bentonite', e.target.value, 'Kgs')} placeholder="0" />
-          <InputField label="Bentonite (%)" type="number" value={formData.testParameter.bentonite.Percent}
-            onChange={(e) => handleChange('testParameter', 'bentonite', e.target.value, 'Percent')} placeholder="0" />
-          <InputField label="Premix (Kgs)" type="number" value={formData.testParameter.premix.Kgs}
-            onChange={(e) => handleChange('testParameter', 'premix', e.target.value, 'Kgs')} placeholder="0" />
-          <InputField label="Premix (%)" type="number" value={formData.testParameter.premix.Percent}
-            onChange={(e) => handleChange('testParameter', 'premix', e.target.value, 'Percent')} placeholder="0" />
-          <InputField label="Coal Dust (Kgs)" type="number" value={formData.testParameter.coalDust.Kgs}
-            onChange={(e) => handleChange('testParameter', 'coalDust', e.target.value, 'Kgs')} placeholder="0" />
-          <InputField label="Coal Dust (%)" type="number" value={formData.testParameter.coalDust.Percent}
-            onChange={(e) => handleChange('testParameter', 'coalDust', e.target.value, 'Percent')} placeholder="0" />
-          <InputField label="LC" type="number" value={formData.testParameter.lc}
-            onChange={(e) => handleChange('testParameter', 'lc', e.target.value)} placeholder="0" />
-          <InputField label="Compactability Settings" type="number" value={formData.testParameter.CompactabilitySettings}
-            onChange={(e) => handleChange('testParameter', 'CompactabilitySettings', e.target.value)} placeholder="0" />
-          <InputField label="Mould Strength" type="number" value={formData.testParameter.mouldStrength}
-            onChange={(e) => handleChange('testParameter', 'mouldStrength', e.target.value)} placeholder="0" />
-          <InputField label="Shear Strength Setting" type="number" value={formData.testParameter.shearStrengthSetting}
-            onChange={(e) => handleChange('testParameter', 'shearStrengthSetting', e.target.value)} placeholder="0" />
-          <InputField label="Prepared Sand Lumps" type="number" value={formData.testParameter.preparedSandlumps}
-            onChange={(e) => handleChange('testParameter', 'preparedSandlumps', e.target.value)} placeholder="0" />
-
-          {/* Remarks */}
-          <h3 className="sand-section-title">Additional Information</h3>
-          <div className="sand-form-group full-width">
-            <label>Item Name</label>
+            <div className="sand-form-group">
+            <label>Time</label>
             <input
+              ref={el => table3InputRefs.current.table3Time = el}
               type="text"
-              value={formData.testParameter.itemName}
-              onChange={(e) => handleChange('testParameter', 'itemName', e.target.value)}
-              placeholder="Enter item name"
-            />
-          </div>
-          <div className="sand-form-group full-width">
-            <label>Remarks</label>
-            <textarea
-              value={formData.testParameter.remarks}
-              onChange={(e) => handleChange('testParameter', 'remarks', e.target.value)}
-              placeholder="Enter remarks..."
-              rows="4"
+              name="table3Time"
+              value={formData.table3Time}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3Time')}
+              placeholder="Enter time"
             />
           </div>
 
-      {/* Submit Button */}
-      <div className="sand-submit-container">
-        <button onClick={handleSubmit} disabled={submitLoading} className="sand-submit-btn" type="button">
-          {submitLoading ? 'Saving...' : (
-            <>
-              <Save size={18} />
-              Submit Record
-            </>
-          )}
-        </button>
+          <div className="sand-form-group">
+            <label>Mix No.</label>
+            <input
+              ref={el => table3InputRefs.current.table3MixNo = el}
+              type="number"
+              name="table3MixNo"
+              value={formData.table3MixNo}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3MixNo')}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>Permeability (90 - 160)</label>
+            <input
+              ref={el => table3InputRefs.current.table3Permeability = el}
+              type="number"
+              name="table3Permeability"
+              value={formData.table3Permeability}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3Permeability')}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>G.C.S. (Gm/cm²)</label>
+            <input
+              ref={el => table3InputRefs.current.table3Gcs = el}
+              type="number"
+              name="table3Gcs"
+              value={formData.table3Gcs}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3Gcs')}
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>W.T.S (N/cm²) (Min 0.15)</label>
+            <input
+              ref={el => table3InputRefs.current.table3Wts = el}
+              type="number"
+              name="table3Wts"
+              value={formData.table3Wts}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3Wts')}
+              step="0.01"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>Moisture % (3.0 - 4.0 %)</label>
+            <input
+              ref={el => table3InputRefs.current.table3Moisture = el}
+              type="number"
+              name="table3Moisture"
+              value={formData.table3Moisture}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3Moisture')}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>Compactability % At DMM (33-40%)</label>
+            <input
+              ref={el => table3InputRefs.current.table3Compactability = el}
+              type="number"
+              name="table3Compactability"
+              value={formData.table3Compactability}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3Compactability')}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>Compressibility % At DMM (20-28%)</label>
+            <input
+              ref={el => table3InputRefs.current.table3Compressibility = el}
+              type="number"
+              name="table3Compressibility"
+              value={formData.table3Compressibility}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3Compressibility')}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>Water Litre /Kg Mix</label>
+            <input
+              ref={el => table3InputRefs.current.table3WaterLitre = el}
+              type="number"
+              name="table3WaterLitre"
+              value={formData.table3WaterLitre}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3WaterLitre')}
+              step="0.01"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>Sand Temp BC (°C)</label>
+            <input
+              ref={el => table3InputRefs.current.table3SandTempBC = el}
+              type="number"
+              name="table3SandTempBC"
+              value={formData.table3SandTempBC}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3SandTempBC')}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>Sand Temp WU (°C)</label>
+            <input
+              ref={el => table3InputRefs.current.table3SandTempWU = el}
+              type="number"
+              name="table3SandTempWU"
+              value={formData.table3SandTempWU}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3SandTempWU')}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="sand-form-group">
+            <label>Sand Temp SSU (°C) (Max 45°C)</label>
+            <input
+              ref={el => table3InputRefs.current.table3SandTempSSU = el}
+              type="number"
+              name="table3SandTempSSU"
+              value={formData.table3SandTempSSU}
+              onChange={handleChange}
+              onKeyDown={(e) => handleTable3KeyDown(e, 'table3SandTempSSU')}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+            <div className="sand-table3-submit-container">
+              <button onClick={handleTable3Submit} className="sand-table3-submit-btn" type="button">
+                <Save size={18} />
+                Submit Entry
+              </button>
+            </div>
+
+            <div className="sand-table3-reset-container">
+              <button onClick={handleTable3Reset} className="sand-table3-reset-btn" type="button">
+                <RefreshCw size={18} />
+                Reset
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Table 4 */}
+        <h3 className="sand-section-title">Table 4</h3>
+        <div className="sand-table-wrapper" style={{ gridColumn: '1 / -1' }}>
+          <table className="sand-table">
+            <thead>
+              <tr>
+                <th rowSpan="2">Shift</th>
+                <th colSpan="3">Mix No.</th>
+                <th rowSpan="2">No. of Mix rejected</th>
+                <th rowSpan="2">Return Sand Hopper level</th>
+              </tr>
+              <tr>
+                <th>Start</th>
+                <th>End</th>
+                <th>Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <td>I</td>
+                <td>
+                      <input
+                        type="number"
+                        name="mixNoStartShiftI"
+                        value={formData.mixNoStartShiftI}
+                        onChange={handleChange}
+                        placeholder="0"
+                      />
+                </td>
+                <td>
+                      <input
+                        type="number"
+                        name="mixNoEndShiftI"
+                        value={formData.mixNoEndShiftI}
+                        onChange={handleChange}
+                        placeholder="0"
+                      />
+                </td>
+                <td>
+                      <input
+                        type="number"
+                        name="mixNoTotalShiftI"
+                        value={formData.mixNoTotalShiftI}
+                        onChange={handleChange}
+                        placeholder="0"
+                      />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="mixRejectedShiftI"
+                    value={formData.mixRejectedShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="hopperLevelShiftI"
+                    value={formData.hopperLevelShiftI}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td>II</td>
+                <td>
+                      <input
+                        type="number"
+                        name="mixNoStartShiftII"
+                        value={formData.mixNoStartShiftII}
+                        onChange={handleChange}
+                        placeholder="0"
+                      />
+                </td>
+                <td>
+                      <input
+                        type="number"
+                        name="mixNoEndShiftII"
+                        value={formData.mixNoEndShiftII}
+                        onChange={handleChange}
+                        placeholder="0"
+                      />
+                </td>
+                <td>
+                      <input
+                        type="number"
+                        name="mixNoTotalShiftII"
+                        value={formData.mixNoTotalShiftII}
+                        onChange={handleChange}
+                        placeholder="0"
+                      />
+                </td>
+                <td>
+                      <input
+                        type="number"
+                    name="mixRejectedShiftII"
+                    value={formData.mixRejectedShiftII}
+                        onChange={handleChange}
+                        placeholder="0"
+                      />
+                </td>
+                <td>
+                      <input
+                        type="number"
+                    name="hopperLevelShiftII"
+                    value={formData.hopperLevelShiftII}
+                        onChange={handleChange}
+                        placeholder="0"
+                      />
+                </td>
+              </tr>
+              <tr>
+                <td>III</td>
+                <td>
+                      <input
+                        type="number"
+                    name="mixNoStartShiftIII"
+                    value={formData.mixNoStartShiftIII}
+                        onChange={handleChange}
+                        placeholder="0"
+                      />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="mixNoEndShiftIII"
+                    value={formData.mixNoEndShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="mixNoTotalShiftIII"
+                    value={formData.mixNoTotalShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="mixRejectedShiftIII"
+                    value={formData.mixRejectedShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="hopperLevelShiftIII"
+                    value={formData.hopperLevelShiftIII}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+              </tr>
+              <tr>
+                <td colSpan="2" style={{ fontWeight: 600, background: '#f8fafc' }}>TOTAL</td>
+                <td>
+                  <input
+                    type="number"
+                    name="mixNoEndTotal"
+                    value={formData.mixNoEndTotal}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="mixNoTotalSum"
+                    value={formData.mixNoTotalSum}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="number"
+                    name="mixRejectedTotal"
+                    value={formData.mixRejectedTotal}
+                    onChange={handleChange}
+                    placeholder="0"
+                  />
+                </td>
+                <td></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        {/* Table 5 */}
+        <h3 className="sand-section-title">Table 5</h3>
+        <div style={{ gridColumn: '1 / -1', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+          {/* First Table - SAND LUMPS and NEW SAND WT */}
+          <div className="sand-table-wrapper">
+            <table className="sand-table">
+              <tbody>
+                <tr>
+                  <td style={{ fontWeight: 600, background: '#f8fafc' }}>SAND LUMPS</td>
+                  <td>
+                    <input
+                      type="text"
+                      name="sandLumpsValue"
+                      value={formData.sandLumpsValue}
+                      onChange={handleChange}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: 600, background: '#f8fafc' }}>NEW SAND WT</td>
+                  <td>
+                    <input
+                      type="text"
+                      name="newSandWtValue"
+                      value={formData.newSandWtValue}
+                      onChange={handleChange}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          {/* Second Table - Shift and Prepared Sand Friability */}
+          <div className="sand-table-wrapper">
+            <table className="sand-table">
+              <thead>
+                <tr>
+                  <th>Shift</th>
+                  <th>Prepared Sand Friability<br/>(8.0-13.0%)</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td style={{ fontWeight: 600, background: '#f8fafc', textAlign: 'center' }}>I</td>
+                  <td>
+                    <input
+                      type="text"
+                      name="preparedSandFriabilityI"
+                      value={formData.preparedSandFriabilityI}
+                      onChange={handleChange}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: 600, background: '#f8fafc', textAlign: 'center' }}>II</td>
+                  <td>
+                    <input
+                      type="text"
+                      name="preparedSandFriabilityII"
+                      value={formData.preparedSandFriabilityII}
+                      onChange={handleChange}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                </tr>
+                <tr>
+                  <td style={{ fontWeight: 600, background: '#f8fafc', textAlign: 'center' }}>III</td>
+                  <td>
+                    <input
+                      type="text"
+                      name="preparedSandFriabilityIII"
+                      value={formData.preparedSandFriabilityIII}
+                      onChange={handleChange}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          </div>
+
+        {/* Table 6 */}
+        <h3 className="sand-section-title">Table 6</h3>
+        <div className="sand-table-wrapper sand-table-6-wrapper" style={{ gridColumn: '1 / -1' }}>
+          <table className="sand-table sand-table-6">
+            <thead>
+              <tr>
+                <th rowSpan="2">S.no</th>
+                <th rowSpan="2">New Sand Kgs / Mould<br/>(0.0 - 5.0)</th>
+                <th colSpan="2">
+                  Bentonite Kgs / With premix<br/>
+                  <div className="gcs-header-checkboxes">
+                    <label className="gcs-header-checkbox">
+                      <input
+                        type="checkbox"
+                        name="bentonitePremix060120"
+                        checked={formData.bentonitePremix060120}
+                        onChange={handleChange}
+                      />
+                      0.60 - 1.20 %
+                    </label>
+                    <label className="gcs-header-checkbox">
+                      <input
+                        type="checkbox"
+                        name="bentonitePremix080220"
+                        checked={formData.bentonitePremix080220}
+                        onChange={handleChange}
+                      />
+                      0.80 - 2.20%
+                    </label>
+                  </div>
+                </th>
+                <th colSpan="2">
+                  <div className="gcs-header-checkboxes">
+                    <label className="gcs-header-checkbox">
+                      <input
+                        type="checkbox"
+                        name="checkpointsPremix"
+                        checked={formData.checkpointsPremix}
+                        onChange={handleChange}
+                      />
+                      Premix Kgs / mix 0.60 - 1.20 %
+                    </label>
+                    <label className="gcs-header-checkbox">
+                      <input
+                        type="checkbox"
+                        name="checkpointsCoalDust"
+                        checked={formData.checkpointsCoalDust}
+                        onChange={handleChange}
+                      />
+                      Coal dust Kgs / mix 0.20 - 0.70 %
+                    </label>
+                  </div>
+                </th>
+                <th rowSpan="2">
+                  <div className="gcs-header-checkboxes">
+                    <label className="gcs-header-checkbox">
+                      <input
+                        type="checkbox"
+                        name="title6LC"
+                        checked={formData.title6LC}
+                        onChange={handleChange}
+                      />
+                      LC
+                    </label>
+                    <label className="gcs-header-checkbox">
+                      <input
+                        type="checkbox"
+                        name="title6SMC42"
+                        checked={formData.title6SMC42}
+                        onChange={handleChange}
+                      />
+                      Compact Ability Setting SMC 42 (±) 3
+                    </label>
+                    <label className="gcs-header-checkbox">
+                      <input
+                        type="checkbox"
+                        name="title6At140"
+                        checked={formData.title6At140}
+                        onChange={handleChange}
+                      />
+                      At1 40 (±) 3
+                    </label>
+                  </div>
+                </th>
+                <th rowSpan="2">
+                  <div className="gcs-header-checkboxes">
+                    <label className="gcs-header-checkbox">
+                      <input
+                        type="checkbox"
+                        name="title7MouldStrength"
+                        checked={formData.title7MouldStrength}
+                        onChange={handleChange}
+                      />
+                      Mould strength SMC - 23 ± 3
+                    </label>
+                    <label className="gcs-header-checkbox">
+                      <input
+                        type="checkbox"
+                        name="title7ShearStrength"
+                        checked={formData.title7ShearStrength}
+                        onChange={handleChange}
+                      />
+                      Shear strength setting At1 5.0±1%
+                    </label>
+                  </div>
+                </th>
+                <th rowSpan="2">Prepared Sand Lumps / Kg</th>
+                <th rowSpan="2">Item name</th>
+                <th rowSpan="2">Remarks</th>
+                <th rowSpan="2">Action</th>
+              </tr>
+              <tr>
+                <th className="table6-subheader-left">Kgs</th>
+                <th className="table6-subheader-middle">%</th>
+                <th className="table6-subheader-middle">Kgs</th>
+                <th className="table6-subheader-right">%</th>
+              </tr>
+            </thead>
+            <tbody>
+              {formData.table6Rows.map((row, index) => (
+                <tr key={index}>
+                  <td className="sand-sno-cell">{index + 1}</td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title1}
+                      onChange={(e) => handleTable6Change(index, 'title1', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title2}
+                      onChange={(e) => handleTable6Change(index, 'title2', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title3}
+                      onChange={(e) => handleTable6Change(index, 'title3', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title4}
+                      onChange={(e) => handleTable6Change(index, 'title4', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title5}
+                      onChange={(e) => handleTable6Change(index, 'title5', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title6}
+                      onChange={(e) => handleTable6Change(index, 'title6', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title7}
+                      onChange={(e) => handleTable6Change(index, 'title7', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title8}
+                      onChange={(e) => handleTable6Change(index, 'title8', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title9}
+                      onChange={(e) => handleTable6Change(index, 'title9', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td>
+                    <input
+                      type="text"
+                      value={row.title10}
+                      onChange={(e) => handleTable6Change(index, 'title10', e.target.value)}
+                      placeholder="Enter value"
+                    />
+                  </td>
+                  <td className="sand-action-cell">
+                    {formData.table6Rows.length > 1 && (
+                      <button
+                        type="button"
+                        className="sand-remove-row-btn"
+                        onClick={() => removeTable6Row(index)}
+                        title="Remove row"
+                      >
+                        <Trash2 size={16} />
+                      </button>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+          <div className="sand-table-6-controls">
+            <button type="button" className="sand-add-row-btn" onClick={addTable6Row}>
+              <Plus size={16} />
+              <span>Add Row</span>
+            </button>
+          </div>
       </div>
       </form>
-
-      <div className="sand-reset-container">
-        <button onClick={handleReset} className="sand-reset-btn">
-          <RefreshCw size={18} />
-          Reset
-        </button>
-      </div>
     </>
   );
 };

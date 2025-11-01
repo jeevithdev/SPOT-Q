@@ -1,28 +1,29 @@
 import React, { useState, useRef } from 'react';
 import { Save, RefreshCw, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import CustomDatePicker from '../Components/CustomDatePicker';
 import '../styles/PageStyles/Process.css';
 
 export default function ProcessControl() {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    partNameDateHeatCode: '', quantityOfMoulds: '', metalCompositionC: '', metalCompositionSi: '',
+    partName: '', date: '', heatCode: '', quantityOfMoulds: '', metalCompositionC: '', metalCompositionSi: '',
     metalCompositionMn: '', metalCompositionP: '', metalCompositionS: '', metalCompositionMgFL: '',
     metalCompositionCr: '', metalCompositionCu: '', timeOfPouring: '', pouringTemperature: '',
-    ppCode: '', treatmentNo: '', fcNoHeatNo: '', conNo: '', tappingTime: '', correctiveAdditionC: '',
+    ppCode: '', treatmentNo: '', fcNo: '', heatNo: '', conNo: '', tappingTime: '', correctiveAdditionC: '',
     correctiveAdditionSi: '', correctiveAdditionMn: '', correctiveAdditionS: '', correctiveAdditionCr: '',
     correctiveAdditionCu: '', correctiveAdditionSn: '', tappingWt: '', mg: '', resMgConvertor: '',
-    recOfMg: '', streamInnoculantPTime: '', remarks: ''
+    recOfMg: '', streamInoculant: '', pTime: '', remarks: ''
   });
 
 
   const inputRefs = useRef({});
-  const fieldOrder = ['partNameDateHeatCode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
-    'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCr',
-    'metalCompositionCu', 'timeOfPouring', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNoHeatNo', 'conNo',
+  const fieldOrder = ['partName', 'date', 'heatCode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
+    'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCu',
+    'metalCompositionCr', 'timeOfPouring', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNo', 'heatNo', 'conNo',
     'tappingTime', 'correctiveAdditionC', 'correctiveAdditionSi', 'correctiveAdditionMn', 'correctiveAdditionS',
     'correctiveAdditionCr', 'correctiveAdditionCu', 'correctiveAdditionSn', 'tappingWt', 'mg', 'resMgConvertor',
-    'recOfMg', 'streamInnoculantPTime', 'remarks'];
+    'recOfMg', 'streamInoculant', 'pTime', 'remarks'];
 
   const handleChange = (e) => setFormData({...formData, [e.target.name]: e.target.value});
   
@@ -36,19 +37,17 @@ export default function ProcessControl() {
     }
   };
 
-  const parsePartInfo = (combined) => {
-    const parts = (combined || '').split(' / ').map(p => p.trim());
-    return {partName: parts[0] || '', date: parts[1] || '', heatCode: parts[2] || ''};
-  };
-
   const handleSubmit = () => {
-    // parse combined PartName / Date / HeatCode and store separately in the record
-    const info = parsePartInfo(formData.partNameDateHeatCode);
+    // Combine separate fields for backward compatibility if needed
+    const partNameDateHeatCode = `${formData.partName} / ${formData.date} / ${formData.heatCode}`;
+    const streamInnoculantPTime = `${formData.streamInoculant} / ${formData.pTime}`;
+    const fcNoHeatNo = `${formData.fcNo} / ${formData.heatNo}`;
+    
     const newRecord = {
       ...formData,
-      partName: info.partName,
-      date: info.date,
-      heatCode: info.heatCode
+      partNameDateHeatCode: partNameDateHeatCode.trim(),
+      streamInnoculantPTime: streamInnoculantPTime.trim(),
+      fcNoHeatNo: fcNoHeatNo.trim()
     };
     alert('Form submitted successfully! Record added.');
     handleReset();
@@ -58,7 +57,7 @@ export default function ProcessControl() {
     const resetData = {};
     Object.keys(formData).forEach(key => resetData[key] = '');
     setFormData(resetData);
-    inputRefs.current.partNameDateHeatCode?.focus();
+    inputRefs.current.partName?.focus();
   };
 
   return (
@@ -82,8 +81,22 @@ export default function ProcessControl() {
 
       <div className="process-form-grid">
             <div className="process-form-group">
-              <label>Part Name / Date / Heat Code</label>
-              <input ref={el => inputRefs.current.partNameDateHeatCode = el} type="text" name="partNameDateHeatCode" value={formData.partNameDateHeatCode} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'partNameDateHeatCode')} placeholder="e.g., ABC-123 / 29-10-2025 / HC-001" />
+              <label>Part Name</label>
+              <input ref={el => inputRefs.current.partName = el} type="text" name="partName" value={formData.partName} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'partName')} placeholder="e.g., ABC-123" />
+            </div>
+
+            <div className="process-form-group">
+              <label>Date</label>
+              <CustomDatePicker
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+              />
+            </div>
+
+            <div className="process-form-group">
+              <label>Heat Code</label>
+              <input ref={el => inputRefs.current.heatCode = el} type="text" name="heatCode" value={formData.heatCode} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'heatCode')} placeholder="e.g., HC-001" />
             </div>
 
             <div className="process-form-group">
@@ -95,7 +108,7 @@ export default function ProcessControl() {
               <h3>Metal Composition (%)</h3>
             </div>
 
-            {['C', 'Si', 'Mn', 'P', 'S', 'MgFL', 'Cr', 'Cu'].map(el => (
+            {['C', 'Si', 'Mn', 'P', 'S', 'MgFL', 'Cu', 'Cr'].map(el => (
               <div className="process-form-group" key={el}>
                 <label>{el === 'MgFL' ? 'Mg F/L' : el}</label>
                 <input ref={r => inputRefs.current[`metalComposition${el}`] = r} type="number" name={`metalComposition${el}`} step="0.001" value={formData[`metalComposition${el}`]} onChange={handleChange} onKeyDown={e => handleKeyDown(e, `metalComposition${el}`)} placeholder="%" />
@@ -123,8 +136,13 @@ export default function ProcessControl() {
             </div>
 
             <div className="process-form-group">
-              <label>F/C No. / Heat No</label>
-              <input ref={el => inputRefs.current.fcNoHeatNo = el} type="text" name="fcNoHeatNo" value={formData.fcNoHeatNo} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'fcNoHeatNo')} placeholder="Enter F/C No./Heat No" />
+              <label>F/C No.</label>
+              <input ref={el => inputRefs.current.fcNo = el} type="text" name="fcNo" value={formData.fcNo} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'fcNo')} placeholder="Enter F/C No." />
+            </div>
+
+            <div className="process-form-group">
+              <label>Heat No</label>
+              <input ref={el => inputRefs.current.heatNo = el} type="text" name="heatNo" value={formData.heatNo} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'heatNo')} placeholder="Enter Heat No" />
             </div>
 
             <div className="process-form-group">
@@ -168,19 +186,31 @@ export default function ProcessControl() {
               <input ref={el => inputRefs.current.recOfMg = el} type="number" name="recOfMg" step="0.01" value={formData.recOfMg} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'recOfMg')} placeholder="Enter %" />
             </div>
 
-            <div className="process-form-group stream-inoculant">
-              <label title="Stream Inoculant (gm/Sec) / P.Time (sec)">
-                Stream Inoculant (gm/Sec) / P.Time (sec)
-              </label>
+            <div className="process-form-group">
+              <label>Stream Inoculant (gm/Sec)</label>
               <input 
-                ref={el => inputRefs.current.streamInnoculantPTime = el}
-                type="text"
-                name="streamInnoculantPTime"
-                value={formData.streamInnoculantPTime}
+                ref={el => inputRefs.current.streamInoculant = el}
+                type="number"
+                name="streamInoculant"
+                value={formData.streamInoculant}
                 onChange={handleChange}
-                onKeyDown={e => handleKeyDown(e, 'streamInnoculantPTime')}
-                placeholder="e.g., 5.5 / 120"
-                className="stream-input"
+                onKeyDown={e => handleKeyDown(e, 'streamInoculant')}
+                step="0.1"
+                placeholder="e.g., 5.5"
+              />
+            </div>
+
+            <div className="process-form-group">
+              <label>P.Time (sec)</label>
+              <input 
+                ref={el => inputRefs.current.pTime = el}
+                type="number"
+                name="pTime"
+                value={formData.pTime}
+                onChange={handleChange}
+                onKeyDown={e => handleKeyDown(e, 'pTime')}
+                step="0.1"
+                placeholder="e.g., 120"
               />
             </div>
 

@@ -12,7 +12,9 @@ const MicroTensile = () => {
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     item: '',
-    dateCodeHeatCode: '',
+    dateCode: '',
+    heatCode: '',
+    disa: [],
     barDia: '',
     gaugeLength: '',
     maxLoad: '',
@@ -37,11 +39,29 @@ const MicroTensile = () => {
     }));
   };
 
+  const handleDisaChange = (disaValue) => {
+    setFormData(prev => {
+      const currentDisa = prev.disa || [];
+      const newDisa = currentDisa.includes(disaValue)
+        ? currentDisa.filter(d => d !== disaValue)
+        : [...currentDisa, disaValue];
+      return {
+        ...prev,
+        disa: newDisa
+      };
+    });
+  };
+
 
   const handleSubmit = async () => {
-    const required = ['dateOfInspection', 'item', 'dateCodeHeatCode', 'barDia', 'gaugeLength',
+    const required = ['dateOfInspection', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
                      'maxLoad', 'yieldLoad', 'tensileStrength', 'yieldStrength', 'elongation', 'testedBy'];
     const missing = required.filter(field => !formData[field]);
+    
+    // Check if at least one Disa is selected
+    if (!formData.disa || formData.disa.length === 0) {
+      missing.push('disa');
+    }
 
     if (missing.length > 0) {
       setMissingFields(missing);
@@ -51,12 +71,17 @@ const MicroTensile = () => {
 
     try {
       setSubmitLoading(true);
-      const data = await api.post('/v1/micro-tensile-tests', formData);
+      // Combine dateCode and heatCode for backward compatibility with backend
+      const submitData = {
+        ...formData,
+        dateCodeHeatCode: `${formData.dateCode} & ${formData.heatCode}`.trim()
+      };
+      const data = await api.post('/v1/micro-tensile-tests', submitData);
       
       if (data.success) {
         alert('Micro tensile test entry created successfully!');
         setFormData({
-          dateOfInspection: '', item: '', dateCodeHeatCode: '', barDia: '', gaugeLength: '',
+          dateOfInspection: '', item: '', dateCode: '', heatCode: '', disa: [], barDia: '', gaugeLength: '',
           maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
           remarks: '', testedBy: ''
         });
@@ -72,7 +97,7 @@ const MicroTensile = () => {
 
   const handleReset = () => {
     setFormData({
-      dateOfInspection: '', item: '', dateCodeHeatCode: '', barDia: '', gaugeLength: '',
+      dateOfInspection: '', item: '', dateCode: '', heatCode: '', disa: [], barDia: '', gaugeLength: '',
       maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
       remarks: '', testedBy: ''
     });
@@ -105,6 +130,22 @@ const MicroTensile = () => {
       </div>
 
       <div className="microtensile-form-grid">
+            <div className="microtensile-form-group" style={{ gridColumn: '1 / -1' }}>
+              <label>Disa *</label>
+              <div className="microtensile-disa-checkboxes">
+                {[1, 2, 3, 4].map(num => (
+                  <label key={num} className="microtensile-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.disa.includes(num.toString())}
+                      onChange={() => handleDisaChange(num.toString())}
+                    />
+                    <span>Disa {num}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
+
             <div className="microtensile-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
@@ -126,13 +167,24 @@ const MicroTensile = () => {
             </div>
 
             <div className="microtensile-form-group">
-              <label>Date Code & Heat Code *</label>
+              <label>Date Code *</label>
               <input
                 type="text"
-                name="dateCodeHeatCode"
-                value={formData.dateCodeHeatCode}
+                name="dateCode"
+                value={formData.dateCode}
                 onChange={handleChange}
-                placeholder="e.g: 2024-HC-012"
+                placeholder="e.g: 2024"
+              />
+            </div>
+
+            <div className="microtensile-form-group">
+              <label>Heat Code *</label>
+              <input
+                type="text"
+                name="heatCode"
+                value={formData.heatCode}
+                onChange={handleChange}
+                placeholder="e.g: HC-012"
               />
             </div>
 

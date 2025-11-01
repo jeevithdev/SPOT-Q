@@ -1,7 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Save, RefreshCw, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-import { DatePicker } from '../../Components/Buttons';
 import ValidationPopup from '../../Components/ValidationPopup';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
@@ -9,11 +8,12 @@ import '../../styles/PageStyles/Melting/MeltingLogSheet.css';
 
 const MeltingLogSheet = () => {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState({
+  const inputRefs = useRef({});
+  
+  const initialFormData = {
     date: '',
     heatNo: '',
     grade: '',
-    // Charging
     chargingTime: '',
     ifBath: '',
     liquidMetalPressPour: '',
@@ -25,7 +25,6 @@ const MeltingLogSheet = () => {
     pigIron: '',
     borings: '',
     finalBath: '',
-    // Materials in kgs
     charCoal: '',
     cpcFur: '',
     cpcLc: '',
@@ -38,18 +37,14 @@ const MeltingLogSheet = () => {
     cr: '',
     pureMg: '',
     ironPyrite: '',
-    // Lab Coin
     labCoinTime: '',
     labCoinTemp: '',
-    // Deslaging
     deslagingFrom: '',
     deslagingTo: '',
     metalReadyTime: '',
-    // Waiting for Tapping
     waitingFrom: '',
     waitingTo: '',
     waitingReason: '',
-    // Metal Tapping
     tappingTime: '',
     tappingTemp: '',
     directFurnace: '',
@@ -57,7 +52,6 @@ const MeltingLogSheet = () => {
     furnaceToHolder: '',
     disaNo: '',
     item: '',
-    // Electrical Readings - Furnace 1
     f1Kw: '',
     f1V: '',
     f1A: '',
@@ -66,7 +60,6 @@ const MeltingLogSheet = () => {
     f1BelowKw: '',
     f1BelowA: '',
     f1BelowV: '',
-    // Furnace 2
     f2Kw: '',
     f2V: '',
     f2A: '',
@@ -75,7 +68,6 @@ const MeltingLogSheet = () => {
     f2BelowKw: '',
     f2BelowA: '',
     f2BelowV: '',
-    // Furnace 3
     f3Kw: '',
     f3V: '',
     f3A: '',
@@ -84,7 +76,6 @@ const MeltingLogSheet = () => {
     f3BelowKw: '',
     f3BelowA: '',
     f3BelowV: '',
-    // Furnace 4
     f4Kw: '',
     f4V: '',
     f4A: '',
@@ -94,26 +85,163 @@ const MeltingLogSheet = () => {
     f4BelowGld: '',
     f4BelowGld1: '',
     remarks: ''
-  });
+  };
 
+  // Form field configurations for each section
+  const formSections = [
+    {
+      title: 'Table 1',
+      fields: [
+        { name: 'date', label: 'Date', type: 'date' },
+        { name: 'heatNo', label: 'Heat No', type: 'text' },
+        { name: 'grade', label: 'Grade', type: 'text' },
+        { name: 'chargingTime', label: 'Charging Time', type: 'time' },
+        { name: 'ifBath', label: 'If Bath', type: 'number', step: '0.1' },
+        { name: 'liquidMetalPressPour', label: 'Liquid Metal Press Pour (kgs)', type: 'number', step: '0.1' },
+        { name: 'liquidMetalHolder', label: 'Liquid Metal Holder (kgs)', type: 'number', step: '0.1' },
+        { name: 'sgMsSteel', label: 'SG-MS Steel (kgs)', type: 'number', step: '0.1' },
+        { name: 'greyMsSteel', label: 'Grey MS Steel (kgs)', type: 'number', step: '0.1' },
+        { name: 'ralumsSg', label: 'Ralums SG (kgs)', type: 'number', step: '0.1' },
+        { name: 'gl', label: 'GL (kgs)', type: 'number', step: '0.1' },
+        { name: 'pigIron', label: 'Pig Iron (kgs)', type: 'number', step: '0.1' },
+        { name: 'borings', label: 'Borings (kgs)', type: 'number', step: '0.1' },
+        { name: 'finalBath', label: 'Final Bath (kgs)', type: 'number', step: '0.1' },
+        { name: 'remarks', label: 'Remarks', type: 'textarea' }
+      ]
+    },
+    {
+      title: 'Table 2',
+      fields: [
+        { name: 'date', label: 'Date', type: 'date' },
+        { name: 'charCoal', label: 'Char Coal (kgs)', type: 'number', step: '0.1' },
+        { name: 'cpcFur', label: 'CPC FUR (kgs)', type: 'number', step: '0.1' },
+        { name: 'cpcLc', label: 'CPC L/C (kgs)', type: 'number', step: '0.1' },
+        { name: 'siliconCarbideFur', label: 'Silicon Carbide FUR (kgs)', type: 'number', step: '0.1' },
+        { name: 'ferroSiliconFur', label: 'Ferro Silicon FUR (kgs)', type: 'number', step: '0.1' },
+        { name: 'ferroSiliconLc', label: 'Ferro Silicon L/C (kgs)', type: 'number', step: '0.1' },
+        { name: 'ferroManganeseFur', label: 'Ferro Manganese FUR (kgs)', type: 'number', step: '0.1' },
+        { name: 'ferroManganeseLc', label: 'Ferro Manganese L/C (kgs)', type: 'number', step: '0.1' },
+        { name: 'cu', label: 'CU (kgs)', type: 'number', step: '0.01' },
+        { name: 'cr', label: 'CR (kgs)', type: 'number', step: '0.01' },
+        { name: 'pureMg', label: 'Pure MG (kgs)', type: 'number', step: '0.01' },
+        { name: 'ironPyrite', label: 'Iron Pyrite (kgs)', type: 'number', step: '0.1' },
+        { name: 'remarks', label: 'Remarks', type: 'textarea' }
+      ]
+    },
+    {
+      title: 'Table 3',
+      fields: [
+        { name: 'date', label: 'Date', type: 'date' },
+        { name: 'labCoinTime', label: 'Lab Coin Time', type: 'time' },
+        { name: 'labCoinTemp', label: 'Lab Coin Temp (°C)', type: 'number', step: '0.1' },
+        { name: 'deslagingFrom', label: 'Deslaging From', type: 'time' },
+        { name: 'deslagingTo', label: 'Deslaging To', type: 'time' },
+        { name: 'metalReadyTime', label: 'Metal Ready Time', type: 'time' },
+        { name: 'waitingFrom', label: 'Waiting From', type: 'time' },
+        { name: 'waitingTo', label: 'Waiting To', type: 'time' },
+        { name: 'waitingReason', label: 'Waiting Reason', type: 'text' },
+        { name: 'remarks', label: 'Remarks', type: 'textarea' }
+      ]
+    },
+    {
+      title: 'Metal Tapping',
+      fields: [
+        { name: 'date', label: 'Date', type: 'date' },
+        { name: 'tappingTime', label: 'Tapping Time', type: 'time' },
+        { name: 'tappingTemp', label: 'Tapping Temp (°C)', type: 'number', step: '0.1' },
+        { name: 'directFurnace', label: 'Direct Furnace (kgs)', type: 'number', step: '0.1' },
+        { name: 'holderToFurnace', label: 'Holder to Furnace (kgs)', type: 'number', step: '0.1' },
+        { name: 'furnaceToHolder', label: 'Furnace to Holder (kgs)', type: 'number', step: '0.1' },
+        { name: 'disaNo', label: 'Disa No', type: 'text' },
+        { name: 'item', label: 'Item', type: 'text' },
+        { name: 'remarks', label: 'Remarks', type: 'textarea' }
+      ]
+    },
+    {
+      title: 'Electrical Readings',
+      fields: [
+        { name: 'date', label: 'Date', type: 'date' },
+        { name: 'f1Kw', label: 'F1 KW', type: 'number', step: '0.1' },
+        { name: 'f1V', label: 'F1 V', type: 'number', step: '0.1' },
+        { name: 'f1A', label: 'F1 A', type: 'number', step: '0.1' },
+        { name: 'f1Gld', label: 'F1 GLD', type: 'number', step: '0.1' },
+        { name: 'f1Hz', label: 'F1 HZ', type: 'number', step: '0.1' },
+        { name: 'f1BelowKw', label: 'F1 Below KW', type: 'number', step: '0.1' },
+        { name: 'f1BelowA', label: 'F1 Below A', type: 'number', step: '0.1' },
+        { name: 'f1BelowV', label: 'F1 Below V', type: 'number', step: '0.1' },
+        { name: 'f2Kw', label: 'F2 KW', type: 'number', step: '0.1' },
+        { name: 'f2V', label: 'F2 V', type: 'number', step: '0.1' },
+        { name: 'f2A', label: 'F2 A', type: 'number', step: '0.1' },
+        { name: 'f2Gld', label: 'F2 GLD', type: 'number', step: '0.1' },
+        { name: 'f2Hz', label: 'F2 HZ', type: 'number', step: '0.1' },
+        { name: 'f2BelowKw', label: 'F2 Below KW', type: 'number', step: '0.1' },
+        { name: 'f2BelowA', label: 'F2 Below A', type: 'number', step: '0.1' },
+        { name: 'f2BelowV', label: 'F2 Below V', type: 'number', step: '0.1' },
+        { name: 'f3Kw', label: 'F3 KW', type: 'number', step: '0.1' },
+        { name: 'f3V', label: 'F3 V', type: 'number', step: '0.1' },
+        { name: 'f3A', label: 'F3 A', type: 'number', step: '0.1' },
+        { name: 'f3Gld', label: 'F3 GLD', type: 'number', step: '0.1' },
+        { name: 'f3Hz', label: 'F3 HZ', type: 'number', step: '0.1' },
+        { name: 'f3BelowKw', label: 'F3 Below KW', type: 'number', step: '0.1' },
+        { name: 'f3BelowA', label: 'F3 Below A', type: 'number', step: '0.1' },
+        { name: 'f3BelowV', label: 'F3 Below V', type: 'number', step: '0.1' },
+        { name: 'remarks', label: 'Remarks', type: 'textarea' }
+      ]
+    },
+    {
+      title: 'Furnace 4',
+      fields: [
+        { name: 'date', label: 'Date', type: 'date' },
+        { name: 'f4Kw', label: 'F4 KW', type: 'number', step: '0.1' },
+        { name: 'f4V', label: 'F4 V', type: 'number', step: '0.1' },
+        { name: 'f4A', label: 'F4 A', type: 'number', step: '0.1' },
+        { name: 'f4Gld', label: 'F4 GLD', type: 'number', step: '0.1' },
+        { name: 'f4Hz', label: 'F4 HZ', type: 'number', step: '0.1' },
+        { name: 'f4BelowHz', label: 'F4 Below HZ', type: 'number', step: '0.1' },
+        { name: 'f4BelowGld', label: 'F4 Below GLD', type: 'number', step: '0.1' },
+        { name: 'f4BelowGld1', label: 'F4 Below GLD1', type: 'number', step: '0.1' },
+        { name: 'remarks', label: 'Remarks', type: 'textarea' }
+      ]
+    }
+  ];
+
+  // Flatten all fields for keyboard navigation
+  const allFields = formSections.flatMap(section => section.fields.map(f => f.name));
+
+  const [formData, setFormData] = useState({ ...initialFormData });
   const [showMissingFields, setShowMissingFields] = useState(false);
   const [missingFields, setMissingFields] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData({ ...formData, [name]: value });
+  };
+
+  const handleKeyDown = (e, field) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const idx = allFields.indexOf(field);
+      if (idx < allFields.length - 1) {
+        inputRefs.current[allFields[idx + 1]]?.focus();
+      } else {
+        handleSubmit();
+      }
+    }
   };
 
   const handleSubmit = async () => {
     const required = ['date', 'heatNo', 'grade', 'chargingTime'];
-    const missing = required.filter(field => !formData[field]);
+    const missing = [];
+    
+    required.forEach(field => {
+      if (!formData[field]) {
+        missing.push(field);
+      }
+    });
 
     if (missing.length > 0) {
-      setMissingFields(missing);
+      setMissingFields(missing.map(f => `Field: ${f}`));
       setShowMissingFields(true);
       return;
     }
@@ -121,6 +249,7 @@ const MeltingLogSheet = () => {
     try {
       setSubmitLoading(true);
       const data = await api.post('/v1/melting-logs', formData);
+      
       if (data.success) {
         alert('Melting log entry created successfully!');
         handleReset();
@@ -133,25 +262,46 @@ const MeltingLogSheet = () => {
     }
   };
 
-
   const handleReset = () => {
-    setFormData({
-      date: '', heatNo: '', grade: '', chargingTime: '', ifBath: '',
-      liquidMetalPressPour: '', liquidMetalHolder: '', sgMsSteel: '',
-      greyMsSteel: '', ralumsSg: '', gl: '', pigIron: '', borings: '',
-      finalBath: '', charCoal: '', cpcFur: '', cpcLc: '', siliconCarbideFur: '',
-      ferroSiliconFur: '', ferroSiliconLc: '', ferroManganeseFur: '',
-      ferroManganeseLc: '', cu: '', cr: '', pureMg: '', ironPyrite: '',
-      labCoinTime: '', labCoinTemp: '', deslagingFrom: '', deslagingTo: '',
-      metalReadyTime: '', waitingFrom: '', waitingTo: '', waitingReason: '',
-      tappingTime: '', tappingTemp: '', directFurnace: '', holderToFurnace: '',
-      furnaceToHolder: '', disaNo: '', item: '',
-      f1Kw: '', f1V: '', f1A: '', f1Gld: '', f1Hz: '', f1BelowKw: '', f1BelowA: '', f1BelowV: '',
-      f2Kw: '', f2V: '', f2A: '', f2Gld: '', f2Hz: '', f2BelowKw: '', f2BelowA: '', f2BelowV: '',
-      f3Kw: '', f3V: '', f3A: '', f3Gld: '', f3Hz: '', f3BelowKw: '', f3BelowA: '', f3BelowV: '',
-      f4Kw: '', f4V: '', f4A: '', f4Gld: '', f4Hz: '', f4BelowHz: '', f4BelowGld: '', f4BelowGld1: '',
-      remarks: ''
-    });
+    setFormData({ ...initialFormData });
+    inputRefs.current.date?.focus();
+  };
+
+  const renderFormSection = (section) => {
+    return (
+      <div className="melting-log-section" key={section.title}>
+        <h3 className="melting-log-section-title">{section.title}</h3>
+        <div className="melting-log-form-grid">
+          {section.fields.map((field) => (
+            <div className="melting-log-form-group" key={field.name} style={field.type === 'textarea' ? { gridColumn: '1 / -1' } : {}}>
+              <label>{field.label}</label>
+              {field.type === 'textarea' ? (
+                <textarea
+                  ref={el => inputRefs.current[field.name] = el}
+                  name={field.name}
+                  value={formData[field.name]}
+                  onChange={handleChange}
+                  onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
+                  rows="4"
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                />
+              ) : (
+                <input
+                  ref={el => inputRefs.current[field.name] = el}
+                  type={field.type}
+                  name={field.name}
+                  value={formData[field.name]}
+                  onChange={handleChange}
+                  onKeyDown={(e) => handleKeyDown(e, field.name)}
+                  step={field.step || 'any'}
+                  placeholder={`Enter ${field.label.toLowerCase()}`}
+                />
+              )}
+            </div>
+          ))}
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -180,441 +330,7 @@ const MeltingLogSheet = () => {
         </div>
       </div>
 
-      <div className="melting-log-form-grid">
-            {/* Basic Information */}
-            <div className="melting-log-form-group">
-              <label>Date *</label>
-              <DatePicker name="date" value={formData.date} onChange={handleChange} />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Heat No *</label>
-              <input type="text" name="heatNo" value={formData.heatNo} onChange={handleChange} placeholder="e.g: H2024-001" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Grade *</label>
-              <input type="text" name="grade" value={formData.grade} onChange={handleChange} placeholder="e.g: SG 500/7" />
-            </div>
-
-            {/* Charging Section */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Charging Details (Foundry B)
-              </h4>
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Charging Time *</label>
-              <input type="time" name="chargingTime" value={formData.chargingTime} onChange={handleChange} />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>If Bath</label>
-              <input type="text" name="ifBath" value={formData.ifBath} onChange={handleChange} placeholder="Yes/No" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Liquid Metal - Press Pour (kgs)</label>
-              <input type="number" name="liquidMetalPressPour" value={formData.liquidMetalPressPour} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Liquid Metal - Holder (kgs)</label>
-              <input type="number" name="liquidMetalHolder" value={formData.liquidMetalHolder} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>SG-MS Steel (400-2500 kgs)</label>
-              <input type="number" name="sgMsSteel" value={formData.sgMsSteel} onChange={handleChange} min="400" max="2500" placeholder="400" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Grey MS Steel (400-2500 kgs)</label>
-              <input type="number" name="greyMsSteel" value={formData.greyMsSteel} onChange={handleChange} min="400" max="2500" placeholder="400" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Ralums SG (500-2500 kgs)</label>
-              <input type="number" name="ralumsSg" value={formData.ralumsSg} onChange={handleChange} min="500" max="2500" placeholder="500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>GL (800-2250 kgs)</label>
-              <input type="number" name="gl" value={formData.gl} onChange={handleChange} min="800" max="2250" placeholder="800" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Pig Iron (0-350 kgs)</label>
-              <input type="number" name="pigIron" value={formData.pigIron} onChange={handleChange} min="0" max="350" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Borings (0-1500 kgs)</label>
-              <input type="number" name="borings" value={formData.borings} onChange={handleChange} min="0" max="1500" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Final Bath (kgs)</label>
-              <input type="number" name="finalBath" value={formData.finalBath} onChange={handleChange} placeholder="0" />
-            </div>
-
-            {/* Materials Section */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Materials (All in kgs)
-              </h4>
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Char Coal (kgs)</label>
-              <input type="number" name="charCoal" value={formData.charCoal} onChange={handleChange} step="0.1" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>CPC - FUR (kgs)</label>
-              <input type="number" name="cpcFur" value={formData.cpcFur} onChange={handleChange} step="0.1" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>CPC - L/C (kgs)</label>
-              <input type="number" name="cpcLc" value={formData.cpcLc} onChange={handleChange} step="0.1" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Silicon Carbide FUR (03-09 kgs)</label>
-              <input type="number" name="siliconCarbideFur" value={formData.siliconCarbideFur} onChange={handleChange} step="0.1" min="3" max="9" placeholder="3" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Ferro Silicon - FUR (kgs)</label>
-              <input type="number" name="ferroSiliconFur" value={formData.ferroSiliconFur} onChange={handleChange} step="0.1" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Ferro Silicon - L/C (kgs)</label>
-              <input type="number" name="ferroSiliconLc" value={formData.ferroSiliconLc} onChange={handleChange} step="0.1" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Ferro Manganese - FUR (kgs)</label>
-              <input type="number" name="ferroManganeseFur" value={formData.ferroManganeseFur} onChange={handleChange} step="0.1" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Ferro Manganese - L/C (kgs)</label>
-              <input type="number" name="ferroManganeseLc" value={formData.ferroManganeseLc} onChange={handleChange} step="0.1" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>CU (kgs)</label>
-              <input type="number" name="cu" value={formData.cu} onChange={handleChange} step="0.01" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>CR (kgs)</label>
-              <input type="number" name="cr" value={formData.cr} onChange={handleChange} step="0.01" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Pure MG (kgs)</label>
-              <input type="number" name="pureMg" value={formData.pureMg} onChange={handleChange} step="0.01" placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Iron Pyrite (kgs)</label>
-              <input type="number" name="ironPyrite" value={formData.ironPyrite} onChange={handleChange} step="0.1" placeholder="0" />
-            </div>
-
-            {/* Lab Coin Section */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Lab Coin & Timing
-              </h4>
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Lab Coin Time</label>
-              <input type="time" name="labCoinTime" value={formData.labCoinTime} onChange={handleChange} />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Lab Coin Temp (°C)</label>
-              <input type="number" name="labCoinTemp" value={formData.labCoinTemp} onChange={handleChange} placeholder="1500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Deslaging From</label>
-              <input type="time" name="deslagingFrom" value={formData.deslagingFrom} onChange={handleChange} />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Deslaging To</label>
-              <input type="time" name="deslagingTo" value={formData.deslagingTo} onChange={handleChange} />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Metal Ready Time</label>
-              <input type="time" name="metalReadyTime" value={formData.metalReadyTime} onChange={handleChange} />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Waiting for Tapping - From</label>
-              <input type="time" name="waitingFrom" value={formData.waitingFrom} onChange={handleChange} />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Waiting for Tapping - To</label>
-              <input type="time" name="waitingTo" value={formData.waitingTo} onChange={handleChange} />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Waiting Reason</label>
-              <input type="text" name="waitingReason" value={formData.waitingReason} onChange={handleChange} placeholder="Enter reason" />
-            </div>
-
-            {/* Metal Tapping Section */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Metal Tapping (SG: 1460-1550°C, Grey: 1440-1550°C)
-              </h4>
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Tapping Time</label>
-              <input type="time" name="tappingTime" value={formData.tappingTime} onChange={handleChange} />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Tapping Temp (°C)</label>
-              <input type="number" name="tappingTemp" value={formData.tappingTemp} onChange={handleChange} min="1440" max="1550" placeholder="1500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Direct Furnace (kgs)</label>
-              <input type="number" name="directFurnace" value={formData.directFurnace} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Holder to Furnace (kgs)</label>
-              <input type="number" name="holderToFurnace" value={formData.holderToFurnace} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Furnace to Holder (kgs)</label>
-              <input type="number" name="furnaceToHolder" value={formData.furnaceToHolder} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Disa No</label>
-              <input type="text" name="disaNo" value={formData.disaNo} onChange={handleChange} placeholder="e.g: DISA-1" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Item</label>
-              <input type="text" name="item" value={formData.item} onChange={handleChange} placeholder="Item name" />
-            </div>
-
-            {/* Electrical Readings - Furnace 1 */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Electrical Readings - Furnace 1
-              </h4>
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>KW (2000-3000)</label>
-              <input type="number" name="f1Kw" value={formData.f1Kw} onChange={handleChange} min="2000" max="3000" placeholder="2500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>V (2000-3000)</label>
-              <input type="number" name="f1V" value={formData.f1V} onChange={handleChange} min="2000" max="3000" placeholder="2500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>A (1000-1500)</label>
-              <input type="number" name="f1A" value={formData.f1A} onChange={handleChange} min="1000" max="1500" placeholder="1200" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>GLD (Max 80)</label>
-              <input type="number" name="f1Gld" value={formData.f1Gld} onChange={handleChange} max="80" placeholder="60" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>HZ (200-250)</label>
-              <input type="number" name="f1Hz" value={formData.f1Hz} onChange={handleChange} min="200" max="250" placeholder="225" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - KW</label>
-              <input type="number" name="f1BelowKw" value={formData.f1BelowKw} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - A</label>
-              <input type="number" name="f1BelowA" value={formData.f1BelowA} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - V</label>
-              <input type="number" name="f1BelowV" value={formData.f1BelowV} onChange={handleChange} placeholder="0" />
-            </div>
-
-            {/* Electrical Readings - Furnace 2 */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Electrical Readings - Furnace 2
-              </h4>
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>KW (2000-3000)</label>
-              <input type="number" name="f2Kw" value={formData.f2Kw} onChange={handleChange} min="2000" max="3000" placeholder="2500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>V (2000-3000)</label>
-              <input type="number" name="f2V" value={formData.f2V} onChange={handleChange} min="2000" max="3000" placeholder="2500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>A (1000-1500)</label>
-              <input type="number" name="f2A" value={formData.f2A} onChange={handleChange} min="1000" max="1500" placeholder="1200" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>GLD (Max 80)</label>
-              <input type="number" name="f2Gld" value={formData.f2Gld} onChange={handleChange} max="80" placeholder="60" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>HZ (200-250)</label>
-              <input type="number" name="f2Hz" value={formData.f2Hz} onChange={handleChange} min="200" max="250" placeholder="225" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - KW</label>
-              <input type="number" name="f2BelowKw" value={formData.f2BelowKw} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - A</label>
-              <input type="number" name="f2BelowA" value={formData.f2BelowA} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - V</label>
-              <input type="number" name="f2BelowV" value={formData.f2BelowV} onChange={handleChange} placeholder="0" />
-            </div>
-
-            {/* Electrical Readings - Furnace 3 */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Electrical Readings - Furnace 3
-              </h4>
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>KW (2000-3000)</label>
-              <input type="number" name="f3Kw" value={formData.f3Kw} onChange={handleChange} min="2000" max="3000" placeholder="2500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>V (2000-3000)</label>
-              <input type="number" name="f3V" value={formData.f3V} onChange={handleChange} min="2000" max="3000" placeholder="2500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>A (1000-1500)</label>
-              <input type="number" name="f3A" value={formData.f3A} onChange={handleChange} min="1000" max="1500" placeholder="1200" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>GLD (Max 80)</label>
-              <input type="number" name="f3Gld" value={formData.f3Gld} onChange={handleChange} max="80" placeholder="60" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>HZ (200-250)</label>
-              <input type="number" name="f3Hz" value={formData.f3Hz} onChange={handleChange} min="200" max="250" placeholder="225" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - KW</label>
-              <input type="number" name="f3BelowKw" value={formData.f3BelowKw} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - A</label>
-              <input type="number" name="f3BelowA" value={formData.f3BelowA} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - V</label>
-              <input type="number" name="f3BelowV" value={formData.f3BelowV} onChange={handleChange} placeholder="0" />
-            </div>
-
-            {/* Electrical Readings - Furnace 4 */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}>
-              <h4 style={{ fontSize: '1rem', fontWeight: '600', color: '#475569', margin: 0 }}>
-                Electrical Readings - Furnace 4 (Different Specifications)
-              </h4>
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>KW (2500-4000)</label>
-              <input type="number" name="f4Kw" value={formData.f4Kw} onChange={handleChange} min="2500" max="4000" placeholder="3000" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>V (2000-3000)</label>
-              <input type="number" name="f4V" value={formData.f4V} onChange={handleChange} min="2000" max="3000" placeholder="2500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>A (1000-2200)</label>
-              <input type="number" name="f4A" value={formData.f4A} onChange={handleChange} min="1000" max="2200" placeholder="1500" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>GLD (Max 80)</label>
-              <input type="number" name="f4Gld" value={formData.f4Gld} onChange={handleChange} max="80" placeholder="60" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>HZ (200-300)</label>
-              <input type="number" name="f4Hz" value={formData.f4Hz} onChange={handleChange} min="200" max="300" placeholder="250" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - HZ</label>
-              <input type="number" name="f4BelowHz" value={formData.f4BelowHz} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - GLD</label>
-              <input type="number" name="f4BelowGld" value={formData.f4BelowGld} onChange={handleChange} placeholder="0" />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Below - GLD1</label>
-              <input type="number" name="f4BelowGld1" value={formData.f4BelowGld1} onChange={handleChange} placeholder="0" />
-            </div>
-
-            {/* Remarks */}
-            <div className="melting-log-form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>Remarks</label>
-              <textarea
-                name="remarks"
-                value={formData.remarks}
-                onChange={handleChange}
-                rows="3"
-                placeholder="Enter any additional notes or observations..."
-              />
-            </div>
-          </div>
+      {formSections.map(section => renderFormSection(section))}
 
           <div className="melting-log-submit-container">
             <button
@@ -634,11 +350,8 @@ const MeltingLogSheet = () => {
           Reset
         </button>
       </div>
-
     </>
   );
 };
 
 export default MeltingLogSheet;
-
-
