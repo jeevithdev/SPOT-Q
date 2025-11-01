@@ -1,21 +1,14 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Save } from "lucide-react";
-import Select from "react-select";
 import { SubmitButton, ViewReportButton, ResetFormButton } from "../../Components/Buttons";
 import "../../styles/PageStyles/Moulding/DisamaticProduct.css";
-
-const memberOptions = [
-  { value: "Member A", label: "Member A" },
-  { value: "Member B", label: "Member B" },
-  { value: "Member C", label: "Member C" },
-];
 
 const initialFormData = {
   date: "",
   shift: "",
   incharge: "",
-  members: [],
+  membersPresent: "",
   ppOperator: "",
   productionTable: [{ counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }],
   nextShiftPlan: [{ componentName: "", plannedMoulds: "", remarks: "" }],
@@ -121,13 +114,12 @@ const DisamaticProduct = () => {
               </div>
               <div className="disamatic-form-group">
                 <label>Members Present</label>
-                <Select 
-                  isMulti 
-                  options={memberOptions} 
-                  value={formData.members} 
-                  onChange={val => handleChange("members", val)} 
-                  className="disamatic-multiselect" 
-                  placeholder="Select Members..." 
+                <input 
+                  type="text" 
+                  value={formData.membersPresent} 
+                  onChange={e => handleChange("membersPresent", e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Enter members present"
                 />
               </div>
             </div>

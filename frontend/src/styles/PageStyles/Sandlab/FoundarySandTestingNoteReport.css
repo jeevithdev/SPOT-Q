@@ -88,6 +88,26 @@
 
 .foundry-table-wrapper {
   overflow-x: auto;
+  overflow-y: visible;
+  -webkit-overflow-scrolling: touch;
+}
+
+.foundry-table-wrapper::-webkit-scrollbar {
+  height: 8px;
+}
+
+.foundry-table-wrapper::-webkit-scrollbar-track {
+  background: #f1f5f9;
+  border-radius: 4px;
+}
+
+.foundry-table-wrapper::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+
+.foundry-table-wrapper::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
 }
 
 .foundry-table {
@@ -102,14 +122,29 @@
 }
 
 .foundry-table th {
-  padding: 1rem;
-  text-align: left;
+  padding: 0.75rem 0.5rem;
+  text-align: center;
   font-weight: 600;
   color: #334155;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   text-transform: uppercase;
   letter-spacing: 0.025em;
   white-space: nowrap;
+  border-right: 1px solid #e2e8f0;
+  background: linear-gradient(to bottom, #f8fafc, #f1f5f9);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.foundry-table th[rowSpan="2"] {
+  vertical-align: middle;
+}
+
+.foundry-table thead tr:first-child th {
+  background: linear-gradient(to bottom, #e2e8f0, #cbd5e1);
+  font-size: 0.8125rem;
+  padding: 0.875rem 0.5rem;
 }
 
 .foundry-table tbody tr {
@@ -126,9 +161,27 @@
 }
 
 .foundry-table td {
-  padding: 1rem;
+  padding: 0.75rem 0.5rem;
   color: #475569;
   vertical-align: middle;
+  font-size: 0.8125rem;
+  border-right: 1px solid #f1f5f9;
+  text-align: center;
+  min-width: 60px;
+  max-width: 100px;
+}
+
+.foundry-table td.foundry-remarks-cell {
+  min-width: 150px;
+  max-width: 200px;
+  text-align: left;
+  word-wrap: break-word;
+}
+
+.foundry-table td.foundry-table-actions {
+  min-width: 80px;
+  max-width: 80px;
+  border-right: none;
 }
 
 .foundry-table-actions {
@@ -189,12 +242,18 @@
 
   .foundry-table th,
   .foundry-table td {
-    padding: 0.75rem 0.5rem;
-    font-size: 0.8125rem;
+    padding: 0.625rem 0.375rem;
+    font-size: 0.75rem;
+    min-width: 50px;
   }
 
   .foundry-table th {
-    font-size: 0.75rem;
+    font-size: 0.6875rem;
+  }
+
+  .foundry-table td.foundry-remarks-cell {
+    min-width: 120px;
+    max-width: 150px;
   }
 
   .foundry-no-data {

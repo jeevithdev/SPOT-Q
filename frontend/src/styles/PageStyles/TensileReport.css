@@ -1,29 +1,119 @@
 /* Tensile Report Styles */
-.tensile-container { padding: 20px; background: transparent; }
-.tensile-wrapper { background: #fff; border-radius: 12px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); padding: 20px; }
+.tensile-container { padding: 0 !important; margin: 0 !important; background: transparent !important; }
+.tensile-wrapper { display: none; }
 
-.tensile-tabs-container { margin-bottom: 16px; }
+.tensile-tabs-container { margin-bottom: 16px; background: transparent; }
 .tensile-tabs { display: flex; gap: 8px; background: #f8fafc; border-radius: 8px; padding: 4px; }
 .tensile-tab { flex: 1; text-align: center; text-decoration: none; color: #64748b; padding: 10px 14px; border-radius: 6px; font-weight: 500; }
 .tensile-tab.active { background: #3b82f6; color: #fff; }
 
-.tensile-report-container { }
-.tensile-report-title { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; padding-bottom: 12px; border-bottom: 2px solid #e2e8f0; }
+.tensile-report-container { padding: 0 !important; margin: 0 !important; background: transparent !important; }
+.tensile-report-title { display: flex; align-items: center; gap: 12px; font-size: 1.75rem; font-weight: 600; color: #1f2937; margin: 0 0 24px 0; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb; background: transparent !important; }
 
-.tensile-filter-grid { display: grid; grid-template-columns: 1fr 1fr auto; gap: 12px; align-items: end; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 16px; }
-.tensile-filter-group { display: flex; flex-direction: column; gap: 6px; }
-.tensile-filter-group label { font-size: 0.875rem; color: #374151; font-weight: 500; }
-.tensile-filter-btn-container { display: flex; align-items: end; }
+.tensile-report-title h3 {
+  margin: 0;
+  color: #1e293b;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.tensile-filter-grid { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: end; background: transparent !important; border: none !important; box-shadow: none !important; padding: 0; margin-bottom: 24px; }
+.tensile-filter-group { display: flex; flex-direction: column; gap: 6px; background: transparent !important; max-width: 200px; }
+.tensile-filter-group label { font-size: 0.9375rem; color: #374151; font-weight: 500; }
+.tensile-filter-group .custom-date-picker { width: 180px; }
+.tensile-filter-btn-container { display: flex; align-items: end; background: transparent !important; }
 .tensile-filter-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
 
 .tensile-loader-container { display: flex; align-items: center; justify-content: center; padding: 32px; }
 
 .tensile-table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
-.tensile-table { width: 100%; border-collapse: collapse; background: #fff; }
+.tensile-table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; }
 .tensile-table thead { background: #f8fafc; }
-.tensile-table th { padding: 10px 8px; text-align: left; color: #374151; font-weight: 600; border-bottom: 2px solid #e2e8f0; white-space: nowrap; font-size: 0.85rem; }
-.tensile-table td { padding: 10px 8px; border-bottom: 1px solid #f1f5f9; color: #64748b; font-size: 0.85rem; }
+.tensile-table th { 
+  padding: 10px 8px; 
+  text-align: left; 
+  color: #374151; 
+  font-weight: 600; 
+  border-bottom: 2px solid #e2e8f0; 
+  border-right: 1px solid #e2e8f0;
+  white-space: nowrap; 
+  font-size: 0.85rem; 
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fafc;
+}
+.tensile-table td { 
+  padding: 10px 8px; 
+  border-bottom: 1px solid #f1f5f9; 
+  border-right: 1px solid #f1f5f9;
+  color: #64748b; 
+  font-size: 0.85rem; 
+  white-space: nowrap;
+  background: white;
+}
+.tensile-table tbody tr:hover {
+  background: #f8fafc;
+}
 .tensile-no-records { text-align: center; padding: 32px; color: #94a3b8; font-style: italic; }
+
+/* Sticky Date Column */
+.tensile-table th.sticky-date,
+.tensile-table td.sticky-date {
+  position: sticky;
+  left: 0;
+  z-index: 15;
+  background: white !important;
+  background-color: white !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  min-width: 120px;
+  width: 120px;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-right: 1px solid #e2e8f0;
+}
+
+.tensile-table thead th.sticky-date {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+  z-index: 16;
+}
+
+.tensile-table tbody tr:hover td.sticky-date {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+}
+
+/* Sticky Item Column */
+.tensile-table th.sticky-item,
+.tensile-table td.sticky-item {
+  position: sticky;
+  left: 120px; /* Matches Date column width */
+  z-index: 14;
+  background: white !important;
+  background-color: white !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  min-width: 150px;
+  width: 150px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-right: 1px solid #e2e8f0;
+}
+
+.tensile-table thead th.sticky-item {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+  z-index: 16;
+}
+
+.tensile-table tbody tr:hover td.sticky-item {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+}
 
 /* Modal */
 .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
@@ -39,7 +129,57 @@
 .tensile-form-group { display: flex; flex-direction: column; gap: 6px; }
 .tensile-form-group input, .tensile-form-group textarea { border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 12px; font-size: 0.9rem; }
 
+@media (max-width: 1024px) {
+  .tensile-filter-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .tensile-filter-group {
+    max-width: 100%;
+  }
+  
+  .tensile-filter-group .custom-date-picker {
+    width: 100%;
+  }
+  
+  .tensile-filter-btn-container {
+    align-items: stretch;
+  }
+  
+  .tensile-filter-btn {
+    width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
-  .tensile-filter-grid { grid-template-columns: 1fr; }
-  .tensile-tabs { flex-direction: column; }
+  .tensile-report-container {
+    padding: 0 !important;
+  }
+
+  .tensile-filter-grid {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+  
+  .tensile-filter-group {
+    max-width: 100%;
+  }
+  
+  .tensile-filter-group .custom-date-picker {
+    width: 100%;
+  }
+  
+  .tensile-tabs { 
+    flex-direction: column; 
+  }
+  
+  .modal-container {
+    width: 95%;
+    margin: 20px;
+  }
+  
+  .tensile-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
