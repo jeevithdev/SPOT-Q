@@ -1,181 +1,172 @@
 const mongoose = require('mongoose');
 
 const DismaticProductReportDISASchema = new mongoose.Schema({
-
+    // Basic Information - Primary Identifier
     date: {
         type: Date,
-        required: true
+        required: true,
+        unique: true, // Primary identifier - one record per date
+        index: true // Index for faster queries
     },
-
     shift: {
         type: String,
-        required: true
+        required: true,
+        trim: true,
+        index: true // Index for faster queries
     },
-
     incharge: {
         type: String,
-        required: true
+        default: '',
+        trim: true
     },
-
     memberspresent: {
         type: String,
-        required: true
+        default: '',
+        trim: true
     },
-
-    production: {
-        type: String,
-        required: true
-    },
-
-    ppOperator: {
-        type: String,
-        required: true
-    },
-
-    productionDetails: {
-        mouldCounterNo: {
-            type: Number,
-            required: true
+    
+    // Production Table
+    productionDetails: [{
+        counterNo: {
+            type: String,
+            default: '',
+            trim: true
         },
         componentName: {
             type: String,
-            required: true
+            default: '',
+            trim: true
         },
         produced: {
             type: Number,
-            required: true
+            default: 0
         },
         poured: {
             type: Number,
-            required: true
+            default: 0
         },
         cycleTime: {
-            type: Number,
-            required: true
+            type: String,
+            default: '',
+            trim: true
         },
         mouldsPerHour: {
             type: Number,
-            required: true
+            default: 0
         },
         remarks: {
             type: String,
-            required: true
+            default: '',
+            trim: true
         }
-    },
+    }],
 
-    nextShiftPlan : {
-
-        sNo: {
-            type: Number,
-            required: true
-        },
-
+    // Next Shift Plan Table
+    nextShiftPlan: [{
         componentName: {
             type: String,
-            required: true
+            default: '',
+            trim: true
         },
-
         plannedMoulds: {
             type: Number,
-            required: true
+            default: 0
         },
         remarks: {
             type: String,
-            required: true
+            default: '',
+            trim: true
         }
-    },
+    }],
 
-    delays: {
-        sNo: {
-            type: Number,
-            required: true
-        },
-
-        delay: {
+    // Delays Table
+    delays: [{
+        delays: {
             type: String,
-            required: true
+            default: '',
+            trim: true
         },
-
-        durationInMinutes: {
+        durationMinutes: {
             type: Number,
-            required: true
+            default: 0
         },
-
-        durationInTime: {
+        durationTime: {
             type: String,
-            required: true
+            default: '',
+            trim: true
         }
-    },
+    }],
 
-    mouldHardness: {
-        sNo: {
-            type: Number,
-            required: true
-        },
-
+    // Mould Hardness Table
+    mouldHardness: [{
         componentName: {
             type: String,
-            required: true
+            default: '',
+            trim: true
         },
-
-        mouldPenetrantTester: {
-            pp: {
-                type: Number,
-                required: true
-            },
-            sp: {
-                type: Number,
-                required: true
-            }
+        mpPP: {
+            type: Number,
+            default: 0
         },
-        bScale: {
-            pp: {
-                type: Number,
-                required: true
-            },
-            sp: {
-                type: Number,
-                required: true
-            }
+        mpSP: {
+            type: Number,
+            default: 0
+        },
+        bsPP: {
+            type: Number,
+            default: 0
+        },
+        bsSP: {
+            type: Number,
+            default: 0
         },
         remarks: {
             type: String,
-            required: true
+            default: '',
+            trim: true
         }
-    },
+    }],
 
-    patternTemperature: {
-        sNo: {
-            type: Number,
-            required: true
-        },
-        items: {
+    // Pattern Temperature Table
+    patternTemperature: [{
+        item: {
             type: String,
-            required: true
+            default: '',
+            trim: true
         },
         pp: {
             type: Number,
-            required: true
+            default: 0
         },
         sp: {
             type: Number,
-            required: true
+            default: 0
         }
-    },
+    }],
 
+    // Additional Fields
     significantEvent: {
         type: String,
-        required: true
+        default: '',
+        trim: true
     },
-
     maintenance: {
         type: String,
-        required: true
+        default: '',
+        trim: true
     },
     supervisorName: {
         type: String,
-        required: true
+        default: '',
+        trim: true
     }
+}, {
+    timestamps: true, // Adds createdAt and updatedAt fields
+    collection: 'disamatic_product_reports' // Explicit collection name
 });
+
+// Date is already indexed and unique as primary identifier
+// Index for date range queries (descending for latest first)
+DismaticProductReportDISASchema.index({ date: -1 });
 
 module.exports = mongoose.model('DismaticProductReportDISA', DismaticProductReportDISASchema);

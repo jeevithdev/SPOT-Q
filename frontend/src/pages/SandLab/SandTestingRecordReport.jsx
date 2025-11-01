@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Filter } from 'lucide-react';
+import { Filter, Loader2 } from 'lucide-react';
 import { FilterButton, DatePicker, DeleteActionButton } from '../../Components/Buttons';
-import Loader from '../../Components/Loader';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Sandlab/SandTestingRecordReport.css';
 
@@ -113,7 +112,7 @@ const SandTestingRecordReport = () => {
 
         {/* Table Section */}
         {loading ? (
-          <Loader />
+          <Loader2 size={40} className="animate-spin" />
         ) : (
           <div className="sand-table-container">
             <div className="sand-table-wrapper">

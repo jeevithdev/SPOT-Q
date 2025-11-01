@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, RefreshCw, X } from 'lucide-react';
+import { Filter, RefreshCw, X, Loader2 } from 'lucide-react';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
-import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/QcProductionDetailsReport.css';
 
@@ -170,7 +169,7 @@ const QcProductionReport = () => {
 
           {loading ? (
             <div className="qcproduction-loader-container">
-              <Loader />
+              <Loader2 size={40} className="animate-spin" />
             </div>
           ) : (
             <div className="qcproduction-table-container">
@@ -340,7 +339,7 @@ const QcProductionReport = () => {
                   onClick={handleUpdate}
                   disabled={editLoading}
                 >
-                  {editLoading ? <Loader size={16} /> : 'Update Entry'}
+                  {editLoading ? <Loader2 size={16} className="animate-spin" /> : 'Update Entry'}
                 </button>
               </div>
             </div>

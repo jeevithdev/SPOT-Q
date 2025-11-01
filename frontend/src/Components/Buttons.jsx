@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { forwardRef } from 'react';
 import styled from 'styled-components';
 import { Settings, Save, Filter, RefreshCw, Edit2, Trash2 } from 'lucide-react';
 import CustomDatePicker from './CustomDatePicker';
@@ -181,11 +181,12 @@ export const SettingsButton = ({ onClick }) => (
 );
 
 // Unified DatePicker Component - Use this for all date inputs
-export const DatePicker = ({ value, onChange, name, max, placeholder, style, disabled }) => {
+export const DatePicker = forwardRef(({ value, onChange, name, max, placeholder, style, disabled, onKeyDown }, ref) => {
   const today = new Date().toISOString().split('T')[0];
   
   return (
     <CustomDatePicker
+      ref={ref}
       value={value}
       onChange={onChange}
       name={name}
@@ -193,9 +194,11 @@ export const DatePicker = ({ value, onChange, name, max, placeholder, style, dis
       placeholder={placeholder}
       style={style}
       disabled={disabled}
+      onKeyDown={onKeyDown}
     />
   );
-};
+});
+DatePicker.displayName = 'DatePicker';
 
 // Submit Button - For form submissions
 export const SubmitButton = ({ onClick, disabled, loading, children, icon = true }) => (

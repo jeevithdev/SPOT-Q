@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, RefreshCw, X } from 'lucide-react';
+import { Filter, RefreshCw, X, Loader2 } from 'lucide-react';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
-import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroTensileReport.css';
 
@@ -156,7 +155,7 @@ const MicroTensileReport = () => {
 
         {loading ? (
           <div className="microtensile-loader-container">
-            <Loader />
+            <Loader2 size={40} className="animate-spin" />
           </div>
         ) : (
           <div className="microtensile-table-container table-wrapper">

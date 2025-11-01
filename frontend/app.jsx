@@ -3,7 +3,6 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { AuthContext } from './src/context/AuthContext';
 import { Navbar } from './src/Components/Navbar';
 import Dashboard from './src/Components/Dashboard';
-import Loader from './src/Components/Loader';
 
 // Pages
 import MicroTensile from './src/pages/MicroTensile';
@@ -57,7 +56,7 @@ const App = () => {
   const { user, loading, isAdmin } = useContext(AuthContext);
 
   if (loading) {
-    return <Loader />;
+    return <div>Loading...</div>;
   }
 
   return (
@@ -107,8 +106,8 @@ const App = () => {
           <Route path="sand-lab/foundry-sand-testing-note/report" element={<FoundrySandTestingReport />} />
 
           {/* Moulding */}
-          <Route path="moulding/disamatic-product-report" element={<DisamaticProduct />} />
-          <Route path="moulding/disamatic-product-report/report" element={<DisamaticProductReport />} />
+          <Route path="moulding/disamatic-product" element={<DisamaticProduct />} />
+          <Route path="moulding/disamatic-product/report" element={<DisamaticProductReport />} />
           <Route path="moulding/dmm-setting-parameters" element={<DmmSettingParameters />} />
           <Route path="moulding/dmm-setting-parameters/report" element={<DmmSettingParametersReport />} />
         </Route>

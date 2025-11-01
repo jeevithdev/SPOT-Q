@@ -1,193 +1,181 @@
 const mongoose = require('mongoose');
 
 const ProcessSchema = new mongoose.Schema({
-
-    disa :{
-        type : Number,
-        required: true
+    // Combined fields for backward compatibility
+    partNameDateHeatCode: {
+        type: String,
+        trim: true
+    },
+    streamInnoculantPTime: {
+        type: String,
+        trim: true
+    },
+    fcNoHeatNo: {
+        type: String,
+        trim: true
     },
 
-    date: { 
-        type: Date, 
-        required: true 
-    },
-
+    // Separate fields (preferred)
     partName: { 
         type: String, 
-        required: true, 
         trim: true 
     },
 
-    datecode : {
-        type : String,
-        required: true
+    date: { 
+        type: String, 
+        required: true 
     },
 
     heatCode: { 
         type: String, 
-        required: true, 
         trim: true 
     },
 
-    qtyOfMoulds: { 
+    quantityOfMoulds: { 
         type: Number, 
-        required: true, 
-        min: 1 
+        default: 0
     },
 
-    metalComposition : {
-    cPercent: { 
+    // Metal Composition fields
+    metalCompositionC: { 
         type: Number, 
-        required: true 
+        default: 0
     },
-
-    siPercent: { 
+    metalCompositionSi: { 
         type: Number, 
-        required: true 
+        default: 0
     },
-
-    mnPercent: { 
+    metalCompositionMn: { 
         type: Number, 
-        required: true 
+        default: 0
     },
-
-    pPercent: { 
+    metalCompositionP: { 
         type: Number, 
-        required: true 
+        default: 0
     },
-
-    sPercent: { 
+    metalCompositionS: { 
         type: Number, 
-        required: true 
+        default: 0
     },
-
-    mgFlPercent: { 
+    metalCompositionMgFL: { 
         type: Number, 
-        required: true 
+        default: 0
     },
-
-    cuPercent: { 
+    metalCompositionCu: { 
         type: Number, 
-        required: true
+        default: 0
     },
-
-    crPercent: { 
+    metalCompositionCr: { 
         type: Number, 
-        required: true 
-    }
-},
+        default: 0
+    },
 
     timeOfPouring: { 
-        type: String, 
-        required: true 
+        type: String
     },
 
     pouringTemperature: {
         type: Number, 
-        required: true 
+        default: 0
     },
 
-    ppcode :{
-        type : Number,
-        required: true
+    ppCode: {
+        type: String,
+        trim: true
     },
 
-    treatmentno :{
-        type : Number,
-        required: true
+    treatmentNo: {
+        type: String,
+        trim: true
     },
 
-    fcno :{
-        type : Number,
-        required: true
+    fcNo: {
+        type: String,
+        trim: true
     },
 
-    heatNo :{
-        type : Number,
-        required: true
+    heatNo: {
+        type: String,
+        trim: true
     },
 
-    conNo :{
-        type : Number,
-        required: true
+    conNo: {
+        type: String,
+        trim: true
     },
 
-    tappingtime :{
-        type : Number,
-        required: true
+    tappingTime: {
+        type: String
     },
 
-    corrativeaddition :{
-
-        C :{
-            type : Number,
-            required: true
-        },
-
-        Si :{
-            type : Number,
-            required: true
-        },
-        Mn :{
-            type : Number,
-            required: true
-        },
-        S :{    
-            type : Number,
-            required: true
-        },
-
-        Cr :{
-            type : Number,
-            required: true
-        },
-
-        Cu :{
-            type : Number,
-            required: true
-        },
-
-        Sn :{ 
-            type : Number,
-            required: true
-        }
+    // Corrective Addition fields
+    correctiveAdditionC: {
+        type: Number,
+        default: 0
+    },
+    correctiveAdditionSi: {
+        type: Number,
+        default: 0
+    },
+    correctiveAdditionMn: {
+        type: Number,
+        default: 0
+    },
+    correctiveAdditionS: {
+        type: Number,
+        default: 0
+    },
+    correctiveAdditionCr: {
+        type: Number,
+        default: 0
+    },
+    correctiveAdditionCu: {
+        type: Number,
+        default: 0
+    },
+    correctiveAdditionSn: {
+        type: Number,
+        default: 0
     },
 
-    tappingWt : {
-        type : Number,
-        required: true
+    tappingWt: {
+        type: Number,
+        default: 0
     },
 
-    Mg :{
-        type : Number,
-        required: true
+    mg: {
+        type: Number,
+        default: 0
     },
 
-    resMgConvertorPercent: { 
+    resMgConvertor: { 
         type: Number, 
         default: 0 
     },
 
-    recMgPercent: { 
+    recOfMg: { 
         type: Number, 
         default: 0 
     },
 
-    streamInoculantGmsSec: { 
+    streamInoculant: { 
         type: Number, 
         default: 0 
     },
 
-    pTimeSec: { 
+    pTime: { 
         type: Number, 
         default: 0 
     },
+
     remarks: { 
         type: String, 
         trim: true, 
         default: '' 
     }
     
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('Process', ProcessSchema);

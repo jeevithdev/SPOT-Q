@@ -1,8 +1,7 @@
 import React, { useState } from 'react';
-import { Save, RefreshCw, FileText } from 'lucide-react';
+import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DatePicker } from '../Components/Buttons';
-import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/QcProductionDetails.css';
 
@@ -405,7 +404,7 @@ const QcProductionDetails = () => {
 
       <div className="qcproduction-submit-container">
         <button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">
-          {submitLoading ? <Loader size={20} /> : <Save size={18} />}
+          {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>

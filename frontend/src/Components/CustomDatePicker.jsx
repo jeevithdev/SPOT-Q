@@ -1,7 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import '../styles/ComponentStyles/CustomDatePicker.css';
 
-const CustomDatePicker = ({ value, onChange, max, style, name }) => {
+const CustomDatePicker = forwardRef(({ value, onChange, max, style, name, onKeyDown, disabled }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(value || '');
   const [viewDate, setViewDate] = useState(value ? new Date(value) : new Date());
@@ -9,10 +9,18 @@ const CustomDatePicker = ({ value, onChange, max, style, name }) => {
   const [showMonthList, setShowMonthList] = useState(false);
   
   const pickerRef = useRef(null);
+  const inputRef = useRef(null);
   const yearDragRef = useRef(null);
   const monthDragRef = useRef(null);
   const yearListRef = useRef(null);
   const monthListRef = useRef(null);
+
+  // Expose focus method to parent via ref
+  useImperativeHandle(ref, () => ({
+    focus: () => {
+      inputRef.current?.focus();
+    }
+  }));
 
   const maxDate = max ? new Date(max) : new Date();
 
@@ -327,20 +335,25 @@ const CustomDatePicker = ({ value, onChange, max, style, name }) => {
     <div className="custom-date-picker" ref={pickerRef}>
       <div className="date-input-wrapper">
         <input
+          ref={inputRef}
           type="text"
           value={formatDisplayDate(selectedDate)}
-          onClick={() => setIsOpen(!isOpen)}
+          onClick={() => !disabled && setIsOpen(!isOpen)}
+          onKeyDown={onKeyDown}
           placeholder="e.g: DD/MM/YYYY"
           readOnly
-          style={style}
+          disabled={disabled}
+          style={{ ...style, ...(disabled ? { backgroundColor: '#f1f5f9', cursor: 'not-allowed', opacity: 0.8 } : {}) }}
           className="date-input"
         />
-        <span className="calendar-icon" onClick={() => setIsOpen(!isOpen)}>📅</span>
+        <span className="calendar-icon" onClick={() => !disabled && setIsOpen(!isOpen)} style={{ cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? 0.6 : 1 }}>📅</span>
       </div>
       {isOpen && renderCalendar()}
     </div>
   );
-};
+});
+
+CustomDatePicker.displayName = 'CustomDatePicker';
 
 export default CustomDatePicker;
 

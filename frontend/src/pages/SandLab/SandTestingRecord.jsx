@@ -56,6 +56,7 @@ const SandTestingRecord = () => {
     finesShiftII: '',
     finesShiftIII: '',
     // Table 3 - Form fields (single entry)
+    table3Sno: '',
     table3Time: '',
     table3MixNo: '',
     table3Permeability: '',
@@ -148,6 +149,7 @@ const SandTestingRecord = () => {
   const handleTable3Reset = () => {
     setFormData(prev => ({
       ...prev,
+      table3Sno: '',
       table3Time: '',
       table3MixNo: '',
       table3Permeability: '',
@@ -163,13 +165,13 @@ const SandTestingRecord = () => {
       gcsFdyA: false,
       gcsFdyB: false,
     }));
-    table3InputRefs.current.table3Time?.focus();
+    table3InputRefs.current.table3Sno?.focus();
   };
 
   const handleTable3KeyDown = (e, field) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      const fieldOrder = ['table3Time', 'table3MixNo', 'table3Permeability', 'table3Gcs', 
+      const fieldOrder = ['table3Sno', 'table3Time', 'table3MixNo', 'table3Permeability', 'table3Gcs', 
                           'table3Wts', 'table3Moisture', 'table3Compactability', 'table3Compressibility',
                           'table3WaterLitre', 'table3SandTempBC', 'table3SandTempWU', 'table3SandTempSSU'];
       const idx = fieldOrder.indexOf(field);
@@ -785,29 +787,17 @@ const SandTestingRecord = () => {
           <h3 className="sand-section-title">Table 3</h3>
           
           <div className="sand-table3-form-grid">
-            {/* G.C.S. Checkpoints */}
-            <div className="sand-form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>G.C.S. (Gm/cm²) Checkpoints</label>
-              <div className="sand-checkbox-group">
-                <label className="sand-checkbox-label">
-                  <input
-                    type="checkbox"
-                    name="gcsFdyA"
-                    checked={formData.gcsFdyA}
-                    onChange={handleChange}
-                  />
-                  <span>FDY - A (Min 1800)</span>
-                </label>
-                <label className="sand-checkbox-label">
-                  <input
-                    type="checkbox"
-                    name="gcsFdyB"
-                    checked={formData.gcsFdyB}
-                    onChange={handleChange}
-                  />
-                  <span>FDY - B (Min 1900)</span>
-                </label>
-              </div>
+            <div className="sand-form-group">
+              <label>S.no</label>
+              <input
+                ref={el => table3InputRefs.current.table3Sno = el}
+                type="number"
+                name="table3Sno"
+                value={formData.table3Sno}
+                onChange={handleChange}
+                onKeyDown={(e) => handleTable3KeyDown(e, 'table3Sno')}
+                placeholder="0"
+              />
             </div>
 
             <div className="sand-form-group">
@@ -847,6 +837,31 @@ const SandTestingRecord = () => {
               onKeyDown={(e) => handleTable3KeyDown(e, 'table3Permeability')}
               placeholder="0"
             />
+          </div>
+
+          {/* G.C.S. Checkpoints - positioned to the right of Permeability */}
+          <div className="sand-form-group">
+            <label>G.C.S. (Gm/cm²) Checkpoints</label>
+            <div className="sand-checkbox-group">
+              <label className="sand-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="gcsFdyA"
+                  checked={formData.gcsFdyA}
+                  onChange={handleChange}
+                />
+                <span>FDY - A (Min 1800)</span>
+              </label>
+              <label className="sand-checkbox-label">
+                <input
+                  type="checkbox"
+                  name="gcsFdyB"
+                  checked={formData.gcsFdyB}
+                  onChange={handleChange}
+                />
+                <span>FDY - B (Min 1900)</span>
+              </label>
+            </div>
           </div>
 
           <div className="sand-form-group">

@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, RefreshCw, X } from 'lucide-react';
+import { Filter, RefreshCw, X, Loader2 } from 'lucide-react';
 import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
-import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/ProcessReport.css';
 
@@ -25,7 +24,7 @@ const ProcessReport = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const data = await api.get('/v1/process-controls');
+      const data = await api.get('/v1/process-records');
       
       if (data.success) {
         setItems(data.data || []);
@@ -91,7 +90,7 @@ const ProcessReport = () => {
   const handleUpdate = async () => {
     try {
       setEditLoading(true);
-      const data = await api.put(`/v1/process-controls/${editingItem._id}`, editFormData);
+      const data = await api.put(`/v1/process-records/${editingItem._id}`, editFormData);
       
       if (data.success) {
         alert('Process control entry updated successfully!');
@@ -113,7 +112,7 @@ const ProcessReport = () => {
     }
 
     try {
-      const data = await api.delete(`/v1/process-controls/${id}`);
+      const data = await api.delete(`/v1/process-records/${id}`);
       
       if (data.success) {
         alert('Process control entry deleted successfully!');
@@ -170,7 +169,7 @@ const ProcessReport = () => {
 
         {loading ? (
           <div className="process-loader-container">
-            <Loader />
+            <Loader2 size={40} className="animate-spin" />
           </div>
         ) : (
           <div className="process-table-container">

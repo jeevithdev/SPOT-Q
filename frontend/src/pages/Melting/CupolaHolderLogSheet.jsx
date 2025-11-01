@@ -1,9 +1,7 @@
 import React, { useState } from 'react';
-import { Save, RefreshCw, FileText } from 'lucide-react';
+import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DatePicker } from '../../Components/Buttons';
-import ValidationPopup from '../../Components/ValidationPopup';
-import Loader from '../../Components/Loader';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Melting/CupolaHolderLogSheet.css';
 
@@ -35,8 +33,6 @@ const CupolaHolderLogSheet = () => {
     remarks: ''
   });
 
-  const [showMissingFields, setShowMissingFields] = useState(false);
-  const [missingFields, setMissingFields] = useState([]);
   const [submitLoading, setSubmitLoading] = useState(false);
 
   const handleChange = (e) => {
@@ -52,8 +48,7 @@ const CupolaHolderLogSheet = () => {
     const missing = required.filter(field => !formData[field]);
 
     if (missing.length > 0) {
-      setMissingFields(missing);
-      setShowMissingFields(true);
+      alert(`Please fill in the following required fields: ${missing.join(', ')}`);
       return;
     }
 
@@ -84,12 +79,6 @@ const CupolaHolderLogSheet = () => {
 
   return (
     <>
-      {showMissingFields && (
-        <ValidationPopup
-          missingFields={missingFields}
-          onClose={() => setShowMissingFields(false)}
-        />
-      )}
 
       <div className="cupola-holder-header">
         <div className="cupola-holder-header-text">
@@ -357,7 +346,7 @@ const CupolaHolderLogSheet = () => {
           className="cupola-holder-submit-btn"
           type="button"
         >
-          {submitLoading ? <Loader size={20} /> : <Save size={18} />}
+          {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>

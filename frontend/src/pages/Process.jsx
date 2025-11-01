@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
-import { Save, RefreshCw, FileText } from 'lucide-react';
+import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import CustomDatePicker from '../Components/CustomDatePicker';
+import api from '../utils/api';
 import '../styles/PageStyles/Process.css';
 
 export default function ProcessControl() {
@@ -18,6 +19,8 @@ export default function ProcessControl() {
 
 
   const inputRefs = useRef({});
+  const [submitLoading, setSubmitLoading] = useState(false);
+  
   const fieldOrder = ['partName', 'date', 'heatCode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
     'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCu',
     'metalCompositionCr', 'timeOfPouring', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNo', 'heatNo', 'conNo',
@@ -25,7 +28,10 @@ export default function ProcessControl() {
     'correctiveAdditionCr', 'correctiveAdditionCu', 'correctiveAdditionSn', 'tappingWt', 'mg', 'resMgConvertor',
     'recOfMg', 'streamInoculant', 'pTime', 'remarks'];
 
-  const handleChange = (e) => setFormData({...formData, [e.target.name]: e.target.value});
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData({...formData, [name]: value});
+  };
   
   const handleKeyDown = (e, field) => {
     if (e.key === 'Enter') {
@@ -37,20 +43,49 @@ export default function ProcessControl() {
     }
   };
 
-  const handleSubmit = () => {
-    // Combine separate fields for backward compatibility if needed
-    const partNameDateHeatCode = `${formData.partName} / ${formData.date} / ${formData.heatCode}`;
-    const streamInnoculantPTime = `${formData.streamInoculant} / ${formData.pTime}`;
-    const fcNoHeatNo = `${formData.fcNo} / ${formData.heatNo}`;
+  const handleSubmit = async () => {
+    // Validate required fields
+    const required = ['partName', 'date', 'heatCode'];
+    const missing = [];
     
-    const newRecord = {
-      ...formData,
-      partNameDateHeatCode: partNameDateHeatCode.trim(),
-      streamInnoculantPTime: streamInnoculantPTime.trim(),
-      fcNoHeatNo: fcNoHeatNo.trim()
-    };
-    alert('Form submitted successfully! Record added.');
-    handleReset();
+    required.forEach(field => {
+      if (!formData[field]) {
+        missing.push(field);
+      }
+    });
+
+    if (missing.length > 0) {
+      alert(`Please fill in the following required fields: ${missing.join(', ')}`);
+      return;
+    }
+
+    try {
+      setSubmitLoading(true);
+      
+      // Combine separate fields for backward compatibility
+      const partNameDateHeatCode = `${formData.partName} / ${formData.date} / ${formData.heatCode}`;
+      const streamInnoculantPTime = `${formData.streamInoculant} / ${formData.pTime}`;
+      const fcNoHeatNo = `${formData.fcNo} / ${formData.heatNo}`;
+      
+      const newRecord = {
+        ...formData,
+        partNameDateHeatCode: partNameDateHeatCode.trim(),
+        streamInnoculantPTime: streamInnoculantPTime.trim(),
+        fcNoHeatNo: fcNoHeatNo.trim()
+      };
+      
+      const data = await api.post('/v1/process-records', newRecord);
+      
+      if (data.success) {
+        alert('Process control entry created successfully!');
+        handleReset();
+      }
+    } catch (error) {
+      console.error('Error creating process control entry:', error);
+      alert('Failed to create entry: ' + error.message);
+    } finally {
+      setSubmitLoading(false);
+    }
   };
 
   const handleReset = () => {
@@ -62,6 +97,7 @@ export default function ProcessControl() {
 
   return (
     <>
+
       <div className="process-header">
         <div className="process-header-text">
           <h2>
@@ -221,9 +257,14 @@ export default function ProcessControl() {
       </div>
 
       <div className="process-submit-container">
-        <button onClick={handleSubmit} className="process-submit-btn" type="button">
-          <Save size={18} />
-          Submit Entry
+        <button 
+          onClick={handleSubmit} 
+          className="process-submit-btn" 
+          type="button"
+          disabled={submitLoading}
+        >
+          {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
+          {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>
 

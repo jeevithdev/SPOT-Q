@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, FileText } from 'lucide-react';
+import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DatePicker } from '../Components/Buttons';
-import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/Tensile.css';
 
@@ -347,7 +346,7 @@ const Tensile = () => {
 
       <div className="tensile-submit-container">
         <button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
-          {submitLoading ? <Loader size={20} /> : <Save size={18} />}
+          {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>

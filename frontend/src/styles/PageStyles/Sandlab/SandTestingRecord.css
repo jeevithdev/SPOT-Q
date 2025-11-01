@@ -1176,8 +1176,8 @@
 
 .sand-checkbox-group {
   display: flex;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 0.5rem;
   margin-top: 0.5rem;
 }
 

@@ -10,14 +10,14 @@ const navItems = [
   { name: 'PROCESS', path: '/process', department: 'Process' },
   { name: 'MICRO TENSILE', path: '/micro-tensile', department: 'Micro Tensile' },
   { name: 'TENSILE', path: '/tensile', department: 'Tensile' },
-  {
-    name: 'MOULDING',
-    department: 'Moulding',
-    dropdown: [
-      { name: 'DISAMATIC PRODUCT REPORT', path: '/moulding/disamatic-product-report' },
-      { name: 'DMM SETTING PARAMETERS CHECK SHEET', path: '/moulding/dmm-setting-parameters' },
-    ],
-  },
+      {
+        name: 'MOULDING',
+        department: 'Moulding',
+        dropdown: [
+          { name: 'DISAMATIC PRODUCT', path: '/moulding/disamatic-product' },
+          { name: 'DMM SETTING PARAMETERS CHECK SHEET', path: '/moulding/dmm-setting-parameters' },
+        ],
+      },
   { name: 'QC-PRODUCTION DETAILS', path: '/qc-production-details/data-entry', department: 'All' },
   { name: 'MICRO STRUCTURE', path: '/micro-structure', department: 'Micro Structure' },
   { name: 'IMPACT', path: '/impact', department: 'Impact' },

@@ -1,14 +1,14 @@
 const mongoose = require('mongoose');
 
 const MicroTensileSchema = new mongoose.Schema({
-
-    disa : {
-        type : Number,
-        required: true
+    // Disa as array for multiple selections
+    disa: {
+        type: [String],
+        default: []
     },
     
     dateOfInspection: { 
-        type: Date, 
+        type: String, 
         required: true 
     },
 
@@ -18,15 +18,20 @@ const MicroTensileSchema = new mongoose.Schema({
         trim: true 
     },
 
+    // Combined field for backward compatibility
+    dateCodeHeatCode: {
+        type: String,
+        trim: true
+    },
+
+    // Separate fields
     dateCode: { 
         type: String, 
-        required: true, 
         trim: true 
     },
 
     heatCode: {
         type: String,
-        required: true,
         trim: true
     },
 
@@ -78,6 +83,8 @@ const MicroTensileSchema = new mongoose.Schema({
         required: true, 
         trim: true 
     }
+}, {
+    timestamps: true
 });
 
 module.exports = mongoose.model('MicroTensile', MicroTensileSchema);

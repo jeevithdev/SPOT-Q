@@ -6,12 +6,12 @@ const DPRController = require('../controllers/Moulding-DismaticProductReportDISA
 router.post('/', DPRController.createDismaticReport);
 // Get all reports
 router.get('/', DPRController.getAllDismaticReports);
-// Get report by ID
-router.get('/:id', DPRController.getDismaticReportById);
-// Get reports by date range
+// Get reports by date range (must come before /:id)
 router.get('/range', DPRController.getDismaticReportsByDateRange);
-// Get reports by shift
-router.get('/shift', DPRController.getDismaticReportsByShift);
+// Get report by date (primary identifier) - must come before /:id
+router.get('/date', DPRController.getDismaticReportByDate);
+// Get report by ID (must come after specific routes)
+router.get('/:id', DPRController.getDismaticReportById);
 // Update report
 router.put('/:id', DPRController.updateDismaticReport);
 // Delete report
