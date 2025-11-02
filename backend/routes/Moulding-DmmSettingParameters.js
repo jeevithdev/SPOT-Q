@@ -16,6 +16,8 @@ router.get('/machine', DMMController.getDMMSettingsByMachine);
 router.get('/shift', DMMController.getDMMSettingsByShift);
 // Get settings by customer
 router.get('/customer', DMMController.getDMMSettingsByCustomer);
+// Get settings by primary (date + machine)
+router.get('/primary', DMMController.getDMMSettingsByPrimary);
 // Update settings
 router.put('/:id', DMMController.updateDMMSettings);
 // Delete settings

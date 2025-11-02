@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import styled from 'styled-components';
-import { Settings, Save, Filter, RefreshCw, Edit2, Trash2 } from 'lucide-react';
+import { Settings, Save, Filter, RefreshCw, Edit2, Trash2, FileText } from 'lucide-react';
 import CustomDatePicker from './CustomDatePicker';
 import '../styles/ComponentStyles/Buttons.css';
 
@@ -259,6 +259,29 @@ export const DeleteActionButton = ({ onClick, disabled }) => (
 );
 
 // View Report Button - For navigating to report pages (top-right corner)
+export const ViewReportButton = ({ onClick, to, children, icon }) => {
+  const handleClick = () => {
+    if (to) {
+      window.location.href = to;
+    } else if (onClick) {
+      onClick();
+    }
+  };
+
+  const IconComponent = icon || FileText;
+  const buttonText = children || "View Reports";
+
+  return (
+    <ViewReportButtonWrapper>
+      <button onClick={handleClick} title={buttonText}>
+        <div className="icon-container">
+          <IconComponent size={24} />
+        </div>
+        <span className="button-text">{buttonText}</span>
+      </button>
+    </ViewReportButtonWrapper>
+  );
+};
 
 const StyledWrapper = styled.div`
   button {
@@ -877,6 +900,134 @@ const DeleteActionButtonWrapper = styled.div`
   }
 `;
 
+// View Report Button Wrapper - Top right corner floating button
+const ViewReportButtonWrapper = styled.div`
+  position: fixed;
+  top: 80px;
+  right: 20px;
+  z-index: 999;
+
+  button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+    min-width: 100px;
+  }
+
+  button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 20px rgba(16, 185, 129, 0.4);
+    background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  }
+
+  button:active {
+    transform: translateY(-1px);
+  }
+
+  .icon-container {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: white;
+  }
+
+  .button-text {
+    color: white;
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  /* Responsive adjustments */
+  @media (max-width: 1024px) {
+    top: 70px;
+    right: 15px;
+
+    button {
+      padding: 10px 14px;
+      min-width: 90px;
+    }
+
+    .icon-container {
+      width: 36px;
+      height: 36px;
+    }
+
+    .button-text {
+      font-size: 11px;
+    }
+
+    svg {
+      width: 20px;
+      height: 20px;
+    }
+  }
+
+  @media (max-width: 768px) {
+    top: 60px;
+    right: 10px;
+
+    button {
+      padding: 8px 12px;
+      min-width: 80px;
+      gap: 6px;
+    }
+
+    .icon-container {
+      width: 32px;
+      height: 32px;
+    }
+
+    .button-text {
+      font-size: 10px;
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    top: 50px;
+    right: 8px;
+
+    button {
+      padding: 6px 10px;
+      min-width: 70px;
+      gap: 4px;
+    }
+
+    .icon-container {
+      width: 28px;
+      height: 28px;
+    }
+
+    .button-text {
+      font-size: 9px;
+    }
+
+    svg {
+      width: 16px;
+      height: 16px;
+    }
+  }
+`;
 
 // Reset Form Button Wrapper - For entry page headers
 const ResetFormButtonWrapper = styled.div`

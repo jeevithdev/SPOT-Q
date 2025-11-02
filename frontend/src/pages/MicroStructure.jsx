@@ -1,12 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroStructure.css';
 
 const MicroStructure = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     disa: '',
     insDate: '',
@@ -70,14 +68,6 @@ const MicroStructure = () => {
         nextInput.focus();
       }
     }
-  };
-
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
   };
 
   const handleSubmit = async () => {
@@ -156,14 +146,23 @@ const MicroStructure = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Micro Structure - Entry Form
+            <button 
+              className="microstructure-view-report-btn"
+              onClick={() => window.location.href = "/micro-structure/report"}
+              title="View Reports"
+            >
+              <FileText size={14} />
+              <span>View Reports</span>
+            </button>
           </h2>
         </div>
         <div className="microstructure-header-buttons">
-          <button className="microstructure-view-report-btn" onClick={() => navigate('/micro-structure/report')} type="button">
-            <div className="microstructure-view-report-icon">
-              <FileText size={16} />
-            </div>
-            <span className="microstructure-view-report-text">View Reports</span>
+          <button 
+            className="microstructure-reset-btn"
+            onClick={handleReset}
+          >
+            <RefreshCw size={18} />
+            Reset Form
           </button>
         </div>
       </div>
@@ -185,11 +184,6 @@ const MicroStructure = () => {
                   </option>
                 ))}
               </select>
-            </div>
-
-            {/* Micro Structure Section */}
-            <div className="section-header" style={{ gridColumn: '1 / -1' }}>
-              <h3>Micro Structure Details</h3>
             </div>
 
             <div className="microstructure-form-group">
@@ -240,6 +234,11 @@ const MicroStructure = () => {
                 placeholder="e.g: 2024-HC-005"
                 className={validationErrors.heatCode ? 'invalid-input' : ''}
               />
+            </div>
+
+            {/* Micro Structure Section */}
+            <div className="section-header">
+              <h3>Micro Structure Details </h3>
             </div>
             
             <div className="microstructure-form-group">
@@ -356,16 +355,14 @@ const MicroStructure = () => {
       </form>
 
       <div className="microstructure-submit-container">
-        <button onClick={handleSubmit} disabled={submitLoading} className="microstructure-submit-btn" type="button">
+        <button 
+          className="microstructure-submit-btn" 
+          type="button"
+          onClick={handleSubmit}
+          disabled={submitLoading}
+        >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </button>
-      </div>
-
-      <div className="microstructure-reset-container">
-        <button onClick={handleReset} className="microstructure-reset-btn">
-          <RefreshCw size={18} />
-          Reset
         </button>
       </div>
     </>

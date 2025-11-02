@@ -1,462 +1,502 @@
-import React, { useState, useRef } from "react";
+import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Save, FileText, RefreshCw } from "lucide-react";
+import { Save, RefreshCw, FileText, Loader2 } from "lucide-react";
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Moulding/DmmSettingParameters.css';
 
+const initialRow = {
+  customer: "",
+  itemDescription: "",
+  time: "",
+  ppThickness: "",
+  ppHeight: "",
+  spThickness: "",
+  spHeight: "",
+  spCoreMaskThickness: "",
+  spCoreMaskHeight: "",
+  ppCoreMaskThickness: "",
+  ppCoreMaskHeight: "",
+  sandShotPressureBar: "",
+  correctionShotTime: "",
+  squeezePressure: "",
+  ppStrippingAcceleration: "",
+  ppStrippingDistance: "",
+  spStrippingAcceleration: "",
+  spStrippingDistance: "",
+  mouldThicknessPlus10: "",
+  closeUpForceMouldCloseUpPressure: "",
+  remarks: "",
+};
+
+
 const DmmSettingParameters = () => {
   const navigate = useNavigate();
-  const inputRefs = useRef({});
-
-  const initialFormData = {
-    customer: "",
-    itemDescription: "",
-    time: "",
-    ppThickness: "",
-    ppHeight: "",
-    spThickness: "",
-    spHeight: "",
-    coreMaskThickness: "",
-    coreMaskHeightOutside: "",
-    coreMaskHeightInside: "",
-    sandShotPressureBar: "",
-    correctionShotTime: "",
-    squeezePressure: "",
-    ppStrippingAcceleration: "",
-    ppStrippingDistance: "",
-    spStrippingAcceleration: "",
-    spStrippingDistance: "",
-    mouldThickness: "",
-    closeUpForce: "",
-    remarks: "",
-  };
-
-  const [shift1FormData, setShift1FormData] = useState({ ...initialFormData });
-  const [shift2FormData, setShift2FormData] = useState({ ...initialFormData });
-  const [shift3FormData, setShift3FormData] = useState({ ...initialFormData });
-  const [basicInfo, setBasicInfo] = useState({
-    machine: "",
-    date: "",
-    operatorNameShift1: "",
-    operatedByShift1: "",
-    operatorNameShift2: "",
-    operatedByShift2: "",
-    operatorNameShift3: "",
-    operatedByShift3: "",
+  const [primaryData, setPrimaryData] = useState({
+    date: '',
+    machine: ''
+  });
+  const [isPrimaryLocked, setIsPrimaryLocked] = useState(false);
+  const [checkingData, setCheckingData] = useState(false);
+  const [operationData, setOperationData] = useState({
+    shift1: {
+      operatorName: '',
+      operatedBy: ''
+    },
+    shift2: {
+      operatorName: '',
+      operatedBy: ''
+    },
+    shift3: {
+      operatorName: '',
+      operatedBy: ''
+    }
+  });
+  const [shift1Row, setShift1Row] = useState({ ...initialRow });
+  const [shift2Row, setShift2Row] = useState({ ...initialRow });
+  const [shift3Row, setShift3Row] = useState({ ...initialRow });
+  const [loadingStates, setLoadingStates] = useState({
+    operation: false,
+    shift1: false,
+    shift2: false,
+    shift3: false
   });
 
-  const fieldOrder = [
-    'customer', 'itemDescription', 'time', 'ppThickness', 'ppHeight',
-    'spThickness', 'spHeight', 'coreMaskThickness', 'coreMaskHeightOutside',
-    'coreMaskHeightInside', 'sandShotPressureBar', 'correctionShotTime',
-    'squeezePressure', 'ppStrippingAcceleration', 'ppStrippingDistance',
-    'spStrippingAcceleration', 'spStrippingDistance', 'mouldThickness',
-    'closeUpForce', 'remarks'
-  ];
-
-  const handleViewReport = () => {
-    navigate('/moulding/dmm-setting-parameters/report');
-  };
-
-  const handleChange = (e, shift) => {
-    const { name, value } = e.target;
-    if (shift === 1) {
-      setShift1FormData({ ...shift1FormData, [name]: value });
-    } else if (shift === 2) {
-      setShift2FormData({ ...shift2FormData, [name]: value });
-    } else if (shift === 3) {
-      setShift3FormData({ ...shift3FormData, [name]: value });
-    }
-  };
-
-  const handleBasicInfoChange = (e) => {
-    const { name, value } = e.target;
-    setBasicInfo({ ...basicInfo, [name]: value });
-  };
-
-  const handleKeyDown = (e, field, shift) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      const idx = fieldOrder.indexOf(field);
-      if (idx < fieldOrder.length - 1) {
-        const nextField = fieldOrder[idx + 1];
-        inputRefs.current[`shift${shift}_${nextField}`]?.focus();
-      } else {
-        handleSubmit(shift);
+  const handlePrimaryChange = (field, value) => {
+    setPrimaryData((prev) => {
+      const updated = { ...prev, [field]: value };
+      // Check for existing data when date or machine changes
+      if ((field === 'date' || field === 'machine') && updated.date && updated.machine) {
+        checkExistingPrimaryData(updated.date, updated.machine);
       }
+      return updated;
+    });
+  };
+
+  // Check if primary data exists for date and machine combination
+  const checkExistingPrimaryData = async (date, machine) => {
+    if (!date || !machine) {
+      setIsPrimaryLocked(false);
+      return;
+    }
+
+    try {
+      setCheckingData(true);
+      const response = await api.get(`/v1/dmm-settings/primary?date=${encodeURIComponent(date)}&machine=${encodeURIComponent(machine)}`);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        const record = response.data[0];
+        // If record exists, lock primary fields and populate them
+        setIsPrimaryLocked(true);
+        setPrimaryData({
+          date: record.date ? new Date(record.date).toISOString().split('T')[0] : date,
+          machine: record.machine ? String(record.machine) : machine
+        });
+      } else {
+        setIsPrimaryLocked(false);
+      }
+    } catch (error) {
+      console.error('Error checking primary data:', error);
+      setIsPrimaryLocked(false);
+    } finally {
+      setCheckingData(false);
     }
   };
 
-  const handleSubmit = async (shift) => {
+  // Handle primary data submission
+  const handlePrimarySubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!primaryData.date || !primaryData.machine) {
+      alert('Please fill in both Date and Machine fields');
+      return;
+    }
+
+    // Check if already locked
+    if (isPrimaryLocked) {
+      alert('Primary data is already locked. Use Reports page to edit.');
+      return;
+    }
+
     try {
-      const formData = shift === 1 ? shift1FormData : shift === 2 ? shift2FormData : shift3FormData;
-      
-      // Structure data to match backend model
+      setCheckingData(true);
       const payload = {
-        machine: parseInt(basicInfo.machine) || 1,
-        date: basicInfo.date || new Date(),
-        shifts: {
-          shift1: {
-            operatorName: basicInfo.operatorNameShift1 || '',
-            checkedBy: basicInfo.operatedByShift1 || ''
-          },
-          shift2: {
-            operatorName: basicInfo.operatorNameShift2 || '',
-            checkedBy: basicInfo.operatedByShift2 || ''
-          },
-          shift3: {
-            operatorName: basicInfo.operatorNameShift3 || '',
-            checkedBy: basicInfo.operatedByShift3 || ''
-          }
-        },
-        parameters: {
-          [shift === 1 ? 'shift1' : shift === 2 ? 'shift2' : 'shift3']: {
-            customer: formData.customer,
-            itemDescription: formData.itemDescription,
-            time: formData.time,
-            ppThickness: formData.ppThickness,
-            ppheight: formData.ppHeight,
-            spThickness: formData.spThickness,
-            spHeight: formData.spHeight,
-            CoreMaskThickness: formData.coreMaskThickness,
-            CoreMaskHeight: formData.coreMaskHeightOutside,
-            sandShotPressurebar: formData.sandShotPressureBar,
-            correctionShotTime: formData.correctionShotTime,
-            squeezePressure: formData.squeezePressure,
-            ppStrippingAcceleration: formData.ppStrippingAcceleration,
-            ppStrippingDistance: formData.ppStrippingDistance,
-            spStrippingAcceleration: formData.spStrippingAcceleration,
-            spStrippingDistance: formData.spStrippingDistance,
-            mouldThickness: formData.mouldThickness,
-            closeUpForceMouldCloseUpPressure: formData.closeUpForce,
-            remarks: formData.remarks
-          }
-        }
+        date: primaryData.date,
+        machine: parseInt(primaryData.machine) || primaryData.machine,
+        section: 'primary'
       };
 
       const data = await api.post('/v1/dmm-settings', payload);
       
       if (data.success) {
-        alert(`Shift ${shift === 1 ? 'I' : shift === 2 ? 'II' : 'III'} entry submitted successfully!`);
-        handleReset(shift);
+        alert('Primary data saved successfully!');
+        setIsPrimaryLocked(true);
       }
     } catch (error) {
-      console.error('Error submitting DMM setting:', error);
-      alert('Failed to submit entry: ' + error.message);
+      console.error('Error saving primary data:', error);
+      alert('Failed to save: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setCheckingData(false);
     }
   };
 
-  const handleReset = (shift) => {
+  const handleOperationChange = (shift, field, value) => {
+    setOperationData((prev) => ({
+      ...prev,
+      [shift]: {
+        ...prev[shift],
+        [field]: value
+      }
+    }));
+  };
+
+  const handleInputChange = (shift, field, value) => {
     if (shift === 1) {
-      setShift1FormData({ ...initialFormData });
-      inputRefs.current[`shift1_customer`]?.focus();
+      setShift1Row((prev) => ({ ...prev, [field]: value }));
     } else if (shift === 2) {
-      setShift2FormData({ ...initialFormData });
-      inputRefs.current[`shift2_customer`]?.focus();
+      setShift2Row((prev) => ({ ...prev, [field]: value }));
     } else if (shift === 3) {
-      setShift3FormData({ ...initialFormData });
-      inputRefs.current[`shift3_customer`]?.focus();
+      setShift3Row((prev) => ({ ...prev, [field]: value }));
     }
   };
 
-  const renderShiftForm = (shift, formData, setFormData) => {
-    const shiftLabel = shift === 1 ? 'I' : shift === 2 ? 'II' : 'III';
-    return (
-      <div className="dmm-section" key={`shift-${shift}`}>
-        <h3 className="dmm-section-title">Shift {shiftLabel}</h3>
-        <div className="dmm-form-grid">
-          <div className="dmm-form-group">
-            <label>Customer</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_customer`] = el}
-              type="text"
-              name="customer"
-              value={formData.customer}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'customer', shift)}
-              placeholder="Enter customer"
-            />
-          </div>
+  // Handle Operation table submission
+  const handleOperationSubmit = async (e) => {
+    e.preventDefault();
+    if (!primaryData.date || !primaryData.machine) {
+      alert('Please fill in Primary data (Date and Machine) first');
+      return;
+    }
 
-          <div className="dmm-form-group">
-            <label>Item Description</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_itemDescription`] = el}
-              type="text"
-              name="itemDescription"
-              value={formData.itemDescription}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'itemDescription', shift)}
-              placeholder="Enter item description"
-            />
-          </div>
+    try {
+      setLoadingStates(prev => ({ ...prev, operation: true }));
+      const payload = {
+        date: primaryData.date,
+        machine: primaryData.machine,
+        section: 'operation',
+        shifts: {
+          shift1: {
+            operatorName: operationData.shift1.operatorName,
+            checkedBy: operationData.shift1.operatedBy
+          },
+          shift2: {
+            operatorName: operationData.shift2.operatorName,
+            checkedBy: operationData.shift2.operatedBy
+          },
+          shift3: {
+            operatorName: operationData.shift3.operatorName,
+            checkedBy: operationData.shift3.operatedBy
+          }
+        }
+      };
 
-          <div className="dmm-form-group">
-            <label>Time</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_time`] = el}
-              type="text"
-              name="time"
-              value={formData.time}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'time', shift)}
-              placeholder="Enter time"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>PP Thickness (mm)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_ppThickness`] = el}
-              type="number"
-              name="ppThickness"
-              value={formData.ppThickness}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'ppThickness', shift)}
-              step="any"
-              placeholder="Enter PP thickness"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>PP Height (mm)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_ppHeight`] = el}
-              type="number"
-              name="ppHeight"
-              value={formData.ppHeight}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'ppHeight', shift)}
-              step="any"
-              placeholder="Enter PP height"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>SP Thickness (mm)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_spThickness`] = el}
-              type="number"
-              name="spThickness"
-              value={formData.spThickness}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'spThickness', shift)}
-              step="any"
-              placeholder="Enter SP thickness"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>SP Height (mm)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_spHeight`] = el}
-              type="number"
-              name="spHeight"
-              value={formData.spHeight}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'spHeight', shift)}
-              step="any"
-              placeholder="Enter SP height"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>Core Mask Thickness (mm)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_coreMaskThickness`] = el}
-              type="number"
-              name="coreMaskThickness"
-              value={formData.coreMaskThickness}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'coreMaskThickness', shift)}
-              step="any"
-              placeholder="Enter core mask thickness"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>Core Mask Height (Outside Mask) (mm)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_coreMaskHeightOutside`] = el}
-              type="number"
-              name="coreMaskHeightOutside"
-              value={formData.coreMaskHeightOutside}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'coreMaskHeightOutside', shift)}
-              step="any"
-              placeholder="Enter outside mask height"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>Core Mask Height (Inside Mask) (mm)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_coreMaskHeightInside`] = el}
-              type="number"
-              name="coreMaskHeightInside"
-              value={formData.coreMaskHeightInside}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'coreMaskHeightInside', shift)}
-              step="any"
-              placeholder="Enter inside mask height"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>Sand Shot Pressure Bar</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_sandShotPressureBar`] = el}
-              type="number"
-              name="sandShotPressureBar"
-              value={formData.sandShotPressureBar}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'sandShotPressureBar', shift)}
-              step="any"
-              placeholder="Enter sand shot pressure"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>Correction of Shot Time / Shot Time (Sec)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_correctionShotTime`] = el}
-              type="text"
-              name="correctionShotTime"
-              value={formData.correctionShotTime}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'correctionShotTime', shift)}
-              placeholder="Enter shot time"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>Squeeze Pressure (kg/cm square/Bar)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_squeezePressure`] = el}
-              type="number"
-              name="squeezePressure"
-              value={formData.squeezePressure}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'squeezePressure', shift)}
-              step="any"
-              placeholder="Enter squeeze pressure"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>PP Stripping Acceleration</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_ppStrippingAcceleration`] = el}
-              type="number"
-              name="ppStrippingAcceleration"
-              value={formData.ppStrippingAcceleration}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'ppStrippingAcceleration', shift)}
-              step="any"
-              placeholder="Enter PP stripping acceleration"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>PP Stripping Distance</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_ppStrippingDistance`] = el}
-              type="number"
-              name="ppStrippingDistance"
-              value={formData.ppStrippingDistance}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'ppStrippingDistance', shift)}
-              step="any"
-              placeholder="Enter PP stripping distance"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>SP Stripping Acceleration</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_spStrippingAcceleration`] = el}
-              type="number"
-              name="spStrippingAcceleration"
-              value={formData.spStrippingAcceleration}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'spStrippingAcceleration', shift)}
-              step="any"
-              placeholder="Enter SP stripping acceleration"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>SP Stripping Distance</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_spStrippingDistance`] = el}
-              type="number"
-              name="spStrippingDistance"
-              value={formData.spStrippingDistance}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'spStrippingDistance', shift)}
-              step="any"
-              placeholder="Enter SP stripping distance"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>Mould Thickness (+ or - 10mm)</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_mouldThickness`] = el}
-              type="number"
-              name="mouldThickness"
-              value={formData.mouldThickness}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'mouldThickness', shift)}
-              step="any"
-              placeholder="Enter mould thickness"
-            />
-          </div>
-
-          <div className="dmm-form-group">
-            <label>Close Up Force (%)/ Mould Close Up Pressure</label>
-            <input
-              ref={el => inputRefs.current[`shift${shift}_closeUpForce`] = el}
-              type="text"
-              name="closeUpForce"
-              value={formData.closeUpForce}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => handleKeyDown(e, 'closeUpForce', shift)}
-              placeholder="Enter close up force"
-            />
-          </div>
-
-          <div className="dmm-form-group" style={{ gridColumn: '1 / -1' }}>
-            <label>Remarks</label>
-            <textarea
-              ref={el => inputRefs.current[`shift${shift}_remarks`] = el}
-              name="remarks"
-              value={formData.remarks}
-              onChange={(e) => handleChange(e, shift)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(shift); } }}
-              rows="4"
-              placeholder="Enter any additional notes..."
-            />
-          </div>
-        </div>
-
-        <div className="dmm-submit-container">
-          <button onClick={() => handleSubmit(shift)} className="dmm-submit-btn" type="button">
-            <Save size={18} />
-            Submit Entry
-          </button>
-        </div>
-
-        <div className="dmm-reset-container">
-          <button onClick={() => handleReset(shift)} className="dmm-reset-btn">
-            <RefreshCw size={18} />
-            Reset
-          </button>
-        </div>
-      </div>
-    );
+      const data = await api.post('/v1/dmm-settings', payload);
+      if (data.success) {
+        alert('Operation data saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving operation data:', error);
+      alert('Failed to save: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoadingStates(prev => ({ ...prev, operation: false }));
+    }
   };
+
+  // Handle Shift parameter submission
+  const handleShiftSubmit = async (e, shiftNumber) => {
+    e.preventDefault();
+    if (!primaryData.date || !primaryData.machine) {
+      alert('Please fill in Primary data (Date and Machine) first');
+      return;
+    }
+
+    try {
+      setLoadingStates(prev => ({ ...prev, [`shift${shiftNumber}`]: true }));
+      const shiftRow = shiftNumber === 1 ? shift1Row : shiftNumber === 2 ? shift2Row : shift3Row;
+      
+      const payload = {
+        date: primaryData.date,
+        machine: primaryData.machine,
+        section: `shift${shiftNumber}`,
+        parameters: {
+          [`shift${shiftNumber}`]: shiftRow
+        }
+      };
+
+      const data = await api.post('/v1/dmm-settings', payload);
+      if (data.success) {
+        alert(`Shift ${shiftNumber} Parameters saved successfully!`);
+      }
+    } catch (error) {
+      console.error(`Error saving shift ${shiftNumber} data:`, error);
+      alert('Failed to save: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [`shift${shiftNumber}`]: false }));
+    }
+  };
+
+  const handleKeyPress = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form || e.target.closest('.dmm-content');
+      const inputs = Array.from(form.querySelectorAll('input:not([type="button"])'));
+      const currentIndex = inputs.indexOf(e.target);
+      const nextInput = inputs[currentIndex + 1];
+      if (nextInput) {
+        nextInput.focus();
+      }
+    }
+  };
+
+
+  const handleReset = () => {
+    if (!window.confirm('Are you sure you want to reset the entire form? All unsaved data will be lost.')) return;
+    setPrimaryData({ date: '', machine: '' });
+    setIsPrimaryLocked(false);
+    setOperationData({
+      shift1: { operatorName: '', operatedBy: '' },
+      shift2: { operatorName: '', operatedBy: '' },
+      shift3: { operatorName: '', operatedBy: '' }
+    });
+    setShift1Row({ ...initialRow });
+    setShift2Row({ ...initialRow });
+    setShift3Row({ ...initialRow });
+  };
+
+  const handleViewReport = () => {
+    navigate('/moulding/dmm-setting-parameters/report');
+  };
+
+  const renderRow = (row, shift) => (
+    <div className="dmm-form-grid">
+      <div className="dmm-form-group">
+        <label>Customer</label>
+        <input
+          type="text"
+                        value={row.customer}
+                        onChange={(e) => handleInputChange(shift, "customer", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., ABC Industries"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>Item Description</label>
+        <input
+          type="text"
+          value={row.itemDescription}
+                        onChange={(e) => handleInputChange(shift, "itemDescription", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., Engine Block Casting"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>Time</label>
+        <input
+          type="text"
+          value={row.time}
+                        onChange={(e) => handleInputChange(shift, "time", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 08:30 AM"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>PP Thickness (mm)</label>
+        <input
+          type="number"
+          value={row.ppThickness}
+                        onChange={(e) => handleInputChange(shift, "ppThickness", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 25.5"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>PP Height (mm)</label>
+        <input
+          type="number"
+          value={row.ppHeight}
+                        onChange={(e) => handleInputChange(shift, "ppHeight", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 150.0"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>SP Thickness (mm)</label>
+        <input
+          type="number"
+          value={row.spThickness}
+                        onChange={(e) => handleInputChange(shift, "spThickness", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 30.2"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>SP Height (mm)</label>
+        <input
+          type="number"
+          value={row.spHeight}
+                        onChange={(e) => handleInputChange(shift, "spHeight", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 180.5"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>SP Core Mask Thickness (mm)</label>
+        <input
+          type="number"
+          value={row.spCoreMaskThickness}
+                        onChange={(e) => handleInputChange(shift, "spCoreMaskThickness", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 12.0"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>SP Core Mask Height (mm)</label>
+        <input
+          type="number"
+          value={row.spCoreMaskHeight}
+                        onChange={(e) => handleInputChange(shift, "spCoreMaskHeight", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 95.5"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>PP Core Mask Thickness (mm)</label>
+        <input
+          type="number"
+          value={row.ppCoreMaskThickness}
+                        onChange={(e) => handleInputChange(shift, "ppCoreMaskThickness", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 10.5"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>PP Core Mask Height (mm)</label>
+        <input
+          type="number"
+          value={row.ppCoreMaskHeight}
+                        onChange={(e) => handleInputChange(shift, "ppCoreMaskHeight", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 85.0"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>Sand Shot Pressure (Bar)</label>
+        <input
+          type="number"
+          value={row.sandShotPressureBar}
+                        onChange={(e) => handleInputChange(shift, "sandShotPressureBar", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 6.5"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>Correction Shot Time (s)</label>
+        <input
+          type="number"
+          value={row.correctionShotTime}
+                        onChange={(e) => handleInputChange(shift, "correctionShotTime", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 2.5"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>Squeeze Pressure (Kg/cm²)</label>
+        <input
+          type="number"
+          value={row.squeezePressure}
+                        onChange={(e) => handleInputChange(shift, "squeezePressure", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 45.0"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>PP Stripping Acceleration</label>
+        <input
+          type="number"
+          value={row.ppStrippingAcceleration}
+                        onChange={(e) => handleInputChange(shift, "ppStrippingAcceleration", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 3.2"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>PP Stripping Distance</label>
+        <input
+          type="number"
+          value={row.ppStrippingDistance}
+                        onChange={(e) => handleInputChange(shift, "ppStrippingDistance", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 120.0"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>SP Stripping Acceleration</label>
+        <input
+          type="number"
+          value={row.spStrippingAcceleration}
+                        onChange={(e) => handleInputChange(shift, "spStrippingAcceleration", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 2.8"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>SP Stripping Distance</label>
+        <input
+          type="number"
+          value={row.spStrippingDistance}
+                        onChange={(e) => handleInputChange(shift, "spStrippingDistance", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 140.0"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>Mould Thickness ±10mm</label>
+        <input
+          type="number"
+          value={row.mouldThicknessPlus10}
+                        onChange={(e) => handleInputChange(shift, "mouldThicknessPlus10", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 250.0"
+          step="any"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>Close Up Force / Mould Close Up Pressure</label>
+        <input
+          type="text"
+          value={row.closeUpForceMouldCloseUpPressure}
+                        onChange={(e) => handleInputChange(shift, "closeUpForceMouldCloseUpPressure", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., 800 kN / 55 bar"
+        />
+      </div>
+      <div className="dmm-form-group">
+        <label>Remarks</label>
+        <input
+          type="text"
+          value={row.remarks}
+                        onChange={(e) => handleInputChange(shift, "remarks", e.target.value)}
+          onKeyPress={handleKeyPress}
+          placeholder="e.g., All parameters OK"
+        />
+      </div>
+    </div>
+  );
 
   return (
     <>
@@ -465,134 +505,226 @@ const DmmSettingParameters = () => {
         <div className="dmm-header-text">
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
-            DMM Setting Parameters Check Sheet - Entry Form
+            DMM Setting Parameters Check Sheet
+            <button 
+              className="dmm-view-report-btn"
+              onClick={handleViewReport}
+              title="View Reports"
+            >
+              <FileText size={14} />
+              <span>View Reports</span>
+            </button>
           </h2>
         </div>
         <div className="dmm-header-buttons">
-          <button className="dmm-view-report-btn" onClick={handleViewReport} type="button">
-            <div className="dmm-view-report-icon">
-              <FileText size={16} />
-            </div>
-            <span className="dmm-view-report-text">View Reports</span>
+          <button 
+            className="dmm-reset-btn"
+            onClick={handleReset}
+          >
+            <RefreshCw size={18} />
+            Reset Form
           </button>
         </div>
       </div>
 
-      {/* Basic Information */}
-      <div className="dmm-section">
-        <h3 className="dmm-section-title">Basic Information</h3>
-        
-        {/* Machine and Date Inputs */}
-        <div className="dmm-basic-inputs">
-          <div className="dmm-basic-input-group">
-            <label>Machine</label>
-            <input 
-              type="number" 
-              className="dmm-basic-input" 
-              name="machine"
-              value={basicInfo.machine}
-              onChange={handleBasicInfoChange}
-              placeholder="Enter machine number" 
-            />
+      <form>
+          {/* Primary Information Section */}
+          <div className="dmm-section">
+            <h3 className="dmm-section-title">Primary</h3>
+            <div className="dmm-form-grid">
+              <div className="dmm-form-group">
+                <label>Date *</label>
+                <CustomDatePicker
+                  value={primaryData.date}
+                  onChange={(e) => handlePrimaryChange("date", e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  disabled={isPrimaryLocked || checkingData}
+                  name="date"
+                  style={{
+                    backgroundColor: isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                    cursor: isPrimaryLocked ? 'not-allowed' : 'text'
+                  }}
+                />
+              </div>
+              <div className="dmm-form-group">
+                <label>Machine *</label>
+                <input
+                  type="text"
+                  value={primaryData.machine}
+                  onChange={(e) => handlePrimaryChange("machine", e.target.value)}
+                  onKeyPress={handleKeyPress}
+                  disabled={isPrimaryLocked || checkingData}
+                  readOnly={isPrimaryLocked}
+                  placeholder="e.g., 1, 2, 3"
+                  style={{
+                    backgroundColor: isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                    cursor: isPrimaryLocked ? 'not-allowed' : 'text'
+                  }}
+                  required
+                />
+              </div>
+              <div className="dmm-form-group">
+                <button
+                  type="button"
+                  onClick={handlePrimarySubmit}
+                  disabled={isPrimaryLocked || checkingData || !primaryData.date || !primaryData.machine}
+                  className="dmm-submit-btn"
+                  style={{ marginTop: '28px' }}
+                >
+                  {checkingData ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
+                  {isPrimaryLocked ? 'Primary Data Locked' : 'Save Primary Data'}
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="dmm-basic-input-group">
-            <label>Date</label>
-            <CustomDatePicker
-              name="date"
-              value={basicInfo.date}
-              onChange={handleBasicInfoChange}
-            />
-          </div>
-        </div>
 
-        <div className="dmm-table-container">
-          <div className="dmm-table-wrapper">
-            <table className="dmm-table">
-              <thead>
-                <tr>
-                  <th>Parameter</th>
-                  <th>Shift I</th>
-                  <th>Shift II</th>
-                  <th>Shift III</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr>
-                  <td>OPERATOR NAME</td>
-                  <td>
-                    <input 
-                      type="text" 
-                      className="dmm-table-input" 
-                      name="operatorNameShift1"
-                      value={basicInfo.operatorNameShift1}
-                      onChange={handleBasicInfoChange}
-                      placeholder="Enter operator name" 
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="text" 
-                      className="dmm-table-input" 
-                      name="operatorNameShift2"
-                      value={basicInfo.operatorNameShift2}
-                      onChange={handleBasicInfoChange}
-                      placeholder="Enter operator name" 
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="text" 
-                      className="dmm-table-input" 
-                      name="operatorNameShift3"
-                      value={basicInfo.operatorNameShift3}
-                      onChange={handleBasicInfoChange}
-                      placeholder="Enter operator name" 
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td>OPERATED BY</td>
-                  <td>
-                    <input 
-                      type="text" 
-                      className="dmm-table-input" 
-                      name="operatedByShift1"
-                      value={basicInfo.operatedByShift1}
-                      onChange={handleBasicInfoChange}
-                      placeholder="Enter operated by" 
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="text" 
-                      className="dmm-table-input" 
-                      name="operatedByShift2"
-                      value={basicInfo.operatedByShift2}
-                      onChange={handleBasicInfoChange}
-                      placeholder="Enter operated by" 
-                    />
-                  </td>
-                  <td>
-                    <input 
-                      type="text" 
-                      className="dmm-table-input" 
-                      name="operatedByShift3"
-                      value={basicInfo.operatedByShift3}
-                      onChange={handleBasicInfoChange}
-                      placeholder="Enter operated by" 
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
+          {/* Operation Section */}
+          <div className="dmm-section">
+            <h3 className="dmm-section-title">Operation</h3>
+            <div className="dmm-operation-table-container">
+              <table className="dmm-operation-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>Shift I</th>
+                    <th>Shift II</th>
+                    <th>Shift III</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td className="dmm-parameter-label">Operator Name</td>
+                    <td>
+                      <input
+                        type="text"
+                        value={operationData.shift1.operatorName}
+                        onChange={(e) => handleOperationChange('shift1', 'operatorName', e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Enter operator name"
+                        className="dmm-table-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={operationData.shift2.operatorName}
+                        onChange={(e) => handleOperationChange('shift2', 'operatorName', e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Enter operator name"
+                        className="dmm-table-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={operationData.shift3.operatorName}
+                        onChange={(e) => handleOperationChange('shift3', 'operatorName', e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Enter operator name"
+                        className="dmm-table-input"
+                      />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td className="dmm-parameter-label">Operated By</td>
+                    <td>
+                      <input
+                        type="text"
+                        value={operationData.shift1.operatedBy}
+                        onChange={(e) => handleOperationChange('shift1', 'operatedBy', e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Enter name"
+                        className="dmm-table-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={operationData.shift2.operatedBy}
+                        onChange={(e) => handleOperationChange('shift2', 'operatedBy', e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Enter name"
+                        className="dmm-table-input"
+                      />
+                    </td>
+                    <td>
+                      <input
+                        type="text"
+                        value={operationData.shift3.operatedBy}
+                        onChange={(e) => handleOperationChange('shift3', 'operatedBy', e.target.value)}
+                        onKeyPress={handleKeyPress}
+                        placeholder="Enter name"
+                        className="dmm-table-input"
+                      />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            <div className="dmm-section-submit">
+              <button
+                type="button"
+                onClick={handleOperationSubmit}
+                disabled={loadingStates.operation || !primaryData.date || !primaryData.machine}
+                className="dmm-submit-btn"
+              >
+                {loadingStates.operation ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
+                Submit Operation
+              </button>
+            </div>
           </div>
-        </div>
-      </div>
 
-      {/* Shift Forms */}
-      {renderShiftForm(1, shift1FormData, setShift1FormData)}
-      {renderShiftForm(2, shift2FormData, setShift2FormData)}
-      {renderShiftForm(3, shift3FormData, setShift3FormData)}
+          {/* Shift 1 Section */}
+          <div className="dmm-section">
+            <h3 className="dmm-section-title">Shift 1 Parameters</h3>
+            {renderRow(shift1Row, 1)}
+            <div className="dmm-section-submit">
+              <button
+                type="button"
+                onClick={(e) => handleShiftSubmit(e, 1)}
+                disabled={loadingStates.shift1 || !primaryData.date || !primaryData.machine}
+                className="dmm-submit-btn"
+              >
+                {loadingStates.shift1 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
+                Submit Shift 1
+              </button>
+            </div>
+          </div>
+
+          {/* Shift 2 Section */}
+          <div className="dmm-section">
+            <h3 className="dmm-section-title">Shift 2 Parameters</h3>
+            {renderRow(shift2Row, 2)}
+            <div className="dmm-section-submit">
+              <button
+                type="button"
+                onClick={(e) => handleShiftSubmit(e, 2)}
+                disabled={loadingStates.shift2 || !primaryData.date || !primaryData.machine}
+                className="dmm-submit-btn"
+              >
+                {loadingStates.shift2 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
+                Submit Shift 2
+              </button>
+            </div>
+          </div>
+
+          {/* Shift 3 Section */}
+          <div className="dmm-section">
+            <h3 className="dmm-section-title">Shift 3 Parameters</h3>
+            {renderRow(shift3Row, 3)}
+            <div className="dmm-section-submit">
+              <button
+                type="button"
+                onClick={(e) => handleShiftSubmit(e, 3)}
+                disabled={loadingStates.shift3 || !primaryData.date || !primaryData.machine}
+                className="dmm-submit-btn"
+              >
+                {loadingStates.shift3 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
+                Submit Shift 3
+              </button>
+            </div>
+          </div>
+      </form>
     </>
   );
 };

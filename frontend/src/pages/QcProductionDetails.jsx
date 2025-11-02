@@ -1,12 +1,10 @@
 import React, { useState } from 'react';
-import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
 import api from '../utils/api';
 import '../styles/PageStyles/QcProductionDetails.css';
 
 const QcProductionDetails = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     date: '',
     partName: '',
@@ -134,18 +132,23 @@ const QcProductionDetails = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             QC Production Details - Entry Form
+            <button 
+              className="qcproduction-view-report-btn"
+              onClick={() => window.location.href = "/qc-production-details/report"}
+              title="View Reports"
+            >
+              <FileText size={14} />
+              <span>View Reports</span>
+            </button>
           </h2>
         </div>
         <div className="qcproduction-header-buttons">
           <button 
-            className="qcproduction-view-report-btn" 
-            onClick={() => navigate('/qc-production-details/report')} 
-            type="button"
+            className="qcproduction-reset-btn"
+            onClick={handleReset}
           >
-            <div className="qcproduction-view-report-icon">
-              <FileText size={16} />
-            </div>
-            <span className="qcproduction-view-report-text">View Reports</span>
+            <RefreshCw size={18} />
+            Reset Form
           </button>
         </div>
       </div>
@@ -403,16 +406,14 @@ const QcProductionDetails = () => {
       </form>
 
       <div className="qcproduction-submit-container">
-        <button onClick={handleSubmit} disabled={submitLoading} className="qcproduction-submit-btn" type="button">
+        <button 
+          className="qcproduction-submit-btn" 
+          type="button"
+          onClick={handleSubmit}
+          disabled={submitLoading}
+        >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </button>
-      </div>
-
-      <div className="qcproduction-reset-container">
-        <button onClick={handleReset} className="qcproduction-reset-btn">
-          <RefreshCw size={18} />
-          Reset
         </button>
       </div>
     </>

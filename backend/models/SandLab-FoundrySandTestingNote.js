@@ -2,11 +2,10 @@ const mongoose = require('mongoose');
 
 const FoundrySandTestingNoteSchema = new mongoose.Schema({
 
-  // --- 1. General Information ---
+  // --- 1. General Information (Primary Data) ---
   date: { 
     type: Date, 
-    required: true, 
-    default: Date.now 
+    required: true
   },
   shift: { 
     type: String, 
@@ -20,67 +19,80 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
   },
   compactibilitySetting: { 
     type: String, 
-    required: true,
     trim: true 
   },
   shearStrengthSetting: { 
     type: String,
-    required: true,
     trim: true 
   },
 
   // --- 2. Clay Test Results ---
   clayTests: {
     test1: {
-      totalClay: { 
-        type: String, 
-        trim: true 
+      totalClay: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        input3: { type: String, trim: true },
+        solution: { type: String, trim: true }
       },
-      activeClay: { 
-        type: String, 
-        trim: true 
+      activeClay: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        solution: { type: String, trim: true }
       },
-      deadClay: { 
-        type: String, 
-        trim: true 
+      deadClay: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        solution: { type: String, trim: true }
       },
-      vcm: { 
-        type: String, 
-        trim: true 
+      vcm: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        input3: { type: String, trim: true },
+        solution: { type: String, trim: true }
       },
-      loi: { 
-        type: String, 
-        trim: true 
+      loi: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        input3: { type: String, trim: true },
+        solution: { type: String, trim: true }
       }
     },
     test2: {
-      totalClay: { 
-        type: String, 
-        trim: true 
+      totalClay: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        input3: { type: String, trim: true },
+        solution: { type: String, trim: true }
       },
-      activeClay: { 
-        type: String, 
-        trim: true 
+      activeClay: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        solution: { type: String, trim: true }
       },
-      deadClay: { 
-        type: String, 
-        trim: true 
+      deadClay: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        solution: { type: String, trim: true }
       },
-      vcm: { 
-        type: String, 
-        trim: true 
+      vcm: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        input3: { type: String, trim: true },
+        solution: { type: String, trim: true }
       },
-      loi: { 
-        type: String, 
-        trim: true 
+      loi: {
+        input1: { type: String, trim: true },
+        input2: { type: String, trim: true },
+        input3: { type: String, trim: true },
+        solution: { type: String, trim: true }
       }
     }
   },
 
   // --- 3. Sieve Test Data ---
   test1: {
-    sieveSize: { 
-      wtRetainedsandpercent: {
+    sieveSize: {
       1700: { 
         type: String, 
         trim: true 
@@ -126,11 +138,9 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
         trim: true 
       }
     }
-  }
-},
+  },
   test2: {
-    sieveSize: { 
-      wtRetainedsandpercent: {
+    sieveSize: {
       1700: { 
         type: String, 
         trim: true 
@@ -176,7 +186,6 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
         trim: true 
       }
     }
-  }
   },
 
   // --- 4. Metal Filter Test Data ---
@@ -336,5 +345,8 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
 }, 
 { timestamps: true }
 );
+
+// Create composite unique index for date + shift combination (primary identifier)
+FoundrySandTestingNoteSchema.index({ date: 1, shift: 1 }, { unique: true });
 
 module.exports = mongoose.model('FoundrySandTestingNote', FoundrySandTestingNoteSchema);

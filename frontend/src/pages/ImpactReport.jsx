@@ -53,10 +53,6 @@ const ImpactReport = () => {
       dateCode: item.dateCode || '',
       specification: item.specification || '',
       observedValue: item.observedValue || '',
-      energy: item.energy || '',
-      temp: item.temp || '',
-      specimenType: item.specimenType || '',
-      heatCode: item.heatCode || '',
       remarks: item.remarks || ''
     });
     setShowEditModal(true);
@@ -161,10 +157,6 @@ const ImpactReport = () => {
                     <th>Date Code</th>
                     <th>Specification</th>
                     <th>Observed Value</th>
-                    <th>Energy</th>
-                    <th>Temp</th>
-                    <th>Specimen Type</th>
-                    <th>Heat Code</th>
                     <th>Remarks</th>
                     <th>Actions</th>
                   </tr>
@@ -172,7 +164,7 @@ const ImpactReport = () => {
                 <tbody>
                   {filteredItems.length === 0 ? (
                     <tr>
-                      <td colSpan="11" className="impact-no-records">
+                      <td colSpan="7" className="impact-no-records">
                         No records found
                       </td>
                     </tr>
@@ -184,10 +176,6 @@ const ImpactReport = () => {
                         <td>{item.dateCode}</td>
                         <td>{item.specification}</td>
                         <td>{item.observedValue}</td>
-                        <td>{item.energy}</td>
-                        <td>{item.temp}</td>
-                        <td>{item.specimenType}</td>
-                        <td>{item.heatCode}</td>
                         <td>{item.remarks || '-'}</td>
                         <td style={{ minWidth: '100px' }}>
                           <EditActionButton onClick={() => handleEdit(item)} />
@@ -268,49 +256,7 @@ const ImpactReport = () => {
                     />
                   </div>
 
-                  <div className="impact-form-group">
-                    <label>Energy *</label>
-                    <input
-                      type="number"
-                      name="energy"
-                      value={editFormData.energy}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="impact-form-group">
-                    <label>Temperature *</label>
-                    <input
-                      type="number"
-                      name="temp"
-                      value={editFormData.temp}
-                      onChange={handleEditChange}
-                      step="0.01"
-                    />
-                  </div>
-
-                  <div className="impact-form-group">
-                    <label>Specimen Type *</label>
-                    <input
-                      type="text"
-                      name="specimenType"
-                      value={editFormData.specimenType}
-                      onChange={handleEditChange}
-                      placeholder="e.g: Charpy V-notch"
-                    />
-                  </div>
-
-                  <div className="impact-form-group">
-                    <label>Heat Code *</label>
-                    <input
-                      type="text"
-                      name="heatCode"
-                      value={editFormData.heatCode}
-                      onChange={handleEditChange}
-                      placeholder="e.g: HC-2024-001"
-                    />
-                  </div>
+                  {/* Energy, Temperature, Specimen Type and Heat Code fields removed per request */}
 
                   <div className="impact-form-group full-width">
                     <label>Remarks</label>

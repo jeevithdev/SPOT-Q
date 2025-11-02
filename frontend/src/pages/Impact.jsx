@@ -6,7 +6,6 @@ import api from '../utils/api';
 import '../styles/PageStyles/Impact.css';
 
 const Impact = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
     dateOfInspection: '',
     partName: '',
@@ -64,14 +63,6 @@ const Impact = () => {
     }
   };
 
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const handleSubmit = async () => {
     const required = ['dateOfInspection', 'partName', 'dateCode', 
                      'specification', 'observedValue'];
@@ -126,14 +117,23 @@ const Impact = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Impact Test - Entry Form
+            <button 
+              className="impact-view-report-btn"
+              onClick={() => window.location.href = "/impact/report"}
+              title="View Reports"
+            >
+              <FileText size={14} />
+              <span>View Reports</span>
+            </button>
           </h2>
         </div>
         <div className="impact-header-buttons">
-          <button className="impact-view-report-btn" onClick={() => navigate('/impact/report')} type="button">
-            <div className="impact-view-report-icon">
-              <FileText size={16} />
-            </div>
-            <span className="impact-view-report-text">View Reports</span>
+          <button 
+            className="impact-reset-btn"
+            onClick={handleReset}
+          >
+            <RefreshCw size={18} />
+            Reset Form
           </button>
         </div>
       </div>
@@ -219,16 +219,14 @@ const Impact = () => {
       </form>
 
       <div className="impact-submit-container">
-        <button onClick={handleSubmit} disabled={submitLoading} className="impact-submit-btn" type="button">
+        <button 
+          className="impact-submit-btn" 
+          type="button"
+          onClick={handleSubmit}
+          disabled={submitLoading}
+        >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </button>
-      </div>
-
-      <div className="impact-reset-container">
-        <button onClick={handleReset} className="impact-reset-btn">
-          <RefreshCw size={18} />
-          Reset
         </button>
       </div>
     </>

@@ -54,12 +54,14 @@ const Login = () => {
           <p className="login-subtext">Please login with your Employee ID</p>
 
           <form onSubmit={handleSubmit}>
+            
+            {/* Employee ID Field */}
             <div className="form-row">
-              <label className="form-label">Employee ID</label>
+              <label className="form-label">Employee ID:</label>
               
               <input
                 type="text"
-                placeholder="Enter Employee ID"
+                placeholder="Enter Employee ID" 
                 required
                 value={employeeId}
                 onChange={(e) => setEmployeeId(e.target.value.toUpperCase())}
@@ -68,12 +70,14 @@ const Login = () => {
               />
             </div>
 
+            {/* Password Field */}
             <div className="form-row">
-              <label className="form-label">Password</label>
+              <label className="form-label">Password:</label>
               <div className="password-wrapper">
+                
                 <input
                   type={showPassword ? "text" : "password"}
-                  placeholder="Enter your password"
+                  placeholder="Enter your password" 
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}

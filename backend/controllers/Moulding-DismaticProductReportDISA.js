@@ -133,6 +133,22 @@ const createDismaticReport = async (req, res) => {
                     case 'supervisorName':
                         if (data.supervisorName !== undefined) report.supervisorName = String(data.supervisorName || '').trim();
                         break;
+                    case 'eventSection':
+                        // Update all three event section fields together
+                        // Only update fields that are present in the request AND have actual content
+                        // This prevents empty strings from overwriting existing data
+                        if (data.significantEvent !== undefined && String(data.significantEvent || '').trim() !== '') {
+                            report.significantEvent = String(data.significantEvent).trim();
+                        }
+                        // If field is not in the payload at all (undefined), don't touch it
+                        if (data.maintenance !== undefined && String(data.maintenance || '').trim() !== '') {
+                            report.maintenance = String(data.maintenance).trim();
+                        }
+                        // If field is not in the payload at all (undefined), don't touch it
+                        if (data.supervisorName !== undefined && String(data.supervisorName || '').trim() !== '') {
+                            report.supervisorName = String(data.supervisorName).trim();
+                        }
+                        break;
                 }
                 
                 await report.save();
@@ -208,11 +224,26 @@ const createDismaticReport = async (req, res) => {
                                 pp: (row.pp && String(row.pp).trim() !== '') ? parseFloat(row.pp) : 0,
                                 sp: (row.sp && String(row.sp).trim() !== '') ? parseFloat(row.sp) : 0
                             })) 
-                        : [],
-                    significantEvent: section === 'significantEvent' ? String(data.significantEvent || '').trim() : '',
-                    maintenance: section === 'maintenance' ? String(data.maintenance || '').trim() : '',
-                    supervisorName: section === 'supervisorName' ? String(data.supervisorName || '').trim() : ''
+                        : []
                 };
+                
+                // Only add event section fields if they have actual content (not empty strings)
+                // This prevents MongoDB from saving empty strings which would trigger field locks
+                if (section === 'eventSection' || section === 'significantEvent') {
+                    if (data.significantEvent !== undefined && String(data.significantEvent || '').trim() !== '') {
+                        newReportData.significantEvent = String(data.significantEvent).trim();
+                    }
+                }
+                if (section === 'eventSection' || section === 'maintenance') {
+                    if (data.maintenance !== undefined && String(data.maintenance || '').trim() !== '') {
+                        newReportData.maintenance = String(data.maintenance).trim();
+                    }
+                }
+                if (section === 'eventSection' || section === 'supervisorName') {
+                    if (data.supervisorName !== undefined && String(data.supervisorName || '').trim() !== '') {
+                        newReportData.supervisorName = String(data.supervisorName).trim();
+                    }
+                }
                 
                 const newReport = new DismaticProductReportDISA(newReportData);
                 const savedReport = await newReport.save();

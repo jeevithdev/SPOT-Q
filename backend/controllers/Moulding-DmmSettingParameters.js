@@ -1,16 +1,70 @@
 const DmmSettingParameters = require('../models/Moulding-DmmSettingParameters');
 
-// Create new DMM Setting Parameters record
+// Create new DMM Setting Parameters record or update existing
 const createDMMSettings = async (req, res) => {
     try {
-        const newSettings = new DmmSettingParameters(req.body);
-        const savedSettings = await newSettings.save();
-        res.status(201).json({
-            success: true,
-            data: savedSettings,
-            message: 'DMM Settings created successfully.'
+        const { date, machine, section } = req.body;
+        
+        if (!date || !machine) {
+            return res.status(400).json({
+                success: false,
+                message: 'Date and machine are required.'
+            });
+        }
+
+        // Normalize date to start of day for comparison
+        const searchDate = new Date(date);
+        searchDate.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(searchDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        // Check if record exists with this date + machine combination (primary identifier)
+        let record = await DmmSettingParameters.findOne({
+            date: {
+                $gte: searchDate,
+                $lte: endOfDay
+            },
+            machine: String(machine).trim()
         });
+
+        if (record) {
+            // Update existing record based on section
+            if (section === 'primary') {
+                record.date = searchDate;
+                record.machine = String(machine).trim();
+            }
+            // Add other section updates here as needed
+            
+            await record.save();
+            return res.status(200).json({
+                success: true,
+                data: record,
+                message: 'DMM Settings updated successfully.'
+            });
+        } else {
+            // Create new record with primary data
+            const newSettingsData = {
+                date: searchDate,
+                machine: String(machine).trim()
+                // Other fields will be added as needed when their sections are submitted
+            };
+
+            const newSettings = new DmmSettingParameters(newSettingsData);
+            const savedSettings = await newSettings.save();
+            return res.status(201).json({
+                success: true,
+                data: savedSettings,
+                message: 'DMM Settings created successfully.'
+            });
+        }
     } catch (error) {
+        // Handle duplicate key error (date + machine combination already exists)
+        if (error.code === 11000) {
+            return res.status(400).json({
+                success: false,
+                message: 'A record with this date and machine combination already exists.'
+            });
+        }
         res.status(400).json({ 
             success: false,
             message: error.message 
@@ -158,6 +212,44 @@ const getDMMSettingsByCustomer = async (req, res) => {
     }
 };
 
+// Get DMM Settings by Primary (date + machine)
+const getDMMSettingsByPrimary = async (req, res) => {
+    try {
+        const { date, machine } = req.query;
+        
+        if (!date || !machine) {
+            return res.status(400).json({
+                success: false,
+                message: 'Date and machine are required.'
+            });
+        }
+
+        const searchDate = new Date(date);
+        searchDate.setHours(0, 0, 0, 0);
+        const endOfDay = new Date(searchDate);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const settings = await DmmSettingParameters.find({
+            date: {
+                $gte: searchDate,
+                $lte: endOfDay
+            },
+            machine: String(machine).trim()
+        }).sort({ date: -1 });
+
+        res.status(200).json({
+            success: true,
+            count: settings.length,
+            data: settings
+        });
+    } catch (error) {
+        res.status(500).json({ 
+            success: false,
+            message: error.message 
+        });
+    }
+};
+
 // Update DMM Setting Parameters
 const updateDMMSettings = async (req, res) => {
     try {
@@ -215,6 +307,7 @@ module.exports = {
     getDMMSettingsByMachine,
     getDMMSettingsByShift,
     getDMMSettingsByCustomer,
+    getDMMSettingsByPrimary,
     updateDMMSettings,
     deleteDMMSettings
 };

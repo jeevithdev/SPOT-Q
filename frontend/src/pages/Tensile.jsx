@@ -1,16 +1,15 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
 import api from '../utils/api';
 import '../styles/PageStyles/Tensile.css';
 
 const Tensile = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
+    disa: '',
     dateOfInspection: '',
     item: '',
-    date: '',
+    dateCode: '',
     heatCode: '',
     dia: '',
     lo: '',
@@ -20,12 +19,14 @@ const Tensile = () => {
     uts: '',
     ys: '',
     elongation: '',
-    testedBy: '',
-    remarks: ''
+    remarks: '',
+    testedBy: ''
   });
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+
+  const disaOptions = ['DISA I', 'DISA II', 'DISA III', 'DISA IV'];
 
 
   const handleChange = (e) => {
@@ -62,7 +63,7 @@ const Tensile = () => {
     if (e.key === 'Enter') {
       e.preventDefault();
       const form = e.target.form;
-      const inputs = Array.from(form.querySelectorAll('input, textarea'));
+      const inputs = Array.from(form.querySelectorAll('input, textarea, select'));
       const currentIndex = inputs.indexOf(e.target);
       const nextInput = inputs[currentIndex + 1];
       
@@ -72,16 +73,8 @@ const Tensile = () => {
     }
   };
 
-  const handleEditChange = (e) => {
-    const { name, value } = e.target;
-    setEditFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  };
-
   const handleSubmit = async () => {
-    const required = ['dateOfInspection', 'item', 'date', 'heatCode', 'dia', 'lo', 'li', 
+    const required = ['disa', 'dateOfInspection', 'item', 'dateCode', 'heatCode', 'dia', 'lo', 'li', 
                      'breakingLoad', 'yieldLoad', 'uts', 'ys', 'elongation', 'testedBy' ];
     const missing = required.filter(field => !formData[field]);
     
@@ -106,8 +99,8 @@ const Tensile = () => {
       if (data.success) {
         alert('Tensile test entry created successfully!');
         setFormData({
-          dateOfInspection: '', item: '', date: '', heatCode: '', dia: '', lo: '', li: '',
-          breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', testedBy: '', remarks: ''
+          disa: '', dateOfInspection: '', item: '', dateCode: '', heatCode: '', dia: '', lo: '', li: '',
+          breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: '', testedBy: ''
         });
       }
     } catch (error) {
@@ -120,8 +113,8 @@ const Tensile = () => {
 
   const handleReset= () => {
     setFormData({
-      dateOfInspection: '', item: '', date: '', heatCode: '', dia: '', lo: '', li: '',
-      breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', testedBy: '', remarks: ''
+      disa: '', dateOfInspection: '', item: '', dateCode: '', heatCode: '', dia: '', lo: '', li: '',
+      breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: '', testedBy: ''
     });
     setValidationErrors({});
   };
@@ -133,20 +126,47 @@ const Tensile = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Tensile Test - Entry Form
+            <button 
+              className="tensile-view-report-btn"
+              onClick={() => window.location.href = "/tensile/report"}
+              title="View Reports"
+            >
+              <FileText size={14} />
+              <span>View Reports</span>
+            </button>
           </h2>
         </div>
         <div className="tensile-header-buttons">
-          <button className="tensile-view-report-btn" onClick={() => navigate('/tensile/report')} type="button">
-            <div className="tensile-view-report-icon">
-              <FileText size={16} />
-            </div>
-            <span className="tensile-view-report-text">View Reports</span>
+          <button 
+            className="tensile-reset-btn"
+            onClick={handleReset}
+          >
+            <RefreshCw size={18} />
+            Reset Form
           </button>
         </div>
       </div>
 
       {/* Entry Form */}
       <form className="tensile-form-grid">
+            <div className="tensile-form-group">
+              <label>DISA *</label>
+              <select
+                name="disa"
+                value={formData.disa}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                className={validationErrors.disa ? 'invalid-input' : ''}
+              >
+                <option value="">Select DISA</option>
+                {disaOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
+            </div>
+
             <div className="tensile-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
@@ -172,15 +192,15 @@ const Tensile = () => {
             </div>
 
             <div className="tensile-form-group">
-              <label>Date *</label>
+              <label>Date Code *</label>
               <input
                 type="text"
-                name="date"
-                value={formData.date}
+                name="dateCode"
+                value={formData.dateCode}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g: 2024-10-30"
-                className={validationErrors.date ? 'invalid-input' : ''}
+                placeholder="e.g: 2024-HC"
+                className={validationErrors.dateCode ? 'invalid-input' : ''}
               />
             </div>
 
@@ -317,19 +337,6 @@ const Tensile = () => {
               />
             </div>
 
-             <div className="tensile-form-group">
-              <label>TestedBy *</label>
-              <input
-                type="text"
-                name="testedBy"
-                value={formData.testedBy}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: John Doe"
-                className={validationErrors.testedBy ? 'invalid-input' : ''}
-              />
-            </div>
-
             <div className="tensile-form-group full-width">
               <label>Remarks</label>
               <textarea
@@ -342,19 +349,30 @@ const Tensile = () => {
                 className=""
               />
             </div>
+
+            <div className="tensile-form-group">
+              <label>Tested By *</label>
+              <input
+                type="text"
+                name="testedBy"
+                value={formData.testedBy}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g: John Doe"
+                className={validationErrors.testedBy ? 'invalid-input' : ''}
+              />
+            </div>
       </form>
 
       <div className="tensile-submit-container">
-        <button onClick={handleSubmit} disabled={submitLoading} className="tensile-submit-btn" type="button">
+        <button 
+          className="tensile-submit-btn" 
+          type="button"
+          onClick={handleSubmit}
+          disabled={submitLoading}
+        >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </button>
-      </div>
-
-      <div className="tensile-reset-container">
-        <button onClick={handleReset} className="tensile-reset-btn">
-          <RefreshCw size={18} />
-          Reset
         </button>
       </div>
     </>

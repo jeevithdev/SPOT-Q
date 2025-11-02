@@ -145,19 +145,18 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
     }],
 
     // Additional Fields
+    // NOTE: No default values - fields will be undefined if not set
+    // This prevents empty strings from being saved and triggering locks
     significantEvent: {
         type: String,
-        default: '',
         trim: true
     },
     maintenance: {
         type: String,
-        default: '',
         trim: true
     },
     supervisorName: {
         type: String,
-        default: '',
         trim: true
     }
 }, {

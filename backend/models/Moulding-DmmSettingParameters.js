@@ -2,14 +2,18 @@ const mongoose = require('mongoose');
 
 const DmmSettingParametersSchema = new mongoose.Schema({
 
-    machine : {
-        type: Number,
-        required: true
-    },
-
+    // Primary Identifier - combination of date and machine
     date: {
         type: Date,
-        required: true
+        required: true,
+        index: true
+    },
+    
+    machine: {
+        type: String, // Changed to String to match frontend input
+        required: true,
+        index: true,
+        trim: true
     },
 
     shifts: {
@@ -289,6 +293,12 @@ const DmmSettingParametersSchema = new mongoose.Schema({
         }
     }
     }
+}, {
+    timestamps: true
 });
+
+// Composite unique index on date + machine (primary identifier)
+// This ensures one record per date-machine combination
+DmmSettingParametersSchema.index({ date: 1, machine: 1 }, { unique: true });
 
 module.exports = mongoose.model('DmmSettingParameters', DmmSettingParametersSchema);

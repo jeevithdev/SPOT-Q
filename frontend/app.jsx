@@ -86,7 +86,7 @@ const App = () => {
           <Route path="process/report" element={<ProcessReport />} />
 
           {/* QC Production Details */}
-          <Route path="qc-production-details/data-entry" element={<QcProductionDetails />} />
+          <Route path="qc-production-details" element={<QcProductionDetails />} />
           <Route path="qc-production-details/report" element={<QcProductionDetailsReport />} />
 
           {/* Melting */}

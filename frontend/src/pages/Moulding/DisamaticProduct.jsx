@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Save, FileText, Plus, X, Loader2, Edit2, RotateCcw } from "lucide-react";
+import { Save, FileText, Plus, X, Loader2, Edit2, RotateCcw, RefreshCw } from "lucide-react";
 import CustomDatePicker from "../../Components/CustomDatePicker";
 import api from "../../utils/api";
 import "../../styles/PageStyles/Moulding/DisamaticProduct.css";
@@ -30,13 +30,17 @@ const DisamaticProduct = () => {
     delays: false,
     mouldHardness: false,
     patternTemp: false,
-    significantEvent: false,
-    maintenance: false,
-    supervisorName: false
+    eventSection: false
   });
   const [isLocked, setIsLocked] = useState(false);
   const [checkingData, setCheckingData] = useState(false);
   const [basicInfoLocked, setBasicInfoLocked] = useState(false);
+  const [isPrimaryLocked, setIsPrimaryLocked] = useState(false);
+  const [eventSectionLocked, setEventSectionLocked] = useState({
+    significantEvent: false,
+    maintenance: false,
+    supervisorName: false
+  });
   const [showLockedPopup, setShowLockedPopup] = useState(false);
   const [initialMembers, setInitialMembers] = useState([]); // Track initial members when locked
   
@@ -74,38 +78,10 @@ const DisamaticProduct = () => {
     setFormData(prev => ({ ...prev, productionTable: updatedTable }));
   };
 
-  const addProductionRow = () => {
-    setFormData(prev => ({
-      ...prev,
-      productionTable: [...prev.productionTable, { counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }]
-    }));
-  };
-
-  const removeProductionRow = (index) => {
-    if (formData.productionTable.length > 1) {
-      const updatedTable = formData.productionTable.filter((_, i) => i !== index);
-      setFormData(prev => ({ ...prev, productionTable: updatedTable }));
-    }
-  };
-
   const handleNextShiftPlanChange = (index, field, value) => {
     const updatedTable = [...formData.nextShiftPlanTable];
     updatedTable[index] = { ...updatedTable[index], [field]: value };
     setFormData(prev => ({ ...prev, nextShiftPlanTable: updatedTable }));
-  };
-
-  const addNextShiftPlanRow = () => {
-    setFormData(prev => ({
-      ...prev,
-      nextShiftPlanTable: [...prev.nextShiftPlanTable, { componentName: "", plannedMoulds: "", remarks: "" }]
-    }));
-  };
-
-  const removeNextShiftPlanRow = (index) => {
-    if (formData.nextShiftPlanTable.length > 1) {
-      const updatedTable = formData.nextShiftPlanTable.filter((_, i) => i !== index);
-      setFormData(prev => ({ ...prev, nextShiftPlanTable: updatedTable }));
-    }
   };
 
   const handleDelaysTableChange = (index, field, value) => {
@@ -114,58 +90,16 @@ const DisamaticProduct = () => {
     setFormData(prev => ({ ...prev, delaysTable: updatedTable }));
   };
 
-  const addDelaysRow = () => {
-    setFormData(prev => ({
-      ...prev,
-      delaysTable: [...prev.delaysTable, { delays: "", durationMinutes: "", durationTime: "" }]
-    }));
-  };
-
-  const removeDelaysRow = (index) => {
-    if (formData.delaysTable.length > 1) {
-      const updatedTable = formData.delaysTable.filter((_, i) => i !== index);
-      setFormData(prev => ({ ...prev, delaysTable: updatedTable }));
-    }
-  };
-
   const handleMouldHardnessTableChange = (index, field, value) => {
     const updatedTable = [...formData.mouldHardnessTable];
     updatedTable[index] = { ...updatedTable[index], [field]: value };
     setFormData(prev => ({ ...prev, mouldHardnessTable: updatedTable }));
   };
 
-  const addMouldHardnessRow = () => {
-    setFormData(prev => ({
-      ...prev,
-      mouldHardnessTable: [...prev.mouldHardnessTable, { componentName: "", mpPP: "", mpSP: "", bsPP: "", bsSP: "", remarks: "" }]
-    }));
-  };
-
-  const removeMouldHardnessRow = (index) => {
-    if (formData.mouldHardnessTable.length > 1) {
-      const updatedTable = formData.mouldHardnessTable.filter((_, i) => i !== index);
-      setFormData(prev => ({ ...prev, mouldHardnessTable: updatedTable }));
-    }
-  };
-
   const handlePatternTempTableChange = (index, field, value) => {
     const updatedTable = [...formData.patternTempTable];
     updatedTable[index] = { ...updatedTable[index], [field]: value };
     setFormData(prev => ({ ...prev, patternTempTable: updatedTable }));
-  };
-
-  const addPatternTempRow = () => {
-    setFormData(prev => ({
-      ...prev,
-      patternTempTable: [...prev.patternTempTable, { item: "", pp: "", sp: "" }]
-    }));
-  };
-
-  const removePatternTempRow = (index) => {
-    if (formData.patternTempTable.length > 1) {
-      const updatedTable = formData.patternTempTable.filter((_, i) => i !== index);
-      setFormData(prev => ({ ...prev, patternTempTable: updatedTable }));
-    }
   };
 
   // Reset functions for each table
@@ -193,9 +127,9 @@ const DisamaticProduct = () => {
     navigate('/moulding/disamatic-product/report');
   };
 
-  // Check if basic info exists for current date (date is primary identifier)
-  const checkBasicInfoForDate = async () => {
-    if (!formData.date || !/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
+  // Check if primary data exists for date (similar to DmmSettingParameters)
+  const checkExistingPrimaryData = async (date) => {
+    if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       setBasicInfoLocked(false);
       return;
     }
@@ -203,7 +137,7 @@ const DisamaticProduct = () => {
     try {
       setCheckingData(true);
       // Get report by date (primary identifier) - date is unique
-      const response = await api.get(`/v1/dismatic-reports/date?date=${encodeURIComponent(formData.date)}`);
+      const response = await api.get(`/v1/dismatic-reports/date?date=${encodeURIComponent(date)}`);
       
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
@@ -211,6 +145,7 @@ const DisamaticProduct = () => {
         // Check if basic info exists (shift, incharge, or members)
         if (report && (report.shift || report.incharge || report.memberspresent)) {
           setBasicInfoLocked(true);
+          setIsPrimaryLocked(true);
           
           // Lock and populate basic info fields only - update all at once
           setFormData(prev => {
@@ -238,13 +173,16 @@ const DisamaticProduct = () => {
           }, 100);
         } else {
           setBasicInfoLocked(false);
+          setIsPrimaryLocked(false);
         }
       } else {
         setBasicInfoLocked(false);
+        setIsPrimaryLocked(false);
       }
     } catch (error) {
-      console.error('Error checking basic info for date:', error);
+      console.error('Error checking primary data:', error);
       setBasicInfoLocked(false);
+      setIsPrimaryLocked(false);
     } finally {
       setCheckingData(false);
     }
@@ -282,6 +220,40 @@ const DisamaticProduct = () => {
         } else {
           setIsLocked(false);
         }
+
+        // Check if individual event section fields have data (lock each field separately)
+        // Only lock if field exists, is not null, not empty string, and has actual content after trimming
+        // Empty strings (MongoDB defaults) should NOT trigger locks - only real data
+        const significantEventValue = report.significantEvent;
+        const maintenanceValue = report.maintenance;
+        const supervisorNameValue = report.supervisorName;
+        
+        // STRICT check: value must be truthy (not null, undefined, or empty string)
+        // AND must have non-empty content after trimming
+        // This ensures MongoDB default empty strings don't trigger locks
+        const hasSignificantEvent = significantEventValue !== undefined && 
+                                   significantEventValue !== null &&
+                                   significantEventValue !== '' &&
+                                   typeof significantEventValue === 'string' &&
+                                   significantEventValue.trim() !== '';
+        const hasMaintenance = maintenanceValue !== undefined && 
+                              maintenanceValue !== null &&
+                              maintenanceValue !== '' &&
+                              typeof maintenanceValue === 'string' &&
+                              maintenanceValue.trim() !== '';
+        const hasSupervisorName = supervisorNameValue !== undefined && 
+                                 supervisorNameValue !== null &&
+                                 supervisorNameValue !== '' &&
+                                 typeof supervisorNameValue === 'string' &&
+                                 supervisorNameValue.trim() !== '';
+        
+        // Only lock fields that actually have content - empty strings from defaults should not lock
+        setEventSectionLocked({
+          significantEvent: hasSignificantEvent,
+          maintenance: hasMaintenance,
+          supervisorName: hasSupervisorName
+        });
+        
         
         // Load all existing data into form - update all sections
         // Use functional update to ensure we have the latest formData
@@ -379,36 +351,47 @@ const DisamaticProduct = () => {
             updatedFormData.patternTempTable = prev.patternTempTable.length > 0 ? prev.patternTempTable : [{ item: "", pp: "", sp: "" }];
           }
           
-          // Other fields
-          if (report.significantEvent !== undefined && report.significantEvent !== null) {
-            updatedFormData.significantEvent = String(report.significantEvent || '');
+          // Other fields - only load if they have actual content
+          // Don't overwrite form data with empty strings from database
+          if (report.significantEvent !== undefined && report.significantEvent !== null && String(report.significantEvent).trim() !== '') {
+            updatedFormData.significantEvent = String(report.significantEvent).trim();
           }
-          if (report.maintenance !== undefined && report.maintenance !== null) {
-            updatedFormData.maintenance = String(report.maintenance || '');
+          if (report.maintenance !== undefined && report.maintenance !== null && String(report.maintenance).trim() !== '') {
+            updatedFormData.maintenance = String(report.maintenance).trim();
           }
-          if (report.supervisorName !== undefined && report.supervisorName !== null) {
-            updatedFormData.supervisorName = String(report.supervisorName || '');
+          if (report.supervisorName !== undefined && report.supervisorName !== null && String(report.supervisorName).trim() !== '') {
+            updatedFormData.supervisorName = String(report.supervisorName).trim();
           }
           
           return updatedFormData;
         });
       } else {
         setIsLocked(false);
+        setEventSectionLocked({
+          significantEvent: false,
+          maintenance: false,
+          supervisorName: false
+        });
       }
     } catch (error) {
       console.error('Error checking existing data:', error);
       setIsLocked(false);
+      setEventSectionLocked({
+        significantEvent: false,
+        maintenance: false,
+        supervisorName: false
+      });
     } finally {
       setCheckingData(false);
     }
   };
 
-  // Check for basic info lock when date changes
+  // Check for primary data when date changes (similar to DmmSettingParameters)
   useEffect(() => {
     setShowLockedPopup(false); // Reset popup when date changes
     const timeoutId = setTimeout(() => {
       if (formData.date) {
-        checkBasicInfoForDate();
+        checkExistingPrimaryData(formData.date);
       } else {
         setBasicInfoLocked(false);
       }
@@ -424,6 +407,11 @@ const DisamaticProduct = () => {
         checkExistingData();
       } else {
         setIsLocked(false);
+        setEventSectionLocked({
+          significantEvent: false,
+          maintenance: false,
+          supervisorName: false
+        });
       }
     }, 500); // Debounce for 500ms
 
@@ -437,8 +425,13 @@ const DisamaticProduct = () => {
       setShowLockedPopup(true);
     } else if (isLocked && fieldName !== 'members') {
       setShowLockedPopup(true);
+    } else if ((fieldName === 'significantEvent' && eventSectionLocked.significantEvent) ||
+               (fieldName === 'maintenance' && eventSectionLocked.maintenance) ||
+               (fieldName === 'supervisorName' && eventSectionLocked.supervisorName)) {
+      setShowLockedPopup(true);
     }
     // Members are allowed to be edited even when locked
+    // Event section fields (significantEvent, maintenance, supervisorName) show popup when locked individually
   };
 
   // Check if a member field is newly added (not in initial members)
@@ -506,11 +499,13 @@ const DisamaticProduct = () => {
         if (basicInfoLocked && savedMembers.length > 0) {
           setInitialMembers([...savedMembers]);
         }
-        alert(basicInfoLocked ? 'New members saved successfully!' : 'Basic information saved successfully!');
+        alert(basicInfoLocked ? 'New members saved successfully!' : 'Primary information saved successfully!');
+        setIsPrimaryLocked(true);
+        setBasicInfoLocked(true);
         // Wait a bit for database to be updated
         setTimeout(async () => {
-          // Re-check for basic info lock and full form lock
-          await checkBasicInfoForDate();
+          // Re-check for primary data and full form lock
+          await checkExistingPrimaryData(formData.date);
           if (formData.shift) {
             await checkExistingData();
           }
@@ -533,6 +528,12 @@ const DisamaticProduct = () => {
     // Validate date format
     if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
       alert('Please select a valid date');
+      return;
+    }
+
+    // Check if primary data is saved
+    if (!isPrimaryLocked) {
+      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
       return;
     }
 
@@ -572,6 +573,12 @@ const DisamaticProduct = () => {
       return;
     }
 
+    // Check if primary data is saved
+    if (!isPrimaryLocked) {
+      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      return;
+    }
+
     try {
       setLoadingStates(prev => ({ ...prev, nextShiftPlan: true }));
       const data = await api.post('/v1/dismatic-reports', {
@@ -604,6 +611,12 @@ const DisamaticProduct = () => {
     // Validate date format
     if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
       alert('Please select a valid date');
+      return;
+    }
+
+    // Check if primary data is saved
+    if (!isPrimaryLocked) {
+      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
       return;
     }
 
@@ -642,6 +655,12 @@ const DisamaticProduct = () => {
       return;
     }
 
+    // Check if primary data is saved
+    if (!isPrimaryLocked) {
+      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      return;
+    }
+
     try {
       setLoadingStates(prev => ({ ...prev, mouldHardness: true }));
       const data = await api.post('/v1/dismatic-reports', {
@@ -677,6 +696,12 @@ const DisamaticProduct = () => {
       return;
     }
 
+    // Check if primary data is saved
+    if (!isPrimaryLocked) {
+      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      return;
+    }
+
     try {
       setLoadingStates(prev => ({ ...prev, patternTemp: true }));
       const data = await api.post('/v1/dismatic-reports', {
@@ -700,7 +725,7 @@ const DisamaticProduct = () => {
     }
   };
 
-  const handleSignificantEventSubmit = async () => {
+  const handleEventSectionSubmit = async () => {
     if (!formData.date) {
       alert('Please select a date');
       return;
@@ -712,96 +737,89 @@ const DisamaticProduct = () => {
       return;
     }
 
+    // Check if primary data is saved
+    if (!isPrimaryLocked) {
+      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      return;
+    }
+
+    // Check if form is locked - show popup instead of saving
+    if (isLocked) {
+      setShowLockedPopup(true);
+      return;
+    }
+    
+    // Check if all event fields are locked individually - show popup
+    if (eventSectionLocked.significantEvent && eventSectionLocked.maintenance && eventSectionLocked.supervisorName) {
+      setShowLockedPopup(true);
+      return;
+    }
+
     try {
-      setLoadingStates(prev => ({ ...prev, significantEvent: true }));
-      const data = await api.post('/v1/dismatic-reports', {
+      setLoadingStates(prev => ({ ...prev, eventSection: true }));
+      
+      // Prepare data - only send fields that have actual content
+      // This prevents overwriting existing data with empty strings
+      const payload = {
         date: formData.date,
-        shift: formData.shift || '', // Include shift if available
-        significantEvent: formData.significantEvent,
-        section: 'significantEvent'
-      });
+        shift: formData.shift || '',
+        section: 'eventSection'
+      };
+      
+      // Only include fields that have non-empty values
+      if (formData.significantEvent && formData.significantEvent.trim() !== '') {
+        payload.significantEvent = formData.significantEvent;
+      }
+      if (formData.maintenance && formData.maintenance.trim() !== '') {
+        payload.maintenance = formData.maintenance;
+      }
+      if (formData.supervisorName && formData.supervisorName.trim() !== '') {
+        payload.supervisorName = formData.supervisorName;
+      }
+      
+      const data = await api.post('/v1/dismatic-reports', payload);
       
       if (data.success) {
-        alert('Significant Event saved successfully!');
-        setTimeout(async () => {
-          await checkExistingData();
-        }, 300);
+        alert('Event section data saved successfully!');
+        // Lock only the fields that were actually saved (have non-empty values)
+        // Check each field individually - only lock if it has actual content
+        const significantEventHasData = formData.significantEvent && 
+                                       String(formData.significantEvent).trim() !== '';
+        const maintenanceHasData = formData.maintenance && 
+                                  String(formData.maintenance).trim() !== '';
+        const supervisorNameHasData = formData.supervisorName && 
+                                     String(formData.supervisorName).trim() !== '';
+        
+        // Update locks: ONLY lock fields that have actual data
+        // Don't merge with previous state - reset based on what was actually saved
+        // This ensures empty fields stay unlocked
+        setEventSectionLocked({
+          significantEvent: significantEventHasData,
+          maintenance: maintenanceHasData,
+          supervisorName: supervisorNameHasData
+        });
+        
+        // Don't call checkExistingData - it might reload empty strings from DB and override our locks
+        // The locks are correctly set based on what was actually saved
       }
     } catch (error) {
-      console.error('Error saving significant event:', error);
-      alert('Failed to save significant event: ' + (error.response?.data?.message || error.message));
+      console.error('Error saving event section:', error);
+      alert('Failed to save: ' + (error.response?.data?.message || error.message));
     } finally {
-      setLoadingStates(prev => ({ ...prev, significantEvent: false }));
+      setLoadingStates(prev => ({ ...prev, eventSection: false }));
     }
   };
 
-  const handleMaintenanceSubmit = async () => {
-    if (!formData.date) {
-      alert('Please select a date');
-      return;
-    }
-
-    // Validate date format
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
-      alert('Please select a valid date');
-      return;
-    }
-
-    try {
-      setLoadingStates(prev => ({ ...prev, maintenance: true }));
-      const data = await api.post('/v1/dismatic-reports', {
-        date: formData.date,
-        shift: formData.shift || '', // Include shift if available
-        maintenance: formData.maintenance,
-        section: 'maintenance'
-      });
-      
-      if (data.success) {
-        alert('Maintenance information saved successfully!');
-        setTimeout(async () => {
-          await checkExistingData();
-        }, 300);
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      const form = e.target.form;
+      const inputs = Array.from(form.querySelectorAll('input:not([readonly]), textarea, select'));
+      const currentIndex = inputs.indexOf(e.target);
+      const nextInput = inputs[currentIndex + 1];
+      if (nextInput) {
+        nextInput.focus();
       }
-    } catch (error) {
-      console.error('Error saving maintenance:', error);
-      alert('Failed to save maintenance information: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setLoadingStates(prev => ({ ...prev, maintenance: false }));
-    }
-  };
-
-  const handleSupervisorSubmit = async () => {
-    if (!formData.date) {
-      alert('Please select a date');
-      return;
-    }
-
-    // Validate date format
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
-      alert('Please select a valid date');
-      return;
-    }
-
-    try {
-      setLoadingStates(prev => ({ ...prev, supervisorName: true }));
-      const data = await api.post('/v1/dismatic-reports', {
-        date: formData.date,
-        shift: formData.shift || '', // Include shift if available
-        supervisorName: formData.supervisorName,
-        section: 'supervisorName'
-      });
-      
-      if (data.success) {
-        alert('Supervisor name saved successfully!');
-        setTimeout(async () => {
-          await checkExistingData();
-        }, 300);
-      }
-    } catch (error) {
-      console.error('Error saving supervisor name:', error);
-      alert('Failed to save supervisor name: ' + (error.response?.data?.message || error.message));
-    } finally {
-      setLoadingStates(prev => ({ ...prev, supervisorName: false }));
     }
   };
 
@@ -812,25 +830,46 @@ const DisamaticProduct = () => {
         <div className="disamatic-header-text">
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
-            Disamatic Production Report DISA - Entry Form
+            Disamatic Production Report DISA
+            <button 
+              className="disamatic-view-report-btn"
+              onClick={handleViewReport}
+              title="View Reports"
+            >
+              <FileText size={14} />
+              <span>View Reports</span>
+            </button>
           </h2>
         </div>
         <div className="disamatic-header-buttons">
-          <button className="disamatic-view-report-btn" onClick={handleViewReport} type="button">
-            <div className="disamatic-view-report-icon">
-              <FileText size={16} />
-            </div>
-            <span className="disamatic-view-report-text">View Reports</span>
+          <button 
+            className="disamatic-reset-btn"
+            onClick={() => {
+              if (window.confirm('Are you sure you want to reset the entire form? All unsaved data will be lost.')) {
+                setFormData(initialFormData);
+                setIsLocked(false);
+                setBasicInfoLocked(false);
+                setIsPrimaryLocked(false);
+                setInitialMembers([]);
+              }
+            }}
+          >
+            <RefreshCw size={18} />
+            Reset Form
           </button>
         </div>
       </div>
-
-          {/* Basic Info Section */}
+          {/* Primary Section */}
           <div className="disamatic-section">
-            <h3 className="disamatic-section-title">Basic Info</h3>
+            <h3 className="disamatic-section-title">Primary</h3>
             {checkingData && (
               <div className="disamatic-checking-message">
                 Checking for existing data...
+              </div>
+            )}
+            {isPrimaryLocked && !checkingData && (
+              <div className="disamatic-primary-locked-message">
+                Primary data is locked. Use Reports page to edit.
               </div>
             )}
             <div className="disamatic-form-grid">
@@ -875,7 +914,7 @@ const DisamaticProduct = () => {
                   style={{ cursor: (basicInfoLocked || isLocked) ? 'not-allowed' : 'text' }}
                 />
               </div>
-          <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
+              <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
                 <label>Members Present</label>
             <div className="disamatic-members-container">
               {formData.members.map((member, index) => {
@@ -936,10 +975,10 @@ const DisamaticProduct = () => {
                 onClick={handleBasicInfoSubmit}
                 disabled={loadingStates.basicInfo}
                 className="disamatic-submit-btn"
-                title={isLocked ? 'Cannot modify when form is fully locked. Use Reports page to edit.' : (basicInfoLocked ? 'Save new members' : 'Save Basic Info')}
+                title={isLocked ? 'Cannot modify when form is fully locked. Use Reports page to edit.' : (basicInfoLocked ? 'Save new members' : 'Save Primary')}
               >
                 {loadingStates.basicInfo ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                {loadingStates.basicInfo ? 'Saving...' : (basicInfoLocked ? 'Save New Members' : 'Save Basic Info')}
+                {loadingStates.basicInfo ? 'Saving...' : (basicInfoLocked ? 'Save New Members' : 'Save Primary')}
               </button>
             </div>
           </div>
@@ -969,7 +1008,17 @@ const DisamaticProduct = () => {
                       value={row.counterNo}
                       onChange={e => handleProductionTableChange(index, 'counterNo', e.target.value)}
                       placeholder="Counter No"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -978,7 +1027,17 @@ const DisamaticProduct = () => {
                       value={row.componentName}
                       onChange={e => handleProductionTableChange(index, 'componentName', e.target.value)}
                       placeholder="Component Name"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -988,7 +1047,17 @@ const DisamaticProduct = () => {
                       onChange={e => handleProductionTableChange(index, 'produced', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -998,7 +1067,17 @@ const DisamaticProduct = () => {
                       onChange={e => handleProductionTableChange(index, 'poured', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1007,7 +1086,17 @@ const DisamaticProduct = () => {
                       value={row.cycleTime}
                       onChange={e => handleProductionTableChange(index, 'cycleTime', e.target.value)}
                       placeholder="e.g., 30s"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1017,7 +1106,17 @@ const DisamaticProduct = () => {
                       onChange={e => handleProductionTableChange(index, 'mouldsPerHour', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1026,7 +1125,17 @@ const DisamaticProduct = () => {
                       value={row.remarks}
                       onChange={e => handleProductionTableChange(index, 'remarks', e.target.value)}
                       placeholder="Remarks"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                 </tr>
@@ -1046,8 +1155,9 @@ const DisamaticProduct = () => {
             <button
               type="button"
               onClick={handleProductionSubmit}
-              disabled={loadingStates.production}
+              disabled={loadingStates.production || !isPrimaryLocked}
               className="disamatic-submit-btn"
+              title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Production'}
             >
               {loadingStates.production ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
               {loadingStates.production ? 'Saving...' : 'Save Production'}
@@ -1056,7 +1166,7 @@ const DisamaticProduct = () => {
                 </div>
           </div>
 
-      {/* Next Shift Plan Table */}
+          {/* Next Shift Plan Section */}
           <div className="disamatic-section">
         <h3 className="disamatic-section-title">Next Shift Plan</h3>
         <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', overflowX: 'auto' }}>
@@ -1081,7 +1191,17 @@ const DisamaticProduct = () => {
                       value={row.componentName}
                       onChange={e => handleNextShiftPlanChange(index, 'componentName', e.target.value)}
                       placeholder="Component Name"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1091,7 +1211,17 @@ const DisamaticProduct = () => {
                       onChange={e => handleNextShiftPlanChange(index, 'plannedMoulds', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1100,7 +1230,17 @@ const DisamaticProduct = () => {
                       value={row.remarks}
                       onChange={e => handleNextShiftPlanChange(index, 'remarks', e.target.value)}
                       placeholder="Remarks"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                 </tr>
@@ -1120,15 +1260,16 @@ const DisamaticProduct = () => {
             <button
               type="button"
               onClick={handleNextShiftPlanSubmit}
-              disabled={loadingStates.nextShiftPlan}
+              disabled={loadingStates.nextShiftPlan || !isPrimaryLocked}
               className="disamatic-submit-btn"
+              title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Next Shift Plan'}
             >
               {loadingStates.nextShiftPlan ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
               {loadingStates.nextShiftPlan ? 'Saving...' : 'Save Next Shift Plan'}
             </button>
           </div>
-                </div>
-          </div>
+        </div>
+      </div>
 
       {/* Delays Table */}
       <div className="disamatic-section">
@@ -1155,7 +1296,17 @@ const DisamaticProduct = () => {
                       value={row.delays}
                       onChange={e => handleDelaysTableChange(index, 'delays', e.target.value)}
                       placeholder="Describe delay"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1165,7 +1316,17 @@ const DisamaticProduct = () => {
                       onChange={e => handleDelaysTableChange(index, 'durationMinutes', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1174,7 +1335,17 @@ const DisamaticProduct = () => {
                       value={row.durationTime}
                       onChange={e => handleDelaysTableChange(index, 'durationTime', e.target.value)}
                       placeholder="HH:MM"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                 </tr>
@@ -1194,8 +1365,9 @@ const DisamaticProduct = () => {
             <button
               type="button"
               onClick={handleDelaysSubmit}
-              disabled={loadingStates.delays}
+              disabled={loadingStates.delays || !isPrimaryLocked}
               className="disamatic-submit-btn"
+              title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Delays'}
             >
               {loadingStates.delays ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
               {loadingStates.delays ? 'Saving...' : 'Save Delays'}
@@ -1236,7 +1408,17 @@ const DisamaticProduct = () => {
                       value={row.componentName}
                       onChange={e => handleMouldHardnessTableChange(index, 'componentName', e.target.value)}
                       placeholder="Component Name"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1246,7 +1428,17 @@ const DisamaticProduct = () => {
                       onChange={e => handleMouldHardnessTableChange(index, 'mpPP', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1256,7 +1448,17 @@ const DisamaticProduct = () => {
                       onChange={e => handleMouldHardnessTableChange(index, 'mpSP', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1266,7 +1468,17 @@ const DisamaticProduct = () => {
                       onChange={e => handleMouldHardnessTableChange(index, 'bsPP', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1276,7 +1488,17 @@ const DisamaticProduct = () => {
                       onChange={e => handleMouldHardnessTableChange(index, 'bsSP', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1285,7 +1507,17 @@ const DisamaticProduct = () => {
                       value={row.remarks}
                       onChange={e => handleMouldHardnessTableChange(index, 'remarks', e.target.value)}
                       placeholder="Remarks"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                 </tr>
@@ -1305,8 +1537,9 @@ const DisamaticProduct = () => {
             <button
               type="button"
               onClick={handleMouldHardnessSubmit}
-              disabled={loadingStates.mouldHardness}
+              disabled={loadingStates.mouldHardness || !isPrimaryLocked}
               className="disamatic-submit-btn"
+              title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Mould Hardness'}
             >
               {loadingStates.mouldHardness ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
               {loadingStates.mouldHardness ? 'Saving...' : 'Save Mould Hardness'}
@@ -1340,7 +1573,17 @@ const DisamaticProduct = () => {
                       value={row.item}
                       onChange={e => handlePatternTempTableChange(index, 'item', e.target.value)}
                       placeholder="Enter item"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1350,7 +1593,17 @@ const DisamaticProduct = () => {
                       onChange={e => handlePatternTempTableChange(index, 'pp', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
@@ -1360,7 +1613,17 @@ const DisamaticProduct = () => {
                       onChange={e => handlePatternTempTableChange(index, 'sp', e.target.value)}
                       placeholder="0"
                       step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                      disabled={!isPrimaryLocked}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        border: '1.5px solid #cbd5e1', 
+                        borderRadius: '4px', 
+                        fontSize: '0.875rem', 
+                        textAlign: 'center',
+                        backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      }}
                     />
                   </td>
                 </tr>
@@ -1380,8 +1643,9 @@ const DisamaticProduct = () => {
             <button
               type="button"
               onClick={handlePatternTempSubmit}
-              disabled={loadingStates.patternTemp}
+              disabled={loadingStates.patternTemp || !isPrimaryLocked}
               className="disamatic-submit-btn"
+              title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Pattern Temp'}
             >
               {loadingStates.patternTemp ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
               {loadingStates.patternTemp ? 'Saving...' : 'Save Pattern Temp'}
@@ -1390,86 +1654,93 @@ const DisamaticProduct = () => {
         </div>
       </div>
 
-      {/* Significance Event */}
+      {/* Significant event Section */}
       <div className="disamatic-section">
-        <h3 className="disamatic-section-title">Significance Event</h3>
-        <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
-          <label>Significance Event</label>
-          <textarea
-            value={formData.significantEvent}
-            onChange={e => handleChange("significantEvent", e.target.value)}
-            placeholder="Describe significant event..."
-            rows={4}
-            style={{ width: '100%', padding: '0.625rem 0.875rem', border: '2px solid #cbd5e1', borderRadius: '8px', fontSize: '0.875rem', fontFamily: 'inherit', color: '#1e293b', backgroundColor: '#ffffff', transition: 'all 0.3s ease', resize: 'vertical', cursor: 'text' }}
-          />
-        </div>
-        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            onClick={handleSignificantEventSubmit}
-            disabled={loadingStates.significantEvent}
-            className="disamatic-submit-btn"
-          >
-            {loadingStates.significantEvent ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-            {loadingStates.significantEvent ? 'Saving...' : 'Save Significant Event'}
-          </button>
-        </div>
-      </div>
-
-      {/* Maintenance */}
-      <div className="disamatic-section">
-        <h3 className="disamatic-section-title">Maintenance</h3>
-        <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
-          <label>Maintenance</label>
-          <textarea
-            value={formData.maintenance}
-            onChange={e => handleChange("maintenance", e.target.value)}
-            placeholder="Describe maintenance activities..."
-            rows={4}
-            style={{ width: '100%', padding: '0.625rem 0.875rem', border: '2px solid #cbd5e1', borderRadius: '8px', fontSize: '0.875rem', fontFamily: 'inherit', color: '#1e293b', backgroundColor: '#ffffff', transition: 'all 0.3s ease', resize: 'vertical', cursor: 'text' }}
-          />
-        </div>
-        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
-          <button
-            type="button"
-            onClick={handleMaintenanceSubmit}
-            disabled={loadingStates.maintenance}
-            className="disamatic-submit-btn"
-          >
-            {loadingStates.maintenance ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-            {loadingStates.maintenance ? 'Saving...' : 'Save Maintenance'}
-          </button>
-        </div>
-      </div>
-
-      {/* Supervisor Name */}
-      <div className="disamatic-section">
+        <h3 className="disamatic-section-title">Event</h3>
         <div className="disamatic-form-grid">
+          <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
+            <label>Significant Event : </label>
+            <textarea
+              value={formData.significantEvent}
+              onChange={e => handleChange("significantEvent", e.target.value)}
+              onClick={() => handleLockedFieldClick('significantEvent')}
+              onFocus={() => handleLockedFieldClick('significantEvent')}
+              placeholder="Describe significant event..."
+              rows={4}
+              disabled={eventSectionLocked.significantEvent || isLocked}
+              readOnly={eventSectionLocked.significantEvent || isLocked}
+              style={{ 
+                width: '100%', 
+                padding: '0.625rem 0.875rem', 
+                border: '2px solid #cbd5e1', 
+                borderRadius: '8px', 
+                fontSize: '0.875rem', 
+                fontFamily: 'inherit', 
+                color: '#1e293b', 
+                backgroundColor: (eventSectionLocked.significantEvent || isLocked) ? '#f1f5f9' : '#ffffff', 
+                transition: 'all 0.3s ease', 
+                resize: 'vertical', 
+                cursor: (eventSectionLocked.significantEvent || isLocked) ? 'not-allowed' : 'text' 
+              }}
+            />
+          </div>
+          <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
+            <label>Maintenance : </label>
+            <textarea
+              value={formData.maintenance}
+              onChange={e => handleChange("maintenance", e.target.value)}
+              onClick={() => handleLockedFieldClick('maintenance')}
+              onFocus={() => handleLockedFieldClick('maintenance')}
+              placeholder="Describe maintenance activities..."
+              rows={4}
+              disabled={eventSectionLocked.maintenance || isLocked}
+              readOnly={eventSectionLocked.maintenance || isLocked}
+              style={{ 
+                width: '100%', 
+                padding: '0.625rem 0.875rem', 
+                border: '2px solid #cbd5e1', 
+                borderRadius: '8px', 
+                fontSize: '0.875rem', 
+                fontFamily: 'inherit', 
+                color: '#1e293b', 
+                backgroundColor: (eventSectionLocked.maintenance || isLocked) ? '#f1f5f9' : '#ffffff', 
+                transition: 'all 0.3s ease', 
+                resize: 'vertical', 
+                cursor: (eventSectionLocked.maintenance || isLocked) ? 'not-allowed' : 'text' 
+              }}
+            />
+          </div>
           <div className="disamatic-form-group" style={{ maxWidth: '400px' }}>
-            <label>Supervisor Name</label>
+            <label>Supervisor Name : </label>
             <input
               type="text"
               value={formData.supervisorName}
               onChange={e => handleChange("supervisorName", e.target.value)}
+              onClick={() => handleLockedFieldClick('supervisorName')}
+              onFocus={() => handleLockedFieldClick('supervisorName')}
               placeholder="Enter supervisor name"
+              disabled={eventSectionLocked.supervisorName || isLocked}
+              readOnly={eventSectionLocked.supervisorName || isLocked}
+              style={{ cursor: (eventSectionLocked.supervisorName || isLocked) ? 'not-allowed' : 'text' }}
             />
           </div>
         </div>
         <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
           <button
             type="button"
-            onClick={handleSupervisorSubmit}
-            disabled={loadingStates.supervisorName}
+            onClick={handleEventSectionSubmit}
+            disabled={loadingStates.eventSection || !isPrimaryLocked || isLocked || (eventSectionLocked.significantEvent && eventSectionLocked.maintenance && eventSectionLocked.supervisorName)}
             className="disamatic-submit-btn"
+            title={!isPrimaryLocked ? 'Please save Primary data first' : (isLocked ? 'Cannot modify when form is fully locked. Use Reports page to edit.' : 'Save Event Section')}
           >
-            {loadingStates.supervisorName ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-            {loadingStates.supervisorName ? 'Saving...' : 'Save Supervisor Name'}
+            {loadingStates.eventSection ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+            {loadingStates.eventSection ? 'Saving...' : 'Save Event Section'}
           </button>
         </div>
       </div>
 
       {/* Locked Form Popup */}
-      {showLockedPopup && (isLocked || basicInfoLocked) && (
+      {showLockedPopup && (isLocked || basicInfoLocked || eventSectionLocked.significantEvent || eventSectionLocked.maintenance || eventSectionLocked.supervisorName) && (
         <div className="disamatic-locked-popup-overlay" onClick={() => setShowLockedPopup(false)}>
           <div className="disamatic-locked-popup-content" onClick={(e) => e.stopPropagation()}>
             <div className="disamatic-locked-popup-header">
@@ -1487,6 +1758,11 @@ const DisamaticProduct = () => {
               {basicInfoLocked && (
                 <p className="disamatic-locked-popup-message">
                   Basic information (Shift, Incharge, Members) is locked for this date. These fields cannot be modified.
+                </p>
+              )}
+              {(eventSectionLocked.significantEvent || eventSectionLocked.maintenance || eventSectionLocked.supervisorName) && (
+                <p className="disamatic-locked-popup-message">
+                  Some event section fields are locked. Saved fields cannot be modified. Use the Reports page to edit.
                 </p>
               )}
               {isLocked && (

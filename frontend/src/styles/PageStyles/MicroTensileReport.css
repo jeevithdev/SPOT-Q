@@ -1,11 +1,23 @@
 /* Micro Tensile Report Styles */
 .microtensile-report-container {
-  padding: 20px;
-  background: transparent;
+  padding: 0 !important;
+  margin: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  border-radius: 0 !important;
+  border: none !important;
+  width: 100%;
+}
+
+.microtensile-report-container.container {
+  padding: 0 !important;
+  margin: 0 !important;
+  max-width: 100% !important;
 }
 
 .microtensile-tabs-container {
   margin-bottom: 20px;
+  background: transparent;
 }
 
 .microtensile-tabs {
@@ -39,19 +51,20 @@
 }
 
 .microtensile-report-wrapper {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-  padding: 24px;
+  display: none;
 }
 
 .microtensile-report-title {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 24px;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 24px 0;
   padding-bottom: 16px;
-  border-bottom: 2px solid #e2e8f0;
+  border-bottom: 2px solid #e5e7eb;
+  background: transparent !important;
 }
 
 .microtensile-report-title h3 {
@@ -63,31 +76,38 @@
 
 .microtensile-filter-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr auto;
+  grid-template-columns: auto 1fr auto;
   gap: 16px;
   align-items: end;
   margin-bottom: 24px;
-  padding: 20px;
-  background: #f8fafc;
-  border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  padding: 0;
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
 }
 
 .microtensile-filter-group {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  background: transparent !important;
+  max-width: 200px;
 }
 
 .microtensile-filter-group label {
   font-weight: 500;
   color: #374151;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
+}
+
+.microtensile-filter-group .custom-date-picker {
+  width: 180px;
 }
 
 .microtensile-filter-btn-container {
   display: flex;
   align-items: end;
+  background: transparent !important;
 }
 
 .microtensile-filter-btn {
@@ -124,7 +144,8 @@
 
 .microtensile-table {
   width: 100%;
-  border-collapse: collapse;
+  border-collapse: separate;
+  border-spacing: 0;
   background: white;
 }
 
@@ -138,15 +159,81 @@
   font-weight: 600;
   color: #374151;
   border-bottom: 2px solid #e2e8f0;
+  border-right: 1px solid #e2e8f0;
   font-size: 0.875rem;
   white-space: nowrap;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: #f8fafc;
 }
 
 .microtensile-table td {
   padding: 12px 8px;
   border-bottom: 1px solid #f1f5f9;
+  border-right: 1px solid #f1f5f9;
   color: #64748b;
   font-size: 0.875rem;
+  white-space: nowrap;
+  background: white;
+}
+
+/* Sticky Date Column */
+.microtensile-table th.sticky-date,
+.microtensile-table td.sticky-date {
+  position: sticky;
+  left: 0;
+  z-index: 15;
+  background: white !important;
+  background-color: white !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  min-width: 100px;
+  width: 100px;
+  max-width: 100px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-right: 1px solid #e2e8f0;
+}
+
+.microtensile-table thead th.sticky-date {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+  z-index: 16;
+}
+
+.microtensile-table tbody tr:hover td.sticky-date {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+}
+
+/* Sticky Item Column */
+.microtensile-table th.sticky-item,
+.microtensile-table td.sticky-item {
+  position: sticky;
+  left: 100px; /* Matches Date column width */
+  z-index: 14;
+  background: white !important;
+  background-color: white !important;
+  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+  min-width: 150px;
+  width: 150px;
+  max-width: 150px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  border-right: 1px solid #e2e8f0;
+}
+
+.microtensile-table thead th.sticky-item {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
+  z-index: 16;
+}
+
+.microtensile-table tbody tr:hover td.sticky-item {
+  background: #f8fafc !important;
+  background-color: #f8fafc !important;
 }
 
 .microtensile-table tbody tr:hover {
@@ -302,10 +389,45 @@
 }
 
 /* Responsive Design */
+@media (max-width: 1024px) {
+  .microtensile-filter-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .microtensile-filter-group {
+    max-width: 100%;
+  }
+  
+  .microtensile-filter-group .custom-date-picker {
+    width: 100%;
+  }
+  
+  .microtensile-filter-btn-container {
+    align-items: stretch;
+  }
+  
+  .microtensile-filter-btn {
+    width: 100%;
+  }
+}
+
 @media (max-width: 768px) {
+  .microtensile-report-container {
+    padding: 0;
+  }
+
   .microtensile-filter-grid {
     grid-template-columns: 1fr;
     gap: 12px;
+  }
+  
+  .microtensile-filter-group {
+    max-width: 100%;
+  }
+  
+  .microtensile-filter-group .custom-date-picker {
+    width: 100%;
   }
   
   .microtensile-tabs {

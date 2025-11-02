@@ -1,19 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { Save, X, RefreshCw, FileText, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { DatePicker } from '../Components/Buttons';
+import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroTensile.css';
 
 const MicroTensile = () => {
-  const navigate = useNavigate();
   const inputRefs = useRef({});
   const [formData, setFormData] = useState({
-    dateOfInspection: '',
+    disa: '',
     item: '',
     dateCode: '',
     heatCode: '',
-    disa: [],
     barDia: '',
     gaugeLength: '',
     maxLoad: '',
@@ -27,9 +23,11 @@ const MicroTensile = () => {
 
   const [submitLoading, setSubmitLoading] = useState(false);
 
+  const disaOptions = ['DISA I', 'DISA II', 'DISA III', 'DISA IV'];
+
   // Field order for keyboard navigation
-  const fieldOrder = ['dateOfInspection', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
-                     'maxLoad', 'yieldLoad', 'tensileStrength', 'yieldStrength', 'elongation', 'testedBy', 'remarks'];
+  const fieldOrder = ['disa', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
+                     'maxLoad', 'yieldLoad', 'tensileStrength', 'yieldStrength', 'elongation', 'remarks', 'testedBy'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -37,19 +35,6 @@ const MicroTensile = () => {
       ...prev,
       [name]: value
     }));
-  };
-
-  const handleDisaChange = (disaValue) => {
-    setFormData(prev => {
-      const currentDisa = prev.disa || [];
-      const newDisa = currentDisa.includes(disaValue)
-        ? currentDisa.filter(d => d !== disaValue)
-        : [...currentDisa, disaValue];
-      return {
-        ...prev,
-        disa: newDisa
-      };
-    });
   };
 
   const handleKeyDown = (e, field) => {
@@ -64,16 +49,10 @@ const MicroTensile = () => {
     }
   };
 
-
   const handleSubmit = async () => {
-    const required = ['dateOfInspection', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
+    const required = ['disa', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
                      'maxLoad', 'yieldLoad', 'tensileStrength', 'yieldStrength', 'elongation', 'testedBy'];
     const missing = required.filter(field => !formData[field]);
-    
-    // Check if at least one Disa is selected
-    if (!formData.disa || formData.disa.length === 0) {
-      missing.push('disa');
-    }
 
     if (missing.length > 0) {
       alert(`Please fill in the following required fields: ${missing.join(', ')}`);
@@ -82,17 +61,12 @@ const MicroTensile = () => {
 
     try {
       setSubmitLoading(true);
-      // Combine dateCode and heatCode for backward compatibility with backend
-      const submitData = {
-        ...formData,
-        dateCodeHeatCode: `${formData.dateCode} & ${formData.heatCode}`.trim()
-      };
-      const data = await api.post('/v1/micro-tensile-tests', submitData);
+      const data = await api.post('/v1/micro-tensile-tests', formData);
       
       if (data.success) {
         alert('Micro tensile test entry created successfully!');
         setFormData({
-          dateOfInspection: '', item: '', dateCode: '', heatCode: '', disa: [], barDia: '', gaugeLength: '',
+          disa: '', item: '', dateCode: '', heatCode: '', barDia: '', gaugeLength: '',
           maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
           remarks: '', testedBy: ''
         });
@@ -108,11 +82,11 @@ const MicroTensile = () => {
 
   const handleReset = () => {
     setFormData({
-      dateOfInspection: '', item: '', dateCode: '', heatCode: '', disa: [], barDia: '', gaugeLength: '',
+      disa: '', item: '', dateCode: '', heatCode: '', barDia: '', gaugeLength: '',
       maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
       remarks: '', testedBy: ''
     });
-    inputRefs.current.dateOfInspection?.focus();
+    inputRefs.current.disa?.focus();
   };
 
   return (
@@ -123,44 +97,44 @@ const MicroTensile = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Micro Tensile Test - Entry Form
+            <button 
+              className="microtensile-view-report-btn"
+              onClick={() => window.location.href = "/micro-tensile/report"}
+              title="View Reports"
+            >
+              <FileText size={14} />
+              <span>View Reports</span>
+            </button>
           </h2>
         </div>
         <div className="microtensile-header-buttons">
-          <button className="microtensile-view-report-btn" onClick={() => navigate('/micro-tensile/report')} type="button">
-            <div className="microtensile-view-report-icon">
-              <FileText size={16} />
-            </div>
-            <span className="microtensile-view-report-text">View Reports</span>
+          <button 
+            className="microtensile-reset-btn"
+            onClick={handleReset}
+          >
+            <RefreshCw size={18} />
+            Reset Form
           </button>
         </div>
       </div>
 
       <div className="microtensile-form-grid">
-            <div className="microtensile-form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>Disa *</label>
-              <div className="microtensile-disa-checkboxes">
-                {[1, 2, 3, 4].map(num => (
-                  <label key={num} className="microtensile-checkbox-label">
-                    <input
-                      type="checkbox"
-                      checked={formData.disa.includes(num.toString())}
-                      onChange={() => handleDisaChange(num.toString())}
-                    />
-                    <span>Disa {num}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-
             <div className="microtensile-form-group">
-              <label>Date of Inspection *</label>
-              <DatePicker
-                ref={el => inputRefs.current.dateOfInspection = el}
-                name="dateOfInspection"
-                value={formData.dateOfInspection}
+              <label>DISA *</label>
+              <select
+                ref={el => inputRefs.current.disa = el}
+                name="disa"
+                value={formData.disa}
                 onChange={handleChange}
-                onKeyDown={e => handleKeyDown(e, 'dateOfInspection')}
-              />
+                onKeyDown={e => handleKeyDown(e, 'disa')}
+              >
+                <option value="">Select DISA</option>
+                {disaOptions.map((option) => (
+                  <option key={option} value={option}>
+                    {option}
+                  </option>
+                ))}
+              </select>
             </div>
 
             <div className="microtensile-form-group">
@@ -185,7 +159,7 @@ const MicroTensile = () => {
                 value={formData.dateCode}
                 onChange={handleChange}
                 onKeyDown={e => handleKeyDown(e, 'dateCode')}
-                placeholder="e.g: 2024"
+                placeholder="e.g: 2024-HC"
               />
             </div>
 
@@ -198,7 +172,7 @@ const MicroTensile = () => {
                 value={formData.heatCode}
                 onChange={handleChange}
                 onKeyDown={e => handleKeyDown(e, 'heatCode')}
-                placeholder="e.g: HC-012"
+                placeholder="e.g: 012"
               />
             </div>
 
@@ -300,6 +274,19 @@ const MicroTensile = () => {
               />
             </div>
 
+            <div className="microtensile-form-group full-width">
+              <label>Remarks</label>
+              <textarea
+                ref={el => inputRefs.current.remarks = el}
+                name="remarks"
+                value={formData.remarks}
+                onChange={handleChange}
+                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleKeyDown(e, 'remarks'); } }}
+                rows="3"
+                placeholder="Enter any additional notes or observations..."
+              />
+            </div>
+
             <div className="microtensile-form-group">
               <label>Tested By *</label>
               <input
@@ -312,32 +299,17 @@ const MicroTensile = () => {
                 placeholder="e.g: John Smith"
               />
             </div>
-
-            <div className="microtensile-form-group full-width">
-              <label>Remarks</label>
-              <textarea
-                ref={el => inputRefs.current.remarks = el}
-                name="remarks"
-                value={formData.remarks}
-                onChange={handleChange}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-                rows="3"
-                placeholder="Enter any additional notes or observations..."
-              />
-            </div>
           </div>
 
       <div className="microtensile-submit-container">
-        <button onClick={handleSubmit} disabled={submitLoading} className="microtensile-submit-btn" type="button">
+        <button 
+          className="microtensile-submit-btn" 
+          type="button"
+          onClick={handleSubmit}
+          disabled={submitLoading}
+        >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </button>
-      </div>
-
-      <div className="microtensile-reset-container">
-        <button onClick={handleReset} className="microtensile-reset-btn">
-          <RefreshCw size={18} />
-          Reset
         </button>
       </div>
     </>

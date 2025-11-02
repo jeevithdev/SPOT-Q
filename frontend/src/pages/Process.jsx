@@ -1,14 +1,12 @@
 import React, { useState, useRef } from 'react';
-import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import CustomDatePicker from '../Components/CustomDatePicker';
+import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
+import { Button, DatePicker } from '../Components/Buttons';
 import api from '../utils/api';
 import '../styles/PageStyles/Process.css';
 
 export default function ProcessControl() {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState({
-    partName: '', date: '', heatCode: '', quantityOfMoulds: '', metalCompositionC: '', metalCompositionSi: '',
+    date: '', disa: '', partName: '', datecode: '', heatcode: '', quantityOfMoulds: '', metalCompositionC: '', metalCompositionSi: '',
     metalCompositionMn: '', metalCompositionP: '', metalCompositionS: '', metalCompositionMgFL: '',
     metalCompositionCr: '', metalCompositionCu: '', timeOfPouring: '', pouringTemperature: '',
     ppCode: '', treatmentNo: '', fcNo: '', heatNo: '', conNo: '', tappingTime: '', correctiveAdditionC: '',
@@ -21,9 +19,9 @@ export default function ProcessControl() {
   const inputRefs = useRef({});
   const [submitLoading, setSubmitLoading] = useState(false);
   
-  const fieldOrder = ['partName', 'date', 'heatCode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
-    'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCu',
-    'metalCompositionCr', 'timeOfPouring', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNo', 'heatNo', 'conNo',
+  const fieldOrder = ['date', 'disa', 'partName', 'datecode', 'heatcode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
+    'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCr',
+    'metalCompositionCu', 'timeOfPouring', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNo', 'heatNo', 'conNo',
     'tappingTime', 'correctiveAdditionC', 'correctiveAdditionSi', 'correctiveAdditionMn', 'correctiveAdditionS',
     'correctiveAdditionCr', 'correctiveAdditionCu', 'correctiveAdditionSn', 'tappingWt', 'mg', 'resMgConvertor',
     'recOfMg', 'streamInoculant', 'pTime', 'remarks'];
@@ -45,36 +43,19 @@ export default function ProcessControl() {
 
   const handleSubmit = async () => {
     // Validate required fields
-    const required = ['partName', 'date', 'heatCode'];
-    const missing = [];
-    
-    required.forEach(field => {
-      if (!formData[field]) {
-        missing.push(field);
-      }
-    });
-
-    if (missing.length > 0) {
-      alert(`Please fill in the following required fields: ${missing.join(', ')}`);
+    if (!formData.date) {
+      alert('Please fill in Date');
+      return;
+    }
+    if (!formData.disa) {
+      alert('Please fill in DISA');
       return;
     }
 
     try {
       setSubmitLoading(true);
       
-      // Combine separate fields for backward compatibility
-      const partNameDateHeatCode = `${formData.partName} / ${formData.date} / ${formData.heatCode}`;
-      const streamInnoculantPTime = `${formData.streamInoculant} / ${formData.pTime}`;
-      const fcNoHeatNo = `${formData.fcNo} / ${formData.heatNo}`;
-      
-      const newRecord = {
-        ...formData,
-        partNameDateHeatCode: partNameDateHeatCode.trim(),
-        streamInnoculantPTime: streamInnoculantPTime.trim(),
-        fcNoHeatNo: fcNoHeatNo.trim()
-      };
-      
-      const data = await api.post('/v1/process-records', newRecord);
+      const data = await api.post('/v1/process-records', formData);
       
       if (data.success) {
         alert('Process control entry created successfully!');
@@ -92,7 +73,7 @@ export default function ProcessControl() {
     const resetData = {};
     Object.keys(formData).forEach(key => resetData[key] = '');
     setFormData(resetData);
-    inputRefs.current.partName?.focus();
+    inputRefs.current.date?.focus();
   };
 
   return (
@@ -103,36 +84,96 @@ export default function ProcessControl() {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Process Control - Entry Form
+            <button 
+              className="process-view-report-btn"
+              onClick={() => window.location.href = "/process/report"}
+              title="View Reports"
+            >
+              <FileText size={14} />
+              <span>View Reports</span>
+            </button>
           </h2>
         </div>
         <div className="process-header-buttons">
-          <button className="process-view-report-btn" onClick={() => navigate('/process/report')} type="button">
-            <div className="process-view-report-icon">
-              <FileText size={16} />
-            </div>
-            <span className="process-view-report-text">View Reports</span>
+          <button 
+            className="process-reset-btn"
+            onClick={handleReset}
+          >
+            <RefreshCw size={18} />
+            Reset Form
           </button>
         </div>
       </div>
 
       <div className="process-form-grid">
-            <div className="process-form-group">
-              <label>Part Name</label>
-              <input ref={el => inputRefs.current.partName = el} type="text" name="partName" value={formData.partName} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'partName')} placeholder="e.g., ABC-123" />
+            <div className="section-header" style={{gridColumn: '1 / -1'}}>
+              <h3>Primary</h3>
             </div>
 
             <div className="process-form-group">
-              <label>Date</label>
-              <CustomDatePicker
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
+              <label>Date *</label>
+              <DatePicker 
+                ref={el => inputRefs.current.date = el} 
+                name="date" 
+                value={formData.date} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'date')} 
+              />
+            </div>
+
+            <div className="process-form-group">
+              <label>DISA *</label>
+              <input 
+                ref={el => inputRefs.current.disa = el} 
+                type="text" 
+                name="disa" 
+                value={formData.disa} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'disa')} 
+                placeholder="e.g., DISA I, DISA II, DISA III, DISA IV" 
+              />
+            </div>
+
+            {/* Divider line */}
+            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
+
+            <div className="process-form-group">
+              <label>Part Name</label>
+              <input 
+                ref={el => inputRefs.current.partName = el} 
+                type="text" 
+                name="partName" 
+                value={formData.partName} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'partName')} 
+                placeholder="e.g., ABC-123" 
+              />
+            </div>
+
+            <div className="process-form-group">
+              <label>Date Code</label>
+              <input 
+                ref={el => inputRefs.current.datecode = el} 
+                type="text" 
+                name="datecode" 
+                value={formData.datecode} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'datecode')} 
+                placeholder="e.g., 29-10-2025" 
               />
             </div>
 
             <div className="process-form-group">
               <label>Heat Code</label>
-              <input ref={el => inputRefs.current.heatCode = el} type="text" name="heatCode" value={formData.heatCode} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'heatCode')} placeholder="e.g., HC-001" />
+              <input 
+                ref={el => inputRefs.current.heatcode = el} 
+                type="text" 
+                name="heatcode" 
+                value={formData.heatcode} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'heatcode')} 
+                placeholder="e.g., HC-001" 
+              />
             </div>
 
             <div className="process-form-group">
@@ -150,6 +191,9 @@ export default function ProcessControl() {
                 <input ref={r => inputRefs.current[`metalComposition${el}`] = r} type="number" name={`metalComposition${el}`} step="0.001" value={formData[`metalComposition${el}`]} onChange={handleChange} onKeyDown={e => handleKeyDown(e, `metalComposition${el}`)} placeholder="%" />
               </div>
             ))}
+
+            {/* Divider line */}
+            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
             <div className="process-form-group">
               <label>Time of Pouring</label>
@@ -173,12 +217,28 @@ export default function ProcessControl() {
 
             <div className="process-form-group">
               <label>F/C No.</label>
-              <input ref={el => inputRefs.current.fcNo = el} type="text" name="fcNo" value={formData.fcNo} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'fcNo')} placeholder="Enter F/C No." />
+              <input 
+                ref={el => inputRefs.current.fcNo = el} 
+                type="text" 
+                name="fcNo" 
+                value={formData.fcNo} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'fcNo')} 
+                placeholder="Enter F/C No." 
+              />
             </div>
 
             <div className="process-form-group">
               <label>Heat No</label>
-              <input ref={el => inputRefs.current.heatNo = el} type="text" name="heatNo" value={formData.heatNo} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'heatNo')} placeholder="Enter Heat No" />
+              <input 
+                ref={el => inputRefs.current.heatNo = el} 
+                type="text" 
+                name="heatNo" 
+                value={formData.heatNo} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'heatNo')} 
+                placeholder="Enter Heat No" 
+              />
             </div>
 
             <div className="process-form-group">
@@ -201,6 +261,9 @@ export default function ProcessControl() {
                 <input ref={r => inputRefs.current[`correctiveAddition${el}`] = r} type="number" name={`correctiveAddition${el}`} step="0.01" value={formData[`correctiveAddition${el}`]} onChange={handleChange} onKeyDown={e => handleKeyDown(e, `correctiveAddition${el}`)} placeholder="Kgs" />
               </div>
             ))}
+
+            {/* Divider line */}
+            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
             <div className="process-form-group">
               <label>Tapping Wt (Kgs)</label>
@@ -258,20 +321,13 @@ export default function ProcessControl() {
 
       <div className="process-submit-container">
         <button 
-          onClick={handleSubmit} 
           className="process-submit-btn" 
           type="button"
+          onClick={handleSubmit}
           disabled={submitLoading}
         >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}
-        </button>
-      </div>
-
-      <div className="process-reset-container">
-        <button onClick={handleReset} className="process-reset-btn">
-          <RefreshCw size={18} />
-          Reset
         </button>
       </div>
     </>

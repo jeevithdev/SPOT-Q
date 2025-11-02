@@ -1,8 +1,10 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import { Save, FileText } from 'lucide-react';
+import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
+import api from '../../utils/api';
 import '../../styles/PageStyles/Sandlab/FoundarySandTestingNote.css';
+import '../../styles/PageStyles/Sandlab/SandTestingRecord.css';
 
 const initialFormData = {
   date: new Date().toISOString().split('T')[0],
@@ -10,154 +12,397 @@ const initialFormData = {
   sandPlant: "",
   compactibilitySetting: "",
   shearStrengthSetting: "",
-  // Table 1
-  totalClayTest1Input1: '',
-  totalClayTest1Input2: '',
-  totalClayTest1Input3: '',
-  totalClayTest2Input1: '',
-  totalClayTest2Input2: '',
-  totalClayTest2Input3: '',
-  activeClayTest1Input1: '',
-  activeClayTest1Input2: '',
-  activeClayTest1Input3: '',
-  activeClayTest2Input1: '',
-  activeClayTest2Input2: '',
-  activeClayTest2Input3: '',
-  deadClayTest1Input1: '',
-  deadClayTest1Input2: '',
-  deadClayTest2Input1: '',
-  deadClayTest2Input2: '',
-  vcmTest1Input1: '',
-  vcmTest1Input2: '',
-  vcmTest1Input3: '',
-  vcmTest2Input1: '',
-  vcmTest2Input2: '',
-  vcmTest2Input3: '',
-  loiTest1Input1: '',
-  loiTest1Input2: '',
-  loiTest1Input3: '',
-  loiTest2Input1: '',
-  loiTest2Input2: '',
-  loiTest2Input3: '',
-  // Table 2
-  sieve1700Test1: '',
-  sieve1700Test2: '',
-  sieve850Test1: '',
-  sieve850Test2: '',
-  sieve600Test1: '',
-  sieve600Test2: '',
-  sieve425Test1: '',
-  sieve425Test2: '',
-  sieve300Test1: '',
-  sieve300Test2: '',
-  sieve212Test1: '',
-  sieve212Test2: '',
-  sieve150Test1: '',
-  sieve150Test2: '',
-  sieve106Test1: '',
-  sieve106Test2: '',
-  sieve75Test1: '',
-  sieve75Test2: '',
-  sieve53Test1: '',
-  sieve53Test2: '',
-  sievePanTest1: '',
-  sievePanTest2: '',
-  sieveTotalTest1: '',
-  sieveTotalTest2: '',
-  compactabilityTest1: '',
-  compactabilityTest2: '',
-  permeabilityTest1: '',
-  permeabilityTest2: '',
-  gcsTest1: '',
-  gcsTest2: '',
-  moistureTest1: '',
-  moistureTest2: '',
-  bentonitedTest1: '',
-  bentonitedTest2: '',
-  coalDustTest1: '',
-  coalDustTest2: '',
-  hopperLevelTest1: '',
-  hopperLevelTest2: '',
-  shearStrengthTest1: '',
-  shearStrengthTest2: '',
-  dustCollectorSettingsTest1: '',
-  dustCollectorSettingsTest2: '',
-  returnSandMoistureTest1: '',
-  returnSandMoistureTest2: '',
-  // Table 3
-  mf5Test1: '',
-  mf5Test2: '',
-  mf10Test1: '',
-  mf10Test2: '',
-  mf20Test1: '',
-  mf20Test2: '',
-  mf30Test1: '',
-  mf30Test2: '',
-  mf40Test1: '',
-  mf40Test2: '',
-  mf50Test1: '',
-  mf50Test2: '',
-  mf70Test1: '',
-  mf70Test2: '',
-  mf100Test1: '',
-  mf100Test2: '',
-  mf140Test1: '',
-  mf140Test2: '',
-  mf200Test1: '',
-  mf200Test2: '',
-  mf300Test1: '',
-  mf300Test2: '',
-  mfRemainingTest1: '',
-  mfRemainingTest2: '',
-  // Table 4
-  afsNoTest1: '',
-  afsNoTest2: '',
-  finesTest1: '',
-  finesTest2: '',
-  gdTest1: '',
-  gdTest2: '',
-  remarks: ''
+  clayTests: {
+    test1: { 
+      totalClay: { input1: "", input2: "", input3: "", solution: "" }, 
+      activeClay: { input1: "", input2: "", solution: "" }, 
+      deadClay: { input1: "", input2: "", solution: "" }, 
+      vcm: { input1: "", input2: "", input3: "", solution: "" }, 
+      loi: { input1: "", input2: "", input3: "", solution: "" } 
+    },
+    test2: { 
+      totalClay: { input1: "", input2: "", input3: "", solution: "" }, 
+      activeClay: { input1: "", input2: "", solution: "" }, 
+      deadClay: { input1: "", input2: "", solution: "" }, 
+      vcm: { input1: "", input2: "", input3: "", solution: "" }, 
+      loi: { input1: "", input2: "", input3: "", solution: "" } 
+    }
+  },
+  test1: {
+    sieveSize: {
+      1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+      150: "", 106: "", 75: "", pan: "", total: ""
+    }
+  },
+  test2: {
+    sieveSize: {
+      1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+      150: "", 106: "", 75: "", pan: "", total: ""
+    }
+  },
+  mfTest: {
+    mf: {
+      5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
+      100: "", 140: "", 200: "", pan: "", total: ""
+    }
+  },
+  parameters: {
+    test1: {
+      gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+      mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+      hopperLevel: "", returnSand: ""
+    },
+    test2: {
+      gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+      mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+      hopperLevel: "", returnSand: ""
+    }
+  },
+  additionalData: {
+    test1: { afsNo: "", fines: "", gd: "" },
+    test2: { afsNo: "", fines: "", gd: "" }
+  },
+  remarks: ""
 };
 
 export default function FoundrySandTestingNote() {
   const navigate = useNavigate();
-  const [formData, setFormData] = useState(initialFormData);
+  
+  // Primary data (must be saved first)
+  const [primaryData, setPrimaryData] = useState({
+    date: new Date().toISOString().split('T')[0],
+    shift: "",
+    sandPlant: "",
+    compactibilitySetting: "",
+    shearStrengthSetting: ""
+  });
+  const [isPrimaryLocked, setIsPrimaryLocked] = useState(false);
+  const [checkingData, setCheckingData] = useState(false);
 
-  const handleInputChange = (field, value) => {
-      setFormData(prev => ({
+  // Check if primary data exists for date and shift combination
+  const checkExistingPrimaryData = async (date, shift) => {
+    if (!date || !shift) {
+      setIsPrimaryLocked(false);
+      return;
+    }
+
+    try {
+      setCheckingData(true);
+      const response = await api.get(`/v1/foundry-sand-testing-notes/primary?date=${encodeURIComponent(date)}&shift=${encodeURIComponent(shift)}`);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        const record = response.data[0];
+        // If record exists, lock primary fields and populate them
+        setIsPrimaryLocked(true);
+        setPrimaryData({
+          date: record.date ? new Date(record.date).toISOString().split('T')[0] : date,
+          shift: record.shift ? String(record.shift) : shift,
+          sandPlant: record.sandPlant ? String(record.sandPlant) : '',
+          compactibilitySetting: record.compactibilitySetting ? String(record.compactibilitySetting) : '',
+          shearStrengthSetting: record.shearStrengthSetting ? String(record.shearStrengthSetting) : ''
+        });
+        
+        // Also load existing section data
+        if (record.clayTests) setSectionData(prev => ({ ...prev, clayTests: record.clayTests }));
+        if (record.test1) setSectionData(prev => ({ ...prev, test1: record.test1 }));
+        if (record.test2) setSectionData(prev => ({ ...prev, test2: record.test2 }));
+        if (record.mfTest) setSectionData(prev => ({ ...prev, mfTest: record.mfTest }));
+        if (record.parameters) setSectionData(prev => ({ ...prev, parameters: record.parameters }));
+        if (record.additionalData) setSectionData(prev => ({ ...prev, additionalData: record.additionalData }));
+        if (record.remarks !== undefined) setSectionData(prev => ({ ...prev, remarks: String(record.remarks || '') }));
+      } else {
+        setIsPrimaryLocked(false);
+      }
+    } catch (error) {
+      console.error('Error checking primary data:', error);
+      setIsPrimaryLocked(false);
+    } finally {
+      setCheckingData(false);
+    }
+  };
+
+  // Check for primary data when date or shift changes
+  useEffect(() => {
+    if (primaryData.date && primaryData.shift) {
+      const timeoutId = setTimeout(() => {
+        checkExistingPrimaryData(primaryData.date, primaryData.shift);
+      }, 500);
+      return () => clearTimeout(timeoutId);
+    } else {
+      setIsPrimaryLocked(false);
+    }
+  }, [primaryData.date, primaryData.shift]);
+  
+  // Other sections data
+  const [sectionData, setSectionData] = useState({
+    clayTests: {
+      test1: { 
+        totalClay: { input1: "", input2: "", input3: "", solution: "" }, 
+        activeClay: { input1: "", input2: "", solution: "" }, 
+        deadClay: { input1: "", input2: "", solution: "" }, 
+        vcm: { input1: "", input2: "", input3: "", solution: "" }, 
+        loi: { input1: "", input2: "", input3: "", solution: "" } 
+      },
+      test2: { 
+        totalClay: { input1: "", input2: "", input3: "", solution: "" }, 
+        activeClay: { input1: "", input2: "", solution: "" }, 
+        deadClay: { input1: "", input2: "", solution: "" }, 
+        vcm: { input1: "", input2: "", input3: "", solution: "" }, 
+        loi: { input1: "", input2: "", input3: "", solution: "" } 
+      }
+    },
+    test1: {
+      sieveSize: {
+        1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+        150: "", 106: "", 75: "", pan: "", total: ""
+      }
+    },
+    test2: {
+      sieveSize: {
+        1700: "", 850: "", 600: "", 425: "", 300: "", 212: "", 
+        150: "", 106: "", 75: "", pan: "", total: ""
+      }
+    },
+    mfTest: {
+      mf: {
+        5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
+        100: "", 140: "", 200: "", pan: "", total: ""
+      }
+    },
+    parameters: {
+      test1: {
+        gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+        mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+        hopperLevel: "", returnSand: ""
+      },
+      test2: {
+        gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
+        mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
+        hopperLevel: "", returnSand: ""
+      }
+    },
+    additionalData: {
+      test1: { afsNo: "", fines: "", gd: "" },
+      test2: { afsNo: "", fines: "", gd: "" }
+    },
+    remarks: ""
+  });
+  
+  const [loadingStates, setLoadingStates] = useState({
+    primary: false,
+    clayParameters: false,
+    sieveTesting: false,
+    testParameters: false,
+    additionalData: false,
+    remarks: false
+  });
+
+  // Handle primary data changes
+  const handlePrimaryChange = (field, value) => {
+    setPrimaryData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Handle section data changes
+  const handleInputChange = (section, field, value, subField = null, subSubField = null) => {
+    if (subSubField) {
+      // For nested structure like clayTests.test1.totalClay.input1
+      setSectionData(prev => ({
         ...prev,
-          [field]: value
+        [section]: {
+          ...prev[section],
+          [field]: {
+            ...prev[section][field],
+            [subField]: {
+              ...prev[section][field][subField],
+              [subSubField]: value
+            }
+          }
+        }
       }));
-  };
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-      setFormData(prev => ({
+    } else if (subField) {
+      setSectionData(prev => ({
         ...prev,
-      [name]: value
-    }));
+        [section]: {
+          ...prev[section],
+          [field]: {
+            ...prev[section][field],
+            [subField]: value
+          }
+        }
+      }));
+    } else if (field) {
+      setSectionData(prev => ({
+        ...prev,
+        [section]: {
+          ...prev[section],
+          [field]: value
+        }
+      }));
+    } else {
+      setSectionData(prev => ({
+        ...prev,
+        [section]: value
+      }));
+    }
   };
 
-  const calculatePercentage = (input1, input2, input3) => {
-    const val1 = parseFloat(input1) || 0;
-    const val2 = parseFloat(input2) || 0;
-    const val3 = parseFloat(input3) || 0;
-    if (val3 === 0) return '';
-    const result = ((val1 - val2) / val3) * 100;
-    return result.toFixed(2) + '%';
+  const calculateClaySolution = (param, testNum) => {
+    const testData = sectionData.clayTests[testNum][param];
+    
+    if (!testData) return "";
+    
+    if (param === "activeClay") {
+      // activeClay: input1 x input2 = Solution %
+      const input1 = parseFloat(testData.input1) || 0;
+      const input2 = parseFloat(testData.input2) || 0;
+      const solution = input1 * input2;
+      return isNaN(solution) ? "" : solution.toFixed(2);
+    } else if (param === "deadClay") {
+      // deadClay: input1 - input2 = Solution %
+      const input1 = parseFloat(testData.input1) || 0;
+      const input2 = parseFloat(testData.input2) || 0;
+      const solution = input1 - input2;
+      return isNaN(solution) ? "" : solution.toFixed(2);
+    } else {
+      // totalClay, vcm, loi: (input1 - input2 / input3) x 100 = Solution %
+      const input1 = parseFloat(testData.input1) || 0;
+      const input2 = parseFloat(testData.input2) || 0;
+      const input3 = parseFloat(testData.input3) || 0;
+      if (input3 === 0) return "";
+      const solution = ((input1 - input2) / input3) * 100;
+      return isNaN(solution) ? "" : solution.toFixed(2);
+    }
   };
 
-  const calculateDeadClayPercentage = (input1, input2) => {
-    const val1 = parseFloat(input1) || 0;
-    const val2 = parseFloat(input2) || 0;
-    const result = val1 - val2;
-    if (result === 0 && !input1 && !input2) return '';
-    return result.toFixed(2) + '%';
+  // Handle primary data submission
+  const handlePrimarySubmit = async (e) => {
+    e.preventDefault();
+    
+    if (!primaryData.date || !primaryData.shift || !primaryData.sandPlant) {
+      alert('Please fill in Date, Shift, and Sand Plant fields');
+      return;
+    }
+
+    if (isPrimaryLocked) {
+      alert('Primary data is already saved. Use Reports page to edit.');
+      return;
+    }
+
+    try {
+      setLoadingStates(prev => ({ ...prev, primary: true }));
+      const payload = {
+        ...primaryData,
+        section: 'primary'
+      };
+
+      const response = await api.post('/v1/foundry-sand-testing-notes', payload);
+      
+      if (response.success) {
+        alert('Primary data saved successfully!');
+        setIsPrimaryLocked(true);
+      } else {
+        alert('Error: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Error saving primary data:', error);
+      alert('Failed to save: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoadingStates(prev => ({ ...prev, primary: false }));
+    }
   };
+
+  // Handle section-wise submissions
+  const handleSectionSubmit = async (sectionName) => {
+    if (!isPrimaryLocked) {
+      alert('Please save Primary data first');
+      return;
+    }
+
+    try {
+      setLoadingStates(prev => ({ ...prev, [sectionName]: true }));
+      
+      const payload = {
+        date: primaryData.date,
+        shift: primaryData.shift,
+        section: sectionName,
+        ...(sectionName === 'clayParameters' && { clayTests: sectionData.clayTests }),
+        ...(sectionName === 'sieveTesting' && { 
+          test1: sectionData.test1,
+          test2: sectionData.test2,
+          mfTest: sectionData.mfTest
+        }),
+        ...(sectionName === 'testParameters' && { parameters: sectionData.parameters }),
+        ...(sectionName === 'additionalData' && { additionalData: sectionData.additionalData }),
+        ...(sectionName === 'remarks' && { remarks: sectionData.remarks })
+      };
+
+      const response = await api.post('/v1/foundry-sand-testing-notes', payload);
+      
+      if (response.success) {
+        alert(`${sectionName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} saved successfully!`);
+      } else {
+        alert('Error: ' + response.message);
+      }
+    } catch (error) {
+      console.error(`Error saving ${sectionName}:`, error);
+      alert('Failed to save: ' + (error.response?.data?.message || error.message));
+    } finally {
+      setLoadingStates(prev => ({ ...prev, [sectionName]: false }));
+    }
+  };
+
+  // Handle section-wise resets
+  const handleSectionReset = (sectionName) => {
+    if (!window.confirm(`Are you sure you want to reset ${sectionName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}?`)) return;
+    
+    if (sectionName === 'clayParameters') {
+      setSectionData(prev => ({
+        ...prev,
+        clayTests: initialFormData.clayTests
+      }));
+    } else if (sectionName === 'sieveTesting') {
+      setSectionData(prev => ({
+        ...prev,
+        test1: initialFormData.test1,
+        test2: initialFormData.test2,
+        mfTest: initialFormData.mfTest
+      }));
+    } else if (sectionName === 'testParameters') {
+      setSectionData(prev => ({
+        ...prev,
+        parameters: initialFormData.parameters
+      }));
+    } else if (sectionName === 'additionalData') {
+      setSectionData(prev => ({
+        ...prev,
+        additionalData: initialFormData.additionalData
+      }));
+    } else if (sectionName === 'remarks') {
+      setSectionData(prev => ({
+        ...prev,
+        remarks: ""
+      }));
+    }
+  };
+
 
   const handleViewReport = () => {
     navigate('/sand-lab/foundry-sand-testing-note/report');
   };
+
+  const sieveData = [
+    { size: 1700, mf: 5 },
+    { size: 850, mf: 10 },
+    { size: 600, mf: 20 },
+    { size: 425, mf: 30 },
+    { size: 300, mf: 40 },
+    { size: 212, mf: 50 },
+    { size: 150, mf: 70 },
+    { size: 106, mf: 100 },
+    { size: 75, mf: 140 },
+    { size: 53, mf: 200 },
+    { size: "Pan", mf: 300 },
+  ];
 
   return (
     <>
@@ -166,1440 +411,675 @@ export default function FoundrySandTestingNote() {
         <div className="foundry-header-text">
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
-            Foundry Sand Testing Note - Entry Form
+            Foundry Sand Testing Note
+            <button 
+              className="foundry-view-report-btn"
+              onClick={handleViewReport}
+              title="View Reports"
+            >
+              <FileText size={14} />
+              <span>View Reports</span>
+            </button>
           </h2>
         </div>
         <div className="foundry-header-buttons">
-          <button className="foundry-view-report-btn" onClick={handleViewReport} type="button">
-            <div className="foundry-view-report-icon">
-              <FileText size={16} />
-            </div>
-            <span className="foundry-view-report-text">View Reports</span>
+          <button 
+            className="foundry-reset-btn"
+            onClick={() => {
+              if (window.confirm('Are you sure you want to reset the entire form? All unsaved data will be lost.')) {
+                setPrimaryData({
+                  date: new Date().toISOString().split('T')[0],
+                  shift: "",
+                  sandPlant: "",
+                  compactibilitySetting: "",
+                  shearStrengthSetting: ""
+                });
+                setIsPrimaryLocked(false);
+                setSectionData({
+                  clayTests: initialFormData.clayTests,
+                  test1: initialFormData.test1,
+                  test2: initialFormData.test2,
+                  mfTest: initialFormData.mfTest,
+                  parameters: initialFormData.parameters,
+                  additionalData: initialFormData.additionalData,
+                  remarks: ""
+                });
+              }
+            }}
+          >
+            <RefreshCw size={18} />
+            Reset Form
           </button>
         </div>
       </div>
 
+      {/* Primary Section */}
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Primary</h3>
+        {checkingData && (
+          <div className="foundry-checking-message">
+            Checking for existing data...
+          </div>
+        )}
         <div className="foundry-form-grid">
-          {/* Basic Info Section */}
-          <h3 className="foundry-section-title">Basic Information</h3>
           <div className="foundry-form-group">
-            <label>Sand Plant</label>
-            <input
-              type="text"
-              placeholder="e.g. DISA"
-              value={formData.sandPlant}
-              onChange={(e) => handleInputChange("sandPlant", e.target.value)}
-            />
-          </div>
-          <div className="foundry-form-group">
-            <label>Date</label>
+            <label>Date *</label>
             <CustomDatePicker
-              value={formData.date}
-              onChange={(e) => handleInputChange("date", e.target.value)}
+              value={primaryData.date}
+              onChange={(e) => {
+                const dateValue = e?.target?.value || e || '';
+                handlePrimaryChange("date", dateValue);
+              }}
               name="date"
+              disabled={isPrimaryLocked || checkingData}
+              style={{
+                backgroundColor: isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                cursor: isPrimaryLocked ? 'not-allowed' : 'text'
+              }}
             />
           </div>
-          <div className="foundry-form-group">
-            <label>Shift</label>
-            <input
-              type="text"
-              placeholder="e.g. 2nd Shift"
-              value={formData.shift}
-              onChange={(e) => handleInputChange("shift", e.target.value)}
-            />
-          </div>
-          <div className="foundry-form-group">
-            <label>Compactability Setting</label>
-            <input
-              type="text"
-              placeholder="e.g. J.C. mode"
-              value={formData.compactibilitySetting}
-              onChange={(e) => handleInputChange("compactibilitySetting", e.target.value)}
-            />
-          </div>
-          <div className="foundry-form-group">
-            <label>Shear/Mould Strength Setting</label>
-            <input
-              type="text"
-              placeholder="e.g. MP.VOX"
-              value={formData.shearStrengthSetting}
-              onChange={(e) => handleInputChange("shearStrengthSetting", e.target.value)}
-            />
-          </div>
+        <div className="foundry-form-group">
+          <label>Shift *</label>
+          <input
+            type="text"
+            placeholder="e.g. 2nd Shift"
+            value={primaryData.shift}
+            onChange={(e) => handlePrimaryChange("shift", e.target.value)}
+            disabled={isPrimaryLocked || checkingData}
+            readOnly={isPrimaryLocked}
+            style={{
+              backgroundColor: isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+              cursor: isPrimaryLocked ? 'not-allowed' : 'text'
+            }}
+          />
+        </div>
+        <div className="foundry-form-group">
+          <label>Sand Plant *</label>
+          <input
+            type="text"
+            placeholder="e.g. DISA"
+            value={primaryData.sandPlant}
+            onChange={(e) => handlePrimaryChange("sandPlant", e.target.value)}
+            disabled={isPrimaryLocked || checkingData}
+            readOnly={isPrimaryLocked}
+            style={{
+              backgroundColor: isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+              cursor: isPrimaryLocked ? 'not-allowed' : 'text'
+            }}
+          />
+        </div>
+        <div className="foundry-form-group">
+          <label>Compactability Setting</label>
+          <input
+            type="text"
+            placeholder="e.g. J.C. mode"
+            value={primaryData.compactibilitySetting}
+            onChange={(e) => handlePrimaryChange("compactibilitySetting", e.target.value)}
+            disabled={isPrimaryLocked || checkingData}
+            readOnly={isPrimaryLocked}
+            style={{
+              backgroundColor: isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+              cursor: isPrimaryLocked ? 'not-allowed' : 'text'
+            }}
+          />
+        </div>
+        <div className="foundry-form-group">
+          <label>Shear/Mould Strength Setting</label>
+          <input
+            type="text"
+            placeholder="e.g. MP.VOX"
+            value={primaryData.shearStrengthSetting}
+            onChange={(e) => handlePrimaryChange("shearStrengthSetting", e.target.value)}
+            disabled={isPrimaryLocked || checkingData}
+            readOnly={isPrimaryLocked}
+            style={{
+              backgroundColor: isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+              cursor: isPrimaryLocked ? 'not-allowed' : 'text'
+            }}
+          />
+        </div>
+      </div>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+        <button
+          type="button"
+          onClick={handlePrimarySubmit}
+          disabled={loadingStates.primary || checkingData || isPrimaryLocked || !primaryData.date || !primaryData.shift || !primaryData.sandPlant}
+          className="foundry-submit-btn"
+          title={isPrimaryLocked ? 'Primary data is already saved. Use Reports page to edit.' : 'Save Primary'}
+        >
+          {loadingStates.primary ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+          {loadingStates.primary ? 'Saving...' : (isPrimaryLocked ? 'Primary Data Locked' : 'Save Primary')}
+        </button>
+      </div>
+      </div>
 
-          {/* Table 1 */}
-          <h3 className="foundry-section-title">Table 1</h3>
-          <div className="foundry-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <table className="foundry-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>Parameters</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>TEST - 1</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>TEST - 2</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Total Clay</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="totalClayTest1Input1"
-                        value={formData.totalClayTest1Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                      <input
-                        type="number"
-                        name="totalClayTest1Input2"
-                        value={formData.totalClayTest1Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>/</span>
-                      <input
-                        type="number"
-                        name="totalClayTest1Input3"
-                        value={formData.totalClayTest1Input3}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculatePercentage(formData.totalClayTest1Input1, formData.totalClayTest1Input2, formData.totalClayTest1Input3)}
-                      </span>
-                    </div>
-                    </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="totalClayTest2Input1"
-                        value={formData.totalClayTest2Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                      <input
-                        type="number"
-                        name="totalClayTest2Input2"
-                        value={formData.totalClayTest2Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>/</span>
-                      <input
-                        type="number"
-                        name="totalClayTest2Input3"
-                        value={formData.totalClayTest2Input3}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculatePercentage(formData.totalClayTest2Input1, formData.totalClayTest2Input2, formData.totalClayTest2Input3)}
-                      </span>
-                    </div>
-                    </td>
+      {/* Clay Parameters */}
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Clay Parameters</h3>
+            <div className="foundry-table-wrapper">
+              <table className="foundry-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
                   </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Active Clay</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="activeClayTest1Input1"
-                        value={formData.activeClayTest1Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                      <input
-                        type="number"
-                        name="activeClayTest1Input2"
-                        value={formData.activeClayTest1Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>/</span>
-                      <input
-                        type="number"
-                        name="activeClayTest1Input3"
-                        value={formData.activeClayTest1Input3}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculatePercentage(formData.activeClayTest1Input1, formData.activeClayTest1Input2, formData.activeClayTest1Input3)}
-                      </span>
-                    </div>
-                    </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="activeClayTest2Input1"
-                        value={formData.activeClayTest2Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                      <input
-                        type="number"
-                        name="activeClayTest2Input2"
-                        value={formData.activeClayTest2Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>/</span>
-                      <input
-                        type="number"
-                        name="activeClayTest2Input3"
-                        value={formData.activeClayTest2Input3}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculatePercentage(formData.activeClayTest2Input1, formData.activeClayTest2Input2, formData.activeClayTest2Input3)}
-                      </span>
-                    </div>
-                    </td>
-                  </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Dead Clay</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="deadClayTest1Input1"
-                        value={formData.deadClayTest1Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                      <input
-                        type="number"
-                        name="deadClayTest1Input2"
-                        value={formData.deadClayTest1Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculateDeadClayPercentage(formData.deadClayTest1Input1, formData.deadClayTest1Input2)}
-                      </span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="deadClayTest2Input1"
-                        value={formData.deadClayTest2Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                    <input
-                        type="number"
-                        name="deadClayTest2Input2"
-                        value={formData.deadClayTest2Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculateDeadClayPercentage(formData.deadClayTest2Input1, formData.deadClayTest2Input2)}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>VCM</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="vcmTest1Input1"
-                        value={formData.vcmTest1Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                      <input
-                        type="number"
-                        name="vcmTest1Input2"
-                        value={formData.vcmTest1Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>/</span>
-                    <input
-                        type="number"
-                        name="vcmTest1Input3"
-                        value={formData.vcmTest1Input3}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculatePercentage(formData.vcmTest1Input1, formData.vcmTest1Input2, formData.vcmTest1Input3)}
-                      </span>
-                    </div>
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="vcmTest2Input1"
-                        value={formData.vcmTest2Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                      <input
-                        type="number"
-                        name="vcmTest2Input2"
-                        value={formData.vcmTest2Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>/</span>
-                    <input
-                        type="number"
-                        name="vcmTest2Input3"
-                        value={formData.vcmTest2Input3}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculatePercentage(formData.vcmTest2Input1, formData.vcmTest2Input2, formData.vcmTest2Input3)}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>LOI</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="loiTest1Input1"
-                        value={formData.loiTest1Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                      <input
-                        type="number"
-                        name="loiTest1Input2"
-                        value={formData.loiTest1Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>/</span>
-                      <input
-                        type="number"
-                        name="loiTest1Input3"
-                        value={formData.loiTest1Input3}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculatePercentage(formData.loiTest1Input1, formData.loiTest1Input2, formData.loiTest1Input3)}
-                      </span>
-                    </div>
-                    </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', justifyContent: 'center', flexWrap: 'wrap' }}>
-                      <input
-                        type="number"
-                        name="loiTest2Input1"
-                        value={formData.loiTest2Input1}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>−</span>
-                      <input
-                        type="number"
-                        name="loiTest2Input2"
-                        value={formData.loiTest2Input2}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>/</span>
-                      <input
-                        type="number"
-                        name="loiTest2Input3"
-                        value={formData.loiTest2Input3}
-                        onChange={handleChange}
-                        placeholder="0"
-                        step="0.1"
-                        style={{ width: '60px', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                      <span style={{ fontSize: '0.875rem', fontWeight: 600 }}>=</span>
-                      <span style={{ minWidth: '60px', padding: '0.5rem', fontSize: '0.875rem', fontWeight: 600, color: '#5B9AA9' }}>
-                        {calculatePercentage(formData.loiTest2Input1, formData.loiTest2Input2, formData.loiTest2Input3)}
-                      </span>
-                    </div>
-                    </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                </thead>
+                <tbody>
+                  {["totalClay", "activeClay", "deadClay", "vcm", "loi"].map((param) => (
+                    <tr key={param}>
+                      <td>{param.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}</td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                          {param === "activeClay" || param === "deadClay" ? (
+                            <>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 1"
+                                value={sectionData.clayTests.test1[param]?.input1 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test1", e.target.value, param, "input1");
+                                  // Trigger recalculation
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test1");
+                                    handleInputChange("clayTests", "test1", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '80px', padding: '0.375rem' }}
+                              />
+                              <span>{param === "activeClay" ? "x" : "-"}</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 2"
+                                value={sectionData.clayTests.test1[param]?.input2 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test1", e.target.value, param, "input2");
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test1");
+                                    handleInputChange("clayTests", "test1", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '80px', padding: '0.375rem' }}
+                              />
+                              <span>=</span>
+                              <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
+                                {sectionData.clayTests.test1[param]?.solution || '0'}%
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 1"
+                                value={sectionData.clayTests.test1[param]?.input1 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test1", e.target.value, param, "input1");
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test1");
+                                    handleInputChange("clayTests", "test1", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '70px', padding: '0.375rem' }}
+                              />
+                              <span>-</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 2"
+                                value={sectionData.clayTests.test1[param]?.input2 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test1", e.target.value, param, "input2");
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test1");
+                                    handleInputChange("clayTests", "test1", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '70px', padding: '0.375rem' }}
+                              />
+                              <span>/</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 3"
+                                value={sectionData.clayTests.test1[param]?.input3 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test1", e.target.value, param, "input3");
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test1");
+                                    handleInputChange("clayTests", "test1", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '70px', padding: '0.375rem' }}
+                              />
+                              <span>x 100 =</span>
+                              <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
+                                {sectionData.clayTests.test1[param]?.solution || '0'}%
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                          {param === "activeClay" || param === "deadClay" ? (
+                            <>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 1"
+                                value={sectionData.clayTests.test2[param]?.input1 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test2", e.target.value, param, "input1");
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test2");
+                                    handleInputChange("clayTests", "test2", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '80px', padding: '0.375rem' }}
+                              />
+                              <span>{param === "activeClay" ? "x" : "-"}</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 2"
+                                value={sectionData.clayTests.test2[param]?.input2 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test2", e.target.value, param, "input2");
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test2");
+                                    handleInputChange("clayTests", "test2", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '80px', padding: '0.375rem' }}
+                              />
+                              <span>=</span>
+                              <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
+                                {sectionData.clayTests.test2[param]?.solution || '0'}%
+                              </span>
+                            </>
+                          ) : (
+                            <>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 1"
+                                value={sectionData.clayTests.test2[param]?.input1 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test2", e.target.value, param, "input1");
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test2");
+                                    handleInputChange("clayTests", "test2", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '70px', padding: '0.375rem' }}
+                              />
+                              <span>-</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 2"
+                                value={sectionData.clayTests.test2[param]?.input2 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test2", e.target.value, param, "input2");
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test2");
+                                    handleInputChange("clayTests", "test2", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '70px', padding: '0.375rem' }}
+                              />
+                              <span>/</span>
+                              <input
+                                type="number"
+                                step="0.01"
+                                placeholder="Input 3"
+                                value={sectionData.clayTests.test2[param]?.input3 || ''}
+                                disabled={!isPrimaryLocked}
+                                onChange={(e) => {
+                                  handleInputChange("clayTests", "test2", e.target.value, param, "input3");
+                                  setTimeout(() => {
+                                    const solution = calculateClaySolution(param, "test2");
+                                    handleInputChange("clayTests", "test2", solution, param, "solution");
+                                  }, 0);
+                                }}
+                                style={{ width: '70px', padding: '0.375rem' }}
+                              />
+                              <span>x 100 =</span>
+                              <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
+                                {sectionData.clayTests.test2[param]?.solution || '0'}%
+                              </span>
+                            </>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+        <button
+          type="button"
+          onClick={() => handleSectionReset('clayParameters')}
+          disabled={loadingStates.clayParameters || !isPrimaryLocked}
+          className="foundry-reset-btn"
+        >
+          <RefreshCw size={18} />
+          Reset Clay Parameters
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSectionSubmit('clayParameters')}
+          disabled={loadingStates.clayParameters || !isPrimaryLocked}
+          className="foundry-submit-btn"
+        >
+          {loadingStates.clayParameters ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+          {loadingStates.clayParameters ? 'Saving...' : 'Save Clay Parameters'}
+        </button>
+      </div>
+      </div>
 
-          {/* Table 2 */}
-          <h3 className="foundry-section-title">Table 2</h3>
-          <div className="foundry-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <table className="foundry-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>Sieve Testing</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>TEST - 1</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }}>TEST - 2</th>
-                </tr>
-                <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>Sieve Size (Mic)</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>% Wt Retained Sand</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>% Wt Retained Sand</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>1700</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <input
-                      type="number"
-                      name="sieve1700Test1"
-                      value={formData.sieve1700Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                    </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <input
-                      type="number"
-                      name="sieve1700Test2"
-                      value={formData.sieve1700Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                    </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>850</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <input
-                      type="number"
-                      name="sieve850Test1"
-                      value={formData.sieve850Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                    </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <input
-                      type="number"
-                      name="sieve850Test2"
-                      value={formData.sieve850Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                    </td>
+      {/* Sieve Testing */}
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Sieve Testing</h3>
+            <div className="foundry-table-wrapper">
+              <table className="foundry-table">
+                <thead>
+                  <tr>
+                    <th rowSpan="2">Sieve size (Mic)</th>
+                    <th colSpan="2">% Wt retained sand</th>
+                    <th rowSpan="2">MF</th>
+                    <th colSpan="2">Product</th>
                   </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>600</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve600Test1"
-                      value={formData.sieve600Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve600Test2"
-                      value={formData.sieve600Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>425</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve425Test1"
-                      value={formData.sieve425Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve425Test2"
-                      value={formData.sieve425Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>300</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve300Test1"
-                      value={formData.sieve300Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve300Test2"
-                      value={formData.sieve300Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>212</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve212Test1"
-                      value={formData.sieve212Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve212Test2"
-                      value={formData.sieve212Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>150</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve150Test1"
-                      value={formData.sieve150Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve150Test2"
-                      value={formData.sieve150Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>106</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve106Test1"
-                      value={formData.sieve106Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve106Test2"
-                      value={formData.sieve106Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>75</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve75Test1"
-                      value={formData.sieve75Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve75Test2"
-                      value={formData.sieve75Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>53</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve53Test1"
-                      value={formData.sieve53Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieve53Test2"
-                      value={formData.sieve53Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Pan</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sievePanTest1"
-                      value={formData.sievePanTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sievePanTest2"
-                      value={formData.sievePanTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Total</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieveTotalTest1"
-                      value={formData.sieveTotalTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="sieveTotalTest2"
-                      value={formData.sieveTotalTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Compactability</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="compactabilityTest1"
-                      value={formData.compactabilityTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="compactabilityTest2"
-                      value={formData.compactabilityTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Permeability</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="permeabilityTest1"
-                      value={formData.permeabilityTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="permeabilityTest2"
-                      value={formData.permeabilityTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>GCS</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="gcsTest1"
-                      value={formData.gcsTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="gcsTest2"
-                      value={formData.gcsTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Moisture</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="moistureTest1"
-                      value={formData.moistureTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="moistureTest2"
-                      value={formData.moistureTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Bentonited</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="bentonitedTest1"
-                      value={formData.bentonitedTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="bentonitedTest2"
-                      value={formData.bentonitedTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Coal Dust</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="coalDustTest1"
-                      value={formData.coalDustTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="coalDustTest2"
-                      value={formData.coalDustTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Hopper level</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="hopperLevelTest1"
-                      value={formData.hopperLevelTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="hopperLevelTest2"
-                      value={formData.hopperLevelTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Shear Strength</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="shearStrengthTest1"
-                      value={formData.shearStrengthTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="shearStrengthTest2"
-                      value={formData.shearStrengthTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Dust Collector Settings</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="dustCollectorSettingsTest1"
-                      value={formData.dustCollectorSettingsTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="dustCollectorSettingsTest2"
-                      value={formData.dustCollectorSettingsTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>Return Sand Moisture</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <input
-                      type="number"
-                      name="returnSandMoistureTest1"
-                      value={formData.returnSandMoistureTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                    </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <input
-                      type="number"
-                      name="returnSandMoistureTest2"
-                      value={formData.returnSandMoistureTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                    </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Table 3 */}
-          <h3 className="foundry-section-title">Table 3</h3>
-          <div className="foundry-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <table className="foundry-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }} rowSpan="2">MF</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1' }} colSpan="2">Product</th>
-                </tr>
-                <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>TEST - 1</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>TEST - 2</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>5</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <input
-                      type="number"
-                      name="mf5Test1"
-                      value={formData.mf5Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                    </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                      <input
-                      type="number"
-                      name="mf5Test2"
-                      value={formData.mf5Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                      />
-                    </td>
+                  <tr>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
                   </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>10</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf10Test1"
-                      value={formData.mf10Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf10Test2"
-                      value={formData.mf10Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>20</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf20Test1"
-                      value={formData.mf20Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf20Test2"
-                      value={formData.mf20Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>30</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf30Test1"
-                      value={formData.mf30Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf30Test2"
-                      value={formData.mf30Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>40</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf40Test1"
-                      value={formData.mf40Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf40Test2"
-                      value={formData.mf40Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>50</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf50Test1"
-                      value={formData.mf50Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf50Test2"
-                      value={formData.mf50Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>70</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf70Test1"
-                      value={formData.mf70Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf70Test2"
-                      value={formData.mf70Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>100</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf100Test1"
-                      value={formData.mf100Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf100Test2"
-                      value={formData.mf100Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>140</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf140Test1"
-                      value={formData.mf140Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf140Test2"
-                      value={formData.mf140Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>200</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf200Test1"
-                      value={formData.mf200Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf200Test2"
-                      value={formData.mf200Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>300</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf300Test1"
-                      value={formData.mf300Test1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mf300Test2"
-                      value={formData.mf300Test2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'center', border: '1px solid #e2e8f0' }}>Remaining</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mfRemainingTest1"
-                      value={formData.mfRemainingTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="mfRemainingTest2"
-                      value={formData.mfRemainingTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
-
-          {/* Table 4 */}
-          <h3 className="foundry-section-title">Table 4</h3>
-          <div className="foundry-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)' }}>
-            <table className="foundry-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
-              <thead>
-                <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>Parameters</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>TEST - 1</th>
-                  <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1' }}>TEST - 2</th>
-                </tr>
-              </thead>
-              <tbody>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>AFS. NO</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                </thead>
+                <tbody>
+                  {sieveData.map((row) => (
+                    <tr key={row.size}>
+                      <td>{row.size}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter %"
+                          value={sectionData.test1.sieveSize[row.size] || ''}
+                          onChange={(e) => handleInputChange("test1", "sieveSize", e.target.value, row.size)}
+                          disabled={!isPrimaryLocked}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter %"
+                          value={sectionData.test2.sieveSize[row.size] || ''}
+                          onChange={(e) => handleInputChange("test2", "sieveSize", e.target.value, row.size)}
+                          disabled={!isPrimaryLocked}
+                        />
+                      </td>
+                      <td>{row.mf}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Product"
+                          value={sectionData.mfTest.mf[row.mf] || ''}
+                          onChange={(e) => handleInputChange("mfTest", "mf", e.target.value, row.mf)}
+                          disabled={!isPrimaryLocked}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Product"
+                          value={sectionData.mfTest.mf[row.mf] || ''}
+                          onChange={(e) => handleInputChange("mfTest", "mf", e.target.value, row.mf)}
+                          disabled={!isPrimaryLocked}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                  <tr className="foundry-table-total">
+                    <td><strong>Total</strong></td>
+                    <td>
                       <input
-                      type="number"
-                      name="afsNoTest1"
-                      value={formData.afsNoTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                        type="text"
+                        placeholder="Total"
+                        value={sectionData.test1.sieveSize.total}
+                        onChange={(e) => handleInputChange("test1", "sieveSize", e.target.value, "total")}
+                        disabled={!isPrimaryLocked}
                       />
                     </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                    <td>
                       <input
-                      type="number"
-                      name="afsNoTest2"
-                      value={formData.afsNoTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
+                        type="text"
+                        placeholder="Total"
+                        value={sectionData.test2.sieveSize.total}
+                        onChange={(e) => handleInputChange("test2", "sieveSize", e.target.value, "total")}
+                        disabled={!isPrimaryLocked}
                       />
                     </td>
+                    <td></td>
+                    <td>
+                      <input
+                        type="text"
+                        placeholder="Total"
+                        value={sectionData.mfTest.mf.total}
+                        onChange={(e) => handleInputChange("mfTest", "mf", e.target.value, "total")}
+                        disabled={!isPrimaryLocked}
+                      />
+                    </td>
+                    <td></td>
                   </tr>
-                <tr style={{ borderBottom: '1px solid #e2e8f0' }}>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>FINES</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="finesTest1"
-                      value={formData.finesTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="finesTest2"
-                      value={formData.finesTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-                <tr>
-                  <td style={{ padding: '0.75rem', fontWeight: 500, background: '#f8fafc', textAlign: 'left', paddingLeft: '1rem', border: '1px solid #e2e8f0' }}>GD</td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="gdTest1"
-                      value={formData.gdTest1}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      name="gdTest2"
-                      value={formData.gdTest2}
-                      onChange={handleChange}
-                      placeholder="0"
-                      step="0.1"
-                      style={{ width: '100%', padding: '0.5rem', border: '1.5px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem', textAlign: 'center' }}
-                    />
-                  </td>
-                </tr>
-              </tbody>
-            </table>
-          </div>
+                </tbody>
+              </table>
+            </div>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+        <button
+          type="button"
+          onClick={() => handleSectionReset('sieveTesting')}
+          disabled={loadingStates.sieveTesting || !isPrimaryLocked}
+          className="foundry-reset-btn"
+        >
+          <RefreshCw size={18} />
+          Reset Sieve Testing
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSectionSubmit('sieveTesting')}
+          disabled={loadingStates.sieveTesting || !isPrimaryLocked}
+          className="foundry-submit-btn"
+        >
+          {loadingStates.sieveTesting ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+          {loadingStates.sieveTesting ? 'Saving...' : 'Save Sieve Testing'}
+        </button>
+      </div>
+      </div>
 
-          {/* Remarks */}
-          <h3 className="foundry-section-title">Remarks</h3>
-          <div className="foundry-form-group" style={{ gridColumn: '1 / -1' }}>
-            <label>Remarks</label>
-            <textarea
-              value={formData.remarks}
-              onChange={(e) => handleInputChange("remarks", e.target.value)}
-              placeholder="Enter any additional remarks..."
-              rows="4"
-            />
-          </div>
+      {/* Test Parameters */}
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Test Parameters</h3>
+            <div className="foundry-table-wrapper">
+              <table className="foundry-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {[
+                    { key: "gcs", label: "GCS" },
+                    { key: "bentonitePremix", label: "Bentonite Premix" },
+                    { key: "premixCoaldust", label: "Premix Coaldust" },
+                    { key: "lcCompactSmcat", label: "LC Compact SMCAT" },
+                    { key: "mouldStrengthSncat", label: "Mould Strength SNCAT" },
+                    { key: "permeability", label: "Permeability" },
+                    { key: "wts", label: "WTS" },
+                    { key: "moisture", label: "Moisture" },
+                    { key: "hopperLevel", label: "Hopper Level" },
+                    { key: "returnSand", label: "Return Sand" }
+                  ].map((param) => (
+                    <tr key={param.key}>
+                      <td>{param.label}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={sectionData.parameters.test1[param.key]}
+                          onChange={(e) => handleInputChange("parameters", "test1", e.target.value, param.key)}
+                          disabled={!isPrimaryLocked}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={sectionData.parameters.test2[param.key]}
+                          onChange={(e) => handleInputChange("parameters", "test2", e.target.value, param.key)}
+                          disabled={!isPrimaryLocked}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+        <button
+          type="button"
+          onClick={() => handleSectionReset('testParameters')}
+          disabled={loadingStates.testParameters || !isPrimaryLocked}
+          className="foundry-reset-btn"
+        >
+          <RefreshCw size={18} />
+          Reset Test Parameters
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSectionSubmit('testParameters')}
+          disabled={loadingStates.testParameters || !isPrimaryLocked}
+          className="foundry-submit-btn"
+        >
+          {loadingStates.testParameters ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+          {loadingStates.testParameters ? 'Saving...' : 'Save Test Parameters'}
+        </button>
+      </div>
+      </div>
+
+      {/* Additional Data */}
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Additional Data</h3>
+            <div className="foundry-table-wrapper">
+              <table className="foundry-table">
+                <thead>
+                  <tr>
+                    <th>Parameter</th>
+                    <th>TEST-1</th>
+                    <th>TEST-2</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {["afsNo", "fines", "gd"].map((param) => (
+                    <tr key={param}>
+                      <td>{param.toUpperCase()}</td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={sectionData.additionalData.test1[param]}
+                          onChange={(e) => handleInputChange("additionalData", "test1", e.target.value, param)}
+                          disabled={!isPrimaryLocked}
+                        />
+                      </td>
+                      <td>
+                        <input
+                          type="text"
+                          placeholder="Enter value"
+                          value={sectionData.additionalData.test2[param]}
+                          onChange={(e) => handleInputChange("additionalData", "test2", e.target.value, param)}
+                          disabled={!isPrimaryLocked}
+                        />
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+        <button
+          type="button"
+          onClick={() => handleSectionReset('additionalData')}
+          disabled={loadingStates.additionalData || !isPrimaryLocked}
+          className="foundry-reset-btn"
+        >
+          <RefreshCw size={18} />
+          Reset Additional Data
+        </button>
+        <button
+          type="button"
+          onClick={() => handleSectionSubmit('additionalData')}
+          disabled={loadingStates.additionalData || !isPrimaryLocked}
+          className="foundry-submit-btn"
+        >
+          {loadingStates.additionalData ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+          {loadingStates.additionalData ? 'Saving...' : 'Save Additional Data'}
+        </button>
+      </div>
+      </div>
+
+      {/* Remarks */}
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Remarks</h3>
+        <div className="foundry-form-group">
+          <label>Remarks</label>
+          <textarea
+            value={sectionData.remarks}
+            onChange={(e) => handleInputChange("remarks", null, e.target.value)}
+            placeholder="Enter any additional remarks..."
+            rows="4"
+            disabled={!isPrimaryLocked}
+            style={{
+              backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+              cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+            }}
+          />
+        </div>
+        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+          <button
+            type="button"
+            onClick={() => handleSectionReset('remarks')}
+            disabled={loadingStates.remarks || !isPrimaryLocked}
+            className="foundry-reset-btn"
+          >
+            <RefreshCw size={18} />
+            Reset Remarks
+          </button>
+          <button
+            type="button"
+            onClick={() => handleSectionSubmit('remarks')}
+            disabled={loadingStates.remarks || !isPrimaryLocked}
+            className="foundry-submit-btn"
+          >
+            {loadingStates.remarks ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+            {loadingStates.remarks ? 'Saving...' : 'Save Remarks'}
+          </button>
+        </div>
       </div>
     </>
   );
