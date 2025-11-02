@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from 'react-router-dom';
-import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
+import { Save, RefreshCw, FileText, Loader2, RotateCcw } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
+import Loader from '../../Components/Loader';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Sandlab/FoundarySandTestingNote.css';
 import '../../styles/PageStyles/Sandlab/SandTestingRecord.css';
@@ -44,18 +45,38 @@ const initialFormData = {
     mf: {
       5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
       100: "", 140: "", 200: "", pan: "", total: ""
+    },
+    mfTest2: {
+      5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
+      100: "", 140: "", 200: "", pan: "", total: ""
     }
   },
   parameters: {
     test1: {
-      gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
-      mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
-      hopperLevel: "", returnSand: ""
+      compactability: "",
+      permeability: "",
+      gcs: "",
+      wts: "",
+      moisture: "",
+      bentonite: "",
+      coalDust: "",
+      hopperLevel: "",
+      shearStrength: "",
+      dustCollectorSettings: "",
+      returnSandMoisture: ""
     },
     test2: {
-      gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
-      mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
-      hopperLevel: "", returnSand: ""
+      compactability: "",
+      permeability: "",
+      gcs: "",
+      wts: "",
+      moisture: "",
+      bentonite: "",
+      coalDust: "",
+      hopperLevel: "",
+      shearStrength: "",
+      dustCollectorSettings: "",
+      returnSandMoisture: ""
     }
   },
   additionalData: {
@@ -167,18 +188,38 @@ export default function FoundrySandTestingNote() {
       mf: {
         5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
         100: "", 140: "", 200: "", pan: "", total: ""
+      },
+      mfTest2: {
+        5: "", 10: "", 20: "", 30: "", 50: "", 70: "", 
+        100: "", 140: "", 200: "", pan: "", total: ""
       }
     },
     parameters: {
       test1: {
-        gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
-        mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
-        hopperLevel: "", returnSand: ""
+        compactability: "",
+        permeability: "",
+        gcs: "",
+        wts: "",
+        moisture: "",
+        bentonite: "",
+        coalDust: "",
+        hopperLevel: "",
+        shearStrength: "",
+        dustCollectorSettings: "",
+        returnSandMoisture: ""
       },
       test2: {
-        gcs: "", bentonitePremix: "", premixCoaldust: "", lcCompactSmcat: "",
-        mouldStrengthSncat: "", permeability: "", wts: "", moisture: "",
-        hopperLevel: "", returnSand: ""
+        compactability: "",
+        permeability: "",
+        gcs: "",
+        wts: "",
+        moisture: "",
+        bentonite: "",
+        coalDust: "",
+        hopperLevel: "",
+        shearStrength: "",
+        dustCollectorSettings: "",
+        returnSandMoisture: ""
       }
     },
     additionalData: {
@@ -351,6 +392,19 @@ export default function FoundrySandTestingNote() {
     }
   };
 
+  // Reset primary data
+  const resetPrimaryData = () => {
+    if (!window.confirm('Are you sure you want to reset Primary data?')) return;
+    setPrimaryData({
+      date: new Date().toISOString().split('T')[0],
+      shift: "",
+      sandPlant: "",
+      compactibilitySetting: "",
+      shearStrengthSetting: ""
+    });
+    setIsPrimaryLocked(false);
+  };
+
   // Handle section-wise resets
   const handleSectionReset = (sectionName) => {
     if (!window.confirm(`Are you sure you want to reset ${sectionName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())}?`)) return;
@@ -365,7 +419,10 @@ export default function FoundrySandTestingNote() {
         ...prev,
         test1: initialFormData.test1,
         test2: initialFormData.test2,
-        mfTest: initialFormData.mfTest
+        mfTest: {
+          mf: initialFormData.mfTest.mf,
+          mfTest2: initialFormData.mfTest.mfTest2
+        }
       }));
     } else if (sectionName === 'testParameters') {
       setSectionData(prev => ({
@@ -406,6 +463,11 @@ export default function FoundrySandTestingNote() {
 
   return (
     <>
+      {checkingData && (
+        <div className="foundry-loader-overlay">
+          <Loader />
+        </div>
+      )}
       {/* Header */}
       <div className="foundry-header">
         <div className="foundry-header-text">
@@ -417,50 +479,16 @@ export default function FoundrySandTestingNote() {
               onClick={handleViewReport}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
-        </div>
-        <div className="foundry-header-buttons">
-          <button 
-            className="foundry-reset-btn"
-            onClick={() => {
-              if (window.confirm('Are you sure you want to reset the entire form? All unsaved data will be lost.')) {
-                setPrimaryData({
-                  date: new Date().toISOString().split('T')[0],
-                  shift: "",
-                  sandPlant: "",
-                  compactibilitySetting: "",
-                  shearStrengthSetting: ""
-                });
-                setIsPrimaryLocked(false);
-                setSectionData({
-                  clayTests: initialFormData.clayTests,
-                  test1: initialFormData.test1,
-                  test2: initialFormData.test2,
-                  mfTest: initialFormData.mfTest,
-                  parameters: initialFormData.parameters,
-                  additionalData: initialFormData.additionalData,
-                  remarks: ""
-                });
-              }
-            }}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
         </div>
       </div>
 
       {/* Primary Section */}
       <div className="foundry-section">
         <h3 className="foundry-section-title">Primary</h3>
-        {checkingData && (
-          <div className="foundry-checking-message">
-            Checking for existing data...
-          </div>
-        )}
         <div className="foundry-form-grid">
           <div className="foundry-form-group">
             <label>Date *</label>
@@ -539,7 +567,7 @@ export default function FoundrySandTestingNote() {
           />
         </div>
       </div>
-      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
         <button
           type="button"
           onClick={handlePrimarySubmit}
@@ -769,15 +797,15 @@ export default function FoundrySandTestingNote() {
                 </tbody>
               </table>
             </div>
-      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           type="button"
           onClick={() => handleSectionReset('clayParameters')}
           disabled={loadingStates.clayParameters || !isPrimaryLocked}
           className="foundry-reset-btn"
         >
-          <RefreshCw size={18} />
-          Reset Clay Parameters
+          <RotateCcw size={16} />
+          Reset
         </button>
         <button
           type="button"
@@ -846,8 +874,8 @@ export default function FoundrySandTestingNote() {
                         <input
                           type="text"
                           placeholder="Product"
-                          value={sectionData.mfTest.mf[row.mf] || ''}
-                          onChange={(e) => handleInputChange("mfTest", "mf", e.target.value, row.mf)}
+                          value={sectionData.mfTest.mfTest2[row.mf] || ''}
+                          onChange={(e) => handleInputChange("mfTest", "mfTest2", e.target.value, row.mf)}
                           disabled={!isPrimaryLocked}
                         />
                       </td>
@@ -873,7 +901,7 @@ export default function FoundrySandTestingNote() {
                         disabled={!isPrimaryLocked}
                       />
                     </td>
-                    <td></td>
+                    <td><strong>Total</strong></td>
                     <td>
                       <input
                         type="text"
@@ -883,20 +911,28 @@ export default function FoundrySandTestingNote() {
                         disabled={!isPrimaryLocked}
                       />
                     </td>
-                    <td></td>
+                    <td>
+                      <input
+                        type="text"
+                        placeholder="Total"
+                        value={sectionData.mfTest.mfTest2.total || ''}
+                        onChange={(e) => handleInputChange("mfTest", "mfTest2", e.target.value, "total")}
+                        disabled={!isPrimaryLocked}
+                      />
+                    </td>
                   </tr>
                 </tbody>
               </table>
             </div>
-      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           type="button"
           onClick={() => handleSectionReset('sieveTesting')}
           disabled={loadingStates.sieveTesting || !isPrimaryLocked}
           className="foundry-reset-btn"
         >
-          <RefreshCw size={18} />
-          Reset Sieve Testing
+          <RotateCcw size={16} />
+          Reset
         </button>
         <button
           type="button"
@@ -924,16 +960,17 @@ export default function FoundrySandTestingNote() {
                 </thead>
                 <tbody>
                   {[
-                    { key: "gcs", label: "GCS" },
-                    { key: "bentonitePremix", label: "Bentonite Premix" },
-                    { key: "premixCoaldust", label: "Premix Coaldust" },
-                    { key: "lcCompactSmcat", label: "LC Compact SMCAT" },
-                    { key: "mouldStrengthSncat", label: "Mould Strength SNCAT" },
+                    { key: "compactability", label: "Compactability" },
                     { key: "permeability", label: "Permeability" },
+                    { key: "gcs", label: "GCS" },
                     { key: "wts", label: "WTS" },
                     { key: "moisture", label: "Moisture" },
+                    { key: "bentonite", label: "Bentonite" },
+                    { key: "coalDust", label: "CoalDust" },
                     { key: "hopperLevel", label: "Hopper Level" },
-                    { key: "returnSand", label: "Return Sand" }
+                    { key: "shearStrength", label: "Shear Strength" },
+                    { key: "dustCollectorSettings", label: "Dust Collector Settings" },
+                    { key: "returnSandMoisture", label: "Return Sand Moisture" }
                   ].map((param) => (
                     <tr key={param.key}>
                       <td>{param.label}</td>
@@ -960,15 +997,15 @@ export default function FoundrySandTestingNote() {
                 </tbody>
               </table>
             </div>
-      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           type="button"
           onClick={() => handleSectionReset('testParameters')}
           disabled={loadingStates.testParameters || !isPrimaryLocked}
           className="foundry-reset-btn"
         >
-          <RefreshCw size={18} />
-          Reset Test Parameters
+          <RotateCcw size={16} />
+          Reset
         </button>
         <button
           type="button"
@@ -1021,15 +1058,15 @@ export default function FoundrySandTestingNote() {
                 </tbody>
               </table>
             </div>
-      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+      <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           type="button"
           onClick={() => handleSectionReset('additionalData')}
           disabled={loadingStates.additionalData || !isPrimaryLocked}
           className="foundry-reset-btn"
         >
-          <RefreshCw size={18} />
-          Reset Additional Data
+          <RotateCcw size={16} />
+          Reset
         </button>
         <button
           type="button"
@@ -1060,15 +1097,15 @@ export default function FoundrySandTestingNote() {
             }}
           />
         </div>
-        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
+        <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button
             type="button"
             onClick={() => handleSectionReset('remarks')}
             disabled={loadingStates.remarks || !isPrimaryLocked}
             className="foundry-reset-btn"
           >
-            <RefreshCw size={18} />
-            Reset Remarks
+            <RotateCcw size={16} />
+            Reset
           </button>
           <button
             type="button"

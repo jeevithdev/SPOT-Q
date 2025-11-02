@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { Save, RefreshCw, FileText, Loader2 } from "lucide-react";
+import { Save, RefreshCw, FileText, Loader2, RotateCcw } from "lucide-react";
 import CustomDatePicker from '../../Components/CustomDatePicker';
+import Loader from '../../Components/Loader';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Moulding/DmmSettingParameters.css';
 
@@ -249,17 +250,34 @@ const DmmSettingParameters = () => {
   };
 
 
-  const handleReset = () => {
-    if (!window.confirm('Are you sure you want to reset the entire form? All unsaved data will be lost.')) return;
+  // Separate reset functions for each section
+  const resetPrimaryData = () => {
+    if (!window.confirm('Are you sure you want to reset Primary data?')) return;
     setPrimaryData({ date: '', machine: '' });
     setIsPrimaryLocked(false);
+  };
+
+  const resetOperationData = () => {
+    if (!window.confirm('Are you sure you want to reset Operation data?')) return;
     setOperationData({
       shift1: { operatorName: '', operatedBy: '' },
       shift2: { operatorName: '', operatedBy: '' },
       shift3: { operatorName: '', operatedBy: '' }
     });
+  };
+
+  const resetShift1Row = () => {
+    if (!window.confirm('Are you sure you want to reset Shift 1 Parameters?')) return;
     setShift1Row({ ...initialRow });
+  };
+
+  const resetShift2Row = () => {
+    if (!window.confirm('Are you sure you want to reset Shift 2 Parameters?')) return;
     setShift2Row({ ...initialRow });
+  };
+
+  const resetShift3Row = () => {
+    if (!window.confirm('Are you sure you want to reset Shift 3 Parameters?')) return;
     setShift3Row({ ...initialRow });
   };
 
@@ -500,6 +518,11 @@ const DmmSettingParameters = () => {
 
   return (
     <>
+      {checkingData && (
+        <div className="dmm-loader-overlay">
+          <Loader />
+        </div>
+      )}
       {/* Header */}
       <div className="dmm-header">
         <div className="dmm-header-text">
@@ -511,19 +534,10 @@ const DmmSettingParameters = () => {
               onClick={handleViewReport}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
-        </div>
-        <div className="dmm-header-buttons">
-          <button 
-            className="dmm-reset-btn"
-            onClick={handleReset}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
         </div>
       </div>
 
@@ -531,7 +545,8 @@ const DmmSettingParameters = () => {
           {/* Primary Information Section */}
           <div className="dmm-section">
             <h3 className="dmm-section-title">Primary</h3>
-            <div className="dmm-form-grid">
+            {/* Primary Row Container */}
+            <div className="dmm-primary-row">
               <div className="dmm-form-group">
                 <label>Date *</label>
                 <CustomDatePicker
@@ -563,13 +578,13 @@ const DmmSettingParameters = () => {
                   required
                 />
               </div>
-              <div className="dmm-form-group">
+              {/* Primary Submit Button */}
+              <div className="dmm-primary-button-wrapper">
                 <button
                   type="button"
                   onClick={handlePrimarySubmit}
                   disabled={isPrimaryLocked || checkingData || !primaryData.date || !primaryData.machine}
                   className="dmm-submit-btn"
-                  style={{ marginTop: '28px' }}
                 >
                   {checkingData ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
                   {isPrimaryLocked ? 'Primary Data Locked' : 'Save Primary Data'}
@@ -661,7 +676,15 @@ const DmmSettingParameters = () => {
                 </tbody>
               </table>
             </div>
-            <div className="dmm-section-submit">
+            <div className="dmm-section-submit" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={resetOperationData}
+                className="dmm-reset-btn"
+              >
+                <RotateCcw size={16} />
+                Reset
+              </button>
               <button
                 type="button"
                 onClick={handleOperationSubmit}
@@ -678,7 +701,15 @@ const DmmSettingParameters = () => {
           <div className="dmm-section">
             <h3 className="dmm-section-title">Shift 1 Parameters</h3>
             {renderRow(shift1Row, 1)}
-            <div className="dmm-section-submit">
+            <div className="dmm-section-submit" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={resetShift1Row}
+                className="dmm-reset-btn"
+              >
+                <RotateCcw size={16} />
+                Reset
+              </button>
               <button
                 type="button"
                 onClick={(e) => handleShiftSubmit(e, 1)}
@@ -695,7 +726,15 @@ const DmmSettingParameters = () => {
           <div className="dmm-section">
             <h3 className="dmm-section-title">Shift 2 Parameters</h3>
             {renderRow(shift2Row, 2)}
-            <div className="dmm-section-submit">
+            <div className="dmm-section-submit" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={resetShift2Row}
+                className="dmm-reset-btn"
+              >
+                <RotateCcw size={16} />
+                Reset
+              </button>
               <button
                 type="button"
                 onClick={(e) => handleShiftSubmit(e, 2)}
@@ -712,7 +751,15 @@ const DmmSettingParameters = () => {
           <div className="dmm-section">
             <h3 className="dmm-section-title">Shift 3 Parameters</h3>
             {renderRow(shift3Row, 3)}
-            <div className="dmm-section-submit">
+            <div className="dmm-section-submit" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <button
+                type="button"
+                onClick={resetShift3Row}
+                className="dmm-reset-btn"
+              >
+                <RotateCcw size={16} />
+                Reset
+              </button>
               <button
                 type="button"
                 onClick={(e) => handleShiftSubmit(e, 3)}

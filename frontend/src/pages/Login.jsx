@@ -2,6 +2,7 @@ import React, { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { EyeButton } from "../Components/Buttons";
 import Button from '../Components/Buttons';
+import Loader from '../Components/Loader';
 import "../styles/PageStyles/Login.css";
 
 const Login = () => {
@@ -38,6 +39,11 @@ const Login = () => {
 
   return (
     <div className="login-container">
+      {loading && (
+        <div className="login-loader-overlay">
+          <Loader />
+        </div>
+      )}
       {/* Left side - Company Logo */}
       <div className="login-left">
         <img
@@ -67,6 +73,7 @@ const Login = () => {
                 onChange={(e) => setEmployeeId(e.target.value.toUpperCase())}
                 autoFocus
                 className="form-input"
+                disabled={loading}
               />
             </div>
 
@@ -82,6 +89,7 @@ const Login = () => {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="form-input"
+                  disabled={loading}
                 />
                 <div className="password-toggle">
                   <EyeButton

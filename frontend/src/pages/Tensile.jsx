@@ -6,7 +6,6 @@ import '../styles/PageStyles/Tensile.css';
 
 const Tensile = () => {
   const [formData, setFormData] = useState({
-    disa: '',
     dateOfInspection: '',
     item: '',
     dateCode: '',
@@ -25,8 +24,6 @@ const Tensile = () => {
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-
-  const disaOptions = ['DISA I', 'DISA II', 'DISA III', 'DISA IV'];
 
 
   const handleChange = (e) => {
@@ -74,7 +71,7 @@ const Tensile = () => {
   };
 
   const handleSubmit = async () => {
-    const required = ['disa', 'dateOfInspection', 'item', 'dateCode', 'heatCode', 'dia', 'lo', 'li', 
+    const required = ['dateOfInspection', 'item', 'dateCode', 'heatCode', 'dia', 'lo', 'li', 
                      'breakingLoad', 'yieldLoad', 'uts', 'ys', 'elongation', 'testedBy' ];
     const missing = required.filter(field => !formData[field]);
     
@@ -99,7 +96,7 @@ const Tensile = () => {
       if (data.success) {
         alert('Tensile test entry created successfully!');
         setFormData({
-          disa: '', dateOfInspection: '', item: '', dateCode: '', heatCode: '', dia: '', lo: '', li: '',
+          dateOfInspection: '', item: '', dateCode: '', heatCode: '', dia: '', lo: '', li: '',
           breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: '', testedBy: ''
         });
       }
@@ -113,7 +110,7 @@ const Tensile = () => {
 
   const handleReset= () => {
     setFormData({
-      disa: '', dateOfInspection: '', item: '', dateCode: '', heatCode: '', dia: '', lo: '', li: '',
+      dateOfInspection: '', item: '', dateCode: '', heatCode: '', dia: '', lo: '', li: '',
       breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: '', testedBy: ''
     });
     setValidationErrors({});
@@ -131,42 +128,15 @@ const Tensile = () => {
               onClick={() => window.location.href = "/tensile/report"}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
-        </div>
-        <div className="tensile-header-buttons">
-          <button 
-            className="tensile-reset-btn"
-            onClick={handleReset}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
         </div>
       </div>
 
       {/* Entry Form */}
       <form className="tensile-form-grid">
-            <div className="tensile-form-group">
-              <label>DISA *</label>
-              <select
-                name="disa"
-                value={formData.disa}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                className={validationErrors.disa ? 'invalid-input' : ''}
-              >
-                <option value="">Select DISA</option>
-                {disaOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </div>
-
             <div className="tensile-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
@@ -365,6 +335,14 @@ const Tensile = () => {
       </form>
 
       <div className="tensile-submit-container">
+        <button 
+          className="tensile-reset-btn"
+          onClick={handleReset}
+          type="button"
+        >
+          <RefreshCw size={18} />
+          Reset Form
+        </button>
         <button 
           className="tensile-submit-btn" 
           type="button"

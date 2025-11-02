@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
+import { Save, RefreshCw, FileText, Loader2, RotateCcw } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Melting/MeltingLogSheet.css';
@@ -164,8 +164,9 @@ const MeltingLogSheet = () => {
     }
   };
 
-  const handleReset = () => {
-    if (!window.confirm('Are you sure you want to reset all tables?')) return;
+  // Reset functions for each section
+  const resetPrimaryData = () => {
+    if (!window.confirm('Are you sure you want to reset Primary data?')) return;
     setPrimaryData({
       date: '',
       shift: '',
@@ -177,6 +178,10 @@ const MeltingLogSheet = () => {
       totalUnits: '',
       cumulativeUnits: ''
     });
+  };
+
+  const resetTable1 = () => {
+    if (!window.confirm('Are you sure you want to reset Table 1?')) return;
     setTable1({
       heatNo: '',
       grade: '',
@@ -192,6 +197,10 @@ const MeltingLogSheet = () => {
       borings: '',
       finalBath: ''
     });
+  };
+
+  const resetTable2 = () => {
+    if (!window.confirm('Are you sure you want to reset Table 2?')) return;
     setTable2({
       charCoal: '',
       cpcFur: '',
@@ -206,6 +215,10 @@ const MeltingLogSheet = () => {
       pureMg: '',
       ironPyrite: ''
     });
+  };
+
+  const resetTable3 = () => {
+    if (!window.confirm('Are you sure you want to reset Table 3?')) return;
     setTable3({
       labCoinTime: '',
       labCoinTempC: '',
@@ -216,6 +229,10 @@ const MeltingLogSheet = () => {
       waitingForTappingTo: '',
       reason: ''
     });
+  };
+
+  const resetTable4 = () => {
+    if (!window.confirm('Are you sure you want to reset Table 4?')) return;
     setTable4({
       time: '',
       tempCSg: '',
@@ -226,6 +243,10 @@ const MeltingLogSheet = () => {
       disaNo: '',
       item: ''
     });
+  };
+
+  const resetTable5 = () => {
+    if (!window.confirm('Are you sure you want to reset Table 5?')) return;
     setTable5({
       furnace1Kw: '',
       furnace1A: '',
@@ -259,19 +280,10 @@ const MeltingLogSheet = () => {
               onClick={handleViewReport}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
-        </div>
-        <div className="cupola-holder-header-buttons">
-          <button 
-            className="cupola-holder-reset-btn"
-            onClick={handleReset}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
         </div>
       </div>
 
@@ -376,14 +388,14 @@ const MeltingLogSheet = () => {
         </div>
 
         <div className="melting-log-submit-container">
-        <button
+          <button
             className="cupola-holder-submit-btn"
-          onClick={handlePrimarySubmit}
-          disabled={primaryLoading || !primaryData.date}
-        >
+            onClick={handlePrimarySubmit}
+            disabled={primaryLoading || !primaryData.date}
+          >
             {primaryLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-          {primaryLoading ? 'Saving...' : 'Save Primary'}
-        </button>
+            {primaryLoading ? 'Saving...' : 'Save Primary'}
+          </button>
         </div>
             </div>
 
@@ -556,14 +568,22 @@ const MeltingLogSheet = () => {
         </div>
 
         <div className="melting-log-submit-container">
-        <button
+          <button
+            className="melting-log-reset-btn"
+            onClick={resetTable1}
+            type="button"
+          >
+            <RotateCcw size={16} />
+            Reset
+          </button>
+          <button
             className="cupola-holder-submit-btn"
-          onClick={() => handleTableSubmit(1)}
-          disabled={loadingStates.table1}
-        >
+            onClick={() => handleTableSubmit(1)}
+            disabled={loadingStates.table1}
+          >
             {loadingStates.table1 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-          {loadingStates.table1 ? 'Saving...' : 'Save Table 1'}
-        </button>
+            {loadingStates.table1 ? 'Saving...' : 'Save Table 1'}
+          </button>
         </div>
             </div>
 
@@ -730,14 +750,22 @@ const MeltingLogSheet = () => {
         </div>
 
         <div className="melting-log-submit-container">
-        <button
+          <button
+            className="melting-log-reset-btn"
+            onClick={resetTable2}
+            type="button"
+          >
+            <RotateCcw size={16} />
+            Reset
+          </button>
+          <button
             className="cupola-holder-submit-btn"
-          onClick={() => handleTableSubmit(2)}
-          disabled={loadingStates.table2}
-        >
+            onClick={() => handleTableSubmit(2)}
+            disabled={loadingStates.table2}
+          >
             {loadingStates.table2 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-          {loadingStates.table2 ? 'Saving...' : 'Save Table 2'}
-        </button>
+            {loadingStates.table2 ? 'Saving...' : 'Save Table 2'}
+          </button>
         </div>
             </div>
 
@@ -840,14 +868,22 @@ const MeltingLogSheet = () => {
         </div>
 
         <div className="melting-log-submit-container">
-        <button
+          <button
+            className="melting-log-reset-btn"
+            onClick={resetTable3}
+            type="button"
+          >
+            <RotateCcw size={16} />
+            Reset
+          </button>
+          <button
             className="cupola-holder-submit-btn"
-          onClick={() => handleTableSubmit(3)}
-          disabled={loadingStates.table3}
-        >
+            onClick={() => handleTableSubmit(3)}
+            disabled={loadingStates.table3}
+          >
             {loadingStates.table3 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-          {loadingStates.table3 ? 'Saving...' : 'Save Table 3'}
-        </button>
+            {loadingStates.table3 ? 'Saving...' : 'Save Table 3'}
+          </button>
         </div>
       </div>
 
@@ -947,6 +983,14 @@ const MeltingLogSheet = () => {
 
         <div className="melting-log-submit-container">
           <button
+            className="melting-log-reset-btn"
+            onClick={resetTable4}
+            type="button"
+          >
+            <RotateCcw size={16} />
+            Reset
+          </button>
+          <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(4)}
             disabled={loadingStates.table4}
@@ -1040,6 +1084,14 @@ const MeltingLogSheet = () => {
         </div>
 
         <div className="melting-log-submit-container">
+          <button
+            className="melting-log-reset-btn"
+            onClick={resetTable5}
+            type="button"
+          >
+            <RotateCcw size={16} />
+            Reset
+          </button>
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(5)}

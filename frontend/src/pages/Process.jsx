@@ -18,6 +18,7 @@ export default function ProcessControl() {
 
   const inputRefs = useRef({});
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [primaryLoading, setPrimaryLoading] = useState(false);
   
   const fieldOrder = ['date', 'disa', 'partName', 'datecode', 'heatcode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
     'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCr',
@@ -38,6 +39,38 @@ export default function ProcessControl() {
       if (idx < fieldOrder.length - 1) {
         inputRefs.current[fieldOrder[idx + 1]]?.focus();
       }
+    }
+  };
+
+  const handlePrimarySubmit = async () => {
+    // Validate required fields
+    if (!formData.date) {
+      alert('Please fill in Date');
+      return;
+    }
+    if (!formData.disa) {
+      alert('Please fill in DISA');
+      return;
+    }
+
+    try {
+      setPrimaryLoading(true);
+      
+      const primaryData = {
+        date: formData.date,
+        disa: formData.disa
+      };
+      
+      const data = await api.post('/v1/process-records/primary', primaryData);
+      
+      if (data.success) {
+        alert('Primary data saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving primary data:', error);
+      alert('Failed to save primary data: ' + error.message);
+    } finally {
+      setPrimaryLoading(false);
     }
   };
 
@@ -89,19 +122,10 @@ export default function ProcessControl() {
               onClick={() => window.location.href = "/process/report"}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
-        </div>
-        <div className="process-header-buttons">
-          <button 
-            className="process-reset-btn"
-            onClick={handleReset}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
         </div>
       </div>
 
@@ -110,28 +134,58 @@ export default function ProcessControl() {
               <h3>Primary</h3>
             </div>
 
-            <div className="process-form-group">
-              <label>Date *</label>
-              <DatePicker 
-                ref={el => inputRefs.current.date = el} 
-                name="date" 
-                value={formData.date} 
-                onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'date')} 
-              />
-            </div>
+            {/* Primary Row Container */}
+            <div className="process-primary-row" style={{gridColumn: '1 / -1'}}>
+              <div className="process-form-group">
+                <label>Date *</label>
+                <DatePicker 
+                  ref={el => inputRefs.current.date = el} 
+                  name="date" 
+                  value={formData.date} 
+                  onChange={handleChange} 
+                  onKeyDown={e => handleKeyDown(e, 'date')} 
+                />
+              </div>
 
-            <div className="process-form-group">
-              <label>DISA *</label>
-              <input 
-                ref={el => inputRefs.current.disa = el} 
-                type="text" 
-                name="disa" 
-                value={formData.disa} 
-                onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'disa')} 
-                placeholder="e.g., DISA I, DISA II, DISA III, DISA IV" 
-              />
+              <div className="process-form-group">
+                <label>DISA *</label>
+                <select
+                  ref={el => inputRefs.current.disa = el}
+                  name="disa"
+                  value={formData.disa}
+                  onChange={handleChange}
+                  onKeyDown={e => handleKeyDown(e, 'disa')}
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.875rem',
+                    border: '2px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    backgroundColor: '#ffffff',
+                    color: '#1e293b',
+                    cursor: 'pointer'
+                  }}
+                >
+                  <option value="">Select DISA</option>
+                  <option value="DISA I">DISA I</option>
+                  <option value="DISA II">DISA II</option>
+                  <option value="DISA III">DISA III</option>
+                  <option value="DISA IV">DISA IV</option>
+                </select>
+              </div>
+
+              {/* Primary Submit Button */}
+              <div className="process-primary-button-wrapper">
+                <button
+                  className="process-submit-btn"
+                  type="button"
+                  onClick={handlePrimarySubmit}
+                  disabled={primaryLoading || !formData.date || !formData.disa}
+                >
+                  {primaryLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
+                  {primaryLoading ? 'Saving...' : 'Save Primary'}
+                </button>
+              </div>
             </div>
 
             {/* Divider line */}
@@ -320,6 +374,14 @@ export default function ProcessControl() {
       </div>
 
       <div className="process-submit-container">
+        <button 
+          className="process-reset-btn"
+          onClick={handleReset}
+          type="button"
+        >
+          <RefreshCw size={18} />
+          Reset Form
+        </button>
         <button 
           className="process-submit-btn" 
           type="button"

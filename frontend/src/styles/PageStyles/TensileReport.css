@@ -1,185 +1,63 @@
-/* Tensile Report Styles */
-.tensile-container { padding: 0 !important; margin: 0 !important; background: transparent !important; }
-.tensile-wrapper { display: none; }
+/* Tensile Test - Report Page Styles */
 
-.tensile-tabs-container { margin-bottom: 16px; background: transparent; }
-.tensile-tabs { display: flex; gap: 8px; background: #f8fafc; border-radius: 8px; padding: 4px; }
-.tensile-tab { flex: 1; text-align: center; text-decoration: none; color: #64748b; padding: 10px 14px; border-radius: 6px; font-weight: 500; }
-.tensile-tab.active { background: #3b82f6; color: #fff; }
+.tensile-report-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+  margin: 0 0 1.5rem 0;
+  padding: 0 0 1rem 0;
+  border-bottom: 2px solid #e2e8f0;
+}
 
-.tensile-report-container { padding: 0 !important; margin: 0 !important; background: transparent !important; }
-.tensile-report-title { display: flex; align-items: center; gap: 12px; font-size: 1.75rem; font-weight: 600; color: #1f2937; margin: 0 0 24px 0; padding-bottom: 16px; border-bottom: 2px solid #e5e7eb; background: transparent !important; }
-
-.tensile-report-title h3 {
+.tensile-report-header-text {
+  flex: 1;
+  display: flex;
+  align-items: center;
   margin: 0;
+  padding: 0;
+}
+
+.tensile-report-header-text h2 {
+  font-size: 1.625rem;
+  font-weight: 700;
   color: #1e293b;
-  font-size: 1.5rem;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  line-height: 1;
+  width: 100%;
+  position: relative;
+}
+
+.tensile-report-entry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  margin-left: 1rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9375rem;
   font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
 }
 
-.tensile-filter-grid { display: grid; grid-template-columns: auto 1fr auto; gap: 16px; align-items: end; background: transparent !important; border: none !important; box-shadow: none !important; padding: 0; margin-bottom: 24px; }
-.tensile-filter-group { display: flex; flex-direction: column; gap: 6px; background: transparent !important; max-width: 200px; }
-.tensile-filter-group label { font-size: 0.9375rem; color: #374151; font-weight: 500; }
-.tensile-filter-group .custom-date-picker { width: 180px; }
-.tensile-filter-btn-container { display: flex; align-items: end; background: transparent !important; }
-.tensile-filter-btn { display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; background: #3b82f6; color: #fff; border: none; border-radius: 6px; cursor: pointer; }
-
-.tensile-loader-container { display: flex; align-items: center; justify-content: center; padding: 32px; }
-
-.tensile-table-container { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; }
-.tensile-table { width: 100%; border-collapse: separate; border-spacing: 0; background: #fff; }
-.tensile-table thead { background: #f8fafc; }
-.tensile-table th { 
-  padding: 10px 8px; 
-  text-align: left; 
-  color: #374151; 
-  font-weight: 600; 
-  border-bottom: 2px solid #e2e8f0; 
-  border-right: 1px solid #e2e8f0;
-  white-space: nowrap; 
-  font-size: 0.85rem; 
-  position: sticky;
-  top: 0;
-  z-index: 10;
-  background: #f8fafc;
-}
-.tensile-table td { 
-  padding: 10px 8px; 
-  border-bottom: 1px solid #f1f5f9; 
-  border-right: 1px solid #f1f5f9;
-  color: #64748b; 
-  font-size: 0.85rem; 
-  white-space: nowrap;
-  background: white;
-}
-.tensile-table tbody tr:hover {
-  background: #f8fafc;
-}
-.tensile-no-records { text-align: center; padding: 32px; color: #94a3b8; font-style: italic; }
-
-/* Sticky Date Column */
-.tensile-table th.sticky-date,
-.tensile-table td.sticky-date {
-  position: sticky;
-  left: 0;
-  z-index: 15;
-  background: white !important;
-  background-color: white !important;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  min-width: 120px;
-  width: 120px;
-  max-width: 120px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  border-right: 1px solid #e2e8f0;
+.tensile-report-entry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
 }
 
-.tensile-table thead th.sticky-date {
-  background: #f8fafc !important;
-  background-color: #f8fafc !important;
-  z-index: 16;
-}
-
-.tensile-table tbody tr:hover td.sticky-date {
-  background: #f8fafc !important;
-  background-color: #f8fafc !important;
-}
-
-/* Sticky Item Column */
-.tensile-table th.sticky-item,
-.tensile-table td.sticky-item {
-  position: sticky;
-  left: 120px; /* Matches Date column width */
-  z-index: 14;
-  background: white !important;
-  background-color: white !important;
-  box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-  min-width: 150px;
-  width: 150px;
-  max-width: 150px;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  border-right: 1px solid #e2e8f0;
-}
-
-.tensile-table thead th.sticky-item {
-  background: #f8fafc !important;
-  background-color: #f8fafc !important;
-  z-index: 16;
-}
-
-.tensile-table tbody tr:hover td.sticky-item {
-  background: #f8fafc !important;
-  background-color: #f8fafc !important;
-}
-
-/* Modal */
-.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 50; }
-.modal-container { background: #fff; border-radius: 12px; width: 90%; max-width: 900px; max-height: 90vh; overflow-y: auto; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-.modal-header { display: flex; align-items: center; justify-content: space-between; padding: 16px 20px; border-bottom: 1px solid #e2e8f0; }
-.modal-close-btn { border: none; background: transparent; color: #64748b; cursor: pointer; }
-.modal-body { padding: 16px 20px; }
-.modal-footer { display: flex; justify-content: flex-end; gap: 10px; padding: 14px 20px; border-top: 1px solid #e2e8f0; }
-.modal-submit-btn { background: #3b82f6; color: #fff; border: none; padding: 10px 16px; border-radius: 6px; cursor: pointer; }
-.modal-cancel-btn { background: #f8fafc; color: #334155; border: 1px solid #e2e8f0; padding: 10px 16px; border-radius: 6px; cursor: pointer; }
-
-.tensile-form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; }
-.tensile-form-group { display: flex; flex-direction: column; gap: 6px; }
-.tensile-form-group input, .tensile-form-group textarea { border: 1px solid #d1d5db; border-radius: 6px; padding: 10px 12px; font-size: 0.9rem; }
-
-@media (max-width: 1024px) {
-  .tensile-filter-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-  }
-  
-  .tensile-filter-group {
-    max-width: 100%;
-  }
-  
-  .tensile-filter-group .custom-date-picker {
-    width: 100%;
-  }
-  
-  .tensile-filter-btn-container {
-    align-items: stretch;
-  }
-  
-  .tensile-filter-btn {
-    width: 100%;
-  }
-}
-
-@media (max-width: 768px) {
-  .tensile-report-container {
-    padding: 0 !important;
-  }
-
-  .tensile-filter-grid {
-    grid-template-columns: 1fr;
-    gap: 12px;
-  }
-  
-  .tensile-filter-group {
-    max-width: 100%;
-  }
-  
-  .tensile-filter-group .custom-date-picker {
-    width: 100%;
-  }
-  
-  .tensile-tabs { 
-    flex-direction: column; 
-  }
-  
-  .modal-container {
-    width: 95%;
-    margin: 20px;
-  }
-  
-  .tensile-form-grid {
-    grid-template-columns: 1fr;
-  }
+.tensile-report-entry-btn svg {
+  width: 16px;
+  height: 16px;
 }

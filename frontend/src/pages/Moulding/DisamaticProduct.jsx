@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Save, FileText, Plus, X, Loader2, Edit2, RotateCcw, RefreshCw } from "lucide-react";
 import CustomDatePicker from "../../Components/CustomDatePicker";
+import Loader from "../../Components/Loader";
 import api from "../../utils/api";
 import "../../styles/PageStyles/Moulding/DisamaticProduct.css";
 
@@ -9,6 +10,7 @@ const initialFormData = {
   date: "",
   shift: "",
   incharge: "",
+  ppOperator: "",
   members: [""],
   productionTable: [{ counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }],
   nextShiftPlanTable: [{ componentName: "", plannedMoulds: "", remarks: "" }],
@@ -142,8 +144,8 @@ const DisamaticProduct = () => {
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
         
-        // Check if basic info exists (shift, incharge, or members)
-        if (report && (report.shift || report.incharge || report.memberspresent)) {
+        // Check if basic info exists (shift, incharge, ppOperator, or members)
+        if (report && (report.shift || report.incharge || report.ppOperator || report.memberspresent)) {
           setBasicInfoLocked(true);
           setIsPrimaryLocked(true);
           
@@ -155,6 +157,9 @@ const DisamaticProduct = () => {
             }
             if (report.incharge) {
               updated.incharge = String(report.incharge || '');
+            }
+            if (report.ppOperator) {
+              updated.ppOperator = String(report.ppOperator || '');
             }
             if (report.memberspresent) {
               const members = String(report.memberspresent || '').split(',').map(m => m.trim()).filter(m => m);
@@ -268,6 +273,11 @@ const DisamaticProduct = () => {
           // Update incharge if available
           if (report.incharge) {
             updatedFormData.incharge = String(report.incharge || '');
+          }
+
+          // Update PP Operator if available
+          if (report.ppOperator) {
+            updatedFormData.ppOperator = String(report.ppOperator || '');
           }
 
           // Update members - preserve newly added members that haven't been saved yet
@@ -421,7 +431,7 @@ const DisamaticProduct = () => {
   // Handle click on locked input fields to show popup
   const handleLockedFieldClick = (fieldName) => {
     // Don't show popup for members if basicInfo is locked (members can be added)
-    if (basicInfoLocked && (fieldName === 'shift' || fieldName === 'incharge')) {
+    if (basicInfoLocked && (fieldName === 'shift' || fieldName === 'incharge' || fieldName === 'ppOperator')) {
       setShowLockedPopup(true);
     } else if (isLocked && fieldName !== 'members') {
       setShowLockedPopup(true);
@@ -444,7 +454,7 @@ const DisamaticProduct = () => {
   };
 
   const handleBasicInfoSubmit = async () => {
-    const required = ['date', 'shift', 'incharge'];
+    const required = ['date', 'shift', 'incharge', 'ppOperator'];
     const missing = required.filter(field => !formData[field]);
     
     if (missing.length > 0) {
@@ -489,6 +499,7 @@ const DisamaticProduct = () => {
         date: formData.date, // Should be in YYYY-MM-DD format
         shift: formData.shift.trim(),
         incharge: formData.incharge.trim(),
+        ppOperator: formData.ppOperator.trim(),
         members: formData.members.filter(m => m.trim() !== ''),
         section: 'basicInfo'
       });
@@ -533,7 +544,7 @@ const DisamaticProduct = () => {
 
     // Check if primary data is saved
     if (!isPrimaryLocked) {
-      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      alert('Please save Primary data (Date, Shift, Incharge, PP Operator, Members) first before submitting other sections.');
       return;
     }
 
@@ -548,10 +559,8 @@ const DisamaticProduct = () => {
       
       if (data.success) {
         alert('Production data saved successfully!');
-        // Wait a bit for database to be updated
-        setTimeout(async () => {
-          await checkExistingData();
-        }, 300);
+        // Clear production table after successful save to allow entering next entry
+        resetProductionTable();
       }
     } catch (error) {
       console.error('Error saving production:', error);
@@ -575,7 +584,7 @@ const DisamaticProduct = () => {
 
     // Check if primary data is saved
     if (!isPrimaryLocked) {
-      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      alert('Please save Primary data (Date, Shift, Incharge, PP Operator, Members) first before submitting other sections.');
       return;
     }
 
@@ -590,9 +599,8 @@ const DisamaticProduct = () => {
       
       if (data.success) {
         alert('Next Shift Plan data saved successfully!');
-        setTimeout(async () => {
-          await checkExistingData();
-        }, 300);
+        // Clear next shift plan table after successful save to allow entering next entry
+        resetNextShiftPlanTable();
       }
     } catch (error) {
       console.error('Error saving next shift plan:', error);
@@ -616,7 +624,7 @@ const DisamaticProduct = () => {
 
     // Check if primary data is saved
     if (!isPrimaryLocked) {
-      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      alert('Please save Primary data (Date, Shift, Incharge, PP Operator, Members) first before submitting other sections.');
       return;
     }
 
@@ -631,9 +639,8 @@ const DisamaticProduct = () => {
       
       if (data.success) {
         alert('Delays data saved successfully!');
-        setTimeout(async () => {
-          await checkExistingData();
-        }, 300);
+        // Clear delays table after successful save to allow entering next entry
+        resetDelaysTable();
       }
     } catch (error) {
       console.error('Error saving delays:', error);
@@ -657,7 +664,7 @@ const DisamaticProduct = () => {
 
     // Check if primary data is saved
     if (!isPrimaryLocked) {
-      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      alert('Please save Primary data (Date, Shift, Incharge, PP Operator, Members) first before submitting other sections.');
       return;
     }
 
@@ -672,9 +679,8 @@ const DisamaticProduct = () => {
       
       if (data.success) {
         alert('Mould Hardness data saved successfully!');
-        setTimeout(async () => {
-          await checkExistingData();
-        }, 300);
+        // Clear mould hardness table after successful save to allow entering next entry
+        resetMouldHardnessTable();
       }
     } catch (error) {
       console.error('Error saving mould hardness:', error);
@@ -698,7 +704,7 @@ const DisamaticProduct = () => {
 
     // Check if primary data is saved
     if (!isPrimaryLocked) {
-      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      alert('Please save Primary data (Date, Shift, Incharge, PP Operator, Members) first before submitting other sections.');
       return;
     }
 
@@ -713,9 +719,8 @@ const DisamaticProduct = () => {
       
       if (data.success) {
         alert('Pattern Temperature data saved successfully!');
-        setTimeout(async () => {
-          await checkExistingData();
-        }, 300);
+        // Clear pattern temp table after successful save to allow entering next entry
+        resetPatternTempTable();
       }
     } catch (error) {
       console.error('Error saving pattern temp:', error);
@@ -739,7 +744,7 @@ const DisamaticProduct = () => {
 
     // Check if primary data is saved
     if (!isPrimaryLocked) {
-      alert('Please save Primary data (Date, Shift, Incharge, Members) first before submitting other sections.');
+      alert('Please save Primary data (Date, Shift, Incharge, PP Operator, Members) first before submitting other sections.');
       return;
     }
 
@@ -799,6 +804,15 @@ const DisamaticProduct = () => {
           supervisorName: supervisorNameHasData
         });
         
+        // Clear event section fields after successful save to allow entering next entry
+        // Only clear fields that were actually saved
+        setFormData(prev => ({
+          ...prev,
+          ...(significantEventHasData && { significantEvent: '' }),
+          ...(maintenanceHasData && { maintenance: '' }),
+          ...(supervisorNameHasData && { supervisorName: '' })
+        }));
+        
         // Don't call checkExistingData - it might reload empty strings from DB and override our locks
         // The locks are correctly set based on what was actually saved
       }
@@ -825,38 +839,26 @@ const DisamaticProduct = () => {
 
   return (
     <>
+      {checkingData && (
+        <div className="disamatic-loader-overlay">
+          <Loader />
+        </div>
+      )}
       {/* Header */}
       <div className="disamatic-header">
         <div className="disamatic-header-text">
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
-            Disamatic Production Report DISA
+            Disamatic Product - Entry Form
             <button 
               className="disamatic-view-report-btn"
               onClick={handleViewReport}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
-        </div>
-        <div className="disamatic-header-buttons">
-          <button 
-            className="disamatic-reset-btn"
-            onClick={() => {
-              if (window.confirm('Are you sure you want to reset the entire form? All unsaved data will be lost.')) {
-                setFormData(initialFormData);
-                setIsLocked(false);
-                setBasicInfoLocked(false);
-                setIsPrimaryLocked(false);
-                setInitialMembers([]);
-              }
-            }}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
         </div>
       </div>
           {/* Primary Section */}
@@ -867,7 +869,7 @@ const DisamaticProduct = () => {
                 Checking for existing data...
               </div>
             )}
-            {isPrimaryLocked && !checkingData && (
+              {isPrimaryLocked && !checkingData && (
               <div className="disamatic-primary-locked-message">
                 Primary data is locked. Use Reports page to edit.
               </div>
@@ -909,6 +911,20 @@ const DisamaticProduct = () => {
                   onClick={() => handleLockedFieldClick('incharge')}
                   onFocus={() => handleLockedFieldClick('incharge')}
                   placeholder="Enter incharge name"
+                  disabled={basicInfoLocked || isLocked}
+                  readOnly={basicInfoLocked || isLocked}
+                  style={{ cursor: (basicInfoLocked || isLocked) ? 'not-allowed' : 'text' }}
+                />
+              </div>
+              <div className="disamatic-form-group">
+                <label>PP Operator</label>
+                <input 
+                  type="text" 
+                  value={formData.ppOperator} 
+                  onChange={e => handleChange("ppOperator", e.target.value)}
+                  onClick={() => handleLockedFieldClick('ppOperator')}
+                  onFocus={() => handleLockedFieldClick('ppOperator')}
+                  placeholder="Enter PP Operator name"
                   disabled={basicInfoLocked || isLocked}
                   readOnly={basicInfoLocked || isLocked}
                   style={{ cursor: (basicInfoLocked || isLocked) ? 'not-allowed' : 'text' }}
@@ -1757,7 +1773,7 @@ const DisamaticProduct = () => {
             <div className="disamatic-locked-popup-body">
               {basicInfoLocked && (
                 <p className="disamatic-locked-popup-message">
-                  Basic information (Shift, Incharge, Members) is locked for this date. These fields cannot be modified.
+                  Basic information (Shift, Incharge, PP Operator, Members) is locked for this date. These fields cannot be modified.
                 </p>
               )}
               {(eventSectionLocked.significantEvent || eventSectionLocked.maintenance || eventSectionLocked.supervisorName) && (

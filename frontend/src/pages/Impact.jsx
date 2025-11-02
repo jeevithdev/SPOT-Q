@@ -122,19 +122,10 @@ const Impact = () => {
               onClick={() => window.location.href = "/impact/report"}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
-        </div>
-        <div className="impact-header-buttons">
-          <button 
-            className="impact-reset-btn"
-            onClick={handleReset}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
         </div>
       </div>
 
@@ -219,6 +210,14 @@ const Impact = () => {
       </form>
 
       <div className="impact-submit-container">
+        <button 
+          className="impact-reset-btn"
+          onClick={handleReset}
+          type="button"
+        >
+          <RefreshCw size={18} />
+          Reset Form
+        </button>
         <button 
           className="impact-submit-btn" 
           type="button"

@@ -137,19 +137,10 @@ const QcProductionDetails = () => {
               onClick={() => window.location.href = "/qc-production-details/report"}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
-        </div>
-        <div className="qcproduction-header-buttons">
-          <button 
-            className="qcproduction-reset-btn"
-            onClick={handleReset}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
         </div>
       </div>
 
@@ -406,6 +397,14 @@ const QcProductionDetails = () => {
       </form>
 
       <div className="qcproduction-submit-container">
+        <button 
+          className="qcproduction-reset-btn"
+          onClick={handleReset}
+          type="button"
+        >
+          <RefreshCw size={18} />
+          Reset Form
+        </button>
         <button 
           className="qcproduction-submit-btn" 
           type="button"

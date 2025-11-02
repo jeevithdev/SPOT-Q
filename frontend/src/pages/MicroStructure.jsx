@@ -151,19 +151,10 @@ const MicroStructure = () => {
               onClick={() => window.location.href = "/micro-structure/report"}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
-        </div>
-        <div className="microstructure-header-buttons">
-          <button 
-            className="microstructure-reset-btn"
-            onClick={handleReset}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
         </div>
       </div>
 
@@ -340,21 +331,29 @@ const MicroStructure = () => {
               />
             </div>
 
-            <div className="microstructure-form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="microstructure-form-group">
               <label>Remarks</label>
-              <textarea
+              <input
+                type="text"
                 name="remarks"
                 value={formData.remarks}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                rows="3"
-                placeholder="Enter any additional notes or observations..."
+                placeholder="Enter remarks (max 3 words)"
                 className=""
               />
             </div>
       </form>
 
       <div className="microstructure-submit-container">
+        <button 
+          className="microstructure-reset-btn"
+          onClick={handleReset}
+          type="button"
+        >
+          <RefreshCw size={18} />
+          Reset Form
+        </button>
         <button 
           className="microstructure-submit-btn" 
           type="button"

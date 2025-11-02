@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
+import CustomDatePicker from '../Components/CustomDatePicker';
 import api from '../utils/api';
 import '../styles/PageStyles/MicroTensile.css';
 
 const MicroTensile = () => {
   const inputRefs = useRef({});
   const [formData, setFormData] = useState({
-    disa: '',
+    dateOfInspection: '',
+    disa: [],
     item: '',
     dateCode: '',
     heatCode: '',
@@ -23,10 +25,10 @@ const MicroTensile = () => {
 
   const [submitLoading, setSubmitLoading] = useState(false);
 
-  const disaOptions = ['DISA I', 'DISA II', 'DISA III', 'DISA IV'];
+  const disaOptions = ['DISA 1', 'DISA 2', 'DISA 3', 'DISA 4'];
 
   // Field order for keyboard navigation
-  const fieldOrder = ['disa', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
+  const fieldOrder = ['disa', 'dateOfInspection', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
                      'maxLoad', 'yieldLoad', 'tensileStrength', 'yieldStrength', 'elongation', 'remarks', 'testedBy'];
 
   const handleChange = (e) => {
@@ -34,6 +36,28 @@ const MicroTensile = () => {
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+  };
+
+  const handleDisaChange = (disaValue) => {
+    setFormData(prev => {
+      const currentDisa = prev.disa || [];
+      const isSelected = currentDisa.includes(disaValue);
+      const newDisa = isSelected
+        ? currentDisa.filter(d => d !== disaValue)
+        : [...currentDisa, disaValue];
+      
+      return {
+        ...prev,
+        disa: newDisa
+      };
+    });
+  };
+
+  const handleDateChange = (e) => {
+    setFormData(prev => ({
+      ...prev,
+      dateOfInspection: e.target.value
     }));
   };
 
@@ -50,9 +74,13 @@ const MicroTensile = () => {
   };
 
   const handleSubmit = async () => {
-    const required = ['disa', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
+    const required = ['dateOfInspection', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
                      'maxLoad', 'yieldLoad', 'tensileStrength', 'yieldStrength', 'elongation', 'testedBy'];
     const missing = required.filter(field => !formData[field]);
+    
+    if (!formData.disa || formData.disa.length === 0) {
+      missing.push('disa');
+    }
 
     if (missing.length > 0) {
       alert(`Please fill in the following required fields: ${missing.join(', ')}`);
@@ -66,7 +94,7 @@ const MicroTensile = () => {
       if (data.success) {
         alert('Micro tensile test entry created successfully!');
         setFormData({
-          disa: '', item: '', dateCode: '', heatCode: '', barDia: '', gaugeLength: '',
+          dateOfInspection: '', disa: [], item: '', dateCode: '', heatCode: '', barDia: '', gaugeLength: '',
           maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
           remarks: '', testedBy: ''
         });
@@ -82,11 +110,17 @@ const MicroTensile = () => {
 
   const handleReset = () => {
     setFormData({
-      disa: '', item: '', dateCode: '', heatCode: '', barDia: '', gaugeLength: '',
+      dateOfInspection: '', disa: [], item: '', dateCode: '', heatCode: '', barDia: '', gaugeLength: '',
       maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
       remarks: '', testedBy: ''
     });
-    inputRefs.current.disa?.focus();
+    // Focus will be handled by the grid layout, but we can try to focus the first input
+    setTimeout(() => {
+      const firstCheckbox = document.querySelector('.microtensile-checkbox');
+      if (firstCheckbox) {
+        firstCheckbox.focus();
+      }
+    }, 0);
   };
 
   return (
@@ -102,39 +136,40 @@ const MicroTensile = () => {
               onClick={() => window.location.href = "/micro-tensile/report"}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
         </div>
-        <div className="microtensile-header-buttons">
-          <button 
-            className="microtensile-reset-btn"
-            onClick={handleReset}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
-        </div>
       </div>
 
       <div className="microtensile-form-grid">
-            <div className="microtensile-form-group">
+            <div className="microtensile-form-group" style={{ gridColumn: '1 / -1' }}>
               <label>DISA *</label>
-              <select
-                ref={el => inputRefs.current.disa = el}
-                name="disa"
-                value={formData.disa}
-                onChange={handleChange}
-                onKeyDown={e => handleKeyDown(e, 'disa')}
-              >
-                <option value="">Select DISA</option>
+              <div className="microtensile-disa-checklist">
                 {disaOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
+                  <label key={option} className="microtensile-checkbox-label">
+                    <input
+                      type="checkbox"
+                      checked={formData.disa?.includes(option) || false}
+                      onChange={() => handleDisaChange(option)}
+                      className="microtensile-checkbox"
+                    />
+                    <span>{option}</span>
+                  </label>
                 ))}
-              </select>
+              </div>
+            </div>
+
+            <div className="microtensile-form-group">
+              <label>Date of Inspection *</label>
+              <CustomDatePicker
+                ref={el => inputRefs.current.dateOfInspection = el}
+                name="dateOfInspection"
+                value={formData.dateOfInspection}
+                onChange={handleDateChange}
+                onKeyDown={e => handleKeyDown(e, 'dateOfInspection')}
+              />
             </div>
 
             <div className="microtensile-form-group">
@@ -274,7 +309,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group full-width">
+            <div className="microtensile-form-group" style={{ gridColumn: 'span 2' }}>
               <label>Remarks</label>
               <textarea
                 ref={el => inputRefs.current.remarks = el}
@@ -302,6 +337,14 @@ const MicroTensile = () => {
           </div>
 
       <div className="microtensile-submit-container">
+        <button 
+          className="microtensile-reset-btn"
+          onClick={handleReset}
+          type="button"
+        >
+          <RefreshCw size={18} />
+          Reset Form
+        </button>
         <button 
           className="microtensile-submit-btn" 
           type="button"

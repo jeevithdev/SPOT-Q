@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Save, RefreshCw, Loader2, FileText } from 'lucide-react';
+import { Save, RefreshCw, Loader2, FileText, RotateCcw } from 'lucide-react';
 import { DatePicker } from '../../Components/Buttons';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Melting/CupolaHolderLogSheet.css';
@@ -7,6 +7,8 @@ import '../../styles/PageStyles/Melting/CupolaHolderLogSheet.css';
 const CupolaHolderLogSheet = () => {
   const [formData, setFormData] = useState({
     date: '',
+    shift: '',
+    holderNumber: '',
     heatNo: '',
     // Additions
     cpc: '',
@@ -32,6 +34,7 @@ const CupolaHolderLogSheet = () => {
   });
 
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [primaryLoading, setPrimaryLoading] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -41,8 +44,38 @@ const CupolaHolderLogSheet = () => {
     }));
   };
 
+  const handlePrimarySubmit = async () => {
+    const required = ['date', 'shift', 'holderNumber'];
+    const missing = required.filter(field => !formData[field]);
+
+    if (missing.length > 0) {
+      alert(`Please fill in the following required fields: ${missing.join(', ')}`);
+      return;
+    }
+
+    try {
+      setPrimaryLoading(true);
+      const primaryData = {
+        date: formData.date,
+        shift: formData.shift,
+        holderNumber: formData.holderNumber
+      };
+      
+      const data = await api.post('/v1/cupola-holder-logs/primary', primaryData);
+      
+      if (data.success) {
+        alert('Primary data saved successfully!');
+      }
+    } catch (error) {
+      console.error('Error saving primary data:', error);
+      alert('Failed to save primary data: ' + error.message);
+    } finally {
+      setPrimaryLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
-    const required = ['date', 'heatNo'];
+    const required = ['date', 'shift', 'holderNumber'];
     const missing = required.filter(field => !formData[field]);
 
     if (missing.length > 0) {
@@ -68,7 +101,7 @@ const CupolaHolderLogSheet = () => {
 
   const handleReset = () => {
     setFormData({
-      date: '', heatNo: '', cpc: '', mFeSl: '', feMn: '', sic: '',
+      date: '', shift: '', holderNumber: '', heatNo: '', cpc: '', mFeSl: '', feMn: '', sic: '',
       pureMg: '', cu: '', feCr: '', actualTime: '', tappingTime: '',
       tappingTemp: '', metalKg: '', disaLine: '', indFur: '', bailNo: '',
       tap: '', kw: '', remarks: ''
@@ -88,34 +121,79 @@ const CupolaHolderLogSheet = () => {
               onClick={() => window.location.href = "/melting/cupola-holder-log-sheet/report"}
               title="View Reports"
             >
-              <FileText size={14} />
+              <FileText size={16} />
               <span>View Reports</span>
             </button>
           </h2>
         </div>
-        <div className="cupola-holder-header-buttons">
-          <button 
-            className="cupola-holder-reset-btn"
-            onClick={handleReset}
-          >
-            <RefreshCw size={18} />
-            Reset Form
-          </button>
-        </div>
       </div>
 
       <div className="cupola-holder-main-card">
-        <h3 className="cupola-holder-main-card-title">Entry Form</h3>
+        <h3 className="cupola-holder-main-card-title">Primary</h3>
 
-        <div className="cupola-holder-form-grid">
-          {/* Basic Information */}
+        <div className="cupola-holder-primary-row">
+          {/* Primary Information */}
           <div className="cupola-holder-form-group">
             <label>Date *</label>
             <DatePicker name="date" value={formData.date} onChange={handleChange} />
           </div>
 
           <div className="cupola-holder-form-group">
-            <label>Heat No *</label>
+            <label>Shift *</label>
+            <select
+              name="shift"
+              value={formData.shift}
+              onChange={handleChange}
+              style={{
+                width: '100%',
+                padding: '0.625rem 0.875rem',
+                border: '2px solid #cbd5e1',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                backgroundColor: '#ffffff',
+                color: '#1e293b',
+                cursor: 'pointer'
+              }}
+            >
+              <option value="">Select Shift</option>
+              <option value="Shift 1">Shift 1</option>
+              <option value="Shift 2">Shift 2</option>
+              <option value="Shift 3">Shift 3</option>
+            </select>
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Holder Number *</label>
+            <input
+              type="text"
+              name="holderNumber"
+              value={formData.holderNumber}
+              onChange={handleChange}
+              placeholder="e.g: H001"
+            />
+          </div>
+
+          {/* Primary Submit Button */}
+          <div className="cupola-holder-primary-button-wrapper">
+            <button
+              className="cupola-holder-submit-btn"
+              type="button"
+              onClick={handlePrimarySubmit}
+              disabled={primaryLoading || !formData.date || !formData.shift || !formData.holderNumber}
+            >
+              {primaryLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
+              {primaryLoading ? 'Saving...' : 'Save Primary'}
+            </button>
+          </div>
+        </div>
+
+        {/* Divider line */}
+        <div style={{ marginTop: '1rem', marginBottom: '1rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
+
+        {/* Heat No */}
+        <div className="cupola-holder-form-grid">
+          <div className="cupola-holder-form-group" style={{ maxWidth: '300px' }}>
+            <label>Heat No</label>
             <input
               type="text"
               name="heatNo"
@@ -128,10 +206,10 @@ const CupolaHolderLogSheet = () => {
 
         {/* Additions Section */}
         <div className="cupola-holder-sub-section">
-          <h4 className="cupola-holder-sub-section-title">Additions (All in kgs)</h4>
+          <h4 className="cupola-holder-sub-section-title">Additions</h4>
           <div className="cupola-holder-form-grid">
             <div className="cupola-holder-form-group">
-              <label>CPC (kgs)</label>
+              <label>CPC</label>
               <input
                 type="number"
                 name="cpc"
@@ -143,7 +221,7 @@ const CupolaHolderLogSheet = () => {
             </div>
 
             <div className="cupola-holder-form-group">
-              <label>M Fe Sl (kgs)</label>
+              <label>Fe Sl</label>
               <input
                 type="number"
                 name="mFeSl"
@@ -155,7 +233,7 @@ const CupolaHolderLogSheet = () => {
             </div>
 
             <div className="cupola-holder-form-group">
-              <label>Fe Mn (kgs)</label>
+              <label>Fe Mn</label>
               <input
                 type="number"
                 name="feMn"
@@ -167,7 +245,7 @@ const CupolaHolderLogSheet = () => {
             </div>
 
             <div className="cupola-holder-form-group">
-              <label>SiC (kgs)</label>
+              <label>Sic</label>
               <input
                 type="number"
                 name="sic"
@@ -179,7 +257,7 @@ const CupolaHolderLogSheet = () => {
             </div>
 
             <div className="cupola-holder-form-group">
-              <label>Pure Mg (kgs)</label>
+              <label>Pure Mg</label>
               <input
                 type="number"
                 name="pureMg"
@@ -191,7 +269,7 @@ const CupolaHolderLogSheet = () => {
             </div>
 
             <div className="cupola-holder-form-group">
-              <label>Cu (kgs)</label>
+              <label>Cu</label>
               <input
                 type="number"
                 name="cu"
@@ -203,7 +281,7 @@ const CupolaHolderLogSheet = () => {
             </div>
 
             <div className="cupola-holder-form-group">
-              <label>Fe Cr (kgs)</label>
+              <label>Fe Cr</label>
               <input
                 type="number"
                 name="feCr"
@@ -218,8 +296,8 @@ const CupolaHolderLogSheet = () => {
 
         {/* Tapping Section */}
         <div className="cupola-holder-sub-section">
-          <h4 className="cupola-holder-sub-section-title">Tapping Details</h4>
-          <div className="cupola-holder-form-grid">
+          <h4 className="cupola-holder-sub-section-title">Tapping</h4>
+          <div className="cupola-holder-tapping-container">
             <div className="cupola-holder-form-group">
               <label>Actual Time</label>
               <input
@@ -241,7 +319,7 @@ const CupolaHolderLogSheet = () => {
             </div>
 
             <div className="cupola-holder-form-group">
-              <label>Tapping Temp (°C)</label>
+              <label>Temp (°C)</label>
               <input
                 type="number"
                 name="tappingTemp"
@@ -265,70 +343,73 @@ const CupolaHolderLogSheet = () => {
           </div>
         </div>
 
-        {/* Pouring Section */}
-        <div className="cupola-holder-sub-section">
-          <h4 className="cupola-holder-sub-section-title">Pouring Details</h4>
-          <div className="cupola-holder-form-grid">
-            <div className="cupola-holder-form-group">
-              <label>DISA LINE</label>
-              <input
-                type="text"
-                name="disaLine"
-                value={formData.disaLine}
-                onChange={handleChange}
-                placeholder="e.g: DISA-1"
-              />
-            </div>
+        {/* Pouring and Electrical Sections - Same Row */}
+        <div className="cupola-holder-row-container">
+          {/* Pouring Section */}
+          <div className="cupola-holder-sub-section">
+            <h4 className="cupola-holder-sub-section-title">Pouring Details</h4>
+            <div className="cupola-holder-form-grid">
+              <div className="cupola-holder-form-group">
+                <label>DISA LINE</label>
+                <input
+                  type="text"
+                  name="disaLine"
+                  value={formData.disaLine}
+                  onChange={handleChange}
+                  placeholder="e.g: DISA-1"
+                />
+              </div>
 
-            <div className="cupola-holder-form-group">
-              <label>IND FUR</label>
-              <input
-                type="text"
-                name="indFur"
-                value={formData.indFur}
-                onChange={handleChange}
-                placeholder="e.g: IND-FUR-1"
-              />
-            </div>
+              <div className="cupola-holder-form-group">
+                <label>IND FUR</label>
+                <input
+                  type="text"
+                  name="indFur"
+                  value={formData.indFur}
+                  onChange={handleChange}
+                  placeholder="e.g: IND-FUR-1"
+                />
+              </div>
 
-            <div className="cupola-holder-form-group">
-              <label>BAIL NO</label>
-              <input
-                type="text"
-                name="bailNo"
-                value={formData.bailNo}
-                onChange={handleChange}
-                placeholder="e.g: BAIL-001"
-              />
+              <div className="cupola-holder-form-group">
+                <label>BAIL NO</label>
+                <input
+                  type="text"
+                  name="bailNo"
+                  value={formData.bailNo}
+                  onChange={handleChange}
+                  placeholder="e.g: BAIL-001"
+                />
+              </div>
             </div>
           </div>
-        </div>
 
-        {/* Electrical Section */}
-        <div className="cupola-holder-sub-section">
-          <h4 className="cupola-holder-sub-section-title">Electrical Readings</h4>
-          <div className="cupola-holder-form-grid">
-            <div className="cupola-holder-form-group">
-              <label>TAP</label>
-              <input
-                type="text"
-                name="tap"
-                value={formData.tap}
-                onChange={handleChange}
-                placeholder="Enter TAP value"
-              />
-            </div>
+          {/* Electrical Section */}
+          <div className="cupola-holder-sub-section">
+            <h4 className="cupola-holder-sub-section-title">Electrical Readings</h4>
+            <div className="cupola-holder-form-grid">
+              <div className="cupola-holder-form-group">
+                <label>TAP</label>
+                <input
+                  type="text"
+                  name="tap"
+                  value={formData.tap}
+                  onChange={handleChange}
+                  placeholder="Enter TAP value"
+                />
+              </div>
 
-            <div className="cupola-holder-form-group">
-              <label>KW</label>
-              <input
-                type="number"
-                name="kw"
-                value={formData.kw}
-                onChange={handleChange}
-                step="0.1"
-                placeholder="e.g: 2500"
-              />
+              <div className="cupola-holder-form-group">
+                <label>KW</label>
+                <input
+                  type="number"
+                  name="kw"
+                  value={formData.kw}
+                  onChange={handleChange}
+                  step="0.1"
+                  placeholder="e.g: 2500"
+                />
+              </div>
             </div>
           </div>
         </div>
@@ -348,6 +429,14 @@ const CupolaHolderLogSheet = () => {
         </div>
 
         <div className="cupola-holder-submit-container">
+          <button
+            className="cupola-holder-reset-btn"
+            type="button"
+            onClick={handleReset}
+          >
+            <RotateCcw size={16} />
+            Reset
+          </button>
           <button
             className="cupola-holder-submit-btn"
             type="button"
