@@ -37,6 +37,11 @@ const DisamaticProduct = () => {
   const [isLocked, setIsLocked] = useState(false);
   const [checkingData, setCheckingData] = useState(false);
   const [basicInfoLocked, setBasicInfoLocked] = useState(false);
+  const [basicFieldLocked, setBasicFieldLocked] = useState({
+    shift: false,
+    incharge: false,
+    ppOperator: false
+  }); // All fields start unlocked - they lock only after data is saved
   const [isPrimaryLocked, setIsPrimaryLocked] = useState(false);
   const [eventSectionLocked, setEventSectionLocked] = useState({
     significantEvent: false,
@@ -45,6 +50,20 @@ const DisamaticProduct = () => {
   });
   const [showLockedPopup, setShowLockedPopup] = useState(false);
   const [initialMembers, setInitialMembers] = useState([]); // Track initial members when locked
+  const [nextSNo, setNextSNo] = useState({
+    production: 1,
+    nextShiftPlan: 1,
+    delays: 1,
+    mouldHardness: 1,
+    patternTemp: 1
+  }); // Track next S.No for each table
+  
+  // Refs for submit buttons
+  const productionSubmitRef = React.useRef(null);
+  const nextShiftPlanSubmitRef = React.useRef(null);
+  const delaysSubmitRef = React.useRef(null);
+  const mouldHardnessSubmitRef = React.useRef(null);
+  const patternTempSubmitRef = React.useRef(null);
   
   const handleChange = (field, value) => {
     // Handle date field specially - ensure we get the actual value string
@@ -104,7 +123,101 @@ const DisamaticProduct = () => {
     setFormData(prev => ({ ...prev, patternTempTable: updatedTable }));
   };
 
-  // Reset functions for each table
+  // Handle Enter key navigation for table inputs
+  const handleTableKeyDown = (e, tableName, rowIndex, fieldIndex, totalFields, submitButtonRef) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Get all inputs in the current table row
+      const currentRow = e.target.closest('tr');
+      if (!currentRow) return;
+      
+      const inputs = Array.from(currentRow.querySelectorAll('input:not([disabled]), textarea:not([disabled])'));
+      const currentInputIndex = inputs.indexOf(e.target);
+      
+      // If not the last input in the row, move to next input
+      if (currentInputIndex < inputs.length - 1) {
+        inputs[currentInputIndex + 1].focus();
+        return;
+      }
+      
+      // If this is the last input in the row, focus the submit button
+      if (submitButtonRef && submitButtonRef.current) {
+        submitButtonRef.current.focus();
+      }
+    }
+  };
+
+  // Update next S.No for a specific table without loading data into form
+  const updateNextSNoForTable = async (tableName) => {
+    if (!formData.date || !/^\d{4}-\d{2}-\d{2}$/.test(formData.date)) {
+      return;
+    }
+
+    try {
+      const response = await api.get(`/v1/dismatic-reports/date?date=${encodeURIComponent(formData.date)}`);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        const report = response.data[0];
+        let maxSNo = 0;
+
+        if (tableName === 'production' && report.productionDetails && Array.isArray(report.productionDetails) && report.productionDetails.length > 0) {
+          maxSNo = Math.max(...report.productionDetails.map(item => item.sNo || 0), 0);
+        } else if (tableName === 'nextShiftPlan' && report.nextShiftPlan && Array.isArray(report.nextShiftPlan) && report.nextShiftPlan.length > 0) {
+          maxSNo = Math.max(...report.nextShiftPlan.map(item => item.sNo || 0), 0);
+        } else if (tableName === 'delays' && report.delays && Array.isArray(report.delays) && report.delays.length > 0) {
+          maxSNo = Math.max(...report.delays.map(item => item.sNo || 0), 0);
+        } else if (tableName === 'mouldHardness' && report.mouldHardness && Array.isArray(report.mouldHardness) && report.mouldHardness.length > 0) {
+          maxSNo = Math.max(...report.mouldHardness.map(item => item.sNo || 0), 0);
+        } else if (tableName === 'patternTemp' && report.patternTemperature && Array.isArray(report.patternTemperature) && report.patternTemperature.length > 0) {
+          maxSNo = Math.max(...report.patternTemperature.map(item => item.sNo || 0), 0);
+        }
+
+        setNextSNo(prev => ({ ...prev, [tableName]: maxSNo + 1 }));
+      }
+    } catch (error) {
+      console.error(`Error updating next S.No for ${tableName}:`, error);
+    }
+  };
+
+  // Focus first input of a table - improved selector
+  const focusFirstTableInput = (tableSection) => {
+    setTimeout(() => {
+      // Find all sections and match by h3 text content
+      const sections = document.querySelectorAll('.disamatic-section');
+      let targetSection = null;
+      
+      sections.forEach(section => {
+        const h3 = section.querySelector('h3.disamatic-section-title');
+        if (h3) {
+          const text = h3.textContent || '';
+          if (tableSection === 'production' && text.includes('Production') && !text.includes('Mould Hardness')) {
+            targetSection = section;
+          } else if (tableSection === 'nextShiftPlan' && text.includes('Next Shift Plan')) {
+            targetSection = section;
+          } else if (tableSection === 'delays' && text.includes('Delays')) {
+            targetSection = section;
+          } else if (tableSection === 'mouldHardness' && text.includes('Mould Hardness')) {
+            targetSection = section;
+          } else if (tableSection === 'patternTemp' && text.includes('Pattern Temp')) {
+            targetSection = section;
+          }
+        }
+      });
+      
+      if (targetSection) {
+        const tableWrapper = targetSection.querySelector('.disamatic-table-wrapper');
+        if (tableWrapper) {
+          const firstInput = tableWrapper.querySelector('tbody tr:first-child input:not([disabled])');
+          if (firstInput) {
+            firstInput.focus();
+          }
+        }
+      }
+    }, 200);
+  };
+
+  // Reset functions for each table - reset to show next S.No
   const resetProductionTable = () => {
     setFormData(prev => ({ ...prev, productionTable: [{ counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }] }));
   };
@@ -132,7 +245,14 @@ const DisamaticProduct = () => {
   // Check if primary data exists for date (similar to DmmSettingParameters)
   const checkExistingPrimaryData = async (date) => {
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      // Reset all locks when no valid date
       setBasicInfoLocked(false);
+      setIsPrimaryLocked(false);
+      setBasicFieldLocked({
+        shift: false,
+        incharge: false,
+        ppOperator: false
+      });
       return;
     }
 
@@ -144,29 +264,49 @@ const DisamaticProduct = () => {
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
         
-        // Check if basic info exists (shift, incharge, ppOperator, or members)
-        if (report && (report.shift || report.incharge || report.ppOperator || report.memberspresent)) {
+        // Determine per-field locks for primary data - only lock if field has actual saved data
+        const hasShift = report.shift !== undefined && report.shift !== null && String(report.shift).trim() !== '';
+        const hasIncharge = report.incharge !== undefined && report.incharge !== null && String(report.incharge).trim() !== '';
+        const hasPpOperator = report.ppOperator !== undefined && report.ppOperator !== null && String(report.ppOperator).trim() !== '';
+        const hasMembers = report.memberspresent && String(report.memberspresent).trim() !== '';
+
+        // Lock only fields that have saved data
+        setBasicFieldLocked({
+          shift: hasShift,
+          incharge: hasIncharge,
+          ppOperator: hasPpOperator
+        });
+
+        // Check if any primary info exists (for UX messaging and primary lock state)
+        if (report && (hasShift || hasIncharge || hasPpOperator || hasMembers)) {
           setBasicInfoLocked(true);
           setIsPrimaryLocked(true);
           
-          // Lock and populate basic info fields only - update all at once
+          // Populate basic info fields only - update all at once
           setFormData(prev => {
             const updated = { ...prev };
-            if (report.shift) {
-              updated.shift = String(report.shift || '');
+            if (hasShift) {
+              updated.shift = String(report.shift || '').trim();
+            } else {
+              updated.shift = ''; // Clear if not saved
             }
-            if (report.incharge) {
-              updated.incharge = String(report.incharge || '');
+            if (hasIncharge) {
+              updated.incharge = String(report.incharge || '').trim();
+            } else {
+              updated.incharge = ''; // Clear if not saved
             }
-            if (report.ppOperator) {
-              updated.ppOperator = String(report.ppOperator || '');
+            if (hasPpOperator) {
+              updated.ppOperator = String(report.ppOperator || '').trim();
+            } else {
+              updated.ppOperator = ''; // Clear if not saved
             }
-            if (report.memberspresent) {
+            if (hasMembers) {
               const members = String(report.memberspresent || '').split(',').map(m => m.trim()).filter(m => m);
               updated.members = members.length > 0 ? members : [''];
               // Store initial members to distinguish from newly added ones
               setInitialMembers([...members]);
             } else {
+              updated.members = prev.members.length > 0 ? prev.members : [''];
               setInitialMembers([]);
             }
             return updated;
@@ -177,17 +317,53 @@ const DisamaticProduct = () => {
             checkExistingData();
           }, 100);
         } else {
+          // No primary data exists - unlock all fields
           setBasicInfoLocked(false);
           setIsPrimaryLocked(false);
+          setBasicFieldLocked({
+            shift: false,
+            incharge: false,
+            ppOperator: false
+          });
+          // Clear form data for primary fields
+          setFormData(prev => ({
+            ...prev,
+            shift: '',
+            incharge: '',
+            ppOperator: '',
+            members: ['']
+          }));
+          setInitialMembers([]);
         }
       } else {
+        // No record exists for this date - unlock all fields
         setBasicInfoLocked(false);
         setIsPrimaryLocked(false);
+        setBasicFieldLocked({
+          shift: false,
+          incharge: false,
+          ppOperator: false
+        });
+        // Clear form data for primary fields
+        setFormData(prev => ({
+          ...prev,
+          shift: '',
+          incharge: '',
+          ppOperator: '',
+          members: ['']
+        }));
+        setInitialMembers([]);
       }
     } catch (error) {
       console.error('Error checking primary data:', error);
+      // On error, unlock all fields
       setBasicInfoLocked(false);
       setIsPrimaryLocked(false);
+      setBasicFieldLocked({
+        shift: false,
+        incharge: false,
+        ppOperator: false
+      });
     } finally {
       setCheckingData(false);
     }
@@ -260,47 +436,20 @@ const DisamaticProduct = () => {
         });
         
         
-        // Load all existing data into form - update all sections
-        // Use functional update to ensure we have the latest formData
+        // Load all existing data into form - update all sections EXCEPT primary fields
+        // NOTE: Primary fields (shift, incharge, ppOperator, members) are handled by checkExistingPrimaryData
+        // This function only updates other sections (tables, event section) to avoid conflicts with locking logic
         setFormData(prev => {
           const updatedFormData = { ...prev };
           
-          // Update shift if available
-          if (report.shift) {
-            updatedFormData.shift = String(report.shift || '');
-          }
-
-          // Update incharge if available
-          if (report.incharge) {
-            updatedFormData.incharge = String(report.incharge || '');
-          }
-
-          // Update PP Operator if available
-          if (report.ppOperator) {
-            updatedFormData.ppOperator = String(report.ppOperator || '');
-          }
-
-          // Update members - preserve newly added members that haven't been saved yet
-          if (report.memberspresent) {
-            const existingMembers = String(report.memberspresent || '').split(',').map(m => m.trim()).filter(m => m);
-            // Find new members in current formData that aren't in the database yet
-            const currentMembers = prev.members || [];
-            const newMembers = currentMembers.filter(m => {
-              const memberStr = String(m).trim();
-              return memberStr && !existingMembers.includes(memberStr);
-            });
-            // Combine: existing locked members + newly added members
-            updatedFormData.members = [...existingMembers, ...newMembers];
-            if (updatedFormData.members.length === 0) {
-              updatedFormData.members = [''];
-            }
-            // Update initial members when loading full data
-            setInitialMembers([...existingMembers]);
-          }
+          // DO NOT update primary fields here - they're fully handled by checkExistingPrimaryData
+          // This prevents race conditions and ensures locks are set correctly
+          // Primary fields will be loaded and locked by checkExistingPrimaryData before this function runs
 
           // Production Details
           if (report.productionDetails && Array.isArray(report.productionDetails) && report.productionDetails.length > 0) {
             updatedFormData.productionTable = report.productionDetails.map(item => ({
+              sNo: item.sNo || 0,
               counterNo: String(item.counterNo || ''),
               componentName: String(item.componentName || ''),
               produced: item.produced !== undefined && item.produced !== null ? item.produced : '',
@@ -309,36 +458,51 @@ const DisamaticProduct = () => {
               mouldsPerHour: item.mouldsPerHour !== undefined && item.mouldsPerHour !== null ? item.mouldsPerHour : '',
               remarks: String(item.remarks || '')
             }));
+            // Calculate next S.No for production (max sNo + 1)
+            const maxSNo = Math.max(...report.productionDetails.map(item => item.sNo || 0), 0);
+            setNextSNo(prev => ({ ...prev, production: maxSNo + 1 }));
           } else {
-            // Keep existing productionTable if no data
+            // Keep existing productionTable if no data, reset next S.No to 1
             updatedFormData.productionTable = prev.productionTable.length > 0 ? prev.productionTable : [{ counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }];
+            setNextSNo(prev => ({ ...prev, production: 1 }));
           }
           
           // Next Shift Plan
           if (report.nextShiftPlan && Array.isArray(report.nextShiftPlan) && report.nextShiftPlan.length > 0) {
             updatedFormData.nextShiftPlanTable = report.nextShiftPlan.map(item => ({
+              sNo: item.sNo || 0,
               componentName: String(item.componentName || ''),
               plannedMoulds: item.plannedMoulds !== undefined && item.plannedMoulds !== null ? item.plannedMoulds : '',
               remarks: String(item.remarks || '')
             }));
+            // Calculate next S.No for nextShiftPlan (max sNo + 1)
+            const maxSNo = Math.max(...report.nextShiftPlan.map(item => item.sNo || 0), 0);
+            setNextSNo(prev => ({ ...prev, nextShiftPlan: maxSNo + 1 }));
           } else {
             updatedFormData.nextShiftPlanTable = prev.nextShiftPlanTable.length > 0 ? prev.nextShiftPlanTable : [{ componentName: "", plannedMoulds: "", remarks: "" }];
+            setNextSNo(prev => ({ ...prev, nextShiftPlan: 1 }));
           }
           
           // Delays
           if (report.delays && Array.isArray(report.delays) && report.delays.length > 0) {
             updatedFormData.delaysTable = report.delays.map(item => ({
+              sNo: item.sNo || 0,
               delays: String(item.delays || ''),
               durationMinutes: item.durationMinutes !== undefined && item.durationMinutes !== null ? item.durationMinutes : '',
               durationTime: String(item.durationTime || '')
             }));
+            // Calculate next S.No for delays (max sNo + 1)
+            const maxSNo = Math.max(...report.delays.map(item => item.sNo || 0), 0);
+            setNextSNo(prev => ({ ...prev, delays: maxSNo + 1 }));
           } else {
             updatedFormData.delaysTable = prev.delaysTable.length > 0 ? prev.delaysTable : [{ delays: "", durationMinutes: "", durationTime: "" }];
+            setNextSNo(prev => ({ ...prev, delays: 1 }));
           }
           
           // Mould Hardness
           if (report.mouldHardness && Array.isArray(report.mouldHardness) && report.mouldHardness.length > 0) {
             updatedFormData.mouldHardnessTable = report.mouldHardness.map(item => ({
+              sNo: item.sNo || 0,
               componentName: String(item.componentName || ''),
               mpPP: item.mpPP !== undefined && item.mpPP !== null ? item.mpPP : '',
               mpSP: item.mpSP !== undefined && item.mpSP !== null ? item.mpSP : '',
@@ -346,19 +510,28 @@ const DisamaticProduct = () => {
               bsSP: item.bsSP !== undefined && item.bsSP !== null ? item.bsSP : '',
               remarks: String(item.remarks || '')
             }));
+            // Calculate next S.No for mouldHardness (max sNo + 1)
+            const maxSNo = Math.max(...report.mouldHardness.map(item => item.sNo || 0), 0);
+            setNextSNo(prev => ({ ...prev, mouldHardness: maxSNo + 1 }));
           } else {
             updatedFormData.mouldHardnessTable = prev.mouldHardnessTable.length > 0 ? prev.mouldHardnessTable : [{ componentName: "", mpPP: "", mpSP: "", bsPP: "", bsSP: "", remarks: "" }];
+            setNextSNo(prev => ({ ...prev, mouldHardness: 1 }));
           }
           
           // Pattern Temperature
           if (report.patternTemperature && Array.isArray(report.patternTemperature) && report.patternTemperature.length > 0) {
             updatedFormData.patternTempTable = report.patternTemperature.map(item => ({
+              sNo: item.sNo || 0,
               item: String(item.item || ''),
               pp: item.pp !== undefined && item.pp !== null ? item.pp : '',
               sp: item.sp !== undefined && item.sp !== null ? item.sp : ''
             }));
+            // Calculate next S.No for patternTemp (max sNo + 1)
+            const maxSNo = Math.max(...report.patternTemperature.map(item => item.sNo || 0), 0);
+            setNextSNo(prev => ({ ...prev, patternTemp: maxSNo + 1 }));
           } else {
             updatedFormData.patternTempTable = prev.patternTempTable.length > 0 ? prev.patternTempTable : [{ item: "", pp: "", sp: "" }];
+            setNextSNo(prev => ({ ...prev, patternTemp: 1 }));
           }
           
           // Other fields - only load if they have actual content
@@ -399,11 +572,27 @@ const DisamaticProduct = () => {
   // Check for primary data when date changes (similar to DmmSettingParameters)
   useEffect(() => {
     setShowLockedPopup(false); // Reset popup when date changes
+    // Reset all locks immediately when date changes
+    setBasicFieldLocked({
+      shift: false,
+      incharge: false,
+      ppOperator: false
+    });
+    setBasicInfoLocked(false);
+    setIsPrimaryLocked(false);
+    
     const timeoutId = setTimeout(() => {
       if (formData.date) {
         checkExistingPrimaryData(formData.date);
       } else {
+        // No date - unlock everything
         setBasicInfoLocked(false);
+        setIsPrimaryLocked(false);
+        setBasicFieldLocked({
+          shift: false,
+          incharge: false,
+          ppOperator: false
+        });
       }
     }, 500); // Debounce for 500ms
 
@@ -430,10 +619,10 @@ const DisamaticProduct = () => {
 
   // Handle click on locked input fields to show popup
   const handleLockedFieldClick = (fieldName) => {
-    // Don't show popup for members if basicInfo is locked (members can be added)
-    if (basicInfoLocked && (fieldName === 'shift' || fieldName === 'incharge' || fieldName === 'ppOperator')) {
-      setShowLockedPopup(true);
-    } else if (isLocked && fieldName !== 'members') {
+    // Primary per-field lock popup
+    if ((fieldName === 'shift' && basicFieldLocked.shift) ||
+        (fieldName === 'incharge' && basicFieldLocked.incharge) ||
+        (fieldName === 'ppOperator' && basicFieldLocked.ppOperator)) {
       setShowLockedPopup(true);
     } else if ((fieldName === 'significantEvent' && eventSectionLocked.significantEvent) ||
                (fieldName === 'maintenance' && eventSectionLocked.maintenance) ||
@@ -454,7 +643,7 @@ const DisamaticProduct = () => {
   };
 
   const handleBasicInfoSubmit = async () => {
-    const required = ['date', 'shift', 'incharge', 'ppOperator'];
+    const required = ['date'];
     const missing = required.filter(field => !formData[field]);
     
     if (missing.length > 0) {
@@ -468,63 +657,84 @@ const DisamaticProduct = () => {
       return;
     }
 
-    // Check if we have new members to save when form is locked
-    // Allow saving new members even when basicInfoLocked or isLocked is true
-    if (basicInfoLocked || isLocked) {
-      const allMembers = formData.members.filter(m => m.trim() !== '');
-      const hasNewMembers = allMembers.some(m => {
-        const memberStr = m.trim();
-        return memberStr && !initialMembers.includes(memberStr);
-      });
+    // Check if there are any unlocked fields with data to save
+    const hasUnlockedShift = !basicFieldLocked.shift && formData.shift && formData.shift.trim() !== '';
+    const hasUnlockedIncharge = !basicFieldLocked.incharge && formData.incharge && formData.incharge.trim() !== '';
+    const hasUnlockedPpOperator = !basicFieldLocked.ppOperator && formData.ppOperator && formData.ppOperator.trim() !== '';
+    
+    // For members: include all current members (both existing locked ones and new ones)
+    // The backend will merge them properly
+    const allMembers = formData.members.filter(m => m.trim() !== '');
+    const hasNewMembers = allMembers.length > 0 && (
+      allMembers.length !== initialMembers.length || 
+      !allMembers.every(m => initialMembers.includes(m))
+    );
 
-      // If no new members to save and form is fully locked, show popup
-      if (isLocked && !hasNewMembers && allMembers.length === initialMembers.length) {
-        setShowLockedPopup(true);
-        return;
-      }
-
-      // If basicInfoLocked and no new members, show message
-      if (basicInfoLocked && !hasNewMembers && allMembers.length === initialMembers.length) {
-        alert('No new members to save. Add new member names and try again.');
-        return;
-      }
-
-      // If we have new members, proceed with saving (even if isLocked is true)
-      // This allows adding members to a fully locked form
+    // Check if there's anything new to save
+    // Allow save if: any unlocked field has data, OR if this is a new record (no primary data exists yet)
+    const isNewRecord = !isPrimaryLocked;
+    if (!isNewRecord && !hasUnlockedShift && !hasUnlockedIncharge && !hasUnlockedPpOperator && !hasNewMembers) {
+      alert('No new data to save. All fields are either locked or empty.');
+      return;
     }
 
     try {
       setLoadingStates(prev => ({ ...prev, basicInfo: true }));
-      const data = await api.post('/v1/dismatic-reports', {
-        date: formData.date, // Should be in YYYY-MM-DD format
-        shift: formData.shift.trim(),
-        incharge: formData.incharge.trim(),
-        ppOperator: formData.ppOperator.trim(),
-        members: formData.members.filter(m => m.trim() !== ''),
+      
+      // Build payload - always include date and section
+      const payload = {
+        date: formData.date,
         section: 'basicInfo'
-      });
+      };
+      
+      // For new records: send all fields that have data (even if empty, shift is required by schema)
+      // For existing records: only send unlocked fields to avoid overwriting locked ones
+      if (isNewRecord) {
+        // New record - send all fields that have data
+        // Shift is required by schema, so always send it (backend will use 'Not Set' if empty)
+        payload.shift = formData.shift && formData.shift.trim() !== '' ? formData.shift.trim() : '';
+        if (formData.incharge && formData.incharge.trim() !== '') {
+          payload.incharge = formData.incharge.trim();
+        }
+        if (formData.ppOperator && formData.ppOperator.trim() !== '') {
+          payload.ppOperator = formData.ppOperator.trim();
+        }
+        if (allMembers.length > 0) {
+          payload.members = allMembers;
+        }
+      } else {
+        // Existing record - only send unlocked fields (fields that don't have saved data yet)
+        // This ensures locked fields are not overwritten
+        if (hasUnlockedShift) {
+          payload.shift = formData.shift.trim();
+        }
+        if (hasUnlockedIncharge) {
+          payload.incharge = formData.incharge.trim();
+        }
+        if (hasUnlockedPpOperator) {
+          payload.ppOperator = formData.ppOperator.trim();
+        }
+        // Always send all members (both existing and new) so backend can merge them
+        if (allMembers.length > 0) {
+          payload.members = allMembers;
+        }
+      }
+
+      const data = await api.post('/v1/dismatic-reports', payload);
       
       if (data.success) {
-        const savedMembers = formData.members.filter(m => m.trim() !== '');
-        // Update initial members to include newly saved ones
-        if (basicInfoLocked && savedMembers.length > 0) {
-          setInitialMembers([...savedMembers]);
-        }
-        alert(basicInfoLocked ? 'New members saved successfully!' : 'Primary information saved successfully!');
-        setIsPrimaryLocked(true);
-        setBasicInfoLocked(true);
-        // Wait a bit for database to be updated
-        setTimeout(async () => {
-          // Re-check for primary data and full form lock
-          await checkExistingPrimaryData(formData.date);
-          if (formData.shift) {
-            await checkExistingData();
-          }
-        }, 300);
+        // After successful save, re-check the data to update locks properly
+        // This ensures the UI reflects the current database state
+        await checkExistingPrimaryData(formData.date);
+        
+        alert('Primary data saved successfully! Saved fields are now locked.');
+      } else {
+        alert('Failed to save: ' + (data.message || 'Unknown error'));
       }
     } catch (error) {
       console.error('Error saving basic info:', error);
-      alert('Failed to save basic information: ' + (error.response?.data?.message || error.message));
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      alert('Failed to save basic information: ' + errorMessage);
     } finally {
       setLoadingStates(prev => ({ ...prev, basicInfo: false }));
     }
@@ -561,6 +771,10 @@ const DisamaticProduct = () => {
         alert('Production data saved successfully!');
         // Clear production table after successful save to allow entering next entry
         resetProductionTable();
+        // Update next S.No based on database (without loading data into form)
+        await updateNextSNoForTable('production');
+        // Focus first input for next entry
+        focusFirstTableInput('production');
       }
     } catch (error) {
       console.error('Error saving production:', error);
@@ -601,6 +815,10 @@ const DisamaticProduct = () => {
         alert('Next Shift Plan data saved successfully!');
         // Clear next shift plan table after successful save to allow entering next entry
         resetNextShiftPlanTable();
+        // Update next S.No based on database (without loading data into form)
+        await updateNextSNoForTable('nextShiftPlan');
+        // Focus first input for next entry
+        focusFirstTableInput('nextShiftPlan');
       }
     } catch (error) {
       console.error('Error saving next shift plan:', error);
@@ -641,6 +859,10 @@ const DisamaticProduct = () => {
         alert('Delays data saved successfully!');
         // Clear delays table after successful save to allow entering next entry
         resetDelaysTable();
+        // Update next S.No based on database (without loading data into form)
+        await updateNextSNoForTable('delays');
+        // Focus first input for next entry
+        focusFirstTableInput('delays');
       }
     } catch (error) {
       console.error('Error saving delays:', error);
@@ -681,6 +903,10 @@ const DisamaticProduct = () => {
         alert('Mould Hardness data saved successfully!');
         // Clear mould hardness table after successful save to allow entering next entry
         resetMouldHardnessTable();
+        // Update next S.No based on database (without loading data into form)
+        await updateNextSNoForTable('mouldHardness');
+        // Focus first input for next entry
+        focusFirstTableInput('mouldHardness');
       }
     } catch (error) {
       console.error('Error saving mould hardness:', error);
@@ -721,6 +947,10 @@ const DisamaticProduct = () => {
         alert('Pattern Temperature data saved successfully!');
         // Clear pattern temp table after successful save to allow entering next entry
         resetPatternTempTable();
+        // Update next S.No based on database (without loading data into form)
+        await updateNextSNoForTable('patternTemp');
+        // Focus first input for next entry
+        focusFirstTableInput('patternTemp');
       }
     } catch (error) {
       console.error('Error saving pattern temp:', error);
@@ -748,12 +978,6 @@ const DisamaticProduct = () => {
       return;
     }
 
-    // Check if form is locked - show popup instead of saving
-    if (isLocked) {
-      setShowLockedPopup(true);
-      return;
-    }
-    
     // Check if all event fields are locked individually - show popup
     if (eventSectionLocked.significantEvent && eventSectionLocked.maintenance && eventSectionLocked.supervisorName) {
       setShowLockedPopup(true);
@@ -804,17 +1028,8 @@ const DisamaticProduct = () => {
           supervisorName: supervisorNameHasData
         });
         
-        // Clear event section fields after successful save to allow entering next entry
-        // Only clear fields that were actually saved
-        setFormData(prev => ({
-          ...prev,
-          ...(significantEventHasData && { significantEvent: '' }),
-          ...(maintenanceHasData && { maintenance: '' }),
-          ...(supervisorNameHasData && { supervisorName: '' })
-        }));
-        
-        // Don't call checkExistingData - it might reload empty strings from DB and override our locks
-        // The locks are correctly set based on what was actually saved
+        // Keep the saved values visible in locked fields (do not clear),
+        // mirroring the behavior of the Primary Data section
       }
     } catch (error) {
       console.error('Error saving event section:', error);
@@ -863,7 +1078,7 @@ const DisamaticProduct = () => {
       </div>
           {/* Primary Section */}
           <div className="disamatic-section">
-            <h3 className="disamatic-section-title">Primary</h3>
+            <h3 className="disamatic-section-title primary-data-title">Primary Data :</h3>
             {checkingData && (
               <div className="disamatic-checking-message">
                 Checking for existing data...
@@ -871,7 +1086,7 @@ const DisamaticProduct = () => {
             )}
               {isPrimaryLocked && !checkingData && (
               <div className="disamatic-primary-locked-message">
-                Primary data is locked. Use Reports page to edit.
+                Saved primary fields are locked individually. Empty fields remain editable.
               </div>
             )}
             <div className="disamatic-form-grid">
@@ -897,9 +1112,12 @@ const DisamaticProduct = () => {
                   onClick={() => handleLockedFieldClick('shift')}
                   onFocus={() => handleLockedFieldClick('shift')}
                   placeholder="e.g., A, B, C"
-                  disabled={basicInfoLocked || isLocked}
-                  readOnly={basicInfoLocked || isLocked}
-                  style={{ cursor: (basicInfoLocked || isLocked) ? 'not-allowed' : 'text' }}
+                  disabled={basicFieldLocked.shift}
+                  readOnly={basicFieldLocked.shift}
+                  style={{ 
+                    cursor: (basicFieldLocked.shift) ? 'not-allowed' : 'text',
+                    backgroundColor: (basicFieldLocked.shift) ? '#f1f5f9' : '#ffffff'
+                  }}
                 />
               </div>
               <div className="disamatic-form-group">
@@ -911,9 +1129,12 @@ const DisamaticProduct = () => {
                   onClick={() => handleLockedFieldClick('incharge')}
                   onFocus={() => handleLockedFieldClick('incharge')}
                   placeholder="Enter incharge name"
-                  disabled={basicInfoLocked || isLocked}
-                  readOnly={basicInfoLocked || isLocked}
-                  style={{ cursor: (basicInfoLocked || isLocked) ? 'not-allowed' : 'text' }}
+                  disabled={basicFieldLocked.incharge}
+                  readOnly={basicFieldLocked.incharge}
+                  style={{ 
+                    cursor: (basicFieldLocked.incharge) ? 'not-allowed' : 'text',
+                    backgroundColor: (basicFieldLocked.incharge) ? '#f1f5f9' : '#ffffff'
+                  }}
                 />
               </div>
               <div className="disamatic-form-group">
@@ -925,9 +1146,12 @@ const DisamaticProduct = () => {
                   onClick={() => handleLockedFieldClick('ppOperator')}
                   onFocus={() => handleLockedFieldClick('ppOperator')}
                   placeholder="Enter PP Operator name"
-                  disabled={basicInfoLocked || isLocked}
-                  readOnly={basicInfoLocked || isLocked}
-                  style={{ cursor: (basicInfoLocked || isLocked) ? 'not-allowed' : 'text' }}
+                  disabled={basicFieldLocked.ppOperator}
+                  readOnly={basicFieldLocked.ppOperator}
+                  style={{ 
+                    cursor: (basicFieldLocked.ppOperator) ? 'not-allowed' : 'text',
+                    backgroundColor: (basicFieldLocked.ppOperator) ? '#f1f5f9' : '#ffffff'
+                  }}
                 />
               </div>
               <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
@@ -991,10 +1215,10 @@ const DisamaticProduct = () => {
                 onClick={handleBasicInfoSubmit}
                 disabled={loadingStates.basicInfo}
                 className="disamatic-submit-btn"
-                title={isLocked ? 'Cannot modify when form is fully locked. Use Reports page to edit.' : (basicInfoLocked ? 'Save new members' : 'Save Primary')}
+                title={!isPrimaryLocked ? 'Save Primary' : 'Save Changes'}
               >
                 {loadingStates.basicInfo ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-                {loadingStates.basicInfo ? 'Saving...' : (basicInfoLocked ? 'Save New Members' : 'Save Primary')}
+                {loadingStates.basicInfo ? 'Saving...' : (!isPrimaryLocked ? 'Save Primary' : 'Save Changes')}
               </button>
             </div>
           </div>
@@ -1006,6 +1230,7 @@ const DisamaticProduct = () => {
           <table className="disamatic-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
             <thead>
               <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
+                <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1', whiteSpace: 'nowrap', width: '80px' }}>S.No</th>
                 <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1', whiteSpace: 'nowrap' }}>Mould Counter No.</th>
                 <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1', whiteSpace: 'nowrap' }}>Component Name</th>
                 <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1', whiteSpace: 'nowrap' }}>Produced</th>
@@ -1018,11 +1243,15 @@ const DisamaticProduct = () => {
             <tbody>
               {formData.productionTable.map((row, index) => (
                 <tr key={index} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', fontWeight: 500, background: '#f8fafc' }}>
+                    {row.sNo !== undefined ? row.sNo : (nextSNo.production + index)}
+                  </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
                       type="text"
                       value={row.counterNo}
                       onChange={e => handleProductionTableChange(index, 'counterNo', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'production', index, 0, 7, productionSubmitRef)}
                       placeholder="Counter No"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1042,6 +1271,7 @@ const DisamaticProduct = () => {
                       type="text"
                       value={row.componentName}
                       onChange={e => handleProductionTableChange(index, 'componentName', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'production', index, 1, 7, productionSubmitRef)}
                       placeholder="Component Name"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1061,6 +1291,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.produced}
                       onChange={e => handleProductionTableChange(index, 'produced', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'production', index, 2, 7, productionSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1081,6 +1312,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.poured}
                       onChange={e => handleProductionTableChange(index, 'poured', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'production', index, 3, 7, productionSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1101,6 +1333,7 @@ const DisamaticProduct = () => {
                       type="text"
                       value={row.cycleTime}
                       onChange={e => handleProductionTableChange(index, 'cycleTime', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'production', index, 4, 7, productionSubmitRef)}
                       placeholder="e.g., 30s"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1120,6 +1353,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.mouldsPerHour}
                       onChange={e => handleProductionTableChange(index, 'mouldsPerHour', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'production', index, 5, 7, productionSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1140,6 +1374,7 @@ const DisamaticProduct = () => {
                   type="text" 
                       value={row.remarks}
                       onChange={e => handleProductionTableChange(index, 'remarks', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'production', index, 6, 7, productionSubmitRef)}
                       placeholder="Remarks"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1169,8 +1404,15 @@ const DisamaticProduct = () => {
               Reset
             </button>
             <button
+              ref={productionSubmitRef}
               type="button"
               onClick={handleProductionSubmit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !loadingStates.production && isPrimaryLocked) {
+                  e.preventDefault();
+                  handleProductionSubmit();
+                }
+              }}
               disabled={loadingStates.production || !isPrimaryLocked}
               className="disamatic-submit-btn"
               title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Production'}
@@ -1199,13 +1441,14 @@ const DisamaticProduct = () => {
               {formData.nextShiftPlanTable.map((row, index) => (
                 <tr key={index} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', fontWeight: 500, background: '#f8fafc' }}>
-                    {index + 1}
+                    {row.sNo !== undefined ? row.sNo : (nextSNo.nextShiftPlan + index)}
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
                       type="text"
                       value={row.componentName}
                       onChange={e => handleNextShiftPlanChange(index, 'componentName', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'nextShiftPlan', index, 0, 3, nextShiftPlanSubmitRef)}
                       placeholder="Component Name"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1225,6 +1468,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.plannedMoulds}
                       onChange={e => handleNextShiftPlanChange(index, 'plannedMoulds', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'nextShiftPlan', index, 1, 3, nextShiftPlanSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1245,6 +1489,7 @@ const DisamaticProduct = () => {
                       type="text"
                       value={row.remarks}
                       onChange={e => handleNextShiftPlanChange(index, 'remarks', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'nextShiftPlan', index, 2, 3, nextShiftPlanSubmitRef)}
                       placeholder="Remarks"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1274,8 +1519,15 @@ const DisamaticProduct = () => {
               Reset
             </button>
             <button
+              ref={nextShiftPlanSubmitRef}
               type="button"
               onClick={handleNextShiftPlanSubmit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !loadingStates.nextShiftPlan && isPrimaryLocked) {
+                  e.preventDefault();
+                  handleNextShiftPlanSubmit();
+                }
+              }}
               disabled={loadingStates.nextShiftPlan || !isPrimaryLocked}
               className="disamatic-submit-btn"
               title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Next Shift Plan'}
@@ -1304,13 +1556,14 @@ const DisamaticProduct = () => {
               {formData.delaysTable.map((row, index) => (
                 <tr key={index} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', fontWeight: 500, background: '#f8fafc' }}>
-                    {index + 1}
+                    {row.sNo !== undefined ? row.sNo : (nextSNo.delays + index)}
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
                       type="text"
                       value={row.delays}
                       onChange={e => handleDelaysTableChange(index, 'delays', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'delays', index, 0, 3, delaysSubmitRef)}
                       placeholder="Describe delay"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1330,6 +1583,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.durationMinutes}
                       onChange={e => handleDelaysTableChange(index, 'durationMinutes', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'delays', index, 1, 3, delaysSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1350,6 +1604,7 @@ const DisamaticProduct = () => {
                       type="text"
                       value={row.durationTime}
                       onChange={e => handleDelaysTableChange(index, 'durationTime', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'delays', index, 2, 3, delaysSubmitRef)}
                       placeholder="HH:MM"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1379,8 +1634,15 @@ const DisamaticProduct = () => {
               Reset
             </button>
             <button
+              ref={delaysSubmitRef}
               type="button"
               onClick={handleDelaysSubmit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !loadingStates.delays && isPrimaryLocked) {
+                  e.preventDefault();
+                  handleDelaysSubmit();
+                }
+              }}
               disabled={loadingStates.delays || !isPrimaryLocked}
               className="disamatic-submit-btn"
               title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Delays'}
@@ -1416,13 +1678,14 @@ const DisamaticProduct = () => {
               {formData.mouldHardnessTable.map((row, index) => (
                 <tr key={index} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', fontWeight: 500, background: '#f8fafc' }}>
-                    {index + 1}
+                    {row.sNo !== undefined ? row.sNo : (nextSNo.mouldHardness + index)}
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
                       type="text"
                       value={row.componentName}
                       onChange={e => handleMouldHardnessTableChange(index, 'componentName', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 0, 6, mouldHardnessSubmitRef)}
                       placeholder="Component Name"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1442,6 +1705,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.mpPP}
                       onChange={e => handleMouldHardnessTableChange(index, 'mpPP', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 1, 6, mouldHardnessSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1462,6 +1726,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.mpSP}
                       onChange={e => handleMouldHardnessTableChange(index, 'mpSP', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 2, 6, mouldHardnessSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1482,6 +1747,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.bsPP}
                       onChange={e => handleMouldHardnessTableChange(index, 'bsPP', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 3, 6, mouldHardnessSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1502,6 +1768,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.bsSP}
                       onChange={e => handleMouldHardnessTableChange(index, 'bsSP', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 4, 6, mouldHardnessSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1522,6 +1789,7 @@ const DisamaticProduct = () => {
                       type="text"
                       value={row.remarks}
                       onChange={e => handleMouldHardnessTableChange(index, 'remarks', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 5, 6, mouldHardnessSubmitRef)}
                       placeholder="Remarks"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1551,8 +1819,15 @@ const DisamaticProduct = () => {
               Reset
             </button>
             <button
+              ref={mouldHardnessSubmitRef}
               type="button"
               onClick={handleMouldHardnessSubmit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !loadingStates.mouldHardness && isPrimaryLocked) {
+                  e.preventDefault();
+                  handleMouldHardnessSubmit();
+                }
+              }}
               disabled={loadingStates.mouldHardness || !isPrimaryLocked}
               className="disamatic-submit-btn"
               title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Mould Hardness'}
@@ -1581,13 +1856,14 @@ const DisamaticProduct = () => {
               {formData.patternTempTable.map((row, index) => (
                 <tr key={index} style={{ borderBottom: '1px solid #e2e8f0' }}>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', fontWeight: 500, background: '#f8fafc' }}>
-                    {index + 1}
+                    {row.sNo !== undefined ? row.sNo : (nextSNo.patternTemp + index)}
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
                       type="text"
                       value={row.item}
                       onChange={e => handlePatternTempTableChange(index, 'item', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'patternTemp', index, 0, 3, patternTempSubmitRef)}
                       placeholder="Enter item"
                       disabled={!isPrimaryLocked}
                       style={{ 
@@ -1607,6 +1883,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.pp}
                       onChange={e => handlePatternTempTableChange(index, 'pp', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'patternTemp', index, 1, 3, patternTempSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1627,6 +1904,7 @@ const DisamaticProduct = () => {
                       type="number"
                       value={row.sp}
                       onChange={e => handlePatternTempTableChange(index, 'sp', e.target.value)}
+                      onKeyDown={(e) => handleTableKeyDown(e, 'patternTemp', index, 2, 3, patternTempSubmitRef)}
                       placeholder="0"
                       step="0.1"
                       disabled={!isPrimaryLocked}
@@ -1657,8 +1935,15 @@ const DisamaticProduct = () => {
               Reset
             </button>
             <button
+              ref={patternTempSubmitRef}
               type="button"
               onClick={handlePatternTempSubmit}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !loadingStates.patternTemp && isPrimaryLocked) {
+                  e.preventDefault();
+                  handlePatternTempSubmit();
+                }
+              }}
               disabled={loadingStates.patternTemp || !isPrimaryLocked}
               className="disamatic-submit-btn"
               title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Pattern Temp'}
@@ -1683,8 +1968,8 @@ const DisamaticProduct = () => {
               onFocus={() => handleLockedFieldClick('significantEvent')}
               placeholder="Describe significant event..."
               rows={4}
-              disabled={eventSectionLocked.significantEvent || isLocked}
-              readOnly={eventSectionLocked.significantEvent || isLocked}
+              disabled={eventSectionLocked.significantEvent}
+              readOnly={eventSectionLocked.significantEvent}
               style={{ 
                 width: '100%', 
                 padding: '0.625rem 0.875rem', 
@@ -1693,10 +1978,10 @@ const DisamaticProduct = () => {
                 fontSize: '0.875rem', 
                 fontFamily: 'inherit', 
                 color: '#1e293b', 
-                backgroundColor: (eventSectionLocked.significantEvent || isLocked) ? '#f1f5f9' : '#ffffff', 
+                backgroundColor: (eventSectionLocked.significantEvent) ? '#f1f5f9' : '#ffffff', 
                 transition: 'all 0.3s ease', 
                 resize: 'vertical', 
-                cursor: (eventSectionLocked.significantEvent || isLocked) ? 'not-allowed' : 'text' 
+                cursor: (eventSectionLocked.significantEvent) ? 'not-allowed' : 'text' 
               }}
             />
           </div>
@@ -1709,8 +1994,8 @@ const DisamaticProduct = () => {
               onFocus={() => handleLockedFieldClick('maintenance')}
               placeholder="Describe maintenance activities..."
               rows={4}
-              disabled={eventSectionLocked.maintenance || isLocked}
-              readOnly={eventSectionLocked.maintenance || isLocked}
+              disabled={eventSectionLocked.maintenance}
+              readOnly={eventSectionLocked.maintenance}
               style={{ 
                 width: '100%', 
                 padding: '0.625rem 0.875rem', 
@@ -1719,10 +2004,10 @@ const DisamaticProduct = () => {
                 fontSize: '0.875rem', 
                 fontFamily: 'inherit', 
                 color: '#1e293b', 
-                backgroundColor: (eventSectionLocked.maintenance || isLocked) ? '#f1f5f9' : '#ffffff', 
+                backgroundColor: (eventSectionLocked.maintenance) ? '#f1f5f9' : '#ffffff', 
                 transition: 'all 0.3s ease', 
                 resize: 'vertical', 
-                cursor: (eventSectionLocked.maintenance || isLocked) ? 'not-allowed' : 'text' 
+                cursor: (eventSectionLocked.maintenance) ? 'not-allowed' : 'text' 
               }}
             />
           </div>
@@ -1735,9 +2020,9 @@ const DisamaticProduct = () => {
               onClick={() => handleLockedFieldClick('supervisorName')}
               onFocus={() => handleLockedFieldClick('supervisorName')}
               placeholder="Enter supervisor name"
-              disabled={eventSectionLocked.supervisorName || isLocked}
-              readOnly={eventSectionLocked.supervisorName || isLocked}
-              style={{ cursor: (eventSectionLocked.supervisorName || isLocked) ? 'not-allowed' : 'text' }}
+              disabled={eventSectionLocked.supervisorName}
+              readOnly={eventSectionLocked.supervisorName}
+              style={{ cursor: (eventSectionLocked.supervisorName) ? 'not-allowed' : 'text' }}
             />
           </div>
         </div>
@@ -1745,9 +2030,9 @@ const DisamaticProduct = () => {
           <button
             type="button"
             onClick={handleEventSectionSubmit}
-            disabled={loadingStates.eventSection || !isPrimaryLocked || isLocked || (eventSectionLocked.significantEvent && eventSectionLocked.maintenance && eventSectionLocked.supervisorName)}
+            disabled={loadingStates.eventSection || !isPrimaryLocked || (eventSectionLocked.significantEvent && eventSectionLocked.maintenance && eventSectionLocked.supervisorName)}
             className="disamatic-submit-btn"
-            title={!isPrimaryLocked ? 'Please save Primary data first' : (isLocked ? 'Cannot modify when form is fully locked. Use Reports page to edit.' : 'Save Event Section')}
+            title={!isPrimaryLocked ? 'Please save Primary data first' : 'Save Event Section'}
           >
             {loadingStates.eventSection ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.eventSection ? 'Saving...' : 'Save Event Section'}
@@ -1756,7 +2041,7 @@ const DisamaticProduct = () => {
       </div>
 
       {/* Locked Form Popup */}
-      {showLockedPopup && (isLocked || basicInfoLocked || eventSectionLocked.significantEvent || eventSectionLocked.maintenance || eventSectionLocked.supervisorName) && (
+      {showLockedPopup && (basicInfoLocked || eventSectionLocked.significantEvent || eventSectionLocked.maintenance || eventSectionLocked.supervisorName) && (
         <div className="disamatic-locked-popup-overlay" onClick={() => setShowLockedPopup(false)}>
           <div className="disamatic-locked-popup-content" onClick={(e) => e.stopPropagation()}>
             <div className="disamatic-locked-popup-header">
@@ -1781,11 +2066,7 @@ const DisamaticProduct = () => {
                   Some event section fields are locked. Saved fields cannot be modified. Use the Reports page to edit.
                 </p>
               )}
-              {isLocked && (
-                <p className="disamatic-locked-popup-message">
-                  This form is locked. Data has already been entered for this date. To modify, please use the Report page.
-                </p>
-              )}
+              {/* Removed global form lock messaging for event section. We lock per-field instead. */}
               <p className="disamatic-locked-popup-hint">
                 You can edit the data from the Reports page by clicking the edit button on any record.
               </p>

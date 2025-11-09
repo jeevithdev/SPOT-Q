@@ -64,6 +64,9 @@ const MicroStructureSchema = new mongoose.Schema({
         trim: true, 
         default: '' 
     }
+}, {
+    timestamps: true,
+    collection: 'micro_structure'
 });
 
 module.exports = mongoose.model('MicroStructure', MicroStructureSchema);

@@ -84,7 +84,8 @@ const MicroTensileSchema = new mongoose.Schema({
         trim: true 
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    collection: 'micro_tensile'
 });
 
 module.exports = mongoose.model('MicroTensile', MicroTensileSchema);

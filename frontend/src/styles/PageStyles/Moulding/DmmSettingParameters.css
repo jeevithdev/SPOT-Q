@@ -156,6 +156,20 @@
   width: 100%;
 }
 
+/* Primary Data Container Styling */
+.dmm-section:has(.primary-data-title) {
+  background: white;
+  border: 2px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  transition: box-shadow 0.3s ease;
+}
+
+.dmm-section:has(.primary-data-title):hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
 .dmm-section-title {
   font-size: 1.125rem;
   font-weight: 700;
@@ -164,6 +178,31 @@
   padding-bottom: 0.5rem;
   border-bottom: 2px solid #e2e8f0;
   background: transparent;
+}
+
+/* Primary Data Title with Blue Highlight */
+.primary-data-title {
+  position: relative;
+  padding-left: 0.75rem !important;
+  font-size: 1.375rem !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  margin: 0 0 1.25rem 0 !important;
+  padding-bottom: 0.75rem !important;
+  display: block;
+  line-height: 1.5;
+  border-bottom: none !important;
+}
+
+.primary-data-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%);
+  border-radius: 2px;
 }
 
 /* Form Grid */
@@ -183,21 +222,36 @@
 
 /* Primary Row Layout */
 .dmm-primary-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  column-gap: 0.5rem;
-  align-items: end;
+  display: flex;
+  align-items: flex-end;
+  gap: 1rem;
   margin-bottom: 1rem;
+  flex-wrap: wrap;
 }
 
 .dmm-primary-row .dmm-form-group {
+  flex: 1;
+  min-width: 200px;
   max-width: 300px;
+  margin-bottom: 0;
 }
 
 .dmm-primary-button-wrapper {
   display: flex;
   align-items: flex-end;
   padding-bottom: 0;
+  margin-left: auto;
+  min-height: 78px; /* Match the form group min-height */
+  justify-content: flex-end;
+}
+
+.dmm-primary-button-wrapper .dmm-submit-btn {
+  white-space: nowrap;
+  padding: 0.625rem 1.25rem;
+  min-height: 42px; /* Match approximate input height */
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 /* Form Group */
@@ -245,6 +299,7 @@
 
 .dmm-form-group input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .dmm-form-group input[type="number"]::-webkit-outer-spin-button,

@@ -21,6 +21,7 @@ const MeltingLogSheet = () => {
     cumulativeUnits: ''
   });
   const [primaryLoading, setPrimaryLoading] = useState(false);
+  const [isPrimarySaved, setIsPrimarySaved] = useState(false);
   
   const [table1, setTable1] = useState({
     heatNo: '',
@@ -110,15 +111,22 @@ const MeltingLogSheet = () => {
   };
 
   const handleTableSubmit = async (tableNum) => {
+    // Ensure primary data is locked first
+    if (!isPrimarySaved) {
+      alert('Please lock Primary data first before submitting.');
+      return;
+    }
+
     const tables = { 1: table1, 2: table2, 3: table3, 4: table4, 5: table5 };
     const tableData = tables[tableNum];
     
     setLoadingStates(prev => ({ ...prev, [`table${tableNum}`]: true }));
     
     try {
-      // TODO: Update with actual API endpoint
+      // Send primary data + table data together
       const response = await api.post(`/v1/melting-logs/table${tableNum}`, {
         tableNum,
+        primaryData: primaryData,
         data: tableData
       });
       
@@ -142,26 +150,24 @@ const MeltingLogSheet = () => {
     }));
   };
 
-  const handlePrimarySubmit = async () => {
-    setPrimaryLoading(true);
-    
-    try {
-      // TODO: Update with actual API endpoint
-      const response = await api.post('/v1/melting-logs/primary', {
-        data: primaryData
-      });
-      
-      if (response.success) {
-        alert('Primary data saved successfully!');
-      } else {
-        alert('Error: ' + response.message);
-      }
-    } catch (error) {
-      console.error('Error saving primary data:', error);
-      alert('Failed to save primary data. Please try again.');
-    } finally {
-      setPrimaryLoading(false);
+  const handlePrimarySubmit = () => {
+    // If already locked, unlock it
+    if (isPrimarySaved) {
+      setIsPrimarySaved(false);
+      alert('Primary data unlocked. You can now modify date.');
+      return;
     }
+
+    // Validate required fields
+    if (!primaryData.date) {
+      alert('Please fill in Date');
+      return;
+    }
+
+    // Lock primary fields (date) without saving to database
+    // The actual save will happen when user clicks submit on tables
+    setIsPrimarySaved(true);
+    alert('Primary data locked. You can now fill other fields.');
   };
 
   // Reset functions for each section
@@ -178,6 +184,7 @@ const MeltingLogSheet = () => {
       totalUnits: '',
       cumulativeUnits: ''
     });
+    setIsPrimarySaved(false);
   };
 
   const resetTable1 = () => {
@@ -289,7 +296,7 @@ const MeltingLogSheet = () => {
 
       {/* Primary Section */}
       <div className="melting-log-main-card">
-        <h3 className="melting-log-main-card-title">Primary Information</h3>
+        <h3 className="melting-log-main-card-title primary-data-title">Primary Data :</h3>
         
         <div className="melting-log-form-grid">
           <div className="melting-log-form-group">
@@ -298,6 +305,7 @@ const MeltingLogSheet = () => {
                 value={primaryData.date}
                 onChange={(e) => handlePrimaryChange('date', e.target.value)}
                 name="date"
+                disabled={isPrimarySaved}
               />
           </div>
 
@@ -391,10 +399,9 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={handlePrimarySubmit}
-            disabled={primaryLoading || !primaryData.date}
+            disabled={!isPrimarySaved && !primaryData.date}
           >
-            {primaryLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-            {primaryLoading ? 'Saving...' : 'Save Primary'}
+            {isPrimarySaved ? 'Unlock Primary' : 'Lock Primary'}
           </button>
         </div>
             </div>
@@ -579,7 +586,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(1)}
-            disabled={loadingStates.table1}
+            disabled={loadingStates.table1 || !isPrimarySaved}
+            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Table 1'}
           >
             {loadingStates.table1 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table1 ? 'Saving...' : 'Save Table 1'}
@@ -761,7 +769,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(2)}
-            disabled={loadingStates.table2}
+            disabled={loadingStates.table2 || !isPrimarySaved}
+            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Table 2'}
           >
             {loadingStates.table2 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table2 ? 'Saving...' : 'Save Table 2'}
@@ -879,7 +888,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(3)}
-            disabled={loadingStates.table3}
+            disabled={loadingStates.table3 || !isPrimarySaved}
+            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Table 3'}
           >
             {loadingStates.table3 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table3 ? 'Saving...' : 'Save Table 3'}
@@ -993,7 +1003,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(4)}
-            disabled={loadingStates.table4}
+            disabled={loadingStates.table4 || !isPrimarySaved}
+            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Metal Tapping in Kgs'}
           >
             {loadingStates.table4 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table4 ? 'Saving...' : 'Save Metal Tapping in Kgs'}
@@ -1095,7 +1106,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(5)}
-            disabled={loadingStates.table5}
+            disabled={loadingStates.table5 || !isPrimarySaved}
+            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Electrical Readings'}
           >
             {loadingStates.table5 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table5 ? 'Saving...' : 'Save Electrical Readings'}

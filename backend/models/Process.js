@@ -175,7 +175,8 @@ const ProcessSchema = new mongoose.Schema({
     }
     
 }, {
-    timestamps: true
+    timestamps: true,
+    collection: 'process'
 });
 
 module.exports = mongoose.model('Process', ProcessSchema);

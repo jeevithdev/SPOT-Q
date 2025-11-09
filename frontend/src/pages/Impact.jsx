@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { DatePicker } from '../Components/Buttons';
@@ -17,6 +17,10 @@ const Impact = () => {
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  
+  // Refs for navigation
+  const submitButtonRef = useRef(null);
+  const firstInputRef = useRef(null);
 
 
   const handleChange = (e) => {
@@ -59,7 +63,19 @@ const Impact = () => {
       
       if (nextInput) {
         nextInput.focus();
+      } else {
+        // Last input - focus submit button
+        if (submitButtonRef.current) {
+          submitButtonRef.current.focus();
+        }
       }
+    }
+  };
+
+  const handleSubmitButtonKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
@@ -92,6 +108,15 @@ const Impact = () => {
           dateOfInspection: '', partName: '', dateCode: '', 
           specification: '', observedValue: '', remarks: ''
         });
+        setValidationErrors({});
+        // Focus first input after successful submission
+        setTimeout(() => {
+          if (firstInputRef.current && firstInputRef.current.focus) {
+            firstInputRef.current.focus();
+          } else if (firstInputRef.current) {
+            firstInputRef.current.focus();
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('Error creating impact test:', error);
@@ -133,6 +158,7 @@ const Impact = () => {
             <div className="impact-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
+                ref={firstInputRef}
                 name="dateOfInspection"
                 value={formData.dateOfInspection}
                 onChange={handleChange}
@@ -219,9 +245,11 @@ const Impact = () => {
           Reset Form
         </button>
         <button 
+          ref={submitButtonRef}
           className="impact-submit-btn" 
           type="button"
           onClick={handleSubmit}
+          onKeyDown={handleSubmitButtonKeyDown}
           disabled={submitLoading}
         >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}

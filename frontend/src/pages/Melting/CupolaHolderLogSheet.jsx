@@ -34,7 +34,7 @@ const CupolaHolderLogSheet = () => {
   });
 
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [primaryLoading, setPrimaryLoading] = useState(false);
+  const [isPrimarySaved, setIsPrimarySaved] = useState(false);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -44,7 +44,14 @@ const CupolaHolderLogSheet = () => {
     }));
   };
 
-  const handlePrimarySubmit = async () => {
+  const handlePrimarySubmit = () => {
+    // If already locked, unlock it
+    if (isPrimarySaved) {
+      setIsPrimarySaved(false);
+      alert('Primary data unlocked. You can now modify date, shift, and holder number.');
+      return;
+    }
+
     const required = ['date', 'shift', 'holderNumber'];
     const missing = required.filter(field => !formData[field]);
 
@@ -53,25 +60,10 @@ const CupolaHolderLogSheet = () => {
       return;
     }
 
-    try {
-      setPrimaryLoading(true);
-      const primaryData = {
-        date: formData.date,
-        shift: formData.shift,
-        holderNumber: formData.holderNumber
-      };
-      
-      const data = await api.post('/v1/cupola-holder-logs/primary', primaryData);
-      
-      if (data.success) {
-        alert('Primary data saved successfully!');
-      }
-    } catch (error) {
-      console.error('Error saving primary data:', error);
-      alert('Failed to save primary data: ' + error.message);
-    } finally {
-      setPrimaryLoading(false);
-    }
+    // Lock primary fields (date, shift, holderNumber) without saving to database
+    // The actual save will happen when user clicks "Submit Entry"
+    setIsPrimarySaved(true);
+    alert('Primary data locked. You can now fill other fields.');
   };
 
   const handleSubmit = async () => {
@@ -83,16 +75,25 @@ const CupolaHolderLogSheet = () => {
       return;
     }
 
+    // Ensure primary data is locked first
+    if (!isPrimarySaved) {
+      alert('Please lock Primary data first before submitting.');
+      return;
+    }
+
     try {
       setSubmitLoading(true);
+      
+      // Send all data (primary + other fields) combined to backend
+      // Backend will find existing document by date+shift+holderNumber and update it, or create new one
       const data = await api.post('/v1/cupola-holder-logs', formData);
       if (data.success) {
-        alert('Cupola holder log entry created successfully!');
+        alert('Cupola holder log entry saved successfully!');
         handleReset();
       }
     } catch (error) {
-      console.error('Error creating cupola holder log:', error);
-      alert('Failed to create entry: ' + error.message);
+      console.error('Error saving cupola holder log:', error);
+      alert('Failed to save entry: ' + error.message);
     } finally {
       setSubmitLoading(false);
     }
@@ -106,6 +107,7 @@ const CupolaHolderLogSheet = () => {
       tappingTemp: '', metalKg: '', disaLine: '', indFur: '', bailNo: '',
       tap: '', kw: '', remarks: ''
     });
+    setIsPrimarySaved(false);
   };
 
   return (
@@ -129,13 +131,18 @@ const CupolaHolderLogSheet = () => {
       </div>
 
       <div className="cupola-holder-main-card">
-        <h3 className="cupola-holder-main-card-title">Primary</h3>
+        <h3 className="cupola-holder-main-card-title primary-data-title">Primary Data :</h3>
 
         <div className="cupola-holder-primary-row">
           {/* Primary Information */}
           <div className="cupola-holder-form-group">
             <label>Date *</label>
-            <DatePicker name="date" value={formData.date} onChange={handleChange} />
+            <DatePicker 
+              name="date" 
+              value={formData.date} 
+              onChange={handleChange}
+              disabled={isPrimarySaved}
+            />
           </div>
 
           <div className="cupola-holder-form-group">
@@ -144,15 +151,16 @@ const CupolaHolderLogSheet = () => {
               name="shift"
               value={formData.shift}
               onChange={handleChange}
+              disabled={isPrimarySaved}
               style={{
                 width: '100%',
                 padding: '0.625rem 0.875rem',
                 border: '2px solid #cbd5e1',
                 borderRadius: '8px',
                 fontSize: '0.875rem',
-                backgroundColor: '#ffffff',
+                backgroundColor: isPrimarySaved ? '#f1f5f9' : '#ffffff',
                 color: '#1e293b',
-                cursor: 'pointer'
+                cursor: isPrimarySaved ? 'not-allowed' : 'pointer'
               }}
             >
               <option value="">Select Shift</option>
@@ -170,6 +178,12 @@ const CupolaHolderLogSheet = () => {
               value={formData.holderNumber}
               onChange={handleChange}
               placeholder="e.g: H001"
+              disabled={isPrimarySaved}
+              readOnly={isPrimarySaved}
+              style={{
+                backgroundColor: isPrimarySaved ? '#f1f5f9' : '#ffffff',
+                cursor: isPrimarySaved ? 'not-allowed' : 'text'
+              }}
             />
           </div>
 
@@ -179,10 +193,9 @@ const CupolaHolderLogSheet = () => {
               className="cupola-holder-submit-btn"
               type="button"
               onClick={handlePrimarySubmit}
-              disabled={primaryLoading || !formData.date || !formData.shift || !formData.holderNumber}
+              disabled={!isPrimarySaved && (!formData.date || !formData.shift || !formData.holderNumber)}
             >
-              {primaryLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-              {primaryLoading ? 'Saving...' : 'Save Primary'}
+              {isPrimarySaved ? 'Unlock Primary' : 'Lock Primary'}
             </button>
           </div>
         </div>
@@ -441,7 +454,8 @@ const CupolaHolderLogSheet = () => {
             className="cupola-holder-submit-btn"
             type="button"
             onClick={handleSubmit}
-            disabled={submitLoading}
+            disabled={submitLoading || !isPrimarySaved}
+            title={!isPrimarySaved ? 'Please save Primary data first' : 'Submit Entry'}
           >
             {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {submitLoading ? 'Saving...' : 'Submit Entry'}

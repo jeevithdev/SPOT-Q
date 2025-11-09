@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
 import api from '../utils/api';
@@ -28,6 +28,10 @@ const QcProductionDetails = () => {
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  
+  // Refs for navigation
+  const submitButtonRef = useRef(null);
+  const firstInputRef = useRef(null);
 
 
   const handleChange = (e) => {
@@ -70,7 +74,19 @@ const QcProductionDetails = () => {
       
       if (nextInput) {
         nextInput.focus();
+      } else {
+        // Last input - focus submit button
+        if (submitButtonRef.current) {
+          submitButtonRef.current.focus();
+        }
       }
+    }
+  };
+
+  const handleSubmitButtonKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
@@ -106,6 +122,13 @@ const QcProductionDetails = () => {
           pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
           nodularity: '', graphiteType: '', pearliteFerrite: '', hardnessBHN: '', ts: '', ys: '', el: ''
         });
+        setValidationErrors({});
+        // Focus first input after successful submission
+        setTimeout(() => {
+          if (firstInputRef.current && firstInputRef.current.focus) {
+            firstInputRef.current.focus();
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('Error creating QC report:', error);
@@ -148,6 +171,7 @@ const QcProductionDetails = () => {
             <div className="qcproduction-form-group">
               <label>Date *</label>
               <DatePicker
+                ref={firstInputRef}
                 name="date"
                 value={formData.date}
                 onChange={handleChange}
@@ -406,9 +430,11 @@ const QcProductionDetails = () => {
           Reset Form
         </button>
         <button 
+          ref={submitButtonRef}
           className="qcproduction-submit-btn" 
           type="button"
           onClick={handleSubmit}
+          onKeyDown={handleSubmitButtonKeyDown}
           disabled={submitLoading}
         >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}

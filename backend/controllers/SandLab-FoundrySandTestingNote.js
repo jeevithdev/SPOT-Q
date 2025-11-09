@@ -2,7 +2,26 @@ const FoundrySandTestingNote = require('../models/SandLab-FoundrySandTestingNote
 
 exports.getAllEntries = async (req, res) => {
     try {
-        const entries = await FoundrySandTestingNote.find().sort({ createdAt: -1 });
+        const { startDate, endDate } = req.query;
+        
+        let query = {};
+        
+        // Filter by date range if provided
+        if (startDate || endDate) {
+            query.date = {};
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                query.date.$gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.date.$lte = end;
+            }
+        }
+        
+        const entries = await FoundrySandTestingNote.find(query).sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,
@@ -83,27 +102,124 @@ exports.createEntry = async (req, res) => {
         });
 
         if (record) {
-            // Update existing record based on section
+            // Update existing record based on section - merge data instead of replacing
             if (section === 'primary') {
                 record.date = searchDate;
                 record.shift = String(shift).trim();
                 if (otherData.sandPlant) record.sandPlant = String(otherData.sandPlant).trim();
-                if (otherData.compactibilitySetting !== undefined) record.compactibilitySetting = String(otherData.compactibilitySetting).trim();
-                if (otherData.shearStrengthSetting !== undefined) record.shearStrengthSetting = String(otherData.shearStrengthSetting).trim();
+                if (otherData.compactibilitySetting !== undefined && otherData.compactibilitySetting !== null && otherData.compactibilitySetting.trim() !== '') {
+                    record.compactibilitySetting = String(otherData.compactibilitySetting).trim();
+                }
+                if (otherData.shearStrengthSetting !== undefined && otherData.shearStrengthSetting !== null && otherData.shearStrengthSetting.trim() !== '') {
+                    record.shearStrengthSetting = String(otherData.shearStrengthSetting).trim();
+                }
             } else if (section === 'clayParameters') {
                 if (otherData.clayTests) {
-                    record.clayTests = otherData.clayTests;
+                    // Merge clayTests instead of replacing
+                    if (!record.clayTests) record.clayTests = {};
+                    Object.keys(otherData.clayTests).forEach(test => {
+                        if (!record.clayTests[test]) record.clayTests[test] = {};
+                        Object.keys(otherData.clayTests[test]).forEach(param => {
+                            if (!record.clayTests[test][param]) record.clayTests[test][param] = {};
+                            Object.keys(otherData.clayTests[test][param] || {}).forEach(field => {
+                                const value = otherData.clayTests[test][param][field];
+                                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                                    record.clayTests[test][param][field] = String(value).trim();
+                                }
+                            });
+                        });
+                    });
                 }
             } else if (section === 'sieveTesting') {
-                if (otherData.test1) record.test1 = otherData.test1;
-                if (otherData.test2) record.test2 = otherData.test2;
-                if (otherData.mfTest) record.mfTest = otherData.mfTest;
+                if (!record.sieveTesting) record.sieveTesting = {};
+                if (otherData.sieveTesting) {
+                    if (otherData.sieveTesting.test1) {
+                        if (!record.sieveTesting.test1) record.sieveTesting.test1 = {};
+                        if (otherData.sieveTesting.test1.sieveSize) {
+                            if (!record.sieveTesting.test1.sieveSize) record.sieveTesting.test1.sieveSize = {};
+                            Object.keys(otherData.sieveTesting.test1.sieveSize).forEach(size => {
+                                const value = otherData.sieveTesting.test1.sieveSize[size];
+                                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                                    record.sieveTesting.test1.sieveSize[size] = String(value).trim();
+                                }
+                            });
+                        }
+                        if (otherData.sieveTesting.test1.mf) {
+                            if (!record.sieveTesting.test1.mf) record.sieveTesting.test1.mf = {};
+                            Object.keys(otherData.sieveTesting.test1.mf).forEach(mf => {
+                                const value = otherData.sieveTesting.test1.mf[mf];
+                                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                                    record.sieveTesting.test1.mf[mf] = String(value).trim();
+                                }
+                            });
+                        }
+                    }
+                    if (otherData.sieveTesting.test2) {
+                        if (!record.sieveTesting.test2) record.sieveTesting.test2 = {};
+                        if (otherData.sieveTesting.test2.sieveSize) {
+                            if (!record.sieveTesting.test2.sieveSize) record.sieveTesting.test2.sieveSize = {};
+                            Object.keys(otherData.sieveTesting.test2.sieveSize).forEach(size => {
+                                const value = otherData.sieveTesting.test2.sieveSize[size];
+                                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                                    record.sieveTesting.test2.sieveSize[size] = String(value).trim();
+                                }
+                            });
+                        }
+                        if (otherData.sieveTesting.test2.mf) {
+                            if (!record.sieveTesting.test2.mf) record.sieveTesting.test2.mf = {};
+                            Object.keys(otherData.sieveTesting.test2.mf).forEach(mf => {
+                                const value = otherData.sieveTesting.test2.mf[mf];
+                                if (value !== undefined && value !== null && String(value).trim() !== '') {
+                                    record.sieveTesting.test2.mf[mf] = String(value).trim();
+                                }
+                            });
+                        }
+                    }
+                }
             } else if (section === 'testParameters') {
-                if (otherData.parameters) record.parameters = otherData.parameters;
+                if (otherData.parameters) {
+                    if (!record.parameters) record.parameters = { test1: {}, test2: {} };
+                    if (otherData.parameters.test1) {
+                        Object.keys(otherData.parameters.test1).forEach(param => {
+                            const value = otherData.parameters.test1[param];
+                            if (value !== undefined && value !== null && String(value).trim() !== '') {
+                                record.parameters.test1[param] = String(value).trim();
+                            }
+                        });
+                    }
+                    if (otherData.parameters.test2) {
+                        Object.keys(otherData.parameters.test2).forEach(param => {
+                            const value = otherData.parameters.test2[param];
+                            if (value !== undefined && value !== null && String(value).trim() !== '') {
+                                record.parameters.test2[param] = String(value).trim();
+                            }
+                        });
+                    }
+                }
             } else if (section === 'additionalData') {
-                if (otherData.additionalData) record.additionalData = otherData.additionalData;
+                if (otherData.additionalData) {
+                    if (!record.additionalData) record.additionalData = { test1: {}, test2: {} };
+                    if (otherData.additionalData.test1) {
+                        Object.keys(otherData.additionalData.test1).forEach(param => {
+                            const value = otherData.additionalData.test1[param];
+                            if (value !== undefined && value !== null && String(value).trim() !== '') {
+                                record.additionalData.test1[param] = String(value).trim();
+                            }
+                        });
+                    }
+                    if (otherData.additionalData.test2) {
+                        Object.keys(otherData.additionalData.test2).forEach(param => {
+                            const value = otherData.additionalData.test2[param];
+                            if (value !== undefined && value !== null && String(value).trim() !== '') {
+                                record.additionalData.test2[param] = String(value).trim();
+                            }
+                        });
+                    }
+                }
             } else if (section === 'remarks') {
-                if (otherData.remarks !== undefined) record.remarks = String(otherData.remarks).trim();
+                if (otherData.remarks !== undefined && otherData.remarks !== null && String(otherData.remarks).trim() !== '') {
+                    record.remarks = String(otherData.remarks).trim();
+                }
             }
             
             await record.save();

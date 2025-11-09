@@ -77,6 +77,9 @@ const TensileSchema = new mongoose.Schema({
         type: String,
         required: true
     }
+}, {
+    timestamps: true,
+    collection: 'tensile'
 });
 
 module.exports = mongoose.model('Tensile', TensileSchema);

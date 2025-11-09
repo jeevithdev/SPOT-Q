@@ -53,6 +53,7 @@ const createDismaticReport = async (req, res) => {
                     case 'basicInfo':
                         if (data.shift !== undefined) report.shift = String(data.shift || '').trim();
                         if (data.incharge !== undefined) report.incharge = String(data.incharge || '').trim();
+                        if (data.ppOperator !== undefined) report.ppOperator = String(data.ppOperator || '').trim();
                         if (data.members !== undefined) {
                             if (Array.isArray(data.members)) {
                                 const filteredMembers = data.members.filter(m => m && String(m).trim() !== '');
@@ -64,9 +65,12 @@ const createDismaticReport = async (req, res) => {
                         break;
                     case 'production':
                         if (data.productionTable && Array.isArray(data.productionTable)) {
-                            report.productionDetails = data.productionTable
+                            // Calculate next sNo based on existing entries
+                            const existingProductionCount = report.productionDetails ? report.productionDetails.length : 0;
+                            const newProductionEntries = data.productionTable
                                 .filter(row => row && (row.counterNo || row.componentName || row.produced || row.poured || row.cycleTime || row.mouldsPerHour || row.remarks)) // Include rows with any data
-                                .map(row => ({
+                                .map((row, index) => ({
+                                    sNo: existingProductionCount + index + 1,
                                     counterNo: String(row.counterNo || '').trim(),
                                     componentName: String(row.componentName || '').trim(),
                                     produced: (row.produced && String(row.produced).trim() !== '') ? parseFloat(row.produced) : 0,
@@ -75,35 +79,50 @@ const createDismaticReport = async (req, res) => {
                                     mouldsPerHour: (row.mouldsPerHour && String(row.mouldsPerHour).trim() !== '') ? parseFloat(row.mouldsPerHour) : 0,
                                     remarks: String(row.remarks || '').trim()
                                 }));
+                            // Append new entries to existing ones
+                            report.productionDetails = [...(report.productionDetails || []), ...newProductionEntries];
                         }
                         break;
                     case 'nextShiftPlan':
                         if (data.nextShiftPlanTable && Array.isArray(data.nextShiftPlanTable)) {
-                            report.nextShiftPlan = data.nextShiftPlanTable
+                            // Calculate next sNo based on existing entries
+                            const existingNextShiftPlanCount = report.nextShiftPlan ? report.nextShiftPlan.length : 0;
+                            const newNextShiftPlanEntries = data.nextShiftPlanTable
                                 .filter(row => row && (row.componentName || row.plannedMoulds || row.remarks)) // Include rows with any data
-                                .map(row => ({
+                                .map((row, index) => ({
+                                    sNo: existingNextShiftPlanCount + index + 1,
                                     componentName: String(row.componentName || '').trim(),
                                     plannedMoulds: (row.plannedMoulds && String(row.plannedMoulds).trim() !== '') ? parseFloat(row.plannedMoulds) : 0,
                                     remarks: String(row.remarks || '').trim()
                                 }));
+                            // Append new entries to existing ones
+                            report.nextShiftPlan = [...(report.nextShiftPlan || []), ...newNextShiftPlanEntries];
                         }
                         break;
                     case 'delays':
                         if (data.delaysTable && Array.isArray(data.delaysTable)) {
-                            report.delays = data.delaysTable
+                            // Calculate next sNo based on existing entries
+                            const existingDelaysCount = report.delays ? report.delays.length : 0;
+                            const newDelaysEntries = data.delaysTable
                                 .filter(row => row && (row.delays || row.durationMinutes || row.durationTime)) // Include rows with any data
-                                .map(row => ({
+                                .map((row, index) => ({
+                                    sNo: existingDelaysCount + index + 1,
                                     delays: String(row.delays || '').trim(),
                                     durationMinutes: (row.durationMinutes && String(row.durationMinutes).trim() !== '') ? parseFloat(row.durationMinutes) : 0,
                                     durationTime: String(row.durationTime || '').trim()
                                 }));
+                            // Append new entries to existing ones
+                            report.delays = [...(report.delays || []), ...newDelaysEntries];
                         }
                         break;
                     case 'mouldHardness':
                         if (data.mouldHardnessTable && Array.isArray(data.mouldHardnessTable)) {
-                            report.mouldHardness = data.mouldHardnessTable
+                            // Calculate next sNo based on existing entries
+                            const existingMouldHardnessCount = report.mouldHardness ? report.mouldHardness.length : 0;
+                            const newMouldHardnessEntries = data.mouldHardnessTable
                                 .filter(row => row && (row.componentName || row.mpPP || row.mpSP || row.bsPP || row.bsSP || row.remarks)) // Include rows with any data
-                                .map(row => ({
+                                .map((row, index) => ({
+                                    sNo: existingMouldHardnessCount + index + 1,
                                     componentName: String(row.componentName || '').trim(),
                                     mpPP: (row.mpPP && String(row.mpPP).trim() !== '') ? parseFloat(row.mpPP) : 0,
                                     mpSP: (row.mpSP && String(row.mpSP).trim() !== '') ? parseFloat(row.mpSP) : 0,
@@ -111,17 +130,24 @@ const createDismaticReport = async (req, res) => {
                                     bsSP: (row.bsSP && String(row.bsSP).trim() !== '') ? parseFloat(row.bsSP) : 0,
                                     remarks: String(row.remarks || '').trim()
                                 }));
+                            // Append new entries to existing ones
+                            report.mouldHardness = [...(report.mouldHardness || []), ...newMouldHardnessEntries];
                         }
                         break;
                     case 'patternTemp':
                         if (data.patternTempTable && Array.isArray(data.patternTempTable)) {
-                            report.patternTemperature = data.patternTempTable
+                            // Calculate next sNo based on existing entries
+                            const existingPatternTempCount = report.patternTemperature ? report.patternTemperature.length : 0;
+                            const newPatternTempEntries = data.patternTempTable
                                 .filter(row => row && (row.item || row.pp || row.sp)) // Include rows with any data
-                                .map(row => ({
+                                .map((row, index) => ({
+                                    sNo: existingPatternTempCount + index + 1,
                                     item: String(row.item || '').trim(),
                                     pp: (row.pp && String(row.pp).trim() !== '') ? parseFloat(row.pp) : 0,
                                     sp: (row.sp && String(row.sp).trim() !== '') ? parseFloat(row.sp) : 0
                                 }));
+                            // Append new entries to existing ones
+                            report.patternTemperature = [...(report.patternTemperature || []), ...newPatternTempEntries];
                         }
                         break;
                     case 'significantEvent':
@@ -164,19 +190,23 @@ const createDismaticReport = async (req, res) => {
                 // Note: shift is required in schema, so we use a default value if not provided
                 const newReportData = {
                     date: searchDate, // Primary identifier - unique per date
-                    shift: shift ? String(shift).trim() : 'Not Set', // Use shift from request if available, otherwise default value
+                    // Shift is required by schema - use from payload if provided, otherwise default to 'Not Set'
+                    shift: (data.shift !== undefined && String(data.shift).trim() !== '') 
+                        ? String(data.shift).trim() 
+                        : (shift && String(shift).trim() !== '' ? String(shift).trim() : 'Not Set'),
                     incharge: section === 'basicInfo' ? String(data.incharge || '').trim() : '',
+                    ppOperator: section === 'basicInfo' ? String(data.ppOperator || '').trim() : '',
                     memberspresent: section === 'basicInfo' && data.members 
                         ? (Array.isArray(data.members) 
                             ? data.members.filter(m => m && String(m).trim() !== '').map(m => String(m).trim()).join(', ') 
                             : String(data.members || '').trim()) 
                         : '',
                     production: '',
-                    ppOperator: '',
                     productionDetails: section === 'production' && data.productionTable && Array.isArray(data.productionTable)
                         ? data.productionTable
                             .filter(row => row && (row.counterNo || row.componentName || row.produced || row.poured || row.cycleTime || row.mouldsPerHour || row.remarks))
-                            .map(row => ({
+                            .map((row, index) => ({
+                                sNo: index + 1,
                                 counterNo: String(row.counterNo || '').trim(),
                                 componentName: String(row.componentName || '').trim(),
                                 produced: (row.produced && String(row.produced).trim() !== '') ? parseFloat(row.produced) : 0,
@@ -189,7 +219,8 @@ const createDismaticReport = async (req, res) => {
                     nextShiftPlan: section === 'nextShiftPlan' && data.nextShiftPlanTable && Array.isArray(data.nextShiftPlanTable)
                         ? data.nextShiftPlanTable
                             .filter(row => row && (row.componentName || row.plannedMoulds || row.remarks))
-                            .map(row => ({
+                            .map((row, index) => ({
+                                sNo: index + 1,
                                 componentName: String(row.componentName || '').trim(),
                                 plannedMoulds: (row.plannedMoulds && String(row.plannedMoulds).trim() !== '') ? parseFloat(row.plannedMoulds) : 0,
                                 remarks: String(row.remarks || '').trim()
@@ -198,7 +229,8 @@ const createDismaticReport = async (req, res) => {
                     delays: section === 'delays' && data.delaysTable && Array.isArray(data.delaysTable)
                         ? data.delaysTable
                             .filter(row => row && (row.delays || row.durationMinutes || row.durationTime))
-                            .map(row => ({
+                            .map((row, index) => ({
+                                sNo: index + 1,
                                 delays: String(row.delays || '').trim(),
                                 durationMinutes: (row.durationMinutes && String(row.durationMinutes).trim() !== '') ? parseFloat(row.durationMinutes) : 0,
                                 durationTime: String(row.durationTime || '').trim()
@@ -207,7 +239,8 @@ const createDismaticReport = async (req, res) => {
                     mouldHardness: section === 'mouldHardness' && data.mouldHardnessTable && Array.isArray(data.mouldHardnessTable)
                         ? data.mouldHardnessTable
                             .filter(row => row && (row.componentName || row.mpPP || row.mpSP || row.bsPP || row.bsSP || row.remarks))
-                            .map(row => ({
+                            .map((row, index) => ({
+                                sNo: index + 1,
                                 componentName: String(row.componentName || '').trim(),
                                 mpPP: (row.mpPP && String(row.mpPP).trim() !== '') ? parseFloat(row.mpPP) : 0,
                                 mpSP: (row.mpSP && String(row.mpSP).trim() !== '') ? parseFloat(row.mpSP) : 0,
@@ -219,7 +252,8 @@ const createDismaticReport = async (req, res) => {
                     patternTemperature: section === 'patternTemp' && data.patternTempTable && Array.isArray(data.patternTempTable)
                         ? data.patternTempTable
                             .filter(row => row && (row.item || row.pp || row.sp))
-                            .map(row => ({
+                            .map((row, index) => ({
+                                sNo: index + 1,
                                 item: String(row.item || '').trim(),
                                 pp: (row.pp && String(row.pp).trim() !== '') ? parseFloat(row.pp) : 0,
                                 sp: (row.sp && String(row.sp).trim() !== '') ? parseFloat(row.sp) : 0

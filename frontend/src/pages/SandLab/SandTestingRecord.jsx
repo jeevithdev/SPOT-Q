@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, RefreshCw, FileText, Loader2, RotateCcw } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
@@ -161,6 +161,14 @@ const SandTestingRecord = () => {
     table5: false
   });
 
+  // Field locks for each table
+  const [tableLocks, setTableLocks] = useState({
+    table1: {},
+    table2: {},
+    table3: {},
+    table4: {}
+  });
+
   const handleTableChange = (tableNum, field, value, nestedField = null) => {
     const setters = {
       1: setTable1,
@@ -197,20 +205,170 @@ const SandTestingRecord = () => {
   };
 
   const handleTableSubmit = async (tableNum) => {
+    if (!primaryData.date) {
+      alert('Please enter a date first.');
+      return;
+    }
+
     const tables = { 1: table1, 2: table2, 3: table3, 4: table4, 5: table5 };
     const tableData = tables[tableNum];
+    
+    // For tables 1-4, only send unlocked/empty fields
+    let dataToSend = tableData;
+    if (tableNum <= 4) {
+      const locks = tableLocks[`table${tableNum}`];
+      if (tableNum === 1) {
+        // Filter out locked fields for table 1 and transform batchNo structure
+        const filtered = {
+          shiftI: {},
+          shiftII: {},
+          shiftIII: {}
+        };
+        ['shiftI', 'shiftII', 'shiftIII'].forEach(shift => {
+          const shiftData = tableData[shift] || {};
+          Object.keys(shiftData).forEach(field => {
+            if (field === 'batchNoBentonite' || field === 'batchNoCoalDustPremix') {
+              // Handle batchNo fields - transform to nested structure
+              if (!filtered[shift].batchNo) {
+                filtered[shift].batchNo = {};
+              }
+              const lockKey = field === 'batchNoBentonite' 
+                ? `${shift}.batchNo.bentonite` 
+                : `${shift}.batchNo.coalDustPremix`;
+              if (!locks[lockKey] && shiftData[field]) {
+                if (field === 'batchNoBentonite') {
+                  filtered[shift].batchNo.bentonite = shiftData[field];
+                } else {
+                  filtered[shift].batchNo.coalDustPremix = shiftData[field];
+                }
+              }
+            } else if (field !== 'checkpointBentonite' && field !== 'checkpointCoalDustPremix') {
+              // Skip checkpoint fields (they're just UI state, not stored)
+              const lockKey = `${shift}.${field}`;
+              if (!locks[lockKey] && shiftData[field]) {
+                filtered[shift][field] = shiftData[field];
+              }
+            }
+          });
+        });
+        dataToSend = filtered;
+      } else if (tableNum === 2) {
+        const filtered = {
+          shiftI: {},
+          ShiftII: {},
+          ShiftIII: {}
+        };
+        ['shiftI', 'shiftII', 'shiftIII'].forEach((shift, idx) => {
+          const backendShiftKey = idx === 0 ? 'shiftI' : idx === 1 ? 'ShiftII' : 'ShiftIII';
+          const shiftData = tableData[shift] || {};
+          Object.keys(shiftData).forEach(field => {
+            const lockKey = `${shift}.${field}`;
+            if (!locks[lockKey] && shiftData[field]) {
+              filtered[backendShiftKey][field] = shiftData[field];
+            }
+          });
+        });
+        dataToSend = filtered;
+      } else if (tableNum === 3) {
+        // Transform mixNo fields to nested structure for backend
+        const filtered = {
+          ShiftI: {},
+          ShiftII: {},
+          ShiftIII: {}
+        };
+        ['shiftI', 'shiftII', 'shiftIII'].forEach((shift, idx) => {
+          const backendShiftKey = idx === 0 ? 'ShiftI' : idx === 1 ? 'ShiftII' : 'ShiftIII';
+          const shiftData = tableData[shift] || {};
+          Object.keys(shiftData).forEach(field => {
+            const lockKey = `${shift}.${field}`;
+            if (!locks[lockKey] && shiftData[field]) {
+              // Transform mixNo fields to nested structure
+              if (field === 'mixNoStart' || field === 'mixNoEnd' || field === 'mixNoTotal') {
+                if (!filtered[backendShiftKey].mixno) {
+                  filtered[backendShiftKey].mixno = {};
+                }
+                if (field === 'mixNoStart') {
+                  filtered[backendShiftKey].mixno.start = shiftData[field];
+                } else if (field === 'mixNoEnd') {
+                  filtered[backendShiftKey].mixno.end = shiftData[field];
+                } else if (field === 'mixNoTotal') {
+                  filtered[backendShiftKey].mixno.total = shiftData[field];
+                }
+              } else if (field === 'noOfMixRejected') {
+                filtered[backendShiftKey].numberOfMixRejected = shiftData[field];
+              } else {
+                filtered[backendShiftKey][field] = shiftData[field];
+              }
+            }
+          });
+        });
+        // Handle total row if it has data
+        if (tableData.total) {
+          const totalData = {};
+          Object.keys(tableData.total).forEach(field => {
+            const lockKey = `total.${field}`;
+            if (!locks[lockKey] && tableData.total[field]) {
+              if (field === 'mixNoEnd' || field === 'mixNoTotal') {
+                if (!totalData.mixno) {
+                  totalData.mixno = {};
+                }
+                if (field === 'mixNoEnd') {
+                  totalData.mixno.end = tableData.total[field];
+                } else if (field === 'mixNoTotal') {
+                  totalData.mixno.total = tableData.total[field];
+                }
+              } else if (field === 'noOfMixRejected') {
+                totalData.numberOfMixRejected = tableData.total[field];
+              } else {
+                totalData[field] = tableData.total[field];
+              }
+            }
+          });
+          if (Object.keys(totalData).length > 0) {
+            filtered.total = totalData;
+          }
+        }
+        dataToSend = filtered;
+      } else if (tableNum === 4) {
+        const filtered = {};
+        Object.keys(tableData).forEach(field => {
+          if (field === 'friability') {
+            filtered.sandFriability = {};
+            Object.keys(tableData.friability || {}).forEach(shift => {
+              const lockKey = `friability.${shift}`;
+              if (!locks[lockKey] && tableData.friability[shift]) {
+                filtered.sandFriability[shift] = tableData.friability[shift];
+              }
+            });
+          } else {
+            const lockKey = field;
+            if (!locks[lockKey] && tableData[field]) {
+              filtered[field] = tableData[field];
+            }
+          }
+        });
+        dataToSend = filtered;
+      }
+    }
     
     setLoadingStates(prev => ({ ...prev, [`table${tableNum}`]: true }));
     
     try {
-      // TODO: Update with actual API endpoint
+      // Send primary data + table data together
       const response = await api.post(`/v1/sand-testing-records/table${tableNum}`, {
         tableNum,
-        data: tableData
+        data: {
+          ...dataToSend,
+          date: primaryData.date
+        }
       });
       
       if (response.success) {
         alert(`Table ${tableNum} saved successfully!`);
+        // Refresh locks after save
+        if (primaryData.date) {
+          await checkExistingData(primaryData.date);
+        }
       } else {
         alert('Error: ' + response.message);
       }
@@ -227,34 +385,236 @@ const SandTestingRecord = () => {
       ...prev,
       [field]: value
     }));
-  };
-
-  const handlePrimarySubmit = async () => {
-    setPrimaryLoading(true);
     
-    try {
-      // TODO: Update with actual API endpoint
-      const response = await api.post('/v1/sand-testing-records/primary', {
-        data: primaryData
-      });
-      
-      if (response.success) {
-        alert('Primary data saved successfully!');
-      } else {
-        alert('Error: ' + response.message);
-      }
-    } catch (error) {
-      console.error('Error saving primary data:', error);
-      alert('Failed to save primary data. Please try again.');
-    } finally {
-      setPrimaryLoading(false);
+    // When date changes, automatically check for existing data
+    if (field === 'date' && value) {
+      checkExistingData(value);
+    } else if (field === 'date' && !value) {
+      // Clear all data when date is cleared
+      resetAllTables();
     }
   };
+
+  // Check for existing data when date is entered
+  const checkExistingData = async (date) => {
+    if (!date) return;
+    
+    try {
+      // Format date as YYYY-MM-DD for API
+      const dateStr = date.includes('T') ? date.split('T')[0] : date;
+      const response = await api.get(`/v1/sand-testing-records/date/${dateStr}`);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        const record = response.data[0];
+        
+        // Load and lock Table 1 data (sandShifts)
+        if (record.sandShifts) {
+          const table1Locks = {};
+          const table1Data = {
+            shiftI: {},
+            shiftII: {},
+            shiftIII: {}
+          };
+          
+          ['shiftI', 'shiftII', 'shiftIII'].forEach(shift => {
+            const shiftData = record.sandShifts[shift] || {};
+            Object.keys(shiftData).forEach(field => {
+              if (field === 'batchNo') {
+                if (shiftData.batchNo) {
+                  if (shiftData.batchNo.bentonite) {
+                    table1Locks[`${shift}.batchNo.bentonite`] = true;
+                    table1Data[shift].batchNoBentonite = shiftData.batchNo.bentonite;
+                  }
+                  if (shiftData.batchNo.coalDustPremix) {
+                    table1Locks[`${shift}.batchNo.coalDustPremix`] = true;
+                    table1Data[shift].batchNoCoalDustPremix = shiftData.batchNo.coalDustPremix;
+                  }
+                }
+              } else if (shiftData[field]) {
+                table1Locks[`${shift}.${field}`] = true;
+                table1Data[shift][field] = shiftData[field];
+              }
+            });
+          });
+          
+          setTable1(prev => {
+            const updated = { ...prev };
+            Object.keys(table1Data).forEach(shift => {
+              updated[shift] = { ...prev[shift], ...table1Data[shift] };
+            });
+            return updated;
+          });
+          setTableLocks(prev => ({
+            ...prev,
+            table1: table1Locks
+          }));
+        }
+        
+        // Load and lock Table 2 data (clayShifts)
+        if (record.clayShifts) {
+          const table2Locks = {};
+          const table2Data = {
+            shiftI: {},
+            shiftII: {},
+            shiftIII: {}
+          };
+          
+          ['shiftI', 'ShiftII', 'ShiftIII'].forEach((shift, idx) => {
+            const shiftKey = idx === 0 ? 'shiftI' : idx === 1 ? 'shiftII' : 'shiftIII';
+            const shiftData = record.clayShifts[shift] || {};
+            Object.keys(shiftData).forEach(field => {
+              if (shiftData[field]) {
+                table2Locks[`${shiftKey}.${field}`] = true;
+                table2Data[shiftKey][field] = shiftData[field];
+              }
+            });
+          });
+          
+          setTable2(prev => {
+            const updated = { ...prev };
+            Object.keys(table2Data).forEach(shift => {
+              updated[shift] = { ...prev[shift], ...table2Data[shift] };
+            });
+            return updated;
+          });
+          setTableLocks(prev => ({
+            ...prev,
+            table2: table2Locks
+          }));
+        }
+        
+        // Load and lock Table 3 data (mixshifts)
+        if (record.mixshifts) {
+          const table3Locks = {};
+          const table3Data = {
+            shiftI: {},
+            shiftII: {},
+            shiftIII: {},
+            total: {}
+          };
+          
+          ['ShiftI', 'ShiftII', 'ShiftIII'].forEach((shift, idx) => {
+            const shiftKey = idx === 0 ? 'shiftI' : idx === 1 ? 'shiftII' : 'shiftIII';
+            const shiftData = record.mixshifts[shift] || {};
+            if (shiftData.mixno) {
+              if (shiftData.mixno.start) {
+                table3Locks[`${shiftKey}.mixNoStart`] = true;
+                table3Data[shiftKey].mixNoStart = shiftData.mixno.start;
+              }
+              if (shiftData.mixno.end) {
+                table3Locks[`${shiftKey}.mixNoEnd`] = true;
+                table3Data[shiftKey].mixNoEnd = shiftData.mixno.end;
+              }
+              if (shiftData.mixno.total) {
+                table3Locks[`${shiftKey}.mixNoTotal`] = true;
+                table3Data[shiftKey].mixNoTotal = shiftData.mixno.total;
+              }
+            }
+            if (shiftData.numberOfMixRejected !== undefined && shiftData.numberOfMixRejected !== null && shiftData.numberOfMixRejected !== '' && shiftData.numberOfMixRejected !== 0) {
+              table3Locks[`${shiftKey}.noOfMixRejected`] = true;
+              table3Data[shiftKey].noOfMixRejected = shiftData.numberOfMixRejected;
+            }
+            if (shiftData.returnSandHopperLevel !== undefined && shiftData.returnSandHopperLevel !== null && shiftData.returnSandHopperLevel !== '' && shiftData.returnSandHopperLevel !== 0) {
+              table3Locks[`${shiftKey}.returnSandHopperLevel`] = true;
+              table3Data[shiftKey].returnSandHopperLevel = shiftData.returnSandHopperLevel;
+            }
+          });
+          
+          setTable3(prev => {
+            const updated = { ...prev };
+            Object.keys(table3Data).forEach(shift => {
+              updated[shift] = { ...prev[shift], ...table3Data[shift] };
+            });
+            return updated;
+          });
+          setTableLocks(prev => ({
+            ...prev,
+            table3: table3Locks
+          }));
+        }
+        
+        // Load and lock Table 4 data
+        if (record.sandLump || record.newSandWt || record.sandFriability) {
+          const table4Locks = {};
+          const table4Data = {};
+          
+          if (record.sandLump) {
+            table4Locks.sandLump = true;
+            table4Data.sandLump = record.sandLump;
+          }
+          if (record.newSandWt) {
+            table4Locks.newSandWt = true;
+            table4Data.newSandWt = record.newSandWt;
+          }
+          if (record.sandFriability) {
+            ['shiftI', 'shiftII', 'shiftIII'].forEach(shift => {
+              if (record.sandFriability[shift]) {
+                table4Locks[`friability.${shift}`] = true;
+                table4Data.friability = table4Data.friability || {};
+                table4Data.friability[shift] = record.sandFriability[shift];
+              }
+            });
+          }
+          
+          setTable4(prev => ({
+            ...prev,
+            ...table4Data
+          }));
+          setTableLocks(prev => ({
+            ...prev,
+            table4: table4Locks
+          }));
+        }
+      } else {
+        // No data found, clear all locks
+        resetAllTables();
+      }
+    } catch (error) {
+      console.error('Error checking existing data:', error);
+      resetAllTables();
+    }
+  };
+
+  const resetAllTables = () => {
+    setTable1({
+      shiftI: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', checkpointBentonite: '', checkpointCoalDustPremix: '', batchNoBentonite: '', batchNoCoalDustPremix: '' },
+      shiftII: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', checkpointBentonite: '', checkpointCoalDustPremix: '', batchNoBentonite: '', batchNoCoalDustPremix: '' },
+      shiftIII: { rSand: '', nSand: '', mixingMode: '', bentonite: '', coalDustPremix: '', checkpointBentonite: '', checkpointCoalDustPremix: '', batchNoBentonite: '', batchNoCoalDustPremix: '' }
+    });
+    setTable2({
+      shiftI: { totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: '' },
+      shiftII: { totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: '' },
+      shiftIII: { totalClay: '', activeClay: '', deadClay: '', vcm: '', loi: '', afsNo: '', fines: '' }
+    });
+    setTable3({
+      shiftI: { mixNoStart: '', mixNoEnd: '', mixNoTotal: '', noOfMixRejected: '', returnSandHopperLevel: '' },
+      shiftII: { mixNoStart: '', mixNoEnd: '', mixNoTotal: '', noOfMixRejected: '', returnSandHopperLevel: '' },
+      shiftIII: { mixNoStart: '', mixNoEnd: '', mixNoTotal: '', noOfMixRejected: '', returnSandHopperLevel: '' },
+      total: { mixNoEnd: '', mixNoTotal: '', noOfMixRejected: '' }
+    });
+    setTable4({
+      sandLump: '',
+      newSandWt: '',
+      friability: {
+        shiftI: '',
+        shiftII: '',
+        shiftIII: ''
+      }
+    });
+    setTableLocks({
+      table1: {},
+      table2: {},
+      table3: {},
+      table4: {}
+    });
+  };
+
 
   // Separate reset functions for each table
   const resetPrimaryData = () => {
     if (!window.confirm('Are you sure you want to reset Primary data?')) return;
     setPrimaryData({ date: '' });
+    resetAllTables();
   };
 
   const resetTable1 = () => {
@@ -336,6 +696,13 @@ const SandTestingRecord = () => {
     navigate('/sand-lab/sand-testing-record/report');
   };
 
+  // Helper function to check if a field is locked
+  const isFieldLocked = (tableNum, fieldPath) => {
+    if (tableNum > 4) return false; // Table 5 doesn't have locks
+    const locks = tableLocks[`table${tableNum}`];
+    return locks && locks[fieldPath] === true;
+  };
+
   const renderTableRow = (tableNum, field, label, type = "text") => (
     <tr>
       <td>{label}</td>
@@ -381,28 +748,20 @@ const SandTestingRecord = () => {
         </div>
       </div>
 
-      {/* Primary */}
-      <div className="sand-section-header">
-        <h3>Primary</h3>
-      </div>
-      <div className="sand-primary-row">
-        <div className="sand-primary-form-group">
-          <label>Date</label>
-          <CustomDatePicker
-            value={primaryData.date}
-            onChange={(e) => handlePrimaryChange('date', e.target.value)}
-            name="date"
-          />
+      {/* Primary Data Section */}
+      <div className="sand-primary-container">
+        <div className="sand-section-header">
+          <h3 className="primary-data-title">Primary Data :</h3>
         </div>
-        <div className="sand-primary-button-wrapper">
-          <button
-            className="sand-submit-btn"
-            onClick={handlePrimarySubmit}
-            disabled={primaryLoading || !primaryData.date}
-          >
-            {primaryLoading ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
-            {primaryLoading ? 'Saving...' : 'Save Primary'}
-          </button>
+        <div className="sand-primary-row">
+          <div className="sand-primary-form-group">
+            <label>Date</label>
+            <CustomDatePicker
+              value={primaryData.date}
+              onChange={(e) => handlePrimaryChange('date', e.target.value)}
+              name="date"
+            />
+          </div>
         </div>
       </div>
 
@@ -429,6 +788,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftI', e.target.value, 'rSand')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftI.rSand')}
+                readOnly={isFieldLocked(1, 'shiftI.rSand')}
+                style={{
+                  backgroundColor: isFieldLocked(1, 'shiftI.rSand') ? '#f1f5f9' : '#ffffff',
+                  cursor: isFieldLocked(1, 'shiftI.rSand') ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -438,6 +803,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftII', e.target.value, 'rSand')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftII.rSand')}
+                readOnly={isFieldLocked(1, 'shiftII.rSand')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftII.rSand')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftII.rSand')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -447,6 +818,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftIII', e.target.value, 'rSand')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftIII.rSand')}
+                readOnly={isFieldLocked(1, 'shiftIII.rSand')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftIII.rSand')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftIII.rSand')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -459,6 +836,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftI', e.target.value, 'nSand')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftI.nSand')}
+                readOnly={isFieldLocked(1, 'shiftI.nSand')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftI.nSand')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftI.nSand')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -468,6 +851,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftII', e.target.value, 'nSand')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftII.nSand')}
+                readOnly={isFieldLocked(1, 'shiftII.nSand')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftII.nSand')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftII.nSand')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -477,6 +866,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftIII', e.target.value, 'nSand')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftIII.nSand')}
+                readOnly={isFieldLocked(1, 'shiftIII.nSand')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftIII.nSand')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftIII.nSand')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -489,6 +884,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftI', e.target.value, 'mixingMode')}
                 placeholder="Enter mode"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftI.mixingMode')}
+                readOnly={isFieldLocked(1, 'shiftI.mixingMode')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftI.mixingMode')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftI.mixingMode')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -498,6 +899,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftII', e.target.value, 'mixingMode')}
                 placeholder="Enter mode"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftII.mixingMode')}
+                readOnly={isFieldLocked(1, 'shiftII.mixingMode')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftII.mixingMode')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftII.mixingMode')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -507,6 +914,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftIII', e.target.value, 'mixingMode')}
                 placeholder="Enter mode"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftIII.mixingMode')}
+                readOnly={isFieldLocked(1, 'shiftIII.mixingMode')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftIII.mixingMode')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftIII.mixingMode')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -519,6 +932,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftI', e.target.value, 'bentonite')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftI.bentonite')}
+                readOnly={isFieldLocked(1, 'shiftI.bentonite')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftI.bentonite')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftI.bentonite')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -528,6 +947,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftII', e.target.value, 'bentonite')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftII.bentonite')}
+                readOnly={isFieldLocked(1, 'shiftII.bentonite')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftII.bentonite')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftII.bentonite')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -537,6 +962,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(1, 'shiftIII', e.target.value, 'bentonite')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(1, 'shiftIII.bentonite')}
+                readOnly={isFieldLocked(1, 'shiftIII.bentonite')}
+                style={{
+                  backgroundColor: (isFieldLocked(1, 'shiftIII.bentonite')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(1, 'shiftIII.bentonite')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -563,31 +994,39 @@ const SandTestingRecord = () => {
                   onChange={(e) => handleTableChange(1, 'shiftI', e.target.value, 'batchNoBentonite')}
                   placeholder="Enter batch no"
                   className="sand-table-input"
+                  disabled={isFieldLocked(1, 'shiftI.batchNo.bentonite')}
+                  readOnly={isFieldLocked(1, 'shiftI.batchNo.bentonite')}
+                  style={{
+                    backgroundColor: (isFieldLocked(1, 'shiftI.batchNo.bentonite')) ? '#f1f5f9' : '#ffffff',
+                    cursor: (isFieldLocked(1, 'shiftI.batchNo.bentonite')) ? 'not-allowed' : 'text'
+                  }}
                 />
             </div>
             </td>
             <td colSpan={2}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                 <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isFieldLocked(1, 'shiftI.batchNo.coalDustPremix') ? 'not-allowed' : 'pointer', fontSize: '0.875rem', opacity: (isFieldLocked(1, 'shiftI.batchNo.coalDustPremix')) ? 0.6 : 1 }}>
                     <input
                       type="radio"
                       name="checkpoint-shiftIIIII"
                       value="coalDust"
                       checked={table1.shiftI.checkpointCoalDustPremix === 'coalDust'}
                       onChange={(e) => handleTableChange(1, 'shiftI', e.target.value, 'checkpointCoalDustPremix')}
-                      style={{ cursor: 'pointer' }}
+                      disabled={isFieldLocked(1, 'shiftI.batchNo.coalDustPremix')}
+                      style={{ cursor: (isFieldLocked(1, 'shiftI.batchNo.coalDustPremix')) ? 'not-allowed' : 'pointer' }}
                     />
                     <span>Coal dust</span>
                   </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
+                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: isFieldLocked(1, 'shiftI.batchNo.coalDustPremix') ? 'not-allowed' : 'pointer', fontSize: '0.875rem', opacity: (isFieldLocked(1, 'shiftI.batchNo.coalDustPremix')) ? 0.6 : 1 }}>
                     <input
                       type="radio"
                       name="checkpoint-shiftIIIII"
                       value="premix"
                       checked={table1.shiftI.checkpointCoalDustPremix === 'premix'}
                       onChange={(e) => handleTableChange(1, 'shiftI', e.target.value, 'checkpointCoalDustPremix')}
-                      style={{ cursor: 'pointer' }}
+                      disabled={isFieldLocked(1, 'shiftI.batchNo.coalDustPremix')}
+                      style={{ cursor: (isFieldLocked(1, 'shiftI.batchNo.coalDustPremix')) ? 'not-allowed' : 'pointer' }}
                     />
                     <span>Premix</span>
                   </label>
@@ -598,6 +1037,12 @@ const SandTestingRecord = () => {
                   onChange={(e) => handleTableChange(1, 'shiftI', e.target.value, 'batchNoCoalDustPremix')}
                   placeholder="Enter batch no"
                   className="sand-table-input"
+                  disabled={isFieldLocked(1, 'shiftI.batchNo.coalDustPremix') || !table1.shiftI.checkpointCoalDustPremix}
+                  readOnly={isFieldLocked(1, 'shiftI.batchNo.coalDustPremix')}
+                  style={{
+                    backgroundColor: (isFieldLocked(1, 'shiftI.batchNo.coalDustPremix') || !table1.shiftI.checkpointCoalDustPremix) ? '#f1f5f9' : '#ffffff',
+                    cursor: (isFieldLocked(1, 'shiftI.batchNo.coalDustPremix') || !table1.shiftI.checkpointCoalDustPremix) ? 'not-allowed' : 'text'
+                  }}
                 />
             </div>
             </td>
@@ -617,6 +1062,7 @@ const SandTestingRecord = () => {
           className="sand-submit-btn"
           onClick={() => handleTableSubmit(1)}
           disabled={loadingStates.table1}
+          title="Save Table 1"
         >
           {loadingStates.table1 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
           {loadingStates.table1 ? 'Saving...' : 'Save Table 1'}
@@ -646,6 +1092,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftI', e.target.value, 'totalClay')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftI.totalClay')}
+                readOnly={isFieldLocked(2, 'shiftI.totalClay')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftI.totalClay')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftI.totalClay')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -655,6 +1107,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftII', e.target.value, 'totalClay')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftII.totalClay')}
+                readOnly={isFieldLocked(2, 'shiftII.totalClay')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftII.totalClay')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftII.totalClay')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -664,6 +1122,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftIII', e.target.value, 'totalClay')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftIII.totalClay')}
+                readOnly={isFieldLocked(2, 'shiftIII.totalClay')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftIII.totalClay')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftIII.totalClay')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -676,6 +1140,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftI', e.target.value, 'activeClay')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftI.activeClay')}
+                readOnly={isFieldLocked(2, 'shiftI.activeClay')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftI.activeClay')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftI.activeClay')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -685,6 +1155,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftII', e.target.value, 'activeClay')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftII.activeClay')}
+                readOnly={isFieldLocked(2, 'shiftII.activeClay')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftII.activeClay')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftII.activeClay')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -694,6 +1170,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftIII', e.target.value, 'activeClay')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftIII.activeClay')}
+                readOnly={isFieldLocked(2, 'shiftIII.activeClay')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftIII.activeClay')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftIII.activeClay')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -706,6 +1188,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftI', e.target.value, 'deadClay')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftI.deadClay')}
+                readOnly={isFieldLocked(2, 'shiftI.deadClay')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftI.deadClay')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftI.deadClay')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -715,6 +1203,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftII', e.target.value, 'deadClay')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftII.deadClay')}
+                readOnly={isFieldLocked(2, 'shiftII.deadClay')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftII.deadClay')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftII.deadClay')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -724,6 +1218,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftIII', e.target.value, 'deadClay')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftIII.deadClay')}
+                readOnly={isFieldLocked(2, 'shiftIII.deadClay')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftIII.deadClay')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftIII.deadClay')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -736,6 +1236,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftI', e.target.value, 'vcm')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftI.vcm')}
+                readOnly={isFieldLocked(2, 'shiftI.vcm')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftI.vcm')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftI.vcm')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -745,6 +1251,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftII', e.target.value, 'vcm')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftII.vcm')}
+                readOnly={isFieldLocked(2, 'shiftII.vcm')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftII.vcm')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftII.vcm')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -754,6 +1266,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftIII', e.target.value, 'vcm')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftIII.vcm')}
+                readOnly={isFieldLocked(2, 'shiftIII.vcm')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftIII.vcm')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftIII.vcm')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -766,6 +1284,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftI', e.target.value, 'loi')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftI.loi')}
+                readOnly={isFieldLocked(2, 'shiftI.loi')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftI.loi')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftI.loi')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -775,6 +1299,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftII', e.target.value, 'loi')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftII.loi')}
+                readOnly={isFieldLocked(2, 'shiftII.loi')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftII.loi')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftII.loi')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -784,6 +1314,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftIII', e.target.value, 'loi')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftIII.loi')}
+                readOnly={isFieldLocked(2, 'shiftIII.loi')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftIII.loi')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftIII.loi')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -796,6 +1332,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftI', e.target.value, 'afsNo')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftI.afsNo')}
+                readOnly={isFieldLocked(2, 'shiftI.afsNo')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftI.afsNo')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftI.afsNo')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -805,6 +1347,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftII', e.target.value, 'afsNo')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftII.afsNo')}
+                readOnly={isFieldLocked(2, 'shiftII.afsNo')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftII.afsNo')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftII.afsNo')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -814,6 +1362,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftIII', e.target.value, 'afsNo')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftIII.afsNo')}
+                readOnly={isFieldLocked(2, 'shiftIII.afsNo')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftIII.afsNo')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftIII.afsNo')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -826,6 +1380,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftI', e.target.value, 'fines')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftI.fines')}
+                readOnly={isFieldLocked(2, 'shiftI.fines')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftI.fines')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftI.fines')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -835,6 +1395,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftII', e.target.value, 'fines')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftII.fines')}
+                readOnly={isFieldLocked(2, 'shiftII.fines')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftII.fines')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftII.fines')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -844,6 +1410,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(2, 'shiftIII', e.target.value, 'fines')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(2, 'shiftIII.fines')}
+                readOnly={isFieldLocked(2, 'shiftIII.fines')}
+                style={{
+                  backgroundColor: (isFieldLocked(2, 'shiftIII.fines')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(2, 'shiftIII.fines')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -862,6 +1434,7 @@ const SandTestingRecord = () => {
           className="sand-submit-btn"
           onClick={() => handleTableSubmit(2)}
           disabled={loadingStates.table2}
+          title="Save Table 2"
         >
           {loadingStates.table2 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
           {loadingStates.table2 ? 'Saving...' : 'Save Table 2'}
@@ -897,6 +1470,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'shiftI.mixNoStart')}
+                readOnly={isFieldLocked(3, 'shiftI.mixNoStart')}
               />
             </td>
             <td style={{ borderRight: '1px solid #e2e8f0', width: '11.67%', padding: '0.4rem' }}>
@@ -907,6 +1482,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'shiftI.mixNoEnd')}
+                readOnly={isFieldLocked(3, 'shiftI.mixNoEnd')}
               />
             </td>
             <td style={{ width: '11.67%', padding: '0.4rem', borderRight: '1px solid #e2e8f0' }}>
@@ -917,6 +1494,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'shiftI.mixNoTotal')}
+                readOnly={isFieldLocked(3, 'shiftI.mixNoTotal')}
               />
             </td>
             <td>
@@ -926,6 +1505,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(3, 'shiftI', e.target.value, 'noOfMixRejected')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(3, 'shiftI.noOfMixRejected')}
+                readOnly={isFieldLocked(3, 'shiftI.noOfMixRejected')}
+                style={{
+                  backgroundColor: (isFieldLocked(3, 'shiftI.noOfMixRejected')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(3, 'shiftI.noOfMixRejected')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -935,6 +1520,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(3, 'shiftI', e.target.value, 'returnSandHopperLevel')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(3, 'shiftI.returnSandHopperLevel')}
+                readOnly={isFieldLocked(3, 'shiftI.returnSandHopperLevel')}
+                style={{
+                  backgroundColor: (isFieldLocked(3, 'shiftI.returnSandHopperLevel')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(3, 'shiftI.returnSandHopperLevel')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -948,6 +1539,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'shiftII.mixNoStart')}
+                readOnly={isFieldLocked(3, 'shiftII.mixNoStart')}
               />
             </td>
             <td style={{ borderRight: '1px solid #e2e8f0', width: '11.67%', padding: '0.4rem' }}>
@@ -958,6 +1551,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'shiftII.mixNoEnd')}
+                readOnly={isFieldLocked(3, 'shiftII.mixNoEnd')}
               />
             </td>
             <td style={{ width: '11.67%', padding: '0.4rem', borderRight: '1px solid #e2e8f0' }}>
@@ -968,6 +1563,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'shiftII.mixNoTotal')}
+                readOnly={isFieldLocked(3, 'shiftII.mixNoTotal')}
               />
             </td>
             <td>
@@ -977,6 +1574,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(3, 'shiftII', e.target.value, 'noOfMixRejected')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(3, 'shiftII.noOfMixRejected')}
+                readOnly={isFieldLocked(3, 'shiftII.noOfMixRejected')}
+                style={{
+                  backgroundColor: (isFieldLocked(3, 'shiftII.noOfMixRejected')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(3, 'shiftII.noOfMixRejected')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -986,6 +1589,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(3, 'shiftII', e.target.value, 'returnSandHopperLevel')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(3, 'shiftII.returnSandHopperLevel')}
+                readOnly={isFieldLocked(3, 'shiftII.returnSandHopperLevel')}
+                style={{
+                  backgroundColor: (isFieldLocked(3, 'shiftII.returnSandHopperLevel')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(3, 'shiftII.returnSandHopperLevel')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -999,6 +1608,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'shiftIII.mixNoStart')}
+                readOnly={isFieldLocked(3, 'shiftIII.mixNoStart')}
               />
             </td>
             <td style={{ borderRight: '1px solid #e2e8f0', width: '11.67%', padding: '0.4rem' }}>
@@ -1009,6 +1620,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'shiftIII.mixNoEnd')}
+                readOnly={isFieldLocked(3, 'shiftIII.mixNoEnd')}
               />
             </td>
             <td style={{ width: '11.67%', padding: '0.4rem', borderRight: '1px solid #e2e8f0' }}>
@@ -1019,6 +1632,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'shiftIII.mixNoTotal')}
+                readOnly={isFieldLocked(3, 'shiftIII.mixNoTotal')}
               />
             </td>
             <td>
@@ -1028,6 +1643,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(3, 'shiftIII', e.target.value, 'noOfMixRejected')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(3, 'shiftIII.noOfMixRejected')}
+                readOnly={isFieldLocked(3, 'shiftIII.noOfMixRejected')}
+                style={{
+                  backgroundColor: (isFieldLocked(3, 'shiftIII.noOfMixRejected')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(3, 'shiftIII.noOfMixRejected')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td>
@@ -1037,6 +1658,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(3, 'shiftIII', e.target.value, 'returnSandHopperLevel')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(3, 'shiftIII.returnSandHopperLevel')}
+                readOnly={isFieldLocked(3, 'shiftIII.returnSandHopperLevel')}
+                style={{
+                  backgroundColor: (isFieldLocked(3, 'shiftIII.returnSandHopperLevel')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(3, 'shiftIII.returnSandHopperLevel')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
           </tr>
@@ -1050,6 +1677,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'total.mixNoEnd')}
+                readOnly={isFieldLocked(3, 'total.mixNoEnd')}
               />
             </td>
             <td style={{ width: '11.67%', padding: '0.4rem', borderRight: '1px solid #e2e8f0' }}>
@@ -1060,6 +1689,8 @@ const SandTestingRecord = () => {
                 placeholder="Enter value"
                 className="sand-table-input"
                 style={{ padding: '0.3rem 0.4rem', fontSize: '0.8125rem', width: '100%' }}
+                disabled={isFieldLocked(3, 'total.mixNoTotal')}
+                readOnly={isFieldLocked(3, 'total.mixNoTotal')}
               />
             </td>
             <td>
@@ -1069,6 +1700,12 @@ const SandTestingRecord = () => {
                 onChange={(e) => handleTableChange(3, 'total', e.target.value, 'noOfMixRejected')}
                 placeholder="Enter value"
                 className="sand-table-input"
+                disabled={isFieldLocked(3, 'total.noOfMixRejected')}
+                readOnly={isFieldLocked(3, 'total.noOfMixRejected')}
+                style={{
+                  backgroundColor: (isFieldLocked(3, 'total.noOfMixRejected')) ? '#f1f5f9' : '#ffffff',
+                  cursor: (isFieldLocked(3, 'total.noOfMixRejected')) ? 'not-allowed' : 'text'
+                }}
               />
             </td>
             <td></td>
@@ -1088,6 +1725,7 @@ const SandTestingRecord = () => {
           className="sand-submit-btn"
           onClick={() => handleTableSubmit(3)}
           disabled={loadingStates.table3}
+          title="Save Table 3"
         >
           {loadingStates.table3 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
           {loadingStates.table3 ? 'Saving...' : 'Save Table 3'}
@@ -1110,6 +1748,12 @@ const SandTestingRecord = () => {
                   onChange={(e) => handleTableChange(4, 'sandLump', e.target.value)}
                   placeholder="Enter value"
                   className="sand-table-input-small"
+                  disabled={isFieldLocked(4, 'sandLump')}
+                  readOnly={isFieldLocked(4, 'sandLump')}
+                  style={{
+                    backgroundColor: isFieldLocked(4, 'sandLump') ? '#f1f5f9' : '#ffffff',
+                    cursor: isFieldLocked(4, 'sandLump') ? 'not-allowed' : 'text'
+                  }}
                 />
               </td>
             </tr>
@@ -1122,6 +1766,12 @@ const SandTestingRecord = () => {
                   onChange={(e) => handleTableChange(4, 'newSandWt', e.target.value)}
                   placeholder="Enter value"
                   className="sand-table-input-small"
+                  disabled={isFieldLocked(4, 'newSandWt')}
+                  readOnly={isFieldLocked(4, 'newSandWt')}
+                  style={{
+                    backgroundColor: (isFieldLocked(4, 'newSandWt')) ? '#f1f5f9' : '#ffffff',
+                    cursor: (isFieldLocked(4, 'newSandWt')) ? 'not-allowed' : 'text'
+                  }}
                 />
               </td>
             </tr>
@@ -1146,6 +1796,12 @@ const SandTestingRecord = () => {
                   onChange={(e) => handleTableChange(4, 'friability', e.target.value, 'shiftI')}
                   placeholder="Enter value"
                   className="sand-table-input"
+                  disabled={isFieldLocked(4, 'friability.shiftI')}
+                  readOnly={isFieldLocked(4, 'friability.shiftI')}
+                  style={{
+                    backgroundColor: (isFieldLocked(4, 'friability.shiftI')) ? '#f1f5f9' : '#ffffff',
+                    cursor: (isFieldLocked(4, 'friability.shiftI')) ? 'not-allowed' : 'text'
+                  }}
                 />
               </td>
               <td>
@@ -1155,6 +1811,12 @@ const SandTestingRecord = () => {
                   onChange={(e) => handleTableChange(4, 'friability', e.target.value, 'shiftII')}
                   placeholder="Enter value"
                   className="sand-table-input"
+                  disabled={isFieldLocked(4, 'friability.shiftII')}
+                  readOnly={isFieldLocked(4, 'friability.shiftII')}
+                  style={{
+                    backgroundColor: (isFieldLocked(4, 'friability.shiftII')) ? '#f1f5f9' : '#ffffff',
+                    cursor: (isFieldLocked(4, 'friability.shiftII')) ? 'not-allowed' : 'text'
+                  }}
                 />
               </td>
               <td>
@@ -1164,6 +1826,12 @@ const SandTestingRecord = () => {
                   onChange={(e) => handleTableChange(4, 'friability', e.target.value, 'shiftIII')}
                   placeholder="Enter value"
                   className="sand-table-input"
+                  disabled={isFieldLocked(4, 'friability.shiftIII')}
+                  readOnly={isFieldLocked(4, 'friability.shiftIII')}
+                  style={{
+                    backgroundColor: (isFieldLocked(4, 'friability.shiftIII')) ? '#f1f5f9' : '#ffffff',
+                    cursor: (isFieldLocked(4, 'friability.shiftIII')) ? 'not-allowed' : 'text'
+                  }}
                 />
               </td>
             </tr>
@@ -1183,6 +1851,7 @@ const SandTestingRecord = () => {
           className="sand-submit-btn"
           onClick={() => handleTableSubmit(4)}
           disabled={loadingStates.table4}
+          title="Save Table 4"
         >
           {loadingStates.table4 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
           {loadingStates.table4 ? 'Saving...' : 'Save Table 4'}
@@ -1654,6 +2323,7 @@ const SandTestingRecord = () => {
             className="sand-submit-btn"
             onClick={() => handleTableSubmit(5)}
             disabled={loadingStates.table5}
+            title="Save Table 5"
           >
             {loadingStates.table5 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
             {loadingStates.table5 ? 'Saving...' : 'Save Table 5'}

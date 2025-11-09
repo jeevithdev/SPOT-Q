@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
 import api from '../utils/api';
@@ -23,6 +23,10 @@ const MicroStructure = () => {
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  
+  // Refs for navigation
+  const submitButtonRef = useRef(null);
+  const firstInputRef = useRef(null);
 
   const disaOptions = ['DISA I', 'DISA II', 'DISA III', 'DISA IV'];
 
@@ -66,13 +70,25 @@ const MicroStructure = () => {
       
       if (nextInput) {
         nextInput.focus();
+      } else {
+        // Last input - focus submit button
+        if (submitButtonRef.current) {
+          submitButtonRef.current.focus();
+        }
       }
+    }
+  };
+
+  const handleSubmitButtonKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
   const handleSubmit = async () => {
     const required = ['disa', 'insDate', 'partName', 'dateCode','heatCode', 'nodularity','graphiteType',
-                     'countNos', 'size', 'ferritePercent', 'pearlitePercent', 'carbidePercent'];
+                     'ferritePercent', 'pearlitePercent', 'carbidePercent'];
     const missing = required.filter(field => !formData[field]);
     
     // Set validation errors for missing fields
@@ -91,7 +107,32 @@ const MicroStructure = () => {
 
     try {
       setSubmitLoading(true);
-      const data = await api.post('/v1/micro-structure', formData);
+      
+      // Map DISA string to number
+      const disaMap = {
+        'DISA I': 1,
+        'DISA II': 2,
+        'DISA III': 3,
+        'DISA IV': 4
+      };
+      
+      // Transform formData to match backend schema
+      const payload = {
+        disa: disaMap[formData.disa] || 0,
+        insDate: formData.insDate,
+        partName: formData.partName,
+        dateCode: formData.dateCode,
+        heatCode: formData.heatCode,
+        microStructure: {
+          nodularityGraphiteType: `${formData.nodularity} ${formData.graphiteType}`.trim(),
+          ferritePercent: parseFloat(formData.ferritePercent) || 0,
+          pearlitePercent: parseFloat(formData.pearlitePercent) || 0,
+          carbidePercent: parseFloat(formData.carbidePercent) || 0
+        },
+        remarks: formData.remarks || ''
+      };
+      
+      const data = await api.post('/v1/micro-structure', payload);
       
       if (data.success) {
         alert('Micro structure report created successfully!');
@@ -110,6 +151,15 @@ const MicroStructure = () => {
           carbidePercent: '', 
           remarks: ''
         });
+        setValidationErrors({});
+        // Focus first input after successful submission
+        setTimeout(() => {
+          if (firstInputRef.current && firstInputRef.current.focus) {
+            firstInputRef.current.focus();
+          } else if (firstInputRef.current) {
+            firstInputRef.current.focus();
+          }
+        }, 100);
       }
     } catch (error) {
       console.error('Error creating micro structure report:', error);
@@ -162,6 +212,7 @@ const MicroStructure = () => {
             <div className="microstructure-form-group">
               <label>DISA *</label>
               <select
+                ref={firstInputRef}
                 name="disa"
                 value={formData.disa}
                 onChange={handleChange}
@@ -355,9 +406,11 @@ const MicroStructure = () => {
           Reset Form
         </button>
         <button 
+          ref={submitButtonRef}
           className="microstructure-submit-btn" 
           type="button"
           onClick={handleSubmit}
+          onKeyDown={handleSubmitButtonKeyDown}
           disabled={submitLoading}
         >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}

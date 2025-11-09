@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
 import { DatePicker } from '../Components/Buttons';
 import api from '../utils/api';
@@ -24,6 +24,9 @@ const Tensile = () => {
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
+  
+  const firstFieldRef = useRef(null);
+  const submitButtonRef = useRef(null);
 
 
   const handleChange = (e) => {
@@ -59,6 +62,24 @@ const Tensile = () => {
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      
+      // If on the last field (testedBy), focus submit button
+      if (e.target.name === 'testedBy') {
+        submitButtonRef.current?.focus();
+        return;
+      }
+      
+      // If on remarks textarea, move to testedBy
+      if (e.target.name === 'remarks') {
+        const form = e.target.form;
+        const testedByInput = form.querySelector('input[name="testedBy"]');
+        if (testedByInput) {
+          testedByInput.focus();
+        }
+        return;
+      }
+      
+      // For other fields, move to next input
       const form = e.target.form;
       const inputs = Array.from(form.querySelectorAll('input, textarea, select'));
       const currentIndex = inputs.indexOf(e.target);
@@ -67,6 +88,13 @@ const Tensile = () => {
       if (nextInput) {
         nextInput.focus();
       }
+    }
+  };
+
+  const handleSubmitKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
     }
   };
 
@@ -91,7 +119,17 @@ const Tensile = () => {
 
     try {
       setSubmitLoading(true);
-      const data = await api.post('/v1/tensile-tests', formData);
+      
+      // Transform formData to match backend model: dateCode -> date
+      const payload = {
+        ...formData,
+        date: formData.dateCode  // Map dateCode to date for backend
+      };
+      
+      // Remove dateCode from payload since backend expects 'date'
+      delete payload.dateCode;
+      
+      const data = await api.post('/v1/tensile-tests', payload);
       
       if (data.success) {
         alert('Tensile test entry created successfully!');
@@ -99,6 +137,11 @@ const Tensile = () => {
           dateOfInspection: '', item: '', dateCode: '', heatCode: '', dia: '', lo: '', li: '',
           breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: '', testedBy: ''
         });
+        
+        // Focus first field for next entry
+        setTimeout(() => {
+          firstFieldRef.current?.focus();
+        }, 100);
       }
     } catch (error) {
       console.error('Error creating tensile test:', error);
@@ -114,6 +157,10 @@ const Tensile = () => {
       breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: '', testedBy: ''
     });
     setValidationErrors({});
+    // Focus first field after reset
+    setTimeout(() => {
+      firstFieldRef.current?.focus();
+    }, 100);
   };
 
   return (
@@ -140,6 +187,7 @@ const Tensile = () => {
             <div className="tensile-form-group">
               <label>Date of Inspection *</label>
               <DatePicker
+                ref={firstFieldRef}
                 name="dateOfInspection"
                 value={formData.dateOfInspection}
                 onChange={handleChange}
@@ -344,9 +392,11 @@ const Tensile = () => {
           Reset Form
         </button>
         <button 
+          ref={submitButtonRef}
           className="tensile-submit-btn" 
           type="button"
           onClick={handleSubmit}
+          onKeyDown={handleSubmitKeyDown}
           disabled={submitLoading}
         >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}

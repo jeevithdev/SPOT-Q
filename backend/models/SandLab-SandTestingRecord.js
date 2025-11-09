@@ -244,39 +244,45 @@ const SandTestingRecordSchema = new mongoose.Schema({
     mixno:{
     start: {
       type: String,
-      required: true,
+      trim: true,
+      default: "",
     },
     end: {
       type: String,
-      required: true,
+      trim: true,
+      default: "",
     },
     total: {
       type: String,
-      required: true,
+      trim: true,
+      default: "",
     }
   },
     numberOfMixRejected: {
       type: Number,
-      required: true,
+      default: 0,
     },
     returnSandHopperLevel: {
       type: Number,
-      required: true,
+      default: 0,
     }
   },
   ShiftII: {
     mixno:{
       start: {
         type: String,
-        required: true,
+        trim: true,
+        default: "",
       },
       end: {
         type: String,
-        required: true,
+        trim: true,
+        default: "",
       },
       total: {
         type: String,
-        required: true,
+        trim: true,
+        default: "",
       }
     },
     numberOfMixRejected: {
@@ -286,193 +292,207 @@ const SandTestingRecordSchema = new mongoose.Schema({
     },
     returnSandHopperLevel: {
       type: Number,
-      required: true,
+      default: 0,
     },
   },
   ShiftIII: {
     mixno:{
       start: {
         type: String,
-        required: true,
+        trim: true,
+        default: "",
       },
       end: {
         type: String,
-        required: true,
+        trim: true,
+        default: "",
       },
       total: {
         type: String,
-        required: true,
+        trim: true,
+        default: "",
       }
     },
     numberOfMixRejected: {
       type: Number,
-      required: true,
+      default: 0,
     },
     returnSandHopperLevel: {
       type: Number,
-      required: true,
+      default: 0,
     }
   }
 },
   sandLump: {
     type: String,
-    required: true,
+    trim: true,
+    default: "",
   },
   newSandWt: {
     type: String,
-    required: true,
+    trim: true,
+    default: "",
   },
 
   sandFriability: {
     shiftI: {
       type: String,
-      required :true,
+      trim: true,
+      default: "",
     },
     shiftII: {
       type: String,
-      required :true,
+      trim: true,
+      default: "",
     },
     shiftIII: {
       type: String,
-      required :true,
+      trim: true,
+      default: "",
     }
 },
 testParameter: {
   sno:{
     type: Number,
-    required: true,
+    default: 0,
   },
   time:{
     type: Number,
-    required: true,
+    default: 0,
   },
   mixno:{
     type: Number,
-    required: true,
+    default: 0,
   },
   permeability: {
       type: Number,
-      required: true,
+      default: 0,
     },
     gcsFdyA: {
       type: Number,
-      required: true,
+      default: 0,
     },
     gcsFdyB: {
       type: Number,
-      required: true,
+      default: 0,
     },
     wts: {
       type: Number,
-      required: true,
+      default: 0,
     },
     moisture: {
       type: Number,
-      required: true,
+      default: 0,
     },
     compactability: {
       type: Number,
-      required: true,
+      default: 0,
     },
     compressibility: {
       type: Number,
-      required: true,
+      default: 0,
     },
     waterLitre: {
       type: Number,
-      required: true,
+      default: 0,
     },
     sandTemp: {
     BC: {
       type: Number,
-      required: true,
+      default: 0,
     },
     WU: {
       type: Number,
-      required: true,
+      default: 0,
     },
     SSUmax: {
       type: Number,
-      required: true,
+      default: 0,
     }
   },
     newSandKgs: {
       type: Number,
-      required: true,
+      default: 0,
     },
     mould : {
       type: Number,
-      required: true,
+      default: 0,
     },
 
     bentoniteWithPremix: {
       Kgs: {
       type: Number,
-      required: true,
+      default: 0,
     },
     Percent: {
       type: Number,
-      required: true,
+      default: 0,
     }
   },
   bentonite : {
     Kgs: {
     type: Number,
-    required: true,
+    default: 0,
   },
   Percent: {
     type: Number,
-    required: true,
+    default: 0,
   }
 },
 premix:{
   Kgs: {
     type: Number,
-    required: true,
+    default: 0,
     },
     Percent: {
     type: Number,
-    required: true,
+    default: 0,
     }
   },
 coalDust:{
   Kgs: {
       type: Number,
-      required: true,
+      default: 0,
     },
     Percent: {
       type: Number,
-      required: true,
+      default: 0,
     }
   },
     lc: {
       type: Number,
-      required: true,
+      default: 0,
     },
     CompactabilitySettings: {
       type: Number,
-      required: true,
+      default: 0,
     },
     mouldStrength: {
       type: Number,
-      required: true,
+      default: 0,
     },
     shearStrengthSetting: {
       type: Number,
-      required: true,
+      default: 0,
     },
     preparedSandlumps: {
       type: Number,
-      required: true,
+      default: 0,
     },
     itemName: {
       type: String,
-      required: true,
+      trim: true,
+      default: "",
     },
     remarks: {
       type: String,
-      required: true,
+      trim: true,
+      default: "",
     },
   },
+}, {
+    timestamps: true,
+    collection: 'sand_testing_record'
 });
+
 module.exports = mongoose.model("SandTestingRecord", SandTestingRecordSchema);

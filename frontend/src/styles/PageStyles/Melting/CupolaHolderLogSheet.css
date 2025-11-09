@@ -136,6 +136,25 @@
   border-radius: 2px;
 }
 
+/* Primary Data Title with Blue Highlight */
+.primary-data-title {
+  position: relative;
+  padding-left: 0.75rem !important;
+  font-size: 1.375rem !important;
+  font-weight: 700 !important;
+  color: #000000 !important;
+  margin: 0 0 1.25rem 0 !important;
+  padding-bottom: 0.75rem !important;
+  display: block;
+  line-height: 1.5;
+  border-bottom: none !important;
+}
+
+.primary-data-title::before {
+  background: linear-gradient(135deg, #3b82f6 0%, #2563eb 100%) !important;
+  height: 100% !important;
+}
+
 /* Sub-section Highlight Containers */
 .cupola-holder-sub-section {
   background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);

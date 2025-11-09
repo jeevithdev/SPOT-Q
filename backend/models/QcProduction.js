@@ -97,6 +97,9 @@ const QcProductionSchema = new mongoose.Schema({
         required: true,
         trim: true
     }
+}, {
+    timestamps: true,
+    collection: 'qc_production_details'
 });
 
 module.exports = mongoose.model('QcProduction', QcProductionSchema);

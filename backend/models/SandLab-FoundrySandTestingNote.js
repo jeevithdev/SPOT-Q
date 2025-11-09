@@ -90,150 +90,194 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
     }
   },
 
-  // --- 3. Sieve Test Data ---
-  test1: {
-    sieveSize: {
-      1700: { 
-        type: String, 
-        trim: true 
+  // --- 3. Sieve Testing Data ---
+  sieveTesting: {
+    test1: {
+      sieveSize: {
+        1700: { 
+          type: String, 
+          trim: true 
+        },
+        850: { 
+          type: String, 
+          trim: true 
+        },
+        600: { 
+          type: String, 
+          trim: true 
+        },
+        425: { 
+          type: String, 
+          trim: true 
+        },
+        300: { 
+          type: String, 
+          trim: true 
+        },
+        212: { 
+          type: String, 
+          trim: true 
+        },
+        150: { 
+          type: String, 
+          trim: true 
+        },
+        106: { 
+          type: String, 
+          trim: true 
+        },
+        75: { 
+          type: String, 
+          trim: true 
+        },
+        pan: { 
+          type: String, 
+          trim: true 
+        },
+        total: { 
+          type: String, 
+          trim: true 
+        }
       },
-      850: { 
-        type: String, 
-        trim: true 
-      },
-      600: { 
-        type: String, 
-        trim: true 
-      },
-      425: { 
-        type: String, 
-        trim: true 
-      },
-      300: { 
-        type: String, 
-        trim: true 
-      },
-      212: { 
-        type: String, 
-        trim: true 
-      },
-      150: { 
-        type: String, 
-        trim: true 
-      },
-      106: { 
-        type: String, 
-        trim: true 
-      },
-      75: { 
-        type: String, 
-        trim: true 
-      },
-      pan: { 
-        type: String, 
-        trim: true 
-      },
-      total: { 
-        type: String, 
-        trim: true 
+      mf: {
+        5: { 
+          type: String, 
+          trim: true  
+        },
+        10: { 
+          type: String, 
+          trim: true  
+        },
+        20: { 
+          type: String, 
+          trim: true  
+        },
+        30: { 
+          type: String, 
+          trim: true  
+        },
+        50: { 
+          type: String,
+          trim: true  
+        },
+        70: { 
+          type: String, 
+          trim: true  
+        },
+        100: { 
+          type: String, 
+          trim: true  
+        },
+        140: { 
+          type: String, 
+          trim: true  
+        },
+        200: { 
+          type: String, 
+          trim: true  
+        },
+        pan: { 
+          type: String, 
+          trim: true  
+        },
+        total: { 
+          type: String, 
+          trim: true  
+        }
       }
-    }
-  },
-  test2: {
-    sieveSize: {
-      1700: { 
-        type: String, 
-        trim: true 
+    },
+    test2: {
+      sieveSize: {
+        1700: { 
+          type: String, 
+          trim: true 
+        },
+        850: { 
+          type: String, 
+          trim: true 
+        },
+        600: { 
+          type: String, 
+          trim: true 
+        },
+        425: { 
+          type: String, 
+          trim: true 
+        },
+        300: { 
+          type: String, 
+          trim: true 
+        },
+        212: { 
+          type: String, 
+          trim: true 
+        },
+        150: { 
+          type: String, 
+          trim: true 
+        },
+        106: { 
+          type: String, 
+          trim: true 
+        },
+        75: { 
+          type: String, 
+          trim: true 
+        },
+        pan: { 
+          type: String, 
+          trim: true 
+        },
+        total: { 
+          type: String, 
+          trim: true 
+        }
       },
-      850: { 
-        type: String, 
-        trim: true 
-      },
-      600: { 
-        type: String, 
-        trim: true 
-      },
-      425: { 
-        type: String, 
-        trim: true 
-      },
-      300: { 
-        type: String, 
-        trim: true 
-      },
-      212: { 
-        type: String, 
-        trim: true 
-      },
-      150: { 
-        type: String, 
-        trim: true 
-      },
-      106: { 
-        type: String, 
-        trim: true 
-      },
-      75: { 
-        type: String, 
-        trim: true 
-      },
-      pan: { 
-        type: String, 
-        trim: true 
-      },
-      total: { 
-        type: String, 
-        trim: true 
-      }
-    }
-  },
-
-  // --- 4. Metal Filter Test Data ---
-  mfTest:{
-    mf:{
-      5: { 
-        type: String, 
-        trim: true  
-      },
-      10: { 
-        type: String, 
-        trim: true  
-      },
-      20: { 
-        type: String, 
-        trim: true  
-      },
-      30: { 
-        type: String, 
-        trim: true  
-      },
-      50: { 
-        type: String,
-        trim: true  
-      },
-      70: { 
-        type: String, 
-        trim: true  
-      },
-      100: { 
-        type: String, 
-        trim: true  
-      },
-      140: { 
-        type: String, 
-        trim: true  
-      },
-      200: { 
-        type: String, 
-        trim: true  
-      },
-      pan: { 
-        type: String, 
-        trim: true  
-      },
-      total: { 
-        type: String, 
-        trim: true  
+      mf: {
+        5: { 
+          type: String, 
+          trim: true  
+        },
+        10: { 
+          type: String, 
+          trim: true  
+        },
+        20: { 
+          type: String, 
+          trim: true  
+        },
+        30: { 
+          type: String, 
+          trim: true  
+        },
+        50: { 
+          type: String,
+          trim: true  
+        },
+        70: { 
+          type: String, 
+          trim: true  
+        },
+        100: { 
+          type: String, 
+          trim: true  
+        },
+        140: { 
+          type: String, 
+          trim: true  
+        },
+        200: { 
+          type: String, 
+          trim: true  
+        },
+        pan: { 
+          type: String, 
+          trim: true  
+        },
+        total: { 
+          type: String, 
+          trim: true  
+        }
       }
     }
   },
@@ -241,27 +285,15 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
   // --- 5. Test Parameters ---
   parameters: {
     test1: {
-      gcs: { 
-        type: String, 
-        trim: true 
-      },
-      bentonitePremix: { 
-        type: String, 
-        trim: true 
-      },
-      premixCoaldust: { 
-        type: String, 
-        trim: true 
-      },
-      lcCompactSmcat: { 
-        type: String, 
-        trim: true 
-      },
-      mouldStrengthSncat: { 
+      compactability: { 
         type: String, 
         trim: true 
       },
       permeability: { 
+        type: String, 
+        trim: true 
+      },
+      gcs: { 
         type: String, 
         trim: true 
       },
@@ -273,37 +305,41 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
         type: String, 
         trim: true 
       },
+      bentonite: { 
+        type: String, 
+        trim: true 
+      },
+      coalDust: { 
+        type: String, 
+        trim: true 
+      },
       hopperLevel: { 
         type: String, 
         trim: true 
       },
-      returnSand: { 
+      shearStrength: { 
+        type: String, 
+        trim: true 
+      },
+      dustCollectorSettings: { 
+        type: String, 
+        trim: true 
+      },
+      returnSandMoisture: { 
         type: String, 
         trim: true 
       }
     },
     test2: {
-      gcs: { 
-        type: String, 
-        trim: true 
-      },
-      bentonitePremix: { 
-        type: String, 
-        trim: true 
-      },
-      premixCoaldust: { 
-        type: String, 
-        trim: true 
-      },
-      lcCompactSmcat: { 
-        type: String, 
-        trim: true 
-      },
-      mouldStrengthSncat: { 
+      compactability: { 
         type: String, 
         trim: true 
       },
       permeability: { 
+        type: String, 
+        trim: true 
+      },
+      gcs: { 
         type: String, 
         trim: true 
       },
@@ -315,11 +351,27 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
         type: String, 
         trim: true 
       },
+      bentonite: { 
+        type: String, 
+        trim: true 
+      },
+      coalDust: { 
+        type: String, 
+        trim: true 
+      },
       hopperLevel: { 
         type: String, 
         trim: true 
       },
-      returnSand: { 
+      shearStrength: { 
+        type: String, 
+        trim: true 
+      },
+      dustCollectorSettings: { 
+        type: String, 
+        trim: true 
+      },
+      returnSandMoisture: { 
         type: String, 
         trim: true 
       }
@@ -343,7 +395,10 @@ const FoundrySandTestingNoteSchema = new mongoose.Schema({
   // --- 7. Remarks ---
   remarks: { type: String, trim: true }
 }, 
-{ timestamps: true }
+{ 
+    timestamps: true,
+    collection: 'foundry_sand_testing_note'
+}
 );
 
 // Create composite unique index for date + shift combination (primary identifier)

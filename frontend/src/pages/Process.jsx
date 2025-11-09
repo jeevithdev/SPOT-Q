@@ -18,11 +18,11 @@ export default function ProcessControl() {
 
   const inputRefs = useRef({});
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [primaryLoading, setPrimaryLoading] = useState(false);
+  const [isPrimarySaved, setIsPrimarySaved] = useState(false);
   
   const fieldOrder = ['date', 'disa', 'partName', 'datecode', 'heatcode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
-    'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCr',
-    'metalCompositionCu', 'timeOfPouring', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNo', 'heatNo', 'conNo',
+    'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCu',
+    'metalCompositionCr', 'timeOfPouring', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNo', 'heatNo', 'conNo',
     'tappingTime', 'correctiveAdditionC', 'correctiveAdditionSi', 'correctiveAdditionMn', 'correctiveAdditionS',
     'correctiveAdditionCr', 'correctiveAdditionCu', 'correctiveAdditionSn', 'tappingWt', 'mg', 'resMgConvertor',
     'recOfMg', 'streamInoculant', 'pTime', 'remarks'];
@@ -36,13 +36,24 @@ export default function ProcessControl() {
     if (e.key === 'Enter') {
       e.preventDefault();
       const idx = fieldOrder.indexOf(field);
-      if (idx < fieldOrder.length - 1) {
+      
+      // If on remarks field (last field), move to submit button
+      if (field === 'remarks') {
+        inputRefs.current.submitBtn?.focus();
+      } else if (idx < fieldOrder.length - 1) {
         inputRefs.current[fieldOrder[idx + 1]]?.focus();
       }
     }
   };
 
-  const handlePrimarySubmit = async () => {
+  const handlePrimarySubmit = () => {
+    // If already locked, unlock it
+    if (isPrimarySaved) {
+      setIsPrimarySaved(false);
+      alert('Primary data unlocked. You can now modify date and DISA.');
+      return;
+    }
+
     // Validate required fields
     if (!formData.date) {
       alert('Please fill in Date');
@@ -53,25 +64,10 @@ export default function ProcessControl() {
       return;
     }
 
-    try {
-      setPrimaryLoading(true);
-      
-      const primaryData = {
-        date: formData.date,
-        disa: formData.disa
-      };
-      
-      const data = await api.post('/v1/process-records/primary', primaryData);
-      
-      if (data.success) {
-        alert('Primary data saved successfully!');
-      }
-    } catch (error) {
-      console.error('Error saving primary data:', error);
-      alert('Failed to save primary data: ' + error.message);
-    } finally {
-      setPrimaryLoading(false);
-    }
+    // Lock primary fields (date and disa) without saving to database
+    // The actual save will happen when user clicks "Submit Entry"
+    setIsPrimarySaved(true);
+    alert('Primary data locked. You can now fill other fields.');
   };
 
   const handleSubmit = async () => {
@@ -85,28 +81,65 @@ export default function ProcessControl() {
       return;
     }
 
+    // Ensure primary data is locked first
+    if (!isPrimarySaved) {
+      alert('Please lock Primary data first before submitting.');
+      return;
+    }
+
     try {
       setSubmitLoading(true);
       
+      // Send all data (primary + other fields) combined to backend
+      // Backend will find existing document by date+disa and update it, or create new one
       const data = await api.post('/v1/process-records', formData);
       
       if (data.success) {
-        alert('Process control entry created successfully!');
-        handleReset();
+        alert('Process control entry saved successfully!');
+        
+        // Reset all fields except primary data (date and disa)
+        const resetData = { ...formData };
+        Object.keys(formData).forEach(key => {
+          if (key !== 'date' && key !== 'disa') {
+            resetData[key] = '';
+          }
+        });
+        setFormData(resetData);
+        
+        // Keep primary locked, focus on Part Name for next entry
+        setTimeout(() => {
+          inputRefs.current.partName?.focus();
+        }, 100);
       }
     } catch (error) {
-      console.error('Error creating process control entry:', error);
-      alert('Failed to create entry: ' + error.message);
+      console.error('Error saving process control entry:', error);
+      alert('Failed to save entry: ' + error.message);
     } finally {
       setSubmitLoading(false);
     }
   };
+  
+  const handleSubmitKeyDown = (e) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      handleSubmit();
+    }
+  };
 
   const handleReset = () => {
-    const resetData = {};
-    Object.keys(formData).forEach(key => resetData[key] = '');
+    // Reset all fields except primary data (date and disa)
+    const resetData = { ...formData };
+    Object.keys(formData).forEach(key => {
+      if (key !== 'date' && key !== 'disa') {
+        resetData[key] = '';
+      }
+    });
     setFormData(resetData);
-    inputRefs.current.date?.focus();
+    // Keep primary locked if it was locked
+    // Focus on Part Name for next entry
+    setTimeout(() => {
+      inputRefs.current.partName?.focus();
+    }, 100);
   };
 
   return (
@@ -129,67 +162,69 @@ export default function ProcessControl() {
         </div>
       </div>
 
+      {/* Primary Data Section */}
+      <div className="process-primary-container">
+        <div className="section-header">
+          <h3 className="primary-data-title">Primary Data :</h3>
+        </div>
+
+        {/* Primary Row Container */}
+        <div className="process-primary-row">
+          <div className="process-form-group">
+            <label>Date *</label>
+            <DatePicker 
+              ref={el => inputRefs.current.date = el} 
+              name="date" 
+              value={formData.date} 
+              onChange={handleChange} 
+              onKeyDown={e => handleKeyDown(e, 'date')}
+              disabled={isPrimarySaved}
+            />
+          </div>
+
+          <div className="process-form-group">
+            <label>DISA *</label>
+            <select
+              ref={el => inputRefs.current.disa = el}
+              name="disa"
+              value={formData.disa}
+              onChange={handleChange}
+              onKeyDown={e => handleKeyDown(e, 'disa')}
+              disabled={isPrimarySaved}
+              style={{
+                width: '100%',
+                padding: '0.625rem 0.875rem',
+                border: '2px solid #cbd5e1',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                backgroundColor: isPrimarySaved ? '#f1f5f9' : '#ffffff',
+                color: '#1e293b',
+                cursor: isPrimarySaved ? 'not-allowed' : 'pointer'
+              }}
+            >
+              <option value="">Select DISA</option>
+              <option value="DISA I">DISA I</option>
+              <option value="DISA II">DISA II</option>
+              <option value="DISA III">DISA III</option>
+              <option value="DISA IV">DISA IV</option>
+            </select>
+          </div>
+
+          {/* Primary Submit Button */}
+          <div className="process-primary-button-wrapper">
+            <button
+              className="process-submit-btn"
+              type="button"
+              onClick={handlePrimarySubmit}
+              disabled={!isPrimarySaved && (!formData.date || !formData.disa)}
+            >
+              {isPrimarySaved ? 'Unlock Primary' : 'Lock Primary'}
+            </button>
+          </div>
+        </div>
+      </div>
+
       <div className="process-form-grid">
-            <div className="section-header" style={{gridColumn: '1 / -1'}}>
-              <h3>Primary</h3>
-            </div>
-
-            {/* Primary Row Container */}
-            <div className="process-primary-row" style={{gridColumn: '1 / -1'}}>
-              <div className="process-form-group">
-                <label>Date *</label>
-                <DatePicker 
-                  ref={el => inputRefs.current.date = el} 
-                  name="date" 
-                  value={formData.date} 
-                  onChange={handleChange} 
-                  onKeyDown={e => handleKeyDown(e, 'date')} 
-                />
-              </div>
-
-              <div className="process-form-group">
-                <label>DISA *</label>
-                <select
-                  ref={el => inputRefs.current.disa = el}
-                  name="disa"
-                  value={formData.disa}
-                  onChange={handleChange}
-                  onKeyDown={e => handleKeyDown(e, 'disa')}
-                  style={{
-                    width: '100%',
-                    padding: '0.625rem 0.875rem',
-                    border: '2px solid #cbd5e1',
-                    borderRadius: '8px',
-                    fontSize: '0.875rem',
-                    backgroundColor: '#ffffff',
-                    color: '#1e293b',
-                    cursor: 'pointer'
-                  }}
-                >
-                  <option value="">Select DISA</option>
-                  <option value="DISA I">DISA I</option>
-                  <option value="DISA II">DISA II</option>
-                  <option value="DISA III">DISA III</option>
-                  <option value="DISA IV">DISA IV</option>
-                </select>
-              </div>
-
-              {/* Primary Submit Button */}
-              <div className="process-primary-button-wrapper">
-                <button
-                  className="process-submit-btn"
-                  type="button"
-                  onClick={handlePrimarySubmit}
-                  disabled={primaryLoading || !formData.date || !formData.disa}
-                >
-                  {primaryLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-                  {primaryLoading ? 'Saving...' : 'Save Primary'}
-                </button>
-              </div>
-            </div>
-
-            {/* Divider line */}
-            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
             <div className="process-form-group">
               <label>Part Name</label>
@@ -369,7 +404,15 @@ export default function ProcessControl() {
 
             <div className="process-form-group" style={{gridColumn: '1 / -1'}}>
               <label>Remarks</label>
-              <textarea ref={el => inputRefs.current.remarks = el} name="remarks" value={formData.remarks} onChange={handleChange} onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); }}} rows="4" placeholder="Enter any additional notes..." />
+              <textarea 
+                ref={el => inputRefs.current.remarks = el} 
+                name="remarks" 
+                value={formData.remarks} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'remarks')}
+                rows="4" 
+                placeholder="Enter any additional notes..." 
+              />
             </div>
       </div>
 
@@ -383,10 +426,13 @@ export default function ProcessControl() {
           Reset Form
         </button>
         <button 
+          ref={el => inputRefs.current.submitBtn = el}
           className="process-submit-btn" 
           type="button"
           onClick={handleSubmit}
-          disabled={submitLoading}
+          onKeyDown={handleSubmitKeyDown}
+          disabled={submitLoading || !isPrimarySaved}
+          title={!isPrimarySaved ? 'Please save Primary data first' : 'Submit Entry'}
         >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
           {submitLoading ? 'Saving...' : 'Submit Entry'}

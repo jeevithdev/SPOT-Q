@@ -109,6 +109,9 @@ const CupolaHolderLogSchema = new mongoose.Schema({
             type: Number 
         },
     }
+}, {
+    timestamps: true,
+    collection: 'cupola_holder_log'
 });
 
 module.exports = mongoose.model('CupolaHolderLog', CupolaHolderLogSchema);

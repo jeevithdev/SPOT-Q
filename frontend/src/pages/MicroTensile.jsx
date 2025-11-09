@@ -93,11 +93,20 @@ const MicroTensile = () => {
       
       if (data.success) {
         alert('Micro tensile test entry created successfully!');
-        setFormData({
-          dateOfInspection: '', disa: [], item: '', dateCode: '', heatCode: '', barDia: '', gaugeLength: '',
-          maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
-          remarks: '', testedBy: ''
+        
+        // Reset all fields except DISA checklist
+        const resetData = { ...formData };
+        Object.keys(formData).forEach(key => {
+          if (key !== 'disa') {
+            resetData[key] = '';
+          }
         });
+        setFormData(resetData);
+        
+        // Focus on Date of Inspection for next entry
+        setTimeout(() => {
+          inputRefs.current.dateOfInspection?.focus();
+        }, 100);
       }
     } catch (error) {
       console.error('Error creating micro tensile test:', error);
@@ -109,18 +118,18 @@ const MicroTensile = () => {
 
 
   const handleReset = () => {
-    setFormData({
-      dateOfInspection: '', disa: [], item: '', dateCode: '', heatCode: '', barDia: '', gaugeLength: '',
-      maxLoad: '', yieldLoad: '', tensileStrength: '', yieldStrength: '', elongation: '',
-      remarks: '', testedBy: ''
-    });
-    // Focus will be handled by the grid layout, but we can try to focus the first input
-    setTimeout(() => {
-      const firstCheckbox = document.querySelector('.microtensile-checkbox');
-      if (firstCheckbox) {
-        firstCheckbox.focus();
+    // Reset all fields except DISA checklist
+    const resetData = { ...formData };
+    Object.keys(formData).forEach(key => {
+      if (key !== 'disa') {
+        resetData[key] = '';
       }
-    }, 0);
+    });
+    setFormData(resetData);
+    // Focus on Date of Inspection for next entry
+    setTimeout(() => {
+      inputRefs.current.dateOfInspection?.focus();
+    }, 100);
   };
 
   return (

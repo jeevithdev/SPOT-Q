@@ -27,6 +27,10 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
     
     // Production Table
     productionDetails: [{
+        sNo: {
+            type: Number,
+            required: true
+        },
         counterNo: {
             type: String,
             default: '',
@@ -63,6 +67,10 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
 
     // Next Shift Plan Table
     nextShiftPlan: [{
+        sNo: {
+            type: Number,
+            required: true
+        },
         componentName: {
             type: String,
             default: '',
@@ -81,6 +89,10 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
 
     // Delays Table
     delays: [{
+        sNo: {
+            type: Number,
+            required: true
+        },
         delays: {
             type: String,
             default: '',
@@ -99,6 +111,10 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
 
     // Mould Hardness Table
     mouldHardness: [{
+        sNo: {
+            type: Number,
+            required: true
+        },
         componentName: {
             type: String,
             default: '',
@@ -129,6 +145,10 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
 
     // Pattern Temperature Table
     patternTemperature: [{
+        sNo: {
+            type: Number,
+            required: true
+        },
         item: {
             type: String,
             default: '',
@@ -161,7 +181,7 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
     }
 }, {
     timestamps: true, // Adds createdAt and updatedAt fields
-    collection: 'disamatic_product_reports' // Explicit collection name
+    collection: 'disamatic_product' // Explicit collection name in snake_case
 });
 
 // Date is already indexed and unique as primary identifier

@@ -294,6 +294,9 @@ const MeltingLogsheetSchema = new mongoose.Schema({
             }
         }
     }
+}, {
+    timestamps: true,
+    collection: 'melting_log_sheet'
 });
 
 module.exports = mongoose.model('MeltingLogsheet', MeltingLogsheetSchema);

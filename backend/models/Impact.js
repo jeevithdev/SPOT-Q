@@ -36,6 +36,9 @@ const ImpactSchema = new mongoose.Schema({
         trim: true, 
         default: '' 
     }
+}, {
+    timestamps: true,
+    collection: 'impact'
 });
 
 module.exports = mongoose.model('Impact', ImpactSchema);

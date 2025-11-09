@@ -20,281 +20,286 @@ const DmmSettingParametersSchema = new mongoose.Schema({
         shift1: {
             operatorName: {
                 type: String,
-                required: true
+                default: ''
             },
             checkedBy: {
                 type: String,
-                required: true
+                default: ''
             }
         },
-
         shift2: {
             operatorName: {
                 type: String,
-                required: true
+                default: ''
             },
             checkedBy: {
                 type: String,
-                required: true
-            },
-            
+                default: ''
+            }
         },
-
         shift3: {
             operatorName: {
                 type: String,
-                required: true
+                default: ''
             },
             checkedBy: {
                 type: String,
-                required: true
-            },
-            
+                default: ''
+            }
         }
     },
 
     parameters: {
-        shift1 :{
-
+        shift1: [{
+            sNo: {
+                type: Number,
+                required: true
+            },
             customer: {
                 type: String,
+                default: ''
+            },
+            itemDescription: {
+                type: String,
+                default: ''
+            },
+            time: {
+                type: String,
+                default: ''
+            },
+            ppThickness: {
+                type: Number,
+                default: 0
+            },
+            ppheight: {
+                type: Number,
+                default: 0
+            },
+            spThickness: {
+                type: Number,
+                default: 0
+            },
+            spHeight: {
+                type: Number,
+                default: 0
+            },
+            CoreMaskThickness: {
+                type: Number,
+                default: 0
+            },
+            CoreMaskHeight: {
+                type: Number,
+                default: 0
+            },
+            sandShotPressurebar: {
+                type: Number,
+                default: 0
+            },
+            correctionShotTime: {
+                type: Number,
+                default: 0
+            },
+            squeezePressure: {
+                type: Number,
+                default: 0
+            },
+            ppStrippingAcceleration: {
+                type: Number,
+                default: 0
+            },
+            ppStrippingDistance: {
+                type: Number,
+                default: 0
+            },
+            spStrippingAcceleration: {
+                type: Number,
+                default: 0
+            },
+            spStrippingDistance: {
+                type: Number,
+                default: 0
+            },
+            mouldThickness: {
+                type: Number,
+                default: 0
+            },
+            closeUpForceMouldCloseUpPressure: {
+                type: String,
+                default: ''
+            },
+            remarks: {
+                type: String,
+                default: ''
+            }
+        }],
+        shift2: [{
+            sNo: {
+                type: Number,
                 required: true
-        },
-
-        itemDescription: {
-            type: String,
-            required: true
-        },
-
-        time: {
-            type: String,
-            required: true
-        },
-
-        ppThickness: {
-            type: Number,
-            required: true
-        },
-        ppheight: {
-            type: Number,
-            required: true
-        },
-        spThickness: {
-            type: Number,
-            required: true
-        },
-        spHeight: {
-            type: Number,
-            required: true
-        },
-        CoreMaskThickness: {
-            type: Number,
-            required: true
-        },
-        CoreMaskHeight: {
-            type: Number,
-            required: true
-        },
-        sandShotPressurebar: {
-            type: Number,
-            required: true
-        },
-        correctionShotTime: {
-            type: Number,
-            required: true
-        },
-        squeezePressure: {
-            type: Number,
-            required: true
-        },
-        ppStrippingAcceleration: {
-            type: Number,
-            required: true
-        },
-        ppStrippingDistance: {
-            type: Number,
-            required: true
-        },
-        spStrippingAcceleration: {
-            type: Number,
-            required: true
-        },
-        spStrippingDistance: {
-            type: Number,
-            required: true
-        },
-        mouldThickness: {
-            type: Number,
-            required: true
-        },
-        closeUpForceMouldCloseUpPressure: {
-            type: Number,
-            required: true
-        },
-        remarks: {
-            type: String,
-            required: true
-        }
-    },
-    shift2 :{
-        customer: {
-            type: String,
-            required: true
-        },
-        itemDescription: {
-            type: String,
-            required: true
-        },
-        time: {
-            type: String,
-            required: true
-        },
-        ppThickness: {
-            type: Number,
-            required: true
-        },
-        ppHeight: {
-            type: Number,
-            required: true
-        },
-        spThickness: {
-            type: Number,
-            required: true
-        },
-        spHeight: {
-            type: Number,
-            required: true
-        },
-        CoreMaskThickness: {
-            type: Number,
-            required: true
-        },  
-        CoreMaskHeight: {
-            type: Number,
-            required: true
-        },
-        sandShotPressurebar: {
-            type: Number,
-            required: true
-        },
-        correctionShotTime: {
-            type: Number,
-            required: true
-        },
-        squeezePressure: {
-            type: Number,
-            required: true
-        },
-        ppStrippingAcceleration: {
-            type: Number,
-            required: true
-        },
-        ppStrippingDistance: {
-            type: Number,
-            required: true
-        },
-        spStrippingAcceleration: {
-            type: Number,
-            required: true
-        },
-        spStrippingDistance: {
-            type: Number,
-            required: true
-        },
-        mouldThickness: {
-            type: Number,
-            required: true
-        },
-        closeUpForceMouldCloseUpPressure: {
-            type: Number,
-            required: true
-        },
-        remarks: {
-            type: String,
-            required: true
-        }   
-    },
-    shift3 :{
-        customer: {
-            type: String,
-            required: true
-        },
-        itemDescription: {
-            type: String,
-            required: true
-        },
-        time: {
-            type: String,
-            required: true
-        },
-        ppThickness: {
-            type: Number,
-            required: true
-        },
-        ppHeight: {
-            type: Number,
-            required: true
-        },
-        spThickness: {
-            type: Number,
-            required: true
-        },
-        spHeight: {
-            type: Number,
-            required: true
-        },
-        CoreMaskThickness: {
-            type: Number,
-            required: true
-        },
-        CoreMaskHeight: {
-            type: Number,
-            required: true
-        },
-        sandShotPressurebar: {
-            type: Number,
-            required: true
-        },
-        correctionShotTime: {
-            type: Number,
-            required: true
-        },
-        squeezePressure: {
-            type: Number,
-            required: true
-        },
-        ppStrippingAcceleration: {
-            type: Number,
-            required: true
-        },
-        ppStrippingDistance: {
-            type: Number,
-            required: true
-        },
-        spStrippingAcceleration: {
-            type: Number,
-            required: true
-        },
-        spStrippingDistance: {
-            type: Number,
-            required: true
-        },
-        mouldThickness: {
-            type: Number,
-            required: true
-        },
-        closeUpForceMouldCloseUpPressure: {
-            type: Number,
-            required: true
-        },
-        remarks: {
-            type: String,
-            required: true
-        }
-    }
+            },
+            customer: {
+                type: String,
+                default: ''
+            },
+            itemDescription: {
+                type: String,
+                default: ''
+            },
+            time: {
+                type: String,
+                default: ''
+            },
+            ppThickness: {
+                type: Number,
+                default: 0
+            },
+            ppHeight: {
+                type: Number,
+                default: 0
+            },
+            spThickness: {
+                type: Number,
+                default: 0
+            },
+            spHeight: {
+                type: Number,
+                default: 0
+            },
+            CoreMaskThickness: {
+                type: Number,
+                default: 0
+            },
+            CoreMaskHeight: {
+                type: Number,
+                default: 0
+            },
+            sandShotPressurebar: {
+                type: Number,
+                default: 0
+            },
+            correctionShotTime: {
+                type: Number,
+                default: 0
+            },
+            squeezePressure: {
+                type: Number,
+                default: 0
+            },
+            ppStrippingAcceleration: {
+                type: Number,
+                default: 0
+            },
+            ppStrippingDistance: {
+                type: Number,
+                default: 0
+            },
+            spStrippingAcceleration: {
+                type: Number,
+                default: 0
+            },
+            spStrippingDistance: {
+                type: Number,
+                default: 0
+            },
+            mouldThickness: {
+                type: Number,
+                default: 0
+            },
+            closeUpForceMouldCloseUpPressure: {
+                type: String,
+                default: ''
+            },
+            remarks: {
+                type: String,
+                default: ''
+            }
+        }],
+        shift3: [{
+            sNo: {
+                type: Number,
+                required: true
+            },
+            customer: {
+                type: String,
+                default: ''
+            },
+            itemDescription: {
+                type: String,
+                default: ''
+            },
+            time: {
+                type: String,
+                default: ''
+            },
+            ppThickness: {
+                type: Number,
+                default: 0
+            },
+            ppHeight: {
+                type: Number,
+                default: 0
+            },
+            spThickness: {
+                type: Number,
+                default: 0
+            },
+            spHeight: {
+                type: Number,
+                default: 0
+            },
+            CoreMaskThickness: {
+                type: Number,
+                default: 0
+            },
+            CoreMaskHeight: {
+                type: Number,
+                default: 0
+            },
+            sandShotPressurebar: {
+                type: Number,
+                default: 0
+            },
+            correctionShotTime: {
+                type: Number,
+                default: 0
+            },
+            squeezePressure: {
+                type: Number,
+                default: 0
+            },
+            ppStrippingAcceleration: {
+                type: Number,
+                default: 0
+            },
+            ppStrippingDistance: {
+                type: Number,
+                default: 0
+            },
+            spStrippingAcceleration: {
+                type: Number,
+                default: 0
+            },
+            spStrippingDistance: {
+                type: Number,
+                default: 0
+            },
+            mouldThickness: {
+                type: Number,
+                default: 0
+            },
+            closeUpForceMouldCloseUpPressure: {
+                type: String,
+                default: ''
+            },
+            remarks: {
+                type: String,
+                default: ''
+            }
+        }]
     }
 }, {
-    timestamps: true
+    timestamps: true,
+    collection: 'dmm_setting_parameters'
 });
 
 // Composite unique index on date + machine (primary identifier)

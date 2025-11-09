@@ -30,8 +30,102 @@ const createDMMSettings = async (req, res) => {
         if (record) {
             // Update existing record based on section
             if (section === 'primary') {
-                record.date = searchDate;
-                record.machine = String(machine).trim();
+                // Date can always be updated (it's always editable)
+                if (req.body.date !== undefined) {
+                    record.date = searchDate;
+                }
+                // Machine can only be updated if it's sent (unlocked field)
+                if (req.body.machine !== undefined) {
+                    const existingMachine = String(record.machine || '').trim();
+                    const newMachine = String(machine).trim();
+                    if (existingMachine !== newMachine) {
+                        record.machine = newMachine;
+                    }
+                }
+            } else if (section === 'operation') {
+                // Update operation data (shifts) - merge with existing data
+                if (req.body.shifts) {
+                    if (!record.shifts) {
+                        record.shifts = {
+                            shift1: { operatorName: '', checkedBy: '' },
+                            shift2: { operatorName: '', checkedBy: '' },
+                            shift3: { operatorName: '', checkedBy: '' }
+                        };
+                    }
+                    
+                    // Update each shift that has data in payload
+                    ['shift1', 'shift2', 'shift3'].forEach(shiftKey => {
+                        if (req.body.shifts[shiftKey]) {
+                            const shiftPayload = req.body.shifts[shiftKey];
+                            if (shiftPayload.operatorName !== undefined) {
+                                record.shifts[shiftKey].operatorName = String(shiftPayload.operatorName).trim();
+                            }
+                            if (shiftPayload.checkedBy !== undefined) {
+                                record.shifts[shiftKey].checkedBy = String(shiftPayload.checkedBy).trim();
+                            }
+                        }
+                    });
+                }
+            } else if (section === 'shift1' || section === 'shift2' || section === 'shift3') {
+                // Append new shift parameter entry (don't overwrite)
+                if (req.body.parameters && req.body.parameters[section]) {
+                    const shiftParams = req.body.parameters[section];
+                    
+                    // Initialize parameters if they don't exist
+                    if (!record.parameters) {
+                        record.parameters = {
+                            shift1: [],
+                            shift2: [],
+                            shift3: []
+                        };
+                    }
+                    
+                    // Initialize the specific shift array if it doesn't exist
+                    if (!record.parameters[section]) {
+                        record.parameters[section] = [];
+                    }
+                    
+                    // Calculate next sNo
+                    const existingEntries = record.parameters[section] || [];
+                    const maxSNo = existingEntries.length > 0 
+                        ? Math.max(...existingEntries.map(entry => entry.sNo || 0))
+                        : 0;
+                    const nextSNo = maxSNo + 1;
+                    
+                    // Create new entry object
+                    const newEntry = {
+                        sNo: nextSNo,
+                        customer: String(shiftParams.customer || '').trim(),
+                        itemDescription: String(shiftParams.itemDescription || '').trim(),
+                        time: String(shiftParams.time || '').trim(),
+                        ppThickness: parseFloat(shiftParams.ppThickness) || 0,
+                        spThickness: parseFloat(shiftParams.spThickness) || 0,
+                        spHeight: parseFloat(shiftParams.spHeight) || 0,
+                        CoreMaskThickness: parseFloat(shiftParams.spCoreMaskThickness || shiftParams.ppCoreMaskThickness) || 0,
+                        CoreMaskHeight: parseFloat(shiftParams.spCoreMaskHeight || shiftParams.ppCoreMaskHeight) || 0,
+                        sandShotPressurebar: parseFloat(shiftParams.sandShotPressureBar) || 0,
+                        correctionShotTime: parseFloat(shiftParams.correctionShotTime) || 0,
+                        squeezePressure: parseFloat(shiftParams.squeezePressure) || 0,
+                        ppStrippingAcceleration: parseFloat(shiftParams.ppStrippingAcceleration) || 0,
+                        ppStrippingDistance: parseFloat(shiftParams.ppStrippingDistance) || 0,
+                        spStrippingAcceleration: parseFloat(shiftParams.spStrippingAcceleration) || 0,
+                        spStrippingDistance: parseFloat(shiftParams.spStrippingDistance) || 0,
+                        mouldThickness: parseFloat(shiftParams.mouldThicknessPlus10) || 0,
+                        closeUpForceMouldCloseUpPressure: String(shiftParams.closeUpForceMouldCloseUpPressure || '').trim(),
+                        remarks: String(shiftParams.remarks || '').trim()
+                    };
+                    
+                    // Handle ppHeight (and ppheight for shift1)
+                    if (shiftParams.ppHeight !== undefined) {
+                        newEntry.ppHeight = parseFloat(shiftParams.ppHeight) || 0;
+                        if (section === 'shift1') {
+                            newEntry.ppheight = parseFloat(shiftParams.ppHeight) || 0;
+                        }
+                    }
+                    
+                    // Append new entry to the array
+                    record.parameters[section].push(newEntry);
+                }
             }
             // Add other section updates here as needed
             
@@ -43,11 +137,78 @@ const createDMMSettings = async (req, res) => {
             });
         } else {
             // Create new record with primary data
+            // Initialize with default values for shifts and parameters to satisfy schema requirements
             const newSettingsData = {
                 date: searchDate,
-                machine: String(machine).trim()
-                // Other fields will be added as needed when their sections are submitted
+                machine: String(machine).trim(),
+                // Initialize shifts with defaults
+                shifts: {
+                    shift1: { operatorName: '', checkedBy: '' },
+                    shift2: { operatorName: '', checkedBy: '' },
+                    shift3: { operatorName: '', checkedBy: '' }
+                },
+                // Initialize parameters with empty arrays for all shifts
+                parameters: {
+                    shift1: [],
+                    shift2: [],
+                    shift3: []
+                }
             };
+            
+            // Override with operation data if section is 'operation'
+            if (section === 'operation' && req.body.shifts) {
+                // Set values from payload
+                ['shift1', 'shift2', 'shift3'].forEach(shiftKey => {
+                    if (req.body.shifts[shiftKey]) {
+                        const shiftPayload = req.body.shifts[shiftKey];
+                        if (shiftPayload.operatorName !== undefined) {
+                            newSettingsData.shifts[shiftKey].operatorName = String(shiftPayload.operatorName).trim();
+                        }
+                        if (shiftPayload.checkedBy !== undefined) {
+                            newSettingsData.shifts[shiftKey].checkedBy = String(shiftPayload.checkedBy).trim();
+                        }
+                    }
+                });
+            }
+            
+            // Override with shift parameters if section is shift1, shift2, or shift3
+            if ((section === 'shift1' || section === 'shift2' || section === 'shift3') && req.body.parameters && req.body.parameters[section]) {
+                const shiftParams = req.body.parameters[section];
+                
+                // Create new entry with sNo = 1 (first entry)
+                const newEntry = {
+                    sNo: 1,
+                    customer: String(shiftParams.customer || '').trim(),
+                    itemDescription: String(shiftParams.itemDescription || '').trim(),
+                    time: String(shiftParams.time || '').trim(),
+                    ppThickness: parseFloat(shiftParams.ppThickness) || 0,
+                    spThickness: parseFloat(shiftParams.spThickness) || 0,
+                    spHeight: parseFloat(shiftParams.spHeight) || 0,
+                    CoreMaskThickness: parseFloat(shiftParams.spCoreMaskThickness || shiftParams.ppCoreMaskThickness) || 0,
+                    CoreMaskHeight: parseFloat(shiftParams.spCoreMaskHeight || shiftParams.ppCoreMaskHeight) || 0,
+                    sandShotPressurebar: parseFloat(shiftParams.sandShotPressureBar) || 0,
+                    correctionShotTime: parseFloat(shiftParams.correctionShotTime) || 0,
+                    squeezePressure: parseFloat(shiftParams.squeezePressure) || 0,
+                    ppStrippingAcceleration: parseFloat(shiftParams.ppStrippingAcceleration) || 0,
+                    ppStrippingDistance: parseFloat(shiftParams.ppStrippingDistance) || 0,
+                    spStrippingAcceleration: parseFloat(shiftParams.spStrippingAcceleration) || 0,
+                    spStrippingDistance: parseFloat(shiftParams.spStrippingDistance) || 0,
+                    mouldThickness: parseFloat(shiftParams.mouldThicknessPlus10) || 0,
+                    closeUpForceMouldCloseUpPressure: String(shiftParams.closeUpForceMouldCloseUpPressure || '').trim(),
+                    remarks: String(shiftParams.remarks || '').trim()
+                };
+                
+                // Handle ppHeight (and ppheight for shift1)
+                if (shiftParams.ppHeight !== undefined) {
+                    newEntry.ppHeight = parseFloat(shiftParams.ppHeight) || 0;
+                    if (section === 'shift1') {
+                        newEntry.ppheight = parseFloat(shiftParams.ppHeight) || 0;
+                    }
+                }
+                
+                // Add entry to array
+                newSettingsData.parameters[section] = [newEntry];
+            }
 
             const newSettings = new DmmSettingParameters(newSettingsData);
             const savedSettings = await newSettings.save();
