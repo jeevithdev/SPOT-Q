@@ -1,5 +1,5 @@
 const express = require('express');
-const { createPrimaryEntry, createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/Melting-CupolaHolderLog');
+const { getPrimaryByDate, createPrimaryEntry, createEntry, getAllEntries, updateEntry, deleteEntry } = require('../controllers/Melting-CupolaHolderLog');
 
 const router = express.Router();
 
@@ -7,7 +7,8 @@ router.route('/')
     .get(getAllEntries)
     .post(createEntry);
 
-// Primary data endpoint - must be before /:id route
+// Primary data endpoints - must be before /:id route
+router.get('/primary/:date/:shift/:holderNumber', getPrimaryByDate);
 router.post('/primary', createPrimaryEntry);
 
 router.route('/:id')

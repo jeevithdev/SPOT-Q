@@ -20,8 +20,9 @@ const CupolaHolderLogSchema = new mongoose.Schema({
     
     heatNo: { 
         type: String, 
-        required: true, 
+        required: false, 
         trim: true, 
+        sparse: true,
         unique: true 
     },
 

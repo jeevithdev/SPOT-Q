@@ -21,7 +21,9 @@ const MeltingLogSheet = () => {
     cumulativeUnits: ''
   });
   const [primaryLoading, setPrimaryLoading] = useState(false);
-  const [isPrimarySaved, setIsPrimarySaved] = useState(false);
+  const [primaryId, setPrimaryId] = useState(null);
+  const [fetchingPrimary, setFetchingPrimary] = useState(false);
+  const [primaryLocks, setPrimaryLocks] = useState({});
   
   const [table1, setTable1] = useState({
     heatNo: '',
@@ -111,9 +113,9 @@ const MeltingLogSheet = () => {
   };
 
   const handleTableSubmit = async (tableNum) => {
-    // Ensure primary data is locked first
-    if (!isPrimarySaved) {
-      alert('Please lock Primary data first before submitting.');
+    // Ensure primary data exists first
+    if (!primaryData.date) {
+      alert('Please enter a date first.');
       return;
     }
 
@@ -143,31 +145,123 @@ const MeltingLogSheet = () => {
     }
   };
 
+  const fetchPrimaryData = async (date) => {
+    if (!date) return;
+    
+    setFetchingPrimary(true);
+    try {
+      // Format date for API (YYYY-MM-DD)
+      const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+      const response = await api.get(`/v1/melting-logs/primary/${dateStr}`);
+      
+      if (response.success && response.data) {
+        // Populate form with fetched data
+        setPrimaryData({
+          date: response.data.date ? new Date(response.data.date).toISOString().split('T')[0] : date,
+          shift: response.data.shift || '',
+          furnaceNo: response.data.furnaceNo || '',
+          panel: response.data.panel || '',
+          cumulativeLiquidMetal: response.data.cumulativeLiquidMetal || '',
+          finalKWHr: response.data.finalKWHr || '',
+          initialKWHr: response.data.initialKWHr || '',
+          totalUnits: response.data.totalUnits || '',
+          cumulativeUnits: response.data.cumulativeUnits || ''
+        });
+        setPrimaryId(response.data._id);
+        
+        // Lock all primary fields except date (date should remain changeable)
+        const locks = {};
+        if (response.data.shift !== undefined && response.data.shift !== null && response.data.shift !== '') locks.shift = true;
+        if (response.data.furnaceNo !== undefined && response.data.furnaceNo !== null && response.data.furnaceNo !== '') locks.furnaceNo = true;
+        if (response.data.panel !== undefined && response.data.panel !== null && response.data.panel !== '') locks.panel = true;
+        if (response.data.cumulativeLiquidMetal !== undefined && response.data.cumulativeLiquidMetal !== null && response.data.cumulativeLiquidMetal !== 0) locks.cumulativeLiquidMetal = true;
+        if (response.data.finalKWHr !== undefined && response.data.finalKWHr !== null && response.data.finalKWHr !== 0) locks.finalKWHr = true;
+        if (response.data.initialKWHr !== undefined && response.data.initialKWHr !== null && response.data.initialKWHr !== 0) locks.initialKWHr = true;
+        if (response.data.totalUnits !== undefined && response.data.totalUnits !== null && response.data.totalUnits !== 0) locks.totalUnits = true;
+        if (response.data.cumulativeUnits !== undefined && response.data.cumulativeUnits !== null && response.data.cumulativeUnits !== 0) locks.cumulativeUnits = true;
+        setPrimaryLocks(locks);
+      } else {
+        // No data found for this date, reset
+        setPrimaryId(null);
+        setPrimaryLocks({});
+      }
+    } catch (error) {
+      console.error('Error fetching primary data:', error);
+      // If error, assume no data exists for this date
+      setPrimaryId(null);
+      setPrimaryLocks({});
+    } finally {
+      setFetchingPrimary(false);
+    }
+  };
+
   const handlePrimaryChange = (field, value) => {
+    // Prevent changes to locked fields (except date)
+    if (field !== 'date' && isPrimaryFieldLocked(field)) {
+      return;
+    }
+    
     setPrimaryData(prev => ({
       ...prev,
       [field]: value
     }));
+    
+    // When date changes, automatically fetch existing data
+    if (field === 'date' && value) {
+      const dateStr = value instanceof Date ? value.toISOString().split('T')[0] : value;
+      fetchPrimaryData(dateStr);
+    } else if (field === 'date' && !value) {
+      // Clear primary ID and locks when date is cleared
+      setPrimaryId(null);
+      setPrimaryLocks({});
+    }
   };
 
-  const handlePrimarySubmit = () => {
-    // If already locked, unlock it
-    if (isPrimarySaved) {
-      setIsPrimarySaved(false);
-      alert('Primary data unlocked. You can now modify date.');
-      return;
-    }
-
+  const handlePrimarySubmit = async () => {
     // Validate required fields
     if (!primaryData.date) {
       alert('Please fill in Date');
       return;
     }
 
-    // Lock primary fields (date) without saving to database
-    // The actual save will happen when user clicks submit on tables
-    setIsPrimarySaved(true);
-    alert('Primary data locked. You can now fill other fields.');
+    // Save primary data to database (without locking)
+    setPrimaryLoading(true);
+    try {
+      const response = await api.post('/v1/melting-logs/primary', {
+        primaryData: primaryData,
+        isLocked: false
+      });
+      
+      if (response.success) {
+        setPrimaryId(response.data._id);
+        // Update primary data with response data to ensure consistency
+        setPrimaryData(prev => ({
+          ...prev,
+          date: response.data.date ? new Date(response.data.date).toISOString().split('T')[0] : prev.date
+        }));
+        
+        // Lock all primary fields except date after saving (only if they have values)
+        const locks = {};
+        if (primaryData.shift !== undefined && primaryData.shift !== null && primaryData.shift !== '') locks.shift = true;
+        if (primaryData.furnaceNo !== undefined && primaryData.furnaceNo !== null && primaryData.furnaceNo !== '') locks.furnaceNo = true;
+        if (primaryData.panel !== undefined && primaryData.panel !== null && primaryData.panel !== '') locks.panel = true;
+        if (primaryData.cumulativeLiquidMetal !== undefined && primaryData.cumulativeLiquidMetal !== null && primaryData.cumulativeLiquidMetal !== 0 && primaryData.cumulativeLiquidMetal !== '') locks.cumulativeLiquidMetal = true;
+        if (primaryData.finalKWHr !== undefined && primaryData.finalKWHr !== null && primaryData.finalKWHr !== 0 && primaryData.finalKWHr !== '') locks.finalKWHr = true;
+        if (primaryData.initialKWHr !== undefined && primaryData.initialKWHr !== null && primaryData.initialKWHr !== 0 && primaryData.initialKWHr !== '') locks.initialKWHr = true;
+        if (primaryData.totalUnits !== undefined && primaryData.totalUnits !== null && primaryData.totalUnits !== 0 && primaryData.totalUnits !== '') locks.totalUnits = true;
+        if (primaryData.cumulativeUnits !== undefined && primaryData.cumulativeUnits !== null && primaryData.cumulativeUnits !== 0 && primaryData.cumulativeUnits !== '') locks.cumulativeUnits = true;
+        setPrimaryLocks(locks);
+        
+        alert('Primary data saved successfully.');
+      } else {
+        alert('Error: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Error saving primary data:', error);
+      alert('Failed to save primary data. Please try again.');
+    } finally {
+      setPrimaryLoading(false);
+    }
   };
 
   // Reset functions for each section
@@ -184,7 +278,13 @@ const MeltingLogSheet = () => {
       totalUnits: '',
       cumulativeUnits: ''
     });
-    setIsPrimarySaved(false);
+    setPrimaryId(null);
+    setPrimaryLocks({});
+  };
+
+  // Helper function to check if a primary field is locked
+  const isPrimaryFieldLocked = (field) => {
+    return primaryLocks[field] === true;
   };
 
   const resetTable1 = () => {
@@ -305,8 +405,9 @@ const MeltingLogSheet = () => {
                 value={primaryData.date}
                 onChange={(e) => handlePrimaryChange('date', e.target.value)}
                 name="date"
-                disabled={isPrimarySaved}
+                disabled={fetchingPrimary}
               />
+              {fetchingPrimary && <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>Loading...</span>}
           </div>
 
           <div className="melting-log-form-group">
@@ -316,6 +417,12 @@ const MeltingLogSheet = () => {
                 value={primaryData.shift}
                 onChange={(e) => handlePrimaryChange('shift', e.target.value)}
                 placeholder="Enter shift"
+                disabled={isPrimaryFieldLocked('shift')}
+                readOnly={isPrimaryFieldLocked('shift')}
+                style={{
+                  backgroundColor: isPrimaryFieldLocked('shift') ? '#f1f5f9' : '#ffffff',
+                  cursor: isPrimaryFieldLocked('shift') ? 'not-allowed' : 'text'
+                }}
             />
           </div>
 
@@ -326,6 +433,12 @@ const MeltingLogSheet = () => {
                 value={primaryData.furnaceNo}
                 onChange={(e) => handlePrimaryChange('furnaceNo', e.target.value)}
                 placeholder="Enter furnace no"
+                disabled={isPrimaryFieldLocked('furnaceNo')}
+                readOnly={isPrimaryFieldLocked('furnaceNo')}
+                style={{
+                  backgroundColor: isPrimaryFieldLocked('furnaceNo') ? '#f1f5f9' : '#ffffff',
+                  cursor: isPrimaryFieldLocked('furnaceNo') ? 'not-allowed' : 'text'
+                }}
             />
           </div>
 
@@ -336,6 +449,12 @@ const MeltingLogSheet = () => {
                 value={primaryData.panel}
                 onChange={(e) => handlePrimaryChange('panel', e.target.value)}
                 placeholder="Enter panel"
+                disabled={isPrimaryFieldLocked('panel')}
+                readOnly={isPrimaryFieldLocked('panel')}
+                style={{
+                  backgroundColor: isPrimaryFieldLocked('panel') ? '#f1f5f9' : '#ffffff',
+                  cursor: isPrimaryFieldLocked('panel') ? 'not-allowed' : 'text'
+                }}
             />
           </div>
 
@@ -347,6 +466,12 @@ const MeltingLogSheet = () => {
                 onChange={(e) => handlePrimaryChange('cumulativeLiquidMetal', e.target.value)}
                 placeholder="Enter value"
                 step="0.01"
+                disabled={isPrimaryFieldLocked('cumulativeLiquidMetal')}
+                readOnly={isPrimaryFieldLocked('cumulativeLiquidMetal')}
+                style={{
+                  backgroundColor: isPrimaryFieldLocked('cumulativeLiquidMetal') ? '#f1f5f9' : '#ffffff',
+                  cursor: isPrimaryFieldLocked('cumulativeLiquidMetal') ? 'not-allowed' : 'text'
+                }}
             />
           </div>
 
@@ -358,6 +483,12 @@ const MeltingLogSheet = () => {
                 onChange={(e) => handlePrimaryChange('finalKWHr', e.target.value)}
                 placeholder="Enter value"
                 step="0.01"
+                disabled={isPrimaryFieldLocked('finalKWHr')}
+                readOnly={isPrimaryFieldLocked('finalKWHr')}
+                style={{
+                  backgroundColor: isPrimaryFieldLocked('finalKWHr') ? '#f1f5f9' : '#ffffff',
+                  cursor: isPrimaryFieldLocked('finalKWHr') ? 'not-allowed' : 'text'
+                }}
             />
           </div>
 
@@ -369,6 +500,12 @@ const MeltingLogSheet = () => {
                 onChange={(e) => handlePrimaryChange('initialKWHr', e.target.value)}
                 placeholder="Enter value"
                 step="0.01"
+                disabled={isPrimaryFieldLocked('initialKWHr')}
+                readOnly={isPrimaryFieldLocked('initialKWHr')}
+                style={{
+                  backgroundColor: isPrimaryFieldLocked('initialKWHr') ? '#f1f5f9' : '#ffffff',
+                  cursor: isPrimaryFieldLocked('initialKWHr') ? 'not-allowed' : 'text'
+                }}
             />
           </div>
 
@@ -380,6 +517,12 @@ const MeltingLogSheet = () => {
                 onChange={(e) => handlePrimaryChange('totalUnits', e.target.value)}
                 placeholder="Enter value"
                 step="0.01"
+                disabled={isPrimaryFieldLocked('totalUnits')}
+                readOnly={isPrimaryFieldLocked('totalUnits')}
+                style={{
+                  backgroundColor: isPrimaryFieldLocked('totalUnits') ? '#f1f5f9' : '#ffffff',
+                  cursor: isPrimaryFieldLocked('totalUnits') ? 'not-allowed' : 'text'
+                }}
             />
           </div>
 
@@ -391,6 +534,12 @@ const MeltingLogSheet = () => {
                 onChange={(e) => handlePrimaryChange('cumulativeUnits', e.target.value)}
                 placeholder="Enter value"
                 step="0.01"
+                disabled={isPrimaryFieldLocked('cumulativeUnits')}
+                readOnly={isPrimaryFieldLocked('cumulativeUnits')}
+                style={{
+                  backgroundColor: isPrimaryFieldLocked('cumulativeUnits') ? '#f1f5f9' : '#ffffff',
+                  cursor: isPrimaryFieldLocked('cumulativeUnits') ? 'not-allowed' : 'text'
+                }}
             />
           </div>
         </div>
@@ -399,9 +548,19 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={handlePrimarySubmit}
-            disabled={!isPrimarySaved && !primaryData.date}
+            disabled={primaryLoading || fetchingPrimary || !primaryData.date}
           >
-            {isPrimarySaved ? 'Unlock Primary' : 'Lock Primary'}
+            {primaryLoading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save size={18} />
+                Save Changes
+              </>
+            )}
           </button>
         </div>
             </div>
@@ -586,8 +745,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(1)}
-            disabled={loadingStates.table1 || !isPrimarySaved}
-            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Table 1'}
+            disabled={loadingStates.table1 || !primaryData.date}
+            title={!primaryData.date ? 'Please enter a date first' : 'Save Table 1'}
           >
             {loadingStates.table1 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table1 ? 'Saving...' : 'Save Table 1'}
@@ -769,8 +928,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(2)}
-            disabled={loadingStates.table2 || !isPrimarySaved}
-            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Table 2'}
+            disabled={loadingStates.table2 || !primaryData.date}
+            title={!primaryData.date ? 'Please enter a date first' : 'Save Table 2'}
           >
             {loadingStates.table2 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table2 ? 'Saving...' : 'Save Table 2'}
@@ -888,8 +1047,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(3)}
-            disabled={loadingStates.table3 || !isPrimarySaved}
-            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Table 3'}
+            disabled={loadingStates.table3 || !primaryData.date}
+            title={!primaryData.date ? 'Please enter a date first' : 'Save Table 3'}
           >
             {loadingStates.table3 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table3 ? 'Saving...' : 'Save Table 3'}
@@ -1003,8 +1162,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(4)}
-            disabled={loadingStates.table4 || !isPrimarySaved}
-            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Metal Tapping in Kgs'}
+            disabled={loadingStates.table4 || !primaryData.date}
+            title={!primaryData.date ? 'Please enter a date first' : 'Save Metal Tapping in Kgs'}
           >
             {loadingStates.table4 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table4 ? 'Saving...' : 'Save Metal Tapping in Kgs'}
@@ -1106,8 +1265,8 @@ const MeltingLogSheet = () => {
           <button
             className="cupola-holder-submit-btn"
             onClick={() => handleTableSubmit(5)}
-            disabled={loadingStates.table5 || !isPrimarySaved}
-            title={!isPrimarySaved ? 'Please save Primary data first' : 'Save Electrical Readings'}
+            disabled={loadingStates.table5 || !primaryData.date}
+            title={!primaryData.date ? 'Please enter a date first' : 'Save Electrical Readings'}
           >
             {loadingStates.table5 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {loadingStates.table5 ? 'Saving...' : 'Save Electrical Readings'}

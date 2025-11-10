@@ -1,5 +1,68 @@
 const CupolaHolderLog = require('../models/Melting-CupolaHolderLog');
 
+// @desc    Get primary data by date, shift, and holderNumber
+// @route   GET /api/v1/cupola-holder-logs/primary/:date/:shift/:holderNumber
+// @access  Private
+exports.getPrimaryByDate = async (req, res) => {
+    try {
+        const { date, shift, holderNumber } = req.params;
+        
+        if (!date || !shift || !holderNumber) {
+            return res.status(400).json({
+                success: false,
+                message: 'Date, Shift, and Holder Number parameters are required.'
+            });
+        }
+
+        const dateObj = new Date(date);
+        dateObj.setHours(0, 0, 0, 0);
+        
+        const endOfDay = new Date(date);
+        endOfDay.setHours(23, 59, 59, 999);
+
+        const holderNo = parseInt(holderNumber) || holderNumber;
+
+        const entry = await CupolaHolderLog.findOne({
+            date: {
+                $gte: dateObj,
+                $lte: endOfDay
+            },
+            shift: shift,
+            holderno: holderNo
+        });
+
+        if (!entry) {
+            return res.status(200).json({
+                success: true,
+                data: null,
+                message: 'No entry found for this date, shift, and holder number combination.'
+            });
+        }
+
+        // Extract primary data
+        const primaryData = {
+            _id: entry._id,
+            date: entry.date,
+            shift: entry.shift,
+            holderNumber: entry.holderno.toString(),
+            heatNo: entry.heatNo || ''
+        };
+
+        res.status(200).json({
+            success: true,
+            data: primaryData,
+            message: 'Primary data fetched successfully.'
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({
+            success: false,
+            message: error.message || 'Error fetching primary data.'
+        });
+    }
+};
+
 exports.getAllEntries = async (req, res) => {
     try {
         const entries = await CupolaHolderLog.find().sort({ createdAt: -1 });
@@ -22,7 +85,8 @@ exports.getAllEntries = async (req, res) => {
 // Create or update primary data (date + shift + holderNumber)
 exports.createPrimaryEntry = async (req, res) => {
     try {
-        const { date, shift, holderNumber } = req.body;
+        const { primaryData } = req.body;
+        const { date, shift, holderNumber, heatNo } = primaryData || req.body;
 
         if (!date || !shift || !holderNumber) {
             return res.status(400).json({
@@ -35,37 +99,53 @@ exports.createPrimaryEntry = async (req, res) => {
         const dateObj = date instanceof Date ? date : new Date(date);
         dateObj.setHours(0, 0, 0, 0);
 
+        const holderNo = parseInt(holderNumber) || holderNumber;
+
         // Check if primary data already exists for this date, shift, and holderNumber combination
-        const existing = await CupolaHolderLog.findOne({ 
+        let entry = await CupolaHolderLog.findOne({ 
             date: dateObj, 
             shift, 
-            holderno: parseInt(holderNumber) || holderNumber 
+            holderno: holderNo 
         });
 
-        if (existing) {
+        if (entry) {
             // Update existing entry with primary data only
-            existing.date = dateObj;
-            existing.shift = shift;
-            existing.holderno = parseInt(holderNumber) || holderNumber;
-            await existing.save();
+            entry.date = dateObj;
+            entry.shift = shift;
+            entry.holderno = holderNo;
+            if (heatNo !== undefined) entry.heatNo = heatNo || '';
+            await entry.save();
 
             return res.status(200).json({
                 success: true,
-                data: existing,
+                data: {
+                    _id: entry._id,
+                    date: entry.date,
+                    shift: entry.shift,
+                    holderNumber: entry.holderno.toString(),
+                    heatNo: entry.heatNo || ''
+                },
                 message: 'Primary data updated successfully.'
             });
         }
 
         // Create new entry with primary data
-        const entry = await CupolaHolderLog.create({ 
+        entry = await CupolaHolderLog.create({ 
             date: dateObj, 
             shift, 
-            holderno: parseInt(holderNumber) || holderNumber 
+            holderno: holderNo,
+            heatNo: heatNo || ''
         });
 
         res.status(201).json({
             success: true,
-            data: entry,
+            data: {
+                _id: entry._id,
+                date: entry.date,
+                shift: entry.shift,
+                holderNumber: entry.holderno.toString(),
+                heatNo: entry.heatNo || ''
+            },
             message: 'Primary data saved successfully.'
         });
 

@@ -9,42 +9,47 @@ const MeltingLogsheetSchema = new mongoose.Schema({
 
     shift: {
         type: String,
-        required: true
+        default: ''
     },
 
     furnaceNo: {
-        type: Number,
-        required: true
+        type: String,
+        default: ''
     },
 
     panel : {
         type: String,
-        required: true
+        default: ''
     },
 
     cumulativeLiquidMetal: {
         type: Number,
-        required: true
+        default: 0
     },
 
     finalkwhr : {
         type: Number,
-        required: true
+        default: 0
     },
     
     initialkwhr: {
         type: Number,
-        required: true
+        default: 0
     },
 
     totoalunits : {
         type: Number,
-        required: true
+        default: 0
     },
 
     cumulativeunits : {
         type: Number,
-        required: true
+        default: 0
+    },
+
+    isLocked: {
+        type: Boolean,
+        default: false
     },
 
     heatno : {
@@ -55,242 +60,273 @@ const MeltingLogsheetSchema = new mongoose.Schema({
 
     grade : {
         type : String,
-        required: true
+        default: ''
     },
 
     chargingkgs : {
         time : {
             type : String,
-            required: true
+            default: ''
         },
 
         ifbath :{
             type : Number,
-            required: true
+            default: 0
         },
 
         liquidmetal : {
             presspour : {
                 type : Number,
-                required: true
+                default: 0
             },
 
             holder : {
                 type : Number,
-                required: true
+                default: 0
             }
         },
 
         sqmssteel : {
             type : Number,
-            required: true
+            default: 0
         },
 
         greymssteel : {
             type : Number,
-            required: true
+            default: 0
         },
 
         returnSg :{
             type : Number,
-            required: true
+            default: 0
         },
         pigiron : {
             type : Number,
-            required: true
+            default: 0
         },
 
         borings : {
             type : Number,
-            required: true
+            default: 0
         },
 
         finalbath : {
             type : Number,
-            required: true
+            default: 0
         }
     },
 
     charcoal : {
         type : Number,
-        required: true
+        default: 0
     },
 
     cpc : {
         fur :{
             type : Number,
-            required: true
+            default: 0
         },
 
         lc : {
             type : Number,
-            required: true
+            default: 0
         }
     },
 
     siliconcarbide : {
         fur : {
             type : Number,
-            required: true
+            default: 0
         }
     },
 
     ferroSilicon : {
         fur : {
             type : Number,
-            required: true
+            default: 0
         },
 
         lc : {
             type : Number,
-            required: true
+            default: 0
         }
     },
 
     ferroManganese : {
         fur : { 
             type : Number,
-            required: true
+            default: 0
         },
 
         lc : {
             type : Number,
-            required: true
+            default: 0
         }
     },
 
     cu : {
         type : Number,
-        required: true
+        default: 0
     },
 
     cr : {
         type : Number,
-        required: true
+        default: 0
     },
 
     pureMg : {
         type : Number,
-        required: true
+        default: 0
     },
 
     ironPyrite : {
         type : Number,
-        required: true
+        default: 0
     },
 
     labCoin : {
 
         time : {
             type : String,
-            required: true
+            default: ''
         },
 
         tempC : {
             type : Number,
-            required: true
+            default: 0
         }
     },
 
     deslagingTime : {
         from : {
             type : String,
-            required: true
+            default: ''
         },
 
         to : {
             type : String,
-            required: true
+            default: ''
         }
     },
 
     metalReadyTime : {
         type : String,
-        required: true
+        default: ''
     },
 
     waitingForTapping : {
         from : {
             type : String,
-            required: true
+            default: ''
         },
 
         to : {
             type : String,
-            required: true
+            default: ''
         }
     },
 
     reason :{
         type : String,
-        required: true
+        default: ''
     },
 
     metalTapping : {
         time : {
             type : String,
-            required: true
+            default: ''
         },
-        tempC : {
+        tempCSg : {
             type : Number,
-            required: true
+            default: 0
+        },
+        tempCGrey : {
+            type : Number,
+            default: 0
         }
     },
     
     directFurnace : {
         type : Number,
-        required: true
+        default: 0
     },
     
     holderToFurnace : {
         type : Number,
-        required: true
+        default: 0
     },
     
     furnaceToHolder : {
         type : Number,
-        required: true
+        default: 0
     },
 
     disaNo : {
-        type : Number,
-        required: true
+        type : String,
+        default: ''
     },
     
     item : {
         type : String,
-        required: true
+        default: ''
     },
 
     electricalReadings : {
-        furnace123 : {
+        furnace1 : {
             kw : {
                 type : Number,
-                required: true
+                default: 0
             },
             v : {
                 type : Number,
-                required: true
+                default: 0
             },
             a : {
                 type : Number,
-                required: true
+                default: 0
             }
         },
-
+        furnace2 : {
+            kw : {
+                type : Number,
+                default: 0
+            },
+            v : {
+                type : Number,
+                default: 0
+            },
+            a : {
+                type : Number,
+                default: 0
+            }
+        },
+        furnace3 : {
+            kw : {
+                type : Number,
+                default: 0
+            },
+            v : {
+                type : Number,
+                default: 0
+            },
+            a : {
+                type : Number,
+                default: 0
+            }
+        },
         furnace4 : {
             hz : {
                 type : Number,
-                required: true
+                default: 0
             },
             gld : {
                 type : Number,
-                required: true
+                default: 0
             },
 
-            kwh : {
+            kwhr : {
                 type : Number,
-                required: true
+                default: 0
             }
         }
     }

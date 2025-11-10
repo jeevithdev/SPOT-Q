@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Save, RefreshCw, Loader2, FileText, RotateCcw } from 'lucide-react';
 import { DatePicker } from '../../Components/Buttons';
+import CustomDatePicker from '../../Components/CustomDatePicker';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Melting/CupolaHolderLogSheet.css';
 
@@ -34,36 +35,152 @@ const CupolaHolderLogSheet = () => {
   });
 
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [isPrimarySaved, setIsPrimarySaved] = useState(false);
+  const [primaryLoading, setPrimaryLoading] = useState(false);
+  const [primaryId, setPrimaryId] = useState(null);
+  const [fetchingPrimary, setFetchingPrimary] = useState(false);
+  const [primaryLocks, setPrimaryLocks] = useState({});
+
+  // Fetch primary data when date, shift, or holderNumber changes
+  useEffect(() => {
+    if (formData.date && formData.shift && formData.holderNumber) {
+      const dateStr = formData.date instanceof Date 
+        ? formData.date.toISOString().split('T')[0] 
+        : formData.date;
+      fetchPrimaryData(dateStr, formData.shift, formData.holderNumber);
+    } else if (!formData.date || !formData.shift || !formData.holderNumber) {
+      // Clear primary ID and locks when primary fields are cleared
+      setPrimaryId(null);
+      setPrimaryLocks({});
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.date, formData.shift, formData.holderNumber]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Prevent changes to locked fields (except date)
+    if (name !== 'date' && isPrimaryFieldLocked(name)) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
+    // Prevent changes if field is disabled
+    if (e.target.disabled) {
+      e.preventDefault();
+      e.stopPropagation();
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
   };
 
-  const handlePrimarySubmit = () => {
-    // If already locked, unlock it
-    if (isPrimarySaved) {
-      setIsPrimarySaved(false);
-      alert('Primary data unlocked. You can now modify date, shift, and holder number.');
+  const fetchPrimaryData = async (date, shift, holderNumber) => {
+    if (!date || !shift || !holderNumber) return;
+    
+    setFetchingPrimary(true);
+    try {
+      // Format date for API (YYYY-MM-DD)
+      const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+      const encodedShift = encodeURIComponent(shift);
+      const encodedHolder = encodeURIComponent(holderNumber);
+      const response = await api.get(`/v1/cupola-holder-logs/primary/${dateStr}/${encodedShift}/${encodedHolder}`);
+      
+      if (response.success && response.data) {
+        // Populate form with fetched data
+        setFormData(prev => ({
+          ...prev,
+          date: response.data.date ? new Date(response.data.date).toISOString().split('T')[0] : date,
+          shift: response.data.shift || shift,
+          holderNumber: response.data.holderNumber || holderNumber,
+          heatNo: response.data.heatNo || prev.heatNo
+        }));
+        setPrimaryId(response.data._id);
+        
+        // Lock all primary fields except date when data exists (date should remain changeable)
+        // Since entry exists, lock shift and holderNumber (they are required fields)
+        const locks = {};
+        locks.shift = true; // Always lock shift when data exists
+        locks.holderNumber = true; // Always lock holderNumber when data exists
+        // Lock heatNo if it has a value
+        if (response.data.heatNo !== undefined && response.data.heatNo !== null && response.data.heatNo !== '') {
+          locks.heatNo = true;
+        }
+        setPrimaryLocks(locks);
+      } else {
+        // No data found, reset
+        setPrimaryId(null);
+        setPrimaryLocks({});
+      }
+    } catch (error) {
+      console.error('Error fetching primary data:', error);
+      // If error, assume no data exists
+      setPrimaryId(null);
+      setPrimaryLocks({});
+    } finally {
+      setFetchingPrimary(false);
+    }
+  };
+
+  // Helper function to check if a primary field is locked
+  const isPrimaryFieldLocked = (field) => {
+    return primaryLocks[field] === true;
+  };
+
+  const handlePrimarySubmit = async () => {
+    // Validate required fields
+    if (!formData.date || !formData.shift || !formData.holderNumber) {
+      alert('Please fill in Date, Shift, and Holder Number');
       return;
     }
 
-    const required = ['date', 'shift', 'holderNumber'];
-    const missing = required.filter(field => !formData[field]);
-
-    if (missing.length > 0) {
-      alert(`Please fill in the following required fields: ${missing.join(', ')}`);
-      return;
+    // Save primary data to database
+    setPrimaryLoading(true);
+    try {
+      const response = await api.post('/v1/cupola-holder-logs/primary', {
+        primaryData: {
+          date: formData.date,
+          shift: formData.shift,
+          holderNumber: formData.holderNumber,
+          heatNo: formData.heatNo
+        }
+      });
+      
+      if (response.success) {
+        setPrimaryId(response.data._id);
+        // Update form data with response data to ensure consistency
+        setFormData(prev => ({
+          ...prev,
+          date: response.data.date ? new Date(response.data.date).toISOString().split('T')[0] : prev.date,
+          shift: response.data.shift || prev.shift,
+          holderNumber: response.data.holderNumber || prev.holderNumber,
+          heatNo: response.data.heatNo || prev.heatNo
+        }));
+        
+        // Lock all primary fields except date after saving
+        // Always lock shift and holderNumber since they are required fields
+        const locks = {};
+        locks.shift = true; // Always lock shift after saving
+        locks.holderNumber = true; // Always lock holderNumber after saving
+        // Lock heatNo if it has a value
+        if (formData.heatNo !== undefined && formData.heatNo !== null && formData.heatNo !== '') {
+          locks.heatNo = true;
+        }
+        setPrimaryLocks(locks);
+        
+        alert('Primary data saved successfully.');
+      } else {
+        alert('Error: ' + response.message);
+      }
+    } catch (error) {
+      console.error('Error saving primary data:', error);
+      alert('Failed to save primary data. Please try again.');
+    } finally {
+      setPrimaryLoading(false);
     }
-
-    // Lock primary fields (date, shift, holderNumber) without saving to database
-    // The actual save will happen when user clicks "Submit Entry"
-    setIsPrimarySaved(true);
-    alert('Primary data locked. You can now fill other fields.');
   };
 
   const handleSubmit = async () => {
@@ -75,9 +192,9 @@ const CupolaHolderLogSheet = () => {
       return;
     }
 
-    // Ensure primary data is locked first
-    if (!isPrimarySaved) {
-      alert('Please lock Primary data first before submitting.');
+    // Ensure primary data exists (date is required)
+    if (!formData.date) {
+      alert('Please enter a date first.');
       return;
     }
 
@@ -107,7 +224,8 @@ const CupolaHolderLogSheet = () => {
       tappingTemp: '', metalKg: '', disaLine: '', indFur: '', bailNo: '',
       tap: '', kw: '', remarks: ''
     });
-    setIsPrimarySaved(false);
+    setPrimaryId(null);
+    setPrimaryLocks({});
   };
 
   return (
@@ -137,12 +255,13 @@ const CupolaHolderLogSheet = () => {
           {/* Primary Information */}
           <div className="cupola-holder-form-group">
             <label>Date *</label>
-            <DatePicker 
-              name="date" 
-              value={formData.date} 
-              onChange={handleChange}
-              disabled={isPrimarySaved}
+            <CustomDatePicker
+              value={formData.date}
+              onChange={(e) => handleChange({ target: { name: 'date', value: e.target.value } })}
+              name="date"
+              disabled={fetchingPrimary}
             />
+            {fetchingPrimary && <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>Loading...</span>}
           </div>
 
           <div className="cupola-holder-form-group">
@@ -151,16 +270,30 @@ const CupolaHolderLogSheet = () => {
               name="shift"
               value={formData.shift}
               onChange={handleChange}
-              disabled={isPrimarySaved}
+              onMouseDown={(e) => {
+                if (isPrimaryFieldLocked('shift') || fetchingPrimary) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
+              onClick={(e) => {
+                if (isPrimaryFieldLocked('shift') || fetchingPrimary) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
+              disabled={isPrimaryFieldLocked('shift') || fetchingPrimary}
               style={{
                 width: '100%',
                 padding: '0.625rem 0.875rem',
                 border: '2px solid #cbd5e1',
                 borderRadius: '8px',
                 fontSize: '0.875rem',
-                backgroundColor: isPrimarySaved ? '#f1f5f9' : '#ffffff',
-                color: '#1e293b',
-                cursor: isPrimarySaved ? 'not-allowed' : 'pointer'
+                backgroundColor: isPrimaryFieldLocked('shift') ? '#f1f5f9' : '#ffffff',
+                color: isPrimaryFieldLocked('shift') ? '#64748b' : '#1e293b',
+                cursor: isPrimaryFieldLocked('shift') ? 'not-allowed' : 'pointer',
+                opacity: isPrimaryFieldLocked('shift') ? 0.8 : 1,
+                pointerEvents: isPrimaryFieldLocked('shift') ? 'none' : 'auto'
               }}
             >
               <option value="">Select Shift</option>
@@ -178,11 +311,11 @@ const CupolaHolderLogSheet = () => {
               value={formData.holderNumber}
               onChange={handleChange}
               placeholder="e.g: H001"
-              disabled={isPrimarySaved}
-              readOnly={isPrimarySaved}
+              disabled={isPrimaryFieldLocked('holderNumber') || fetchingPrimary}
+              readOnly={isPrimaryFieldLocked('holderNumber')}
               style={{
-                backgroundColor: isPrimarySaved ? '#f1f5f9' : '#ffffff',
-                cursor: isPrimarySaved ? 'not-allowed' : 'text'
+                backgroundColor: isPrimaryFieldLocked('holderNumber') ? '#f1f5f9' : '#ffffff',
+                cursor: isPrimaryFieldLocked('holderNumber') ? 'not-allowed' : 'text'
               }}
             />
           </div>
@@ -193,9 +326,19 @@ const CupolaHolderLogSheet = () => {
               className="cupola-holder-submit-btn"
               type="button"
               onClick={handlePrimarySubmit}
-              disabled={!isPrimarySaved && (!formData.date || !formData.shift || !formData.holderNumber)}
+              disabled={primaryLoading || fetchingPrimary || (!formData.date || !formData.shift || !formData.holderNumber)}
             >
-              {isPrimarySaved ? 'Unlock Primary' : 'Lock Primary'}
+              {primaryLoading ? (
+                <>
+                  <Loader2 size={18} className="animate-spin" />
+                  Saving...
+                </>
+              ) : (
+                <>
+                  <Save size={18} />
+                  Save Changes
+                </>
+              )}
             </button>
           </div>
         </div>
@@ -213,6 +356,12 @@ const CupolaHolderLogSheet = () => {
               value={formData.heatNo}
               onChange={handleChange}
               placeholder="e.g: H2024-001"
+              disabled={isPrimaryFieldLocked('heatNo')}
+              readOnly={isPrimaryFieldLocked('heatNo')}
+              style={{
+                backgroundColor: isPrimaryFieldLocked('heatNo') ? '#f1f5f9' : '#ffffff',
+                cursor: isPrimaryFieldLocked('heatNo') ? 'not-allowed' : 'text'
+              }}
             />
           </div>
         </div>
@@ -454,8 +603,8 @@ const CupolaHolderLogSheet = () => {
             className="cupola-holder-submit-btn"
             type="button"
             onClick={handleSubmit}
-            disabled={submitLoading || !isPrimarySaved}
-            title={!isPrimarySaved ? 'Please save Primary data first' : 'Submit Entry'}
+            disabled={submitLoading || !formData.date}
+            title={!formData.date ? 'Please enter a date first' : 'Submit Entry'}
           >
             {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
             {submitLoading ? 'Saving...' : 'Submit Entry'}
