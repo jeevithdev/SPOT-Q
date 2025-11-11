@@ -1,27 +1,130 @@
-import React, { useState } from 'react';
-import { PencilLine, BookOpenCheck, Filter } from 'lucide-react';
-import CustomDatePicker from '../Components/CustomDatePicker';
-import '../styles/PageStyles/MicroStructureReport.css';
+import React, { useState, useEffect } from 'react';
+import { Filter, X, PencilLine, BookOpenCheck } from 'lucide-react';
+import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
+import Loader from '../Components/Loader';
+import api from '../utils/api';
+import '../styles/PageStyles/ImpactReport.css';
 
 const MicroStructureReport = () => {
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [items, setItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+  
+  // Edit states
+  const [showEditModal, setShowEditModal] = useState(false);
+  const [editingItem, setEditingItem] = useState(null);
+  const [editFormData, setEditFormData] = useState({});
+  const [editLoading, setEditLoading] = useState(false);
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const data = await api.get('/v1/microstructures');
+      
+      if (data.success) {
+        setItems(data.data || []);
+        setFilteredItems(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching microstructures:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleEditChange = (e) => {
+    const { name, value } = e.target;
+    setEditFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
+  };
+
+  const handleEdit = (item) => {
+    setEditingItem(item);
+    setEditFormData({
+      dateOfInspection: item.dateOfInspection ? new Date(item.dateOfInspection).toISOString().split('T')[0] : '',
+      disa: item.disa || '',
+      heatCode: item.heatCode || '',
+      nodularity: item.nodularity || '',
+      graphiteType: item.graphiteType || '',
+      countNos: item.countNos || '',
+      size: item.size || '',
+      ferritePercentage: item.ferritePercentage || '',
+      pearlitePercentage: item.pearlitePercentage || '',
+      carbidePercentage: item.carbidePercentage || '',
+      remarks: item.remarks || ''
+    });
+    setShowEditModal(true);
+  };
+
+  const handleUpdate = async () => {
+    try {
+      setEditLoading(true);
+      const data = await api.put(`/v1/microstructures/${editingItem._id}`, editFormData);
+      
+      if (data.success) {
+        setShowEditModal(false);
+        fetchItems();
+      }
+    } catch (error) {
+      console.error('Error updating microstructure:', error);
+      alert('Failed to update entry: ' + (error.message || 'Unknown error'));
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const handleDelete = async (id) => {
+    if (window.confirm('Are you sure you want to delete this entry?')) {
+      try {
+        const data = await api.delete(`/v1/microstructures/${id}`);
+        
+        if (data.success) {
+          fetchItems();
+        }
+      } catch (error) {
+        console.error('Error deleting microstructure:', error);
+        alert('Failed to delete entry: ' + (error.message || 'Unknown error'));
+      }
+    }
+  };
 
   const handleFilter = () => {
-    // TODO: Implement filter logic
-    console.log('Filtering from:', fromDate, 'to:', toDate);
+    if (!startDate || !endDate) {
+      setFilteredItems(items);
+      return;
+    }
+
+    const filtered = items.filter(item => {
+      if (!item.dateOfInspection) return false;
+      const itemDate = new Date(item.dateOfInspection);
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      end.setHours(23, 59, 59, 999);
+      
+      return itemDate >= start && itemDate <= end;
+    });
+
+    setFilteredItems(filtered);
   };
 
   return (
     <>
-      <div className="microstructure-report-header">
-        <div className="microstructure-report-header-text">
+      <div className="impact-report-header">
+        <div className="impact-report-header-text">
           <h2>
             <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
-            Micro Structure - Report
+            Micro Structure - Report Card
             <button 
-              className="microstructure-report-entry-btn"
-              onClick={() => window.location.href = "/micro-structure"}
+              className="impact-report-entry-btn"
+              onClick={() => window.location.href = "/microstructure"}
               title="Entry"
             >
               <PencilLine size={16} />
@@ -31,36 +134,245 @@ const MicroStructureReport = () => {
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="microstructure-report-container">
-        <div className="microstructure-filter-grid">
-          <div className="microstructure-filter-group">
-            <label>From Date</label>
-            <CustomDatePicker
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              name="fromDate"
-            />
-          </div>
-          <div className="microstructure-filter-group">
-            <label>To Date</label>
-            <CustomDatePicker
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              name="toDate"
-            />
-          </div>
-          <div className="microstructure-filter-btn-container">
-            <button
-              className="microstructure-filter-btn"
-              onClick={handleFilter}
-            >
-              <Filter size={16} />
-              Filter
-            </button>
-          </div>
+      <div className="impact-filter-grid">
+        <div className="impact-filter-group">
+          <label>Start Date</label>
+          <DatePicker
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            placeholder="Select start date"
+          />
+        </div>
+        <div className="impact-filter-group">
+          <label>End Date</label>
+          <DatePicker
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            placeholder="Select end date"
+          />
+        </div>
+        <div className="impact-filter-btn-container">
+          <Button onClick={handleFilter} className="impact-filter-btn" type="button">
+            <Filter size={18} />
+            Filter
+          </Button>
         </div>
       </div>
+
+      {loading ? (
+        <div className="impact-loader-container">
+          <Loader />
+        </div>
+      ) : (
+        <div className="impact-details-card">
+          <div className="impact-table-container">
+            <table className="impact-table">
+              <thead>
+                <tr>
+                  <th>Date Of Inspection</th>
+                  <th>Disa</th>
+                  <th>Heat Code</th>
+                  <th>Nodularity</th>
+                  <th>Graphite Type</th>
+                  <th>Count Nos</th>
+                  <th>Size</th>
+                  <th>Ferrite %</th>
+                  <th>Pearlite %</th>
+                  <th>Carbide %</th>
+                  <th>Remarks</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredItems.length === 0 ? (
+                  <tr>
+                    <td colSpan="12" className="impact-no-records">
+                      No records found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredItems.map((item, index) => (
+                    <tr key={item._id || index}>
+                      <td>{item.dateOfInspection ? new Date(item.dateOfInspection).toLocaleDateString() : '-'}</td>
+                      <td>{item.disa || '-'}</td>
+                      <td>{item.heatCode || '-'}</td>
+                      <td>{item.nodularity || '-'}</td>
+                      <td>{item.graphiteType || '-'}</td>
+                      <td>{item.countNos || '-'}</td>
+                      <td>{item.size || '-'}</td>
+                      <td>{item.ferritePercentage !== undefined && item.ferritePercentage !== null ? item.ferritePercentage : '-'}</td>
+                      <td>{item.pearlitePercentage !== undefined && item.pearlitePercentage !== null ? item.pearlitePercentage : '-'}</td>
+                      <td>{item.carbidePercentage !== undefined && item.carbidePercentage !== null ? item.carbidePercentage : '-'}</td>
+                      <td>{item.remarks || '-'}</td>
+                      <td style={{ minWidth: '100px' }}>
+                        <EditActionButton onClick={() => handleEdit(item)} />
+                        <DeleteActionButton onClick={() => handleDelete(item._id)} />
+                      </td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Edit Micro Structure Entry</h2>
+              <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            
+            <div className="modal-body">
+              <div className="impact-form-grid">
+                <div className="impact-form-group">
+                  <label>Date of Inspection *</label>
+                  <DatePicker
+                    name="dateOfInspection"
+                    value={editFormData.dateOfInspection}
+                    onChange={handleEditChange}
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Disa *</label>
+                  <input
+                    type="text"
+                    name="disa"
+                    value={editFormData.disa}
+                    onChange={handleEditChange}
+                    placeholder="e.g: DISA-001"
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Heat Code *</label>
+                  <input
+                    type="text"
+                    name="heatCode"
+                    value={editFormData.heatCode}
+                    onChange={handleEditChange}
+                    placeholder="e.g: HC-2024-001"
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Nodularity *</label>
+                  <input
+                    type="text"
+                    name="nodularity"
+                    value={editFormData.nodularity}
+                    onChange={handleEditChange}
+                    placeholder="e.g: 85%"
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Graphite Type *</label>
+                  <input
+                    type="text"
+                    name="graphiteType"
+                    value={editFormData.graphiteType}
+                    onChange={handleEditChange}
+                    placeholder="e.g: Type VI"
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Count Nos *</label>
+                  <input
+                    type="text"
+                    name="countNos"
+                    value={editFormData.countNos}
+                    onChange={handleEditChange}
+                    placeholder="e.g: 150"
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Size *</label>
+                  <input
+                    type="text"
+                    name="size"
+                    value={editFormData.size}
+                    onChange={handleEditChange}
+                    placeholder="e.g: 25mm"
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Ferrite % *</label>
+                  <input
+                    type="number"
+                    name="ferritePercentage"
+                    value={editFormData.ferritePercentage}
+                    onChange={handleEditChange}
+                    step="0.01"
+                    placeholder="e.g: 75.5"
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Pearlite % *</label>
+                  <input
+                    type="number"
+                    name="pearlitePercentage"
+                    value={editFormData.pearlitePercentage}
+                    onChange={handleEditChange}
+                    step="0.01"
+                    placeholder="e.g: 20.5"
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Carbide % *</label>
+                  <input
+                    type="number"
+                    name="carbidePercentage"
+                    value={editFormData.carbidePercentage}
+                    onChange={handleEditChange}
+                    step="0.01"
+                    placeholder="e.g: 4.0"
+                  />
+                </div>
+
+                <div className="impact-form-group full-width">
+                  <label>Remarks</label>
+                  <textarea
+                    name="remarks"
+                    value={editFormData.remarks}
+                    onChange={handleEditChange}
+                    rows="3"
+                    placeholder="Enter any additional remarks..."
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="modal-cancel-btn" 
+                onClick={() => setShowEditModal(false)}
+                disabled={editLoading}
+              >
+                Cancel
+              </button>
+              <button 
+                className="modal-submit-btn" 
+                onClick={handleUpdate}
+                disabled={editLoading}
+              >
+                {editLoading ? 'Updating...' : 'Update Entry'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </>
   );
 };
