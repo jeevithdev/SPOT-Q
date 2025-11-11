@@ -18,7 +18,7 @@ const navItems = [
           { name: 'DMM SETTING PARAMETERS CHECK SHEET', path: '/moulding/dmm-setting-parameters' },
         ],
       },
-  { name: 'QC-PRODUCTION DETAILS', path: '/qc-production-details', department: 'All' },
+  { name: 'QC-PRODUCTION DETAILS', path: '/qc-production-details', department: 'QC - production' },
   { name: 'MICRO STRUCTURE', path: '/micro-structure', department: 'Micro Structure' },
   { name: 'IMPACT', path: '/impact', department: 'Impact' },
   {
@@ -40,10 +40,15 @@ const navItems = [
 ];
 
 export const Navbar = () => {
-  const { isAdmin, user } = useContext(AuthContext);
+  const { isAdmin, user, logout } = useContext(AuthContext);
   const [activeDropdown, setActiveDropdown] = useState(null);
   const [scrolled, setScrolled] = useState(false);
   const location = useLocation();
+
+  const handleLogoutClick = () => {
+    logout();
+    window.location.href = '/login';
+  };
 
   useEffect(() => {
     const handleScroll = () => {
@@ -175,7 +180,7 @@ export const Navbar = () => {
         )}
       </div>
 
-      <LogoutButton />
+      <LogoutButton onClick={handleLogoutClick} />
     </nav>
   );
 };

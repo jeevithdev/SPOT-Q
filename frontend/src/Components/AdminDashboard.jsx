@@ -52,8 +52,7 @@ const AdminDashboard = () => {
   // Check if user is admin
   useEffect(() => {
     if (!isAdmin) {
-      alert('Access denied. Admin privileges required.');
-      navigate('/items');
+      navigate('/');
     }
   }, [isAdmin, navigate]);
 

@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom
 import { AuthContext } from './src/context/AuthContext';
 import { Navbar } from './src/Components/Navbar';
 import Dashboard from './src/Components/Dashboard';
+import DepartmentRouteGuard from './src/Components/DepartmentRouteGuard';
 
 // Pages
 import MicroTensile from './src/pages/MicroTensile';
@@ -106,41 +107,41 @@ const App = () => {
           {/* Default dashboard page - Redirects based on user's department */}
           <Route index element={<DepartmentRedirect />} />
 
-          {/* Top-level pages */}
-          <Route path="micro-tensile" element={<MicroTensile />} />
-          <Route path="micro-tensile/report" element={<MicroTensileReport />} />
-          <Route path="micro-structure" element={<MicroStructure />} />
-          <Route path="micro-structure/report" element={<MicroStructureReport />} />
-          <Route path="impact" element={<Impact />} />
-          <Route path="impact/report" element={<ImpactReport />} />
-          <Route path="process" element={<Process />} />
-          <Route path="process/report" element={<ProcessReport />} />
+          {/* Top-level pages - Protected by DepartmentRouteGuard */}
+          <Route path="micro-tensile" element={<DepartmentRouteGuard><MicroTensile /></DepartmentRouteGuard>} />
+          <Route path="micro-tensile/report" element={<DepartmentRouteGuard><MicroTensileReport /></DepartmentRouteGuard>} />
+          <Route path="micro-structure" element={<DepartmentRouteGuard><MicroStructure /></DepartmentRouteGuard>} />
+          <Route path="micro-structure/report" element={<DepartmentRouteGuard><MicroStructureReport /></DepartmentRouteGuard>} />
+          <Route path="impact" element={<DepartmentRouteGuard><Impact /></DepartmentRouteGuard>} />
+          <Route path="impact/report" element={<DepartmentRouteGuard><ImpactReport /></DepartmentRouteGuard>} />
+          <Route path="process" element={<DepartmentRouteGuard><Process /></DepartmentRouteGuard>} />
+          <Route path="process/report" element={<DepartmentRouteGuard><ProcessReport /></DepartmentRouteGuard>} />
 
           {/* QC Production Details */}
-          <Route path="qc-production-details" element={<QcProductionDetails />} />
-          <Route path="qc-production-details/report" element={<QcProductionDetailsReport />} />
+          <Route path="qc-production-details" element={<DepartmentRouteGuard><QcProductionDetails /></DepartmentRouteGuard>} />
+          <Route path="qc-production-details/report" element={<DepartmentRouteGuard><QcProductionDetailsReport /></DepartmentRouteGuard>} />
 
           {/* Melting */}
-          <Route path="melting/melting-log-sheet" element={<MeltingLogSheet />} />
-          <Route path="melting/melting-log-sheet/report" element={<MeltingLogSheetReport />} />
-          <Route path="melting/cupola-holder-log-sheet" element={<CupolaHolderLogSheet />} />
-          <Route path="melting/cupola-holder-log-sheet/report" element={<CupolaHolderLogSheetReport />} />
+          <Route path="melting/melting-log-sheet" element={<DepartmentRouteGuard><MeltingLogSheet /></DepartmentRouteGuard>} />
+          <Route path="melting/melting-log-sheet/report" element={<DepartmentRouteGuard><MeltingLogSheetReport /></DepartmentRouteGuard>} />
+          <Route path="melting/cupola-holder-log-sheet" element={<DepartmentRouteGuard><CupolaHolderLogSheet /></DepartmentRouteGuard>} />
+          <Route path="melting/cupola-holder-log-sheet/report" element={<DepartmentRouteGuard><CupolaHolderLogSheetReport /></DepartmentRouteGuard>} />
 
           {/* Tensile */}
-          <Route path="tensile" element={<Tensile />} />
-          <Route path="tensile/report" element={<TensileReport />} />
+          <Route path="tensile" element={<DepartmentRouteGuard><Tensile /></DepartmentRouteGuard>} />
+          <Route path="tensile/report" element={<DepartmentRouteGuard><TensileReport /></DepartmentRouteGuard>} />
 
           {/* Sand Lab */}
-          <Route path="sand-lab/sand-testing-record" element={<SandTestingRecord />} />
-          <Route path="sand-lab/sand-testing-record/report" element={<SandTestingRecordReport />} />
-          <Route path="sand-lab/foundry-sand-testing-note" element={<FoundarySandTestingNote />} />
-          <Route path="sand-lab/foundry-sand-testing-note/report" element={<FoundrySandTestingReport />} />
+          <Route path="sand-lab/sand-testing-record" element={<DepartmentRouteGuard><SandTestingRecord /></DepartmentRouteGuard>} />
+          <Route path="sand-lab/sand-testing-record/report" element={<DepartmentRouteGuard><SandTestingRecordReport /></DepartmentRouteGuard>} />
+          <Route path="sand-lab/foundry-sand-testing-note" element={<DepartmentRouteGuard><FoundarySandTestingNote /></DepartmentRouteGuard>} />
+          <Route path="sand-lab/foundry-sand-testing-note/report" element={<DepartmentRouteGuard><FoundrySandTestingReport /></DepartmentRouteGuard>} />
 
           {/* Moulding */}
-          <Route path="moulding/disamatic-product" element={<DisamaticProduct />} />
-          <Route path="moulding/disamatic-product/report" element={<DisamaticProductReport />} />
-          <Route path="moulding/dmm-setting-parameters" element={<DmmSettingParameters />} />
-          <Route path="moulding/dmm-setting-parameters/report" element={<DmmSettingParametersReport />} />
+          <Route path="moulding/disamatic-product" element={<DepartmentRouteGuard><DisamaticProduct /></DepartmentRouteGuard>} />
+          <Route path="moulding/disamatic-product/report" element={<DepartmentRouteGuard><DisamaticProductReport /></DepartmentRouteGuard>} />
+          <Route path="moulding/dmm-setting-parameters" element={<DepartmentRouteGuard><DmmSettingParameters /></DepartmentRouteGuard>} />
+          <Route path="moulding/dmm-setting-parameters/report" element={<DepartmentRouteGuard><DmmSettingParametersReport /></DepartmentRouteGuard>} />
         </Route>
 
         {/* Fallback */}

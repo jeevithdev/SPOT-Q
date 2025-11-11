@@ -3,7 +3,6 @@ import ReactDOM from 'react-dom/client';
 import App from './app.jsx';
 import { AuthProvider } from './src/context/AuthContext';
 import './app.css';
-import Button from './src/Components/Buttons';
 
 // Error Boundary Component
 class ErrorBoundary extends React.Component {
@@ -39,13 +38,12 @@ class ErrorBoundary extends React.Component {
                 {this.state.error && this.state.error.toString()}
               </pre>
             </details>
-            <Button
+            <button
               onClick={() => window.location.reload()}
               className="retry-button"
-              variant="ghost"
             >
               Reload Page
-            </Button>
+            </button>
           </div>
           <style>{`
             .error-boundary {
