@@ -43,6 +43,77 @@ const DisamaticProduct = () => {
     ppOperator: false
   }); // All fields start unlocked - they lock only after data is saved
   const [isPrimaryLocked, setIsPrimaryLocked] = useState(false);
+  const [primaryId, setPrimaryId] = useState(null);
+
+  // Check if there's data for the specific date+shift combination and lock shift dropdown
+  const checkAndLockByDateAndShift = async (date, shift) => {
+    if (!date || !shift) {
+      // If date or shift is not set, unlock shift (unless primaryId exists)
+      if (!primaryId) {
+        setBasicFieldLocked(prev => ({
+          ...prev,
+          shift: false
+        }));
+      }
+      return;
+    }
+    
+    try {
+      const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+      // Use the date range endpoint to get all entries for this date
+      const response = await api.get(`/v1/dismatic-reports/date-range?startDate=${dateStr}&endDate=${dateStr}`);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        // Check if any entry has the same date AND shift
+        const hasDataForShift = response.data.some(entry => {
+          const entryShift = entry.shift;
+          return entryShift === shift;
+        });
+        
+        if (hasDataForShift) {
+          // Data exists for this date+shift combination, lock shift dropdown
+          setBasicFieldLocked(prev => ({
+            ...prev,
+            shift: true
+          }));
+        } else {
+          // No data for this date+shift combination, unlock shift (unless primaryId exists)
+          if (!primaryId) {
+            setBasicFieldLocked(prev => ({
+              ...prev,
+              shift: false
+            }));
+          }
+        }
+      } else {
+        // No data for this date, unlock shift (unless primaryId exists)
+        if (!primaryId) {
+          setBasicFieldLocked(prev => ({
+            ...prev,
+            shift: false
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error checking existing data for date and shift:', error);
+    }
+  };
+
+  // Check for existing data when date or shift changes
+  useEffect(() => {
+    if (formData.date && formData.shift) {
+      checkAndLockByDateAndShift(formData.date, formData.shift);
+    } else if (!formData.date || !formData.shift) {
+      // Clear shift lock when date or shift is cleared (unless primaryId exists)
+      if (!primaryId) {
+        setBasicFieldLocked(prev => ({
+          ...prev,
+          shift: false
+        }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.date, formData.shift]);
   const [eventSectionLocked, setEventSectionLocked] = useState({
     significantEvent: false,
     maintenance: false,
@@ -246,6 +317,7 @@ const DisamaticProduct = () => {
   const checkExistingPrimaryData = async (date) => {
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       // Reset all locks when no valid date
+      setPrimaryId(null);
       setBasicInfoLocked(false);
       setIsPrimaryLocked(false);
       setBasicFieldLocked({
@@ -263,6 +335,7 @@ const DisamaticProduct = () => {
       
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
+        setPrimaryId(report._id || null);
         
         // Determine per-field locks for primary data - only lock if field has actual saved data
         const hasShift = report.shift !== undefined && report.shift !== null && String(report.shift).trim() !== '';
@@ -276,6 +349,11 @@ const DisamaticProduct = () => {
           incharge: hasIncharge,
           ppOperator: hasPpOperator
         });
+        
+        // Check if there's existing data for this date+shift combination and lock shift accordingly
+        if (hasShift && report.shift) {
+          await checkAndLockByDateAndShift(date, report.shift);
+        }
 
         // Check if any primary info exists (for UX messaging and primary lock state)
         if (report && (hasShift || hasIncharge || hasPpOperator || hasMembers)) {
@@ -337,6 +415,7 @@ const DisamaticProduct = () => {
         }
       } else {
         // No record exists for this date - unlock all fields
+        setPrimaryId(null);
         setBasicInfoLocked(false);
         setIsPrimaryLocked(false);
         setBasicFieldLocked({
@@ -357,6 +436,7 @@ const DisamaticProduct = () => {
     } catch (error) {
       console.error('Error checking primary data:', error);
       // On error, unlock all fields
+      setPrimaryId(null);
       setBasicInfoLocked(false);
       setIsPrimaryLocked(false);
       setBasicFieldLocked({
@@ -723,6 +803,11 @@ const DisamaticProduct = () => {
       const data = await api.post('/v1/dismatic-reports', payload);
       
       if (data.success) {
+        setPrimaryId(data.data?._id || null);
+        // Check if there's existing data for this date+shift combination and lock shift accordingly
+        if (formData.shift) {
+          await checkAndLockByDateAndShift(formData.date, formData.shift);
+        }
         // After successful save, re-check the data to update locks properly
         // This ensures the UI reflects the current database state
         await checkExistingPrimaryData(formData.date);
@@ -1105,20 +1190,37 @@ const DisamaticProduct = () => {
           </div>
               <div className="disamatic-form-group">
                 <label>Shift</label>
-                <input 
-                  type="text" 
-                  value={formData.shift} 
+                <select
+                  value={formData.shift}
                   onChange={e => handleChange("shift", e.target.value)}
                   onClick={() => handleLockedFieldClick('shift')}
                   onFocus={() => handleLockedFieldClick('shift')}
-                  placeholder="e.g., A, B, C"
-                  disabled={basicFieldLocked.shift}
-                  readOnly={basicFieldLocked.shift}
-                  style={{ 
-                    cursor: (basicFieldLocked.shift) ? 'not-allowed' : 'text',
-                    backgroundColor: (basicFieldLocked.shift) ? '#f1f5f9' : '#ffffff'
+                  onMouseDown={(e) => {
+                    if (basicFieldLocked.shift || checkingData) {
+                      e.preventDefault();
+                      e.stopPropagation();
+                    }
                   }}
-                />
+                  disabled={basicFieldLocked.shift || checkingData}
+                  readOnly={basicFieldLocked.shift}
+                  style={{
+                    width: '100%',
+                    padding: '0.625rem 0.875rem',
+                    border: '2px solid #cbd5e1',
+                    borderRadius: '8px',
+                    fontSize: '0.875rem',
+                    backgroundColor: (basicFieldLocked.shift || checkingData) ? '#f1f5f9' : '#ffffff',
+                    color: (basicFieldLocked.shift || checkingData) ? '#64748b' : '#1e293b',
+                    cursor: (basicFieldLocked.shift || checkingData) ? 'not-allowed' : 'pointer',
+                    opacity: (basicFieldLocked.shift || checkingData) ? 0.8 : 1,
+                    pointerEvents: (basicFieldLocked.shift || checkingData) ? 'none' : 'auto'
+                  }}
+                >
+                  <option value="">Select Shift</option>
+                  <option value="Shift 1">Shift 1</option>
+                  <option value="Shift 2">Shift 2</option>
+                  <option value="Shift 3">Shift 3</option>
+                </select>
               </div>
               <div className="disamatic-form-group">
                 <label>Incharge</label>

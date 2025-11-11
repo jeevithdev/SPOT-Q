@@ -32,6 +32,37 @@ import AdminDashboard from './src/Components/AdminDashboard';
 import Impact from './src/pages/Impact';
 import ImpactReport from './src/pages/ImpactReport';
 
+/**
+ * Component to redirect users to their department's default page
+ */
+const DepartmentRedirect = () => {
+  const { user, isAdmin } = useContext(AuthContext);
+
+  // If user is admin, redirect to admin dashboard
+  if (isAdmin) {
+    return <Navigate to="/admin" replace />;
+  }
+
+  // Map department to default route
+  const departmentRouteMap = {
+    'Tensile': '/tensile',
+    'Impact': '/impact',
+    'Micro Tensile': '/micro-tensile',
+    'Micro Structure': '/micro-structure',
+    'QC - production': '/qc-production-details',
+    'Process': '/process',
+    'Melting': '/melting/melting-log-sheet',
+    'Moulding': '/moulding/disamatic-product',
+    'Sand Lab': '/sand-lab/sand-testing-record',
+    'All': '/micro-tensile' // Default for 'All' department
+  };
+
+  const userDepartment = user?.department;
+  const defaultRoute = departmentRouteMap[userDepartment] || '/micro-tensile';
+
+  return <Navigate to={defaultRoute} replace />;
+};
+
 const ProtectedLayout = () => {
   const { user } = useContext(AuthContext);
   if (!user) return <Navigate to="/login" replace />;
@@ -72,8 +103,8 @@ const App = () => {
 
         {/* Protected Employee Routes */}
         <Route path="/" element={<ProtectedLayout />}>
-          {/* Default dashboard page - Admin goes to admin dashboard, others to micro-tensile */}
-          <Route index element={isAdmin ? <Navigate to="/admin" replace /> : <MicroTensile />} />
+          {/* Default dashboard page - Redirects based on user's department */}
+          <Route index element={<DepartmentRedirect />} />
 
           {/* Top-level pages */}
           <Route path="micro-tensile" element={<MicroTensile />} />

@@ -1,6 +1,10 @@
 const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 
+/**
+ * Authentication middleware - verifies JWT token and loads user
+ * This middleware only handles authentication, not authorization
+ */
 exports.protect = async (req, res, next) => {
     let token;
 
@@ -25,13 +29,4 @@ exports.protect = async (req, res, next) => {
     } catch (err) {
         return res.status(401).json({ success: false, message: 'Not authorized, token failed.' });
     }
-};
-
-exports.authorize = (...roles) => {
-    return (req, res, next) => {
-        if (!req.user || !roles.includes(req.user.role)) {
-            return res.status(403).json({ success: false, message: `User role is not authorized.` });
-        }
-        next();
-    };
 };

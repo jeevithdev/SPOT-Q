@@ -2,7 +2,26 @@ const MeltingLogsheet = require('../models/Melting-MeltingLogsheet');
 
 exports.getAllEntries = async (req, res) => {
     try {
-        const entries = await MeltingLogsheet.find().sort({ createdAt: -1 });
+        const { startDate, endDate } = req.query;
+        
+        let query = {};
+        
+        // Filter by date range if provided
+        if (startDate || endDate) {
+            query.date = {};
+            if (startDate) {
+                const start = new Date(startDate);
+                start.setHours(0, 0, 0, 0);
+                query.date.$gte = start;
+            }
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.date.$lte = end;
+            }
+        }
+        
+        const entries = await MeltingLogsheet.find(query).sort({ createdAt: -1 });
 
         res.status(200).json({
             success: true,

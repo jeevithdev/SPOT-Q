@@ -12,6 +12,10 @@ const PORT = process.env.PORT || 5000;
 app.use(cors());
 app.use(express.json());
 
+// Import Middleware
+const { protect } = require('./middleware/auth');
+const { checkDepartmentAccess } = require('./middleware/rolecheck');
+
 // Import Routes
 const authRoutes = require('./routes/auth');
 const tensileRoutes = require('./routes/Tensile');
@@ -33,29 +37,31 @@ mongoose.connect(process.env.MONGODB_URI)
   .catch(err => console.error('MongoDB Connection Error:', err));
 
 // Mount Routes
+// Public routes (no authentication required)
 app.use('/api/auth', authRoutes);
 
+// Protected routes with department-based access control
 // QC Testing Routes
-app.use('/api/v1/tensile-tests', tensileRoutes);
-app.use('/api/v1/impact-tests', impactRoutes);
-app.use('/api/v1/micro-tensile-tests', microTensileRoutes);
-app.use('/api/v1/micro-structure', microStructureRoutes);
-app.use('/api/v1/qc-reports', qcProductionRoutes);
+app.use('/api/v1/tensile-tests', protect, checkDepartmentAccess, tensileRoutes);
+app.use('/api/v1/impact-tests', protect, checkDepartmentAccess, impactRoutes);
+app.use('/api/v1/micro-tensile-tests', protect, checkDepartmentAccess, microTensileRoutes);
+app.use('/api/v1/micro-structure', protect, checkDepartmentAccess, microStructureRoutes);
+app.use('/api/v1/qc-reports', protect, checkDepartmentAccess, qcProductionRoutes);
 
 // Production Routes
-app.use('/api/v1/process-records', processRoutes);
+app.use('/api/v1/process-records', protect, checkDepartmentAccess, processRoutes);
 
 // Melting Routes
-app.use('/api/v1/melting-logs', meltingLogsheetRoutes);
-app.use('/api/v1/cupola-holder-logs', cupolaHolderLogRoutes);
+app.use('/api/v1/melting-logs', protect, checkDepartmentAccess, meltingLogsheetRoutes);
+app.use('/api/v1/cupola-holder-logs', protect, checkDepartmentAccess, cupolaHolderLogRoutes);
 
 // Moulding Routes
-app.use('/api/v1/dmm-settings', dmmSettingParametersRoutes);
-app.use('/api/v1/dismatic-reports', dismaticProductReportRoutes);
+app.use('/api/v1/dmm-settings', protect, checkDepartmentAccess, dmmSettingParametersRoutes);
+app.use('/api/v1/dismatic-reports', protect, checkDepartmentAccess, dismaticProductReportRoutes);
 
 // SandLab Routes
-app.use('/api/v1/sand-testing-records', sandTestingRecordRoutes);
-app.use('/api/v1/foundry-sand-testing-notes', foundrySandTestingNoteRoutes);
+app.use('/api/v1/sand-testing-records', protect, checkDepartmentAccess, sandTestingRecordRoutes);
+app.use('/api/v1/foundry-sand-testing-notes', protect, checkDepartmentAccess, foundrySandTestingNoteRoutes);
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {

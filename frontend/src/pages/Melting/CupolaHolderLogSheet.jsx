@@ -40,6 +40,79 @@ const CupolaHolderLogSheet = () => {
   const [fetchingPrimary, setFetchingPrimary] = useState(false);
   const [primaryLocks, setPrimaryLocks] = useState({});
 
+  // Check if there's data for the specific date+shift combination and lock shift dropdown
+  const checkAndLockByDateAndShift = async (date, shift) => {
+    if (!date || !shift) {
+      // If date or shift is not set, unlock shift (unless primaryId exists)
+      if (!primaryId) {
+        setPrimaryLocks(prev => {
+          const newLocks = { ...prev };
+          delete newLocks.shift;
+          return newLocks;
+        });
+      }
+      return;
+    }
+    
+    try {
+      const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+      const response = await api.get(`/v1/cupola-holder-logs?startDate=${dateStr}&endDate=${dateStr}`);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        // Check if any entry has the same date AND shift
+        const hasDataForShift = response.data.some(entry => {
+          const entryShift = entry.shift;
+          return entryShift === shift;
+        });
+        
+        if (hasDataForShift) {
+          // Data exists for this date+shift combination, lock shift dropdown
+          setPrimaryLocks(prev => ({
+            ...prev,
+            shift: true
+          }));
+        } else {
+          // No data for this date+shift combination, unlock shift (unless primaryId exists)
+          if (!primaryId) {
+            setPrimaryLocks(prev => {
+              const newLocks = { ...prev };
+              delete newLocks.shift;
+              return newLocks;
+            });
+          }
+        }
+      } else {
+        // No data for this date, unlock shift (unless primaryId exists)
+        if (!primaryId) {
+          setPrimaryLocks(prev => {
+            const newLocks = { ...prev };
+            delete newLocks.shift;
+            return newLocks;
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking existing data for date and shift:', error);
+    }
+  };
+
+  // Check for existing data when date or shift changes
+  useEffect(() => {
+    if (formData.date && formData.shift) {
+      checkAndLockByDateAndShift(formData.date, formData.shift);
+    } else if (!formData.date || !formData.shift) {
+      // Clear shift lock when date or shift is cleared (unless primaryId exists)
+      if (!primaryId) {
+        setPrimaryLocks(prev => {
+          const newLocks = { ...prev };
+          delete newLocks.shift;
+          return newLocks;
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [formData.date, formData.shift]);
+
   // Fetch primary data when date, shift, or holderNumber changes
   useEffect(() => {
     if (formData.date && formData.shift && formData.holderNumber) {
@@ -50,7 +123,6 @@ const CupolaHolderLogSheet = () => {
     } else if (!formData.date || !formData.shift || !formData.holderNumber) {
       // Clear primary ID and locks when primary fields are cleared
       setPrimaryId(null);
-      setPrimaryLocks({});
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.date, formData.shift, formData.holderNumber]);
@@ -130,6 +202,7 @@ const CupolaHolderLogSheet = () => {
     return primaryLocks[field] === true;
   };
 
+
   const handlePrimarySubmit = async () => {
     // Validate required fields
     if (!formData.date || !formData.shift || !formData.holderNumber) {
@@ -160,16 +233,23 @@ const CupolaHolderLogSheet = () => {
           heatNo: response.data.heatNo || prev.heatNo
         }));
         
+        // After saving, check if data exists for this date+shift combination and lock shift accordingly
+        // This will lock shift only if data exists for that specific date+shift combination
+        await checkAndLockByDateAndShift(formData.date, formData.shift);
+        
         // Lock all primary fields except date after saving
-        // Always lock shift and holderNumber since they are required fields
-        const locks = {};
-        locks.shift = true; // Always lock shift after saving
-        locks.holderNumber = true; // Always lock holderNumber after saving
-        // Lock heatNo if it has a value
-        if (formData.heatNo !== undefined && formData.heatNo !== null && formData.heatNo !== '') {
-          locks.heatNo = true;
-        }
-        setPrimaryLocks(locks);
+        // Shift lock is determined by checkAndLockByDateAndShift based on whether data exists for date+shift
+        // Always lock holderNumber since it's a required field
+        setPrimaryLocks(prev => {
+          const locks = { ...prev };
+          // Shift lock is already set by checkAndLockByDateAndShift if data exists
+          locks.holderNumber = true; // Always lock holderNumber after saving
+          // Lock heatNo if it has a value
+          if (formData.heatNo !== undefined && formData.heatNo !== null && formData.heatNo !== '') {
+            locks.heatNo = true;
+          }
+          return locks;
+        });
         
         alert('Primary data saved successfully.');
       } else {

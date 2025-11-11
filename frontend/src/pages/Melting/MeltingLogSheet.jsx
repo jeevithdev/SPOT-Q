@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Save, RefreshCw, FileText, Loader2, RotateCcw } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
@@ -24,6 +24,79 @@ const MeltingLogSheet = () => {
   const [primaryId, setPrimaryId] = useState(null);
   const [fetchingPrimary, setFetchingPrimary] = useState(false);
   const [primaryLocks, setPrimaryLocks] = useState({});
+
+  // Check if there's data for the specific date+shift combination and lock shift dropdown
+  const checkAndLockByDateAndShift = async (date, shift) => {
+    if (!date || !shift) {
+      // If date or shift is not set, unlock shift (unless primaryId exists)
+      if (!primaryId) {
+        setPrimaryLocks(prev => {
+          const newLocks = { ...prev };
+          delete newLocks.shift;
+          return newLocks;
+        });
+      }
+      return;
+    }
+    
+    try {
+      const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+      const response = await api.get(`/v1/melting-logs?startDate=${dateStr}&endDate=${dateStr}`);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        // Check if any entry has the same date AND shift
+        const hasDataForShift = response.data.some(entry => {
+          const entryShift = entry.shift;
+          return entryShift === shift;
+        });
+        
+        if (hasDataForShift) {
+          // Data exists for this date+shift combination, lock shift dropdown
+          setPrimaryLocks(prev => ({
+            ...prev,
+            shift: true
+          }));
+        } else {
+          // No data for this date+shift combination, unlock shift (unless primaryId exists)
+          if (!primaryId) {
+            setPrimaryLocks(prev => {
+              const newLocks = { ...prev };
+              delete newLocks.shift;
+              return newLocks;
+            });
+          }
+        }
+      } else {
+        // No data for this date, unlock shift (unless primaryId exists)
+        if (!primaryId) {
+          setPrimaryLocks(prev => {
+            const newLocks = { ...prev };
+            delete newLocks.shift;
+            return newLocks;
+          });
+        }
+      }
+    } catch (error) {
+      console.error('Error checking existing data for date and shift:', error);
+    }
+  };
+
+  // Check for existing data when date or shift changes
+  useEffect(() => {
+    if (primaryData.date && primaryData.shift) {
+      checkAndLockByDateAndShift(primaryData.date, primaryData.shift);
+    } else if (!primaryData.date || !primaryData.shift) {
+      // Clear shift lock when date or shift is cleared (unless primaryId exists)
+      if (!primaryId) {
+        setPrimaryLocks(prev => {
+          const newLocks = { ...prev };
+          delete newLocks.shift;
+          return newLocks;
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [primaryData.date, primaryData.shift]);
   
   const [table1, setTable1] = useState({
     heatNo: '',
@@ -215,6 +288,7 @@ const MeltingLogSheet = () => {
       setPrimaryId(null);
       setPrimaryLocks({});
     }
+    // Shift changes are handled by useEffect
   };
 
   const handlePrimarySubmit = async () => {
@@ -412,18 +486,42 @@ const MeltingLogSheet = () => {
 
           <div className="melting-log-form-group">
             <label>Shift</label>
-          <input
-                type="text"
-                value={primaryData.shift}
-                onChange={(e) => handlePrimaryChange('shift', e.target.value)}
-                placeholder="Enter shift"
-                disabled={isPrimaryFieldLocked('shift')}
-                readOnly={isPrimaryFieldLocked('shift')}
-                style={{
-                  backgroundColor: isPrimaryFieldLocked('shift') ? '#f1f5f9' : '#ffffff',
-                  cursor: isPrimaryFieldLocked('shift') ? 'not-allowed' : 'text'
-                }}
-            />
+            <select
+              name="shift"
+              value={primaryData.shift}
+              onChange={(e) => handlePrimaryChange('shift', e.target.value)}
+              onMouseDown={(e) => {
+                if (isPrimaryFieldLocked('shift') || fetchingPrimary) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
+              onClick={(e) => {
+                if (isPrimaryFieldLocked('shift') || fetchingPrimary) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                }
+              }}
+              disabled={isPrimaryFieldLocked('shift') || fetchingPrimary}
+              readOnly={isPrimaryFieldLocked('shift')}
+              style={{
+                width: '100%',
+                padding: '0.625rem 0.875rem',
+                border: '2px solid #cbd5e1',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                backgroundColor: isPrimaryFieldLocked('shift') ? '#f1f5f9' : '#ffffff',
+                color: isPrimaryFieldLocked('shift') ? '#64748b' : '#1e293b',
+                cursor: isPrimaryFieldLocked('shift') ? 'not-allowed' : 'pointer',
+                opacity: isPrimaryFieldLocked('shift') ? 0.8 : 1,
+                pointerEvents: isPrimaryFieldLocked('shift') ? 'none' : 'auto'
+              }}
+            >
+              <option value="">Select Shift</option>
+              <option value="Shift 1">Shift 1</option>
+              <option value="Shift 2">Shift 2</option>
+              <option value="Shift 3">Shift 3</option>
+            </select>
           </div>
 
           <div className="melting-log-form-group">

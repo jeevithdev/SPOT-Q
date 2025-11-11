@@ -1862,453 +1862,416 @@ const SandTestingRecord = () => {
       <div className="sand-table5-main-card">
         <h4 className="sand-table5-main-card-title">Sand Properties & Test Parameters</h4>
 
-        <table className="sand-table">
-          <tbody>
-            <tr>
-              <td>Sno</td>
-              <td>
-                <input 
-                  type="text" 
-                  name="sno" 
-                  value={table5.sno || ''} 
-                  onChange={(e) => handleTableChange(5, 'sno', e.target.value)} 
-                  placeholder="Enter Sno"
-                  className="sand-table-input"
+        <div className="sand-table5-form-grid">
+          <div className="sand-table5-form-group">
+            <label>Sno</label>
+            <input 
+              type="text" 
+              name="sno" 
+              value={table5.sno || ''} 
+              onChange={(e) => handleTableChange(5, 'sno', e.target.value)} 
+              placeholder="Enter Sno"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Time</label>
+            <input 
+              type="time" 
+              name="time" 
+              value={table5.time || ''} 
+              onChange={(e) => handleTableChange(5, 'time', e.target.value)} 
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Mix No</label>
+            <input 
+              type="text" 
+              name="mixNo" 
+              value={table5.mixNo || ''} 
+              onChange={(e) => handleTableChange(5, 'mixNo', e.target.value)} 
+              placeholder="Enter Mix No"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Permeability (90-160)</label>
+            <input 
+              type="number" 
+              name="permeability" 
+              value={table5.permeability || ''} 
+              onChange={(e) => handleTableChange(5, 'permeability', e.target.value)} 
+              placeholder="Enter value"
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>G.C.S (Gm/cm²)</label>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="gcs-checkpoint"
+                  value="fdyA"
+                  checked={table5.gcsCheckpoint === 'fdyA'}
+                  onChange={(e) => handleTableChange(5, 'gcsCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Time</td>
-              <td>
-                <input 
-                  type="time" 
-                  name="time" 
-                  value={table5.time || ''} 
-                  onChange={(e) => handleTableChange(5, 'time', e.target.value)} 
-                  className="sand-table-input"
+                <span>FDY-A (Min 1800)</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="gcs-checkpoint"
+                  value="fdyB"
+                  checked={table5.gcsCheckpoint === 'fdyB'}
+                  onChange={(e) => handleTableChange(5, 'gcsCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Mix No</td>
-              <td>
-                <input 
-                  type="text" 
-                  name="mixNo" 
-                  value={table5.mixNo || ''} 
-                  onChange={(e) => handleTableChange(5, 'mixNo', e.target.value)} 
-                  placeholder="Enter Mix No"
-                  className="sand-table-input"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>Permeability (90-160)</td>
-              <td>
-                <input 
-                  type="number" 
-                  name="permeability" 
-                  value={table5.permeability || ''} 
-                  onChange={(e) => handleTableChange(5, 'permeability', e.target.value)} 
-                  placeholder="Enter value"
-                  step="0.01"
-                  className="sand-table-input"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>G.C.S (Gm/cm²)</td>
-              <td>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="gcs-checkpoint"
-                      value="fdyA"
-                      checked={table5.gcsCheckpoint === 'fdyA'}
-                      onChange={(e) => handleTableChange(5, 'gcsCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>FDY-A (Min 1800)</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="gcs-checkpoint"
-                      value="fdyB"
-                      checked={table5.gcsCheckpoint === 'fdyB'}
-                      onChange={(e) => handleTableChange(5, 'gcsCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>FDY-B (Min 1900)</span>
-                  </label>
-                </div>
-                <input 
-                  type="number" 
-                  name="gcsValue" 
-                  value={table5.gcsValue || ''} 
-                  onChange={(e) => handleTableChange(5, 'gcsValue', e.target.value)} 
-                  placeholder={table5.gcsCheckpoint === 'fdyA' ? 'FDY-A value' : table5.gcsCheckpoint === 'fdyB' ? 'FDY-B value' : 'Enter value'}
-                  step="0.01"
-                  className="sand-table-input"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>W.T.S (N/cm² Min 0.15)</td>
-              <td>
-                <input 
-                  type="number" 
-                  name="wts" 
-                  value={table5.wts || ''} 
-                  onChange={(e) => handleTableChange(5, 'wts', e.target.value)} 
-                  placeholder="Enter value"
-                  step="0.01"
-                  className="sand-table-input"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>Moisture% (3.0-4.0%)</td>
-              <td>
-                <input 
-                  type="number" 
-                  name="moisture" 
-                  value={table5.moisture || ''} 
-                  onChange={(e) => handleTableChange(5, 'moisture', e.target.value)} 
-                  placeholder="Enter %"
-                  step="0.01"
-                  className="sand-table-input"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>Compactability% (At DMM 33-40%)</td>
-              <td>
-                <input 
-                  type="number" 
-                  name="compactability" 
-                  value={table5.compactability || ''} 
-                  onChange={(e) => handleTableChange(5, 'compactability', e.target.value)} 
-                  placeholder="Enter %"
-                  step="0.01"
-                  className="sand-table-input"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>Compressability% (At DMM 20-28%)</td>
-              <td>
-                <input 
-                  type="number" 
-                  name="compressability" 
-                  value={table5.compressability || ''} 
-                  onChange={(e) => handleTableChange(5, 'compressability', e.target.value)} 
-                  placeholder="Enter %"
-                  step="0.01"
-                  className="sand-table-input"
-                />
-              </td>
-            </tr>
-            <tr>
-              <td>Water (Litre /Kg Mix)</td>
-              <td>
+                <span>FDY-B (Min 1900)</span>
+              </label>
+            </div>
+            <input 
+              type="number" 
+              name="gcsValue" 
+              value={table5.gcsValue || ''} 
+              onChange={(e) => handleTableChange(5, 'gcsValue', e.target.value)} 
+              placeholder={table5.gcsCheckpoint === 'fdyA' ? 'FDY-A value' : table5.gcsCheckpoint === 'fdyB' ? 'FDY-B value' : 'Enter value'}
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group sand-table5-align-input">
+            <label>W.T.S (N/cm² Min 0.15)</label>
+            <div style={{ marginBottom: '0.5rem', height: '1.5rem' }}></div>
+            <input 
+              type="number" 
+              name="wts" 
+              value={table5.wts || ''} 
+              onChange={(e) => handleTableChange(5, 'wts', e.target.value)} 
+              placeholder="Enter value"
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group sand-table5-align-input">
+            <label>Moisture% (3.0-4.0%)</label>
+            <div style={{ marginBottom: '0.5rem', height: '1.5rem' }}></div>
+            <input 
+              type="number" 
+              name="moisture" 
+              value={table5.moisture || ''} 
+              onChange={(e) => handleTableChange(5, 'moisture', e.target.value)} 
+              placeholder="Enter %"
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group sand-table5-align-input">
+            <label>Compactability% (At DMM 33-40%)</label>
+            <div style={{ marginBottom: '0.5rem', height: '1.5rem' }}></div>
+            <input 
+              type="number" 
+              name="compactability" 
+              value={table5.compactability || ''} 
+              onChange={(e) => handleTableChange(5, 'compactability', e.target.value)} 
+              placeholder="Enter %"
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Compressability% (At DMM 20-28%)</label>
+            <input 
+              type="number" 
+              name="compressability" 
+              value={table5.compressability || ''} 
+              onChange={(e) => handleTableChange(5, 'compressability', e.target.value)} 
+              placeholder="Enter %"
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Water (Litre /Kg Mix)</label>
+            <input 
+              type="number" 
+              name="waterLitrePerKgMix" 
+              value={table5.waterLitrePerKgMix || ''} 
+              onChange={(e) => handleTableChange(5, 'waterLitrePerKgMix', e.target.value)} 
+              placeholder="Enter value"
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Sand Temp C (°C)</label>
+            <div className="sand-table5-temp-container">
+              <div className="sand-table5-temp-item">
+                <label>BC</label>
                 <input 
                   type="number" 
-                  name="waterLitrePerKgMix" 
-                  value={table5.waterLitrePerKgMix || ''} 
-                  onChange={(e) => handleTableChange(5, 'waterLitrePerKgMix', e.target.value)} 
-                  placeholder="Enter value"
+                  name="sandTempBC" 
+                  value={table5.sandTempBC || ''} 
+                  onChange={(e) => handleTableChange(5, 'sandTempBC', e.target.value)} 
+                  placeholder="BC"
                   step="0.01"
-                  className="sand-table-input"
+                  className="sand-table5-input"
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Sand Temp C (°C)</td>
-              <td>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b', marginBottom: '0.25rem' }}>BC</label>
-                    <input 
-                      type="number" 
-                      name="sandTempBC" 
-                      value={table5.sandTempBC || ''} 
-                      onChange={(e) => handleTableChange(5, 'sandTempBC', e.target.value)} 
-                      placeholder="Enter BC"
-                      step="0.01"
-                      className="sand-table-input"
-                    />
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b', marginBottom: '0.25rem' }}>WU</label>
-                    <input 
-                      type="number" 
-                      name="sandTempWU" 
-                      value={table5.sandTempWU || ''} 
-                      onChange={(e) => handleTableChange(5, 'sandTempWU', e.target.value)} 
-                      placeholder="Enter WU"
-                      step="0.01"
-                      className="sand-table-input"
-                    />
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b', marginBottom: '0.25rem' }}>SSU Max 45C</label>
-                    <input 
-                      type="number" 
-                      name="sandTempSSU" 
-                      value={table5.sandTempSSU || ''} 
-                      onChange={(e) => handleTableChange(5, 'sandTempSSU', e.target.value)} 
-                      placeholder="Enter SSU Max 45C"
-                      step="0.01"
-                      className="sand-table-input"
-                    />
-                  </div>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>New Sand (kgs/Mould 0.0-5.0)</td>
-              <td>
+              </div>
+              <div className="sand-table5-temp-item">
+                <label>WU</label>
                 <input 
                   type="number" 
-                  name="newSandKgsPerMould" 
-                  value={table5.newSandKgsPerMould || ''} 
-                  onChange={(e) => handleTableChange(5, 'newSandKgsPerMould', e.target.value)} 
-                  placeholder="Enter value"
+                  name="sandTempWU" 
+                  value={table5.sandTempWU || ''} 
+                  onChange={(e) => handleTableChange(5, 'sandTempWU', e.target.value)} 
+                  placeholder="WU"
                   step="0.01"
-                  className="sand-table-input"
+                  className="sand-table5-input"
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Bentonite</td>
-              <td>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="bentonite-checkpoint"
-                      value="withPremix"
-                      checked={table5.bentoniteCheckpoint === 'withPremix'}
-                      onChange={(e) => handleTableChange(5, 'bentoniteCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>Bentonite Kgs/mix with premix (0.60-1.20%)</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="bentonite-checkpoint"
-                      value="only"
-                      checked={table5.bentoniteCheckpoint === 'only'}
-                      onChange={(e) => handleTableChange(5, 'bentoniteCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>Bentonite kgs/mix (0.80-2.20%)</span>
-                  </label>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b', marginBottom: '0.25rem' }}>Kgs</label>
-                    <input 
-                      type="number" 
-                      name="bentoniteWithPremix" 
-                      value={table5.bentoniteWithPremix || ''} 
-                      onChange={(e) => handleTableChange(5, 'bentoniteWithPremix', e.target.value)} 
-                      placeholder="Enter value"
-                      step="0.01"
-                      className="sand-table-input"
-                    />
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b', marginBottom: '0.25rem' }}>%</label>
-                    <input 
-                      type="number" 
-                      name="bentoniteOnly" 
-                      value={table5.bentoniteOnly || ''} 
-                      onChange={(e) => handleTableChange(5, 'bentoniteOnly', e.target.value)} 
-                      placeholder="Enter value"
-                      step="0.01"
-                      className="sand-table-input"
-                    />
-                  </div>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>Premix / Coal Dust</td>
-              <td>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="premix-coaldust-checkpoint"
-                      value="premix"
-                      checked={table5.premixCoalDustCheckpoint === 'premix'}
-                      onChange={(e) => handleTableChange(5, 'premixCoalDustCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>Premix Kgs/mix (0.60-1.20%)</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="premix-coaldust-checkpoint"
-                      value="coalDust"
-                      checked={table5.premixCoalDustCheckpoint === 'coalDust'}
-                      onChange={(e) => handleTableChange(5, 'premixCoalDustCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>Coal dust kgs/mix (0.20-0.70%)</span>
-                  </label>
-                </div>
-                <div style={{ display: 'flex', gap: '1rem' }}>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b', marginBottom: '0.25rem' }}>Kgs</label>
-                    <input 
-                      type="number" 
-                      name="premixKgsMix" 
-                      value={table5.premixKgsMix || ''} 
-                      onChange={(e) => handleTableChange(5, 'premixKgsMix', e.target.value)} 
-                      placeholder="Enter value"
-                      step="0.01"
-                      className="sand-table-input"
-                    />
-                  </div>
-                  <div style={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
-                    <label style={{ fontSize: '0.75rem', fontWeight: 500, color: '#64748b', marginBottom: '0.25rem' }}>%</label>
-                    <input 
-                      type="number" 
-                      name="coalDustKgsMix" 
-                      value={table5.coalDustKgsMix || ''} 
-                      onChange={(e) => handleTableChange(5, 'coalDustKgsMix', e.target.value)} 
-                      placeholder="Enter value"
-                      step="0.01"
-                      className="sand-table-input"
-                    />
-                  </div>
-                </div>
-              </td>
-            </tr>
-            <tr>
-              <td>LC SCM / Compactability Setting</td>
-              <td>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="lcscm-compactability-checkpoint"
-                      value="lcScm"
-                      checked={table5.lcScmCompactabilityCheckpoint === 'lcScm'}
-                      onChange={(e) => handleTableChange(5, 'lcScmCompactabilityCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>LC SCM (42 ± 3)</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="lcscm-compactability-checkpoint"
-                      value="compactabilitySetting"
-                      checked={table5.lcScmCompactabilityCheckpoint === 'compactabilitySetting'}
-                      onChange={(e) => handleTableChange(5, 'lcScmCompactabilityCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>Compactability setting At1 (40±3)</span>
-                  </label>
-                </div>
+              </div>
+              <div className="sand-table5-temp-item">
+                <label>SSU Max 45C</label>
                 <input 
                   type="number" 
-                  name="lcScmCompactabilityValue" 
-                  value={table5.lcScmCompactabilityValue || ''} 
-                  onChange={(e) => handleTableChange(5, 'lcScmCompactabilityValue', e.target.value)} 
-                  placeholder={table5.lcScmCompactabilityCheckpoint === 'lcScm' ? 'LC SCM value' : table5.lcScmCompactabilityCheckpoint === 'compactabilitySetting' ? 'Compactability setting value' : 'Enter value'}
+                  name="sandTempSSU" 
+                  value={table5.sandTempSSU || ''} 
+                  onChange={(e) => handleTableChange(5, 'sandTempSSU', e.target.value)} 
+                  placeholder="SSU"
                   step="0.01"
-                  className="sand-table-input"
+                  className="sand-table5-input"
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Mould Strength / Shear Strength</td>
-              <td>
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap' }}>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="mouldstrength-shear-checkpoint"
-                      value="mouldStrength"
-                      checked={table5.mouldStrengthShearCheckpoint === 'mouldStrength'}
-                      onChange={(e) => handleTableChange(5, 'mouldStrengthShearCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>Mould strength SMC- (23±3)</span>
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer', fontSize: '0.875rem' }}>
-                    <input
-                      type="radio"
-                      name="mouldstrength-shear-checkpoint"
-                      value="shearStrength"
-                      checked={table5.mouldStrengthShearCheckpoint === 'shearStrength'}
-                      onChange={(e) => handleTableChange(5, 'mouldStrengthShearCheckpoint', e.target.value)}
-                      style={{ cursor: 'pointer' }}
-                    />
-                    <span>Shear Strength Setting At1 (5.0±1%)</span>
-                  </label>
-                </div>
+              </div>
+            </div>
+          </div>
+          <div className="sand-table5-form-group">
+            <label>New Sand (kgs/Mould 0.0-5.0)</label>
+            <input 
+              type="number" 
+              name="newSandKgsPerMould" 
+              value={table5.newSandKgsPerMould || ''} 
+              onChange={(e) => handleTableChange(5, 'newSandKgsPerMould', e.target.value)} 
+              placeholder="Enter value"
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Bentonite</label>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="bentonite-checkpoint"
+                  value="withPremix"
+                  checked={table5.bentoniteCheckpoint === 'withPremix'}
+                  onChange={(e) => handleTableChange(5, 'bentoniteCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>With premix (0.60-1.20%)</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="bentonite-checkpoint"
+                  value="only"
+                  checked={table5.bentoniteCheckpoint === 'only'}
+                  onChange={(e) => handleTableChange(5, 'bentoniteCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>Only (0.80-2.20%)</span>
+              </label>
+            </div>
+            <div className="sand-table5-flex-container">
+              <div className="sand-table5-flex-item">
+                <label>Kgs</label>
                 <input 
                   type="number" 
-                  name="mouldStrengthShearValue" 
-                  value={table5.mouldStrengthShearValue || ''} 
-                  onChange={(e) => handleTableChange(5, 'mouldStrengthShearValue', e.target.value)} 
-                  placeholder={table5.mouldStrengthShearCheckpoint === 'mouldStrength' ? 'Mould strength value' : table5.mouldStrengthShearCheckpoint === 'shearStrength' ? 'Shear strength setting value' : 'Enter value'}
+                  name="bentoniteWithPremix" 
+                  value={table5.bentoniteWithPremix || ''} 
+                  onChange={(e) => handleTableChange(5, 'bentoniteWithPremix', e.target.value)} 
+                  placeholder="Kgs"
                   step="0.01"
-                  className="sand-table-input"
+                  className="sand-table5-input"
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Prepared Sand Lumps/kg</td>
-              <td>
+              </div>
+              <div className="sand-table5-flex-item">
+                <label>%</label>
                 <input 
                   type="number" 
-                  name="preparedSandLumpsPerKg" 
-                  value={table5.preparedSandLumpsPerKg || ''} 
-                  onChange={(e) => handleTableChange(5, 'preparedSandLumpsPerKg', e.target.value)} 
-                  placeholder="Enter value"
+                  name="bentoniteOnly" 
+                  value={table5.bentoniteOnly || ''} 
+                  onChange={(e) => handleTableChange(5, 'bentoniteOnly', e.target.value)} 
+                  placeholder="%"
                   step="0.01"
-                  className="sand-table-input"
+                  className="sand-table5-input"
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Item Name</td>
-              <td>
+              </div>
+            </div>
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Premix / Coal Dust</label>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="premix-coaldust-checkpoint"
+                  value="premix"
+                  checked={table5.premixCoalDustCheckpoint === 'premix'}
+                  onChange={(e) => handleTableChange(5, 'premixCoalDustCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>Premix (0.60-1.20%)</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="premix-coaldust-checkpoint"
+                  value="coalDust"
+                  checked={table5.premixCoalDustCheckpoint === 'coalDust'}
+                  onChange={(e) => handleTableChange(5, 'premixCoalDustCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>Coal dust (0.20-0.70%)</span>
+              </label>
+            </div>
+            <div className="sand-table5-flex-container">
+              <div className="sand-table5-flex-item">
+                <label>Kgs</label>
                 <input 
-                  type="text" 
-                  name="itemName" 
-                  value={table5.itemName || ''} 
-                  onChange={(e) => handleTableChange(5, 'itemName', e.target.value)} 
-                  placeholder="Enter item name"
-                  className="sand-table-input"
+                  type="number" 
+                  name="premixKgsMix" 
+                  value={table5.premixKgsMix || ''} 
+                  onChange={(e) => handleTableChange(5, 'premixKgsMix', e.target.value)} 
+                  placeholder="Kgs"
+                  step="0.01"
+                  className="sand-table5-input"
                 />
-              </td>
-            </tr>
-            <tr>
-              <td>Remarks</td>
-              <td>
-                <textarea 
-                  name="remarks" 
-                  value={table5.remarks || ''} 
-                  onChange={(e) => handleTableChange(5, 'remarks', e.target.value)} 
-                  rows="4" 
-                  placeholder="Enter any additional notes..."
-                  className="sand-table-input"
+              </div>
+              <div className="sand-table5-flex-item">
+                <label>%</label>
+                <input 
+                  type="number" 
+                  name="coalDustKgsMix" 
+                  value={table5.coalDustKgsMix || ''} 
+                  onChange={(e) => handleTableChange(5, 'coalDustKgsMix', e.target.value)} 
+                  placeholder="%"
+                  step="0.01"
+                  className="sand-table5-input"
                 />
-              </td>
-            </tr>
-          </tbody>
-        </table>
+              </div>
+            </div>
+          </div>
+          <div className="sand-table5-form-group">
+            <label>LC SCM / Compactability Setting</label>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="lcscm-compactability-checkpoint"
+                  value="lcScm"
+                  checked={table5.lcScmCompactabilityCheckpoint === 'lcScm'}
+                  onChange={(e) => handleTableChange(5, 'lcScmCompactabilityCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>LC SCM (42 ± 3)</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="lcscm-compactability-checkpoint"
+                  value="compactabilitySetting"
+                  checked={table5.lcScmCompactabilityCheckpoint === 'compactabilitySetting'}
+                  onChange={(e) => handleTableChange(5, 'lcScmCompactabilityCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>Compactability At1 (40±3)</span>
+              </label>
+            </div>
+            <input 
+              type="number" 
+              name="lcScmCompactabilityValue" 
+              value={table5.lcScmCompactabilityValue || ''} 
+              onChange={(e) => handleTableChange(5, 'lcScmCompactabilityValue', e.target.value)} 
+              placeholder={table5.lcScmCompactabilityCheckpoint === 'lcScm' ? 'LC SCM value' : table5.lcScmCompactabilityCheckpoint === 'compactabilitySetting' ? 'Compactability value' : 'Enter value'}
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Mould Strength / Shear Strength</label>
+            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="mouldstrength-shear-checkpoint"
+                  value="mouldStrength"
+                  checked={table5.mouldStrengthShearCheckpoint === 'mouldStrength'}
+                  onChange={(e) => handleTableChange(5, 'mouldStrengthShearCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>Mould strength (23±3)</span>
+              </label>
+              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
+                <input
+                  type="radio"
+                  name="mouldstrength-shear-checkpoint"
+                  value="shearStrength"
+                  checked={table5.mouldStrengthShearCheckpoint === 'shearStrength'}
+                  onChange={(e) => handleTableChange(5, 'mouldStrengthShearCheckpoint', e.target.value)}
+                  style={{ cursor: 'pointer' }}
+                />
+                <span>Shear Strength (5.0±1%)</span>
+              </label>
+            </div>
+            <input 
+              type="number" 
+              name="mouldStrengthShearValue" 
+              value={table5.mouldStrengthShearValue || ''} 
+              onChange={(e) => handleTableChange(5, 'mouldStrengthShearValue', e.target.value)} 
+              placeholder={table5.mouldStrengthShearCheckpoint === 'mouldStrength' ? 'Mould strength value' : table5.mouldStrengthShearCheckpoint === 'shearStrength' ? 'Shear strength value' : 'Enter value'}
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Prepared Sand Lumps/kg</label>
+            <input 
+              type="number" 
+              name="preparedSandLumpsPerKg" 
+              value={table5.preparedSandLumpsPerKg || ''} 
+              onChange={(e) => handleTableChange(5, 'preparedSandLumpsPerKg', e.target.value)} 
+              placeholder="Enter value"
+              step="0.01"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group">
+            <label>Item Name</label>
+            <input 
+              type="text" 
+              name="itemName" 
+              value={table5.itemName || ''} 
+              onChange={(e) => handleTableChange(5, 'itemName', e.target.value)} 
+              placeholder="Enter item name"
+              className="sand-table5-input"
+            />
+          </div>
+          <div className="sand-table5-form-group sand-table5-form-group-full">
+            <label>Remarks</label>
+            <textarea 
+              name="remarks" 
+              value={table5.remarks || ''} 
+              onChange={(e) => handleTableChange(5, 'remarks', e.target.value)} 
+              rows="4" 
+              placeholder="Enter any additional notes..."
+              className="sand-table5-input"
+            />
+          </div>
+        </div>
 
         <div className="sand-table-submit" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <button

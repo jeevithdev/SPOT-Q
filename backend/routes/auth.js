@@ -3,7 +3,8 @@
 const express = require('express');
 const router = express.Router();
 const { login, verify, createEmployee, getAllUsers, updateEmployee, deleteEmployee, changePassword, getDepartments } = require('../controllers/auth');
-const { protect, authorize } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
+const { checkAdminAccess } = require('../middleware/rolecheck');
 
 // === PUBLIC ROUTES ===
 router.post('/login', login);
@@ -15,13 +16,13 @@ router.put('/changepassword', protect, changePassword); // For both Admin and Em
 // === ADMIN ROUTES ===
 const adminRoutes = router.route('/admin/users');
 
-adminRoutes.post(protect, authorize('admin'), createEmployee); // Create new employee
-adminRoutes.get(protect, authorize('admin'), getAllUsers);   // Get all users
+adminRoutes.post(protect, checkAdminAccess, createEmployee); // Create new employee
+adminRoutes.get(protect, checkAdminAccess, getAllUsers);   // Get all users
 
 router.route('/admin/users/:id')
-    .put(protect, authorize('admin'), updateEmployee)   // Update specific user
-    .delete(protect, authorize('admin'), deleteEmployee); // Delete specific user
+    .put(protect, checkAdminAccess, updateEmployee)   // Update specific user
+    .delete(protect, checkAdminAccess, deleteEmployee); // Delete specific user
 
-router.get('/admin/departments', protect, authorize('admin'), getDepartments); // Get department list
+router.get('/admin/departments', protect, checkAdminAccess, getDepartments); // Get department list
 
 module.exports = router;

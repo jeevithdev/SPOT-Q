@@ -98,6 +98,91 @@ export default function FoundrySandTestingNote() {
     shearStrengthSetting: ""
   });
   const [checkingData, setCheckingData] = useState(false);
+  const [primaryId, setPrimaryId] = useState(null);
+
+  // Check if there's data for the specific date+shift combination and lock shift dropdown
+  const checkAndLockByDateAndShift = async (date, shift) => {
+    if (!date || !shift) {
+      // If date or shift is not set, unlock shift (unless primaryId exists)
+      if (!primaryId) {
+        setFieldLocks(prev => ({
+          ...prev,
+          primary: {
+            ...prev.primary,
+            shift: false
+          }
+        }));
+      }
+      return;
+    }
+    
+    try {
+      const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+      const response = await api.get(`/v1/foundry-sand-testing-notes?startDate=${dateStr}&endDate=${dateStr}`);
+      
+      if (response.success && response.data && response.data.length > 0) {
+        // Check if any entry has the same date AND shift
+        const hasDataForShift = response.data.some(entry => {
+          const entryShift = entry.shift;
+          return entryShift === shift;
+        });
+        
+        if (hasDataForShift) {
+          // Data exists for this date+shift combination, lock shift dropdown
+          setFieldLocks(prev => ({
+            ...prev,
+            primary: {
+              ...prev.primary,
+              shift: true
+            }
+          }));
+        } else {
+          // No data for this date+shift combination, unlock shift (unless primaryId exists)
+          if (!primaryId) {
+            setFieldLocks(prev => ({
+              ...prev,
+              primary: {
+                ...prev.primary,
+                shift: false
+              }
+            }));
+          }
+        }
+      } else {
+        // No data for this date, unlock shift (unless primaryId exists)
+        if (!primaryId) {
+          setFieldLocks(prev => ({
+            ...prev,
+            primary: {
+              ...prev.primary,
+              shift: false
+            }
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Error checking existing data for date and shift:', error);
+    }
+  };
+
+  // Check for existing data when date or shift changes
+  useEffect(() => {
+    if (primaryData.date && primaryData.shift) {
+      checkAndLockByDateAndShift(primaryData.date, primaryData.shift);
+    } else if (!primaryData.date || !primaryData.shift) {
+      // Clear shift lock when date or shift is cleared (unless primaryId exists)
+      if (!primaryId) {
+        setFieldLocks(prev => ({
+          ...prev,
+          primary: {
+            ...prev.primary,
+            shift: false
+          }
+        }));
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [primaryData.date, primaryData.shift]);
 
   // Field locks for all sections
   const [fieldLocks, setFieldLocks] = useState({
@@ -168,6 +253,9 @@ export default function FoundrySandTestingNote() {
       let record = null;
       if (response.success && response.data && Array.isArray(response.data) && response.data.length > 0) {
         record = response.data[0];
+        setPrimaryId(record._id || null);
+      } else {
+        setPrimaryId(null);
       }
       
       if (record) {
@@ -363,6 +451,7 @@ export default function FoundrySandTestingNote() {
         setFieldLocks(locks);
       } else {
         // No data found, clear all locks
+        setPrimaryId(null);
         setFieldLocks({
           primary: {
             date: false,
@@ -395,6 +484,7 @@ export default function FoundrySandTestingNote() {
       }
     } catch (error) {
       console.error('Error checking existing data:', error);
+      setPrimaryId(null);
       setFieldLocks({
         primary: {
           date: false,
@@ -614,6 +704,9 @@ export default function FoundrySandTestingNote() {
       const response = await api.post('/v1/foundry-sand-testing-notes', payload);
       
       if (response.success) {
+        setPrimaryId(response.data?._id || null);
+        // Check if there's existing data for this date+shift combination and lock shift accordingly
+        await checkAndLockByDateAndShift(primaryData.date, primaryData.shift);
         alert('Primary data saved successfully!');
         // Refresh all locks from database
         if (primaryData.date) {
@@ -919,20 +1012,43 @@ export default function FoundrySandTestingNote() {
           </div>
         <div className="foundry-form-group">
           <label>Shift *</label>
-          <input
+          <select
             ref={primaryFirstInputRef}
-            type="text"
-            placeholder="e.g. 2nd Shift"
             value={primaryData.shift}
             onChange={(e) => handlePrimaryChange("shift", e.target.value)}
             onKeyDown={(e) => handleKeyDown(e, primarySubmitRef, primaryFirstInputRef)}
+            onMouseDown={(e) => {
+              if (isFieldLocked('primary', 'shift') || checkingData) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
+            onClick={(e) => {
+              if (isFieldLocked('primary', 'shift') || checkingData) {
+                e.preventDefault();
+                e.stopPropagation();
+              }
+            }}
             disabled={isFieldLocked('primary', 'shift') || checkingData}
             readOnly={isFieldLocked('primary', 'shift')}
             style={{
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              border: '2px solid #cbd5e1',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
               backgroundColor: (isFieldLocked('primary', 'shift') || checkingData) ? '#f1f5f9' : '#ffffff',
-              cursor: (isFieldLocked('primary', 'shift') || checkingData) ? 'not-allowed' : 'text'
+              color: (isFieldLocked('primary', 'shift') || checkingData) ? '#64748b' : '#1e293b',
+              cursor: (isFieldLocked('primary', 'shift') || checkingData) ? 'not-allowed' : 'pointer',
+              opacity: (isFieldLocked('primary', 'shift') || checkingData) ? 0.8 : 1,
+              pointerEvents: (isFieldLocked('primary', 'shift') || checkingData) ? 'none' : 'auto'
             }}
-          />
+          >
+            <option value="">Select Shift</option>
+            <option value="Shift 1">Shift 1</option>
+            <option value="Shift 2">Shift 2</option>
+            <option value="Shift 3">Shift 3</option>
+          </select>
         </div>
         <div className="foundry-form-group">
           <label>Sand Plant *</label>

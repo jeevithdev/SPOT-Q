@@ -177,6 +177,15 @@ a:hover {
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
+/* Global green box shadow for all input fields when focused */
+input:focus:not([type="checkbox"]):not([type="radio"]):not([type="submit"]):not([type="button"]):not([type="reset"]):not([disabled]):not([readonly]),
+textarea:focus:not([disabled]):not([readonly]),
+select:focus:not([disabled]):not([readonly]) {
+  outline: none !important;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.4), 0 0 12px rgba(16, 185, 129, 0.3) !important;
+  transition: box-shadow 0.2s ease-in-out;
+}
+
 .form-input.error {
   border-color: #dc3545;
 }
