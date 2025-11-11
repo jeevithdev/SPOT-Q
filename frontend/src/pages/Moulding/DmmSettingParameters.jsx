@@ -1033,7 +1033,7 @@ const DmmSettingParameters = () => {
       <form>
           {/* Primary Information Section */}
           <div className="dmm-section">
-            <h3 className="dmm-section-title primary-data-title">Primary Data :</h3>
+            <h3 className="dmm-section-title">Primary Data</h3>
             {checkingData && (
               <div style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.875rem' }}>
                 Checking for existing data...
@@ -1044,8 +1044,8 @@ const DmmSettingParameters = () => {
                 Machine field is locked. Date is always editable. Operation table fields with data are locked, empty fields remain editable.
               </div>
             )}
-            {/* Primary Row Container */}
-            <div className="dmm-primary-row">
+            {/* Primary Data Grid */}
+            <div className="dmm-form-grid">
               <div className="dmm-form-group">
                 <label>Date *</label>
                 <CustomDatePicker
@@ -1075,19 +1075,22 @@ const DmmSettingParameters = () => {
                   required
                 />
               </div>
-              {/* Primary Submit Button */}
-              <div className="dmm-primary-button-wrapper">
+              <div className="dmm-form-group">
+                <label>&nbsp;</label>
                 <button
                   type="button"
                   onClick={handlePrimarySubmit}
                   disabled={checkingData || loadingStates.primary || (!primaryData.date || !primaryData.machine)}
-                  className="dmm-submit-btn"
+                  className="dmm-lock-primary-btn"
                 >
                   {loadingStates.primary ? 'Saving...' : (isPrimaryLocked ? 'Save Changes' : 'Save Primary')}
                 </button>
               </div>
             </div>
           </div>
+
+      {/* Divider line to separate primary data from other inputs */}
+      <div style={{ width: '100%', marginTop: '1rem', marginBottom: '1rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
           {/* Operation Section */}
           <div className="dmm-section">

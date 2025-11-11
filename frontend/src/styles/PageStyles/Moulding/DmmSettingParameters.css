@@ -457,6 +457,39 @@
   transform: none;
 }
 
+/* Lock Primary Button - Styled to fit in grid */
+.dmm-lock-primary-btn {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border: 2px solid #5B9AA9;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  background: linear-gradient(135deg, #5B9AA9 0%, #4A8494 100%);
+  color: white;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(91, 154, 169, 0.3);
+  min-height: 42px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.dmm-lock-primary-btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(91, 154, 169, 0.4);
+  background: linear-gradient(135deg, #4A8494 0%, #3a6a78 100%);
+}
+
+.dmm-lock-primary-btn:disabled {
+  background: #94a3b8;
+  border-color: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+  opacity: 0.6;
+}
+
 .dmm-submit-btn .spinner {
   animation: spin 1s linear infinite;
 }

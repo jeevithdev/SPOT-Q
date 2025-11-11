@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import styled from 'styled-components';
-import { Settings } from 'lucide-react';
+import { Settings, Edit2, Trash2 } from 'lucide-react';
 import CustomDatePicker from './CustomDatePicker';
 import '../styles/ComponentStyles/Buttons.css';
 
@@ -112,6 +112,24 @@ export const SettingsButton = ({ onClick }) => (
       <Settings size={18} />
     </button>
   </SettingsButtonWrapper>
+);
+
+// Edit Action Button for table rows
+export const EditActionButton = ({ onClick }) => (
+  <ActionButtonWrapper>
+    <button onClick={onClick} type="button" title="Edit" className="edit-action-btn">
+      <Edit2 size={16} />
+    </button>
+  </ActionButtonWrapper>
+);
+
+// Delete Action Button for table rows
+export const DeleteActionButton = ({ onClick }) => (
+  <ActionButtonWrapper>
+    <button onClick={onClick} type="button" title="Delete" className="delete-action-btn">
+      <Trash2 size={16} />
+    </button>
+  </ActionButtonWrapper>
 );
 
 // Unified DatePicker Component - Use this for all date inputs
@@ -418,6 +436,61 @@ const SettingsButtonWrapper = styled.div`
   svg {
     width: 18px;
     height: 18px;
+    stroke-width: 2;
+  }
+`;
+
+// Action Button Wrapper for Edit and Delete buttons in tables
+const ActionButtonWrapper = styled.div`
+  display: inline-block;
+  margin: 0 4px;
+
+  button {
+    width: 32px;
+    height: 32px;
+    padding: 6px;
+    border-radius: 4px;
+    border: 1px solid #e5e7eb;
+    background: white;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #6b7280;
+  }
+
+  button.edit-action-btn {
+    color: #3b82f6;
+    border-color: #3b82f6;
+  }
+
+  button.edit-action-btn:hover {
+    background: #3b82f6;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(59, 130, 246, 0.3);
+  }
+
+  button.delete-action-btn {
+    color: #ef4444;
+    border-color: #ef4444;
+  }
+
+  button.delete-action-btn:hover {
+    background: #ef4444;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: 0 2px 4px rgba(239, 68, 68, 0.3);
+  }
+
+  button:active {
+    transform: translateY(0);
+  }
+
+  svg {
+    width: 16px;
+    height: 16px;
     stroke-width: 2;
   }
 `;

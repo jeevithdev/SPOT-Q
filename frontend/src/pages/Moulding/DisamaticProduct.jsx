@@ -1163,7 +1163,7 @@ const DisamaticProduct = () => {
       </div>
           {/* Primary Section */}
           <div className="disamatic-section">
-            <h3 className="disamatic-section-title primary-data-title">Primary Data :</h3>
+            <h3 className="disamatic-section-title">Primary Data</h3>
             {checkingData && (
               <div className="disamatic-checking-message">
                 Checking for existing data...
@@ -1324,6 +1324,9 @@ const DisamaticProduct = () => {
               </button>
             </div>
           </div>
+
+      {/* Divider line to separate primary data from other inputs */}
+      <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '1rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
       {/* Production Table */}
           <div className="disamatic-section">

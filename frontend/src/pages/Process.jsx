@@ -162,69 +162,66 @@ export default function ProcessControl() {
         </div>
       </div>
 
-      {/* Primary Data Section */}
-      <div className="process-primary-container">
-        <div className="section-header">
-          <h3 className="primary-data-title">Primary Data :</h3>
-        </div>
-
-        {/* Primary Row Container */}
-        <div className="process-primary-row">
-          <div className="process-form-group">
-            <label>Date *</label>
-            <DatePicker 
-              ref={el => inputRefs.current.date = el} 
-              name="date" 
-              value={formData.date} 
-              onChange={handleChange} 
-              onKeyDown={e => handleKeyDown(e, 'date')}
-              disabled={isPrimarySaved}
-            />
-          </div>
-
-          <div className="process-form-group">
-            <label>DISA *</label>
-            <select
-              ref={el => inputRefs.current.disa = el}
-              name="disa"
-              value={formData.disa}
-              onChange={handleChange}
-              onKeyDown={e => handleKeyDown(e, 'disa')}
-              disabled={isPrimarySaved}
-              style={{
-                width: '100%',
-                padding: '0.625rem 0.875rem',
-                border: '2px solid #cbd5e1',
-                borderRadius: '8px',
-                fontSize: '0.875rem',
-                backgroundColor: isPrimarySaved ? '#f1f5f9' : '#ffffff',
-                color: '#1e293b',
-                cursor: isPrimarySaved ? 'not-allowed' : 'pointer'
-              }}
-            >
-              <option value="">Select DISA</option>
-              <option value="DISA I">DISA I</option>
-              <option value="DISA II">DISA II</option>
-              <option value="DISA III">DISA III</option>
-              <option value="DISA IV">DISA IV</option>
-            </select>
-          </div>
-
-          {/* Primary Submit Button */}
-          <div className="process-primary-button-wrapper">
-            <button
-              className="process-submit-btn"
-              type="button"
-              onClick={handlePrimarySubmit}
-              disabled={!isPrimarySaved && (!formData.date || !formData.disa)}
-            >
-              {isPrimarySaved ? 'Unlock Primary' : 'Lock Primary'}
-            </button>
-          </div>
-        </div>
-      </div>
-
       <div className="process-form-grid">
+            {/* Primary Data Section */}
+            <div className="section-header">
+              <h3>Primary Data</h3>
+            </div>
+
+            <div className="process-form-group">
+              <label>Date *</label>
+              <DatePicker 
+                ref={el => inputRefs.current.date = el} 
+                name="date" 
+                value={formData.date} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'date')}
+                disabled={isPrimarySaved}
+              />
+            </div>
+
+            <div className="process-form-group">
+              <label>DISA *</label>
+              <select
+                ref={el => inputRefs.current.disa = el}
+                name="disa"
+                value={formData.disa}
+                onChange={handleChange}
+                onKeyDown={e => handleKeyDown(e, 'disa')}
+                disabled={isPrimarySaved}
+                style={{
+                  width: '100%',
+                  padding: '0.625rem 0.875rem',
+                  border: '2px solid #cbd5e1',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  backgroundColor: isPrimarySaved ? '#f1f5f9' : '#ffffff',
+                  color: '#1e293b',
+                  cursor: isPrimarySaved ? 'not-allowed' : 'pointer'
+                }}
+              >
+                <option value="">Select DISA</option>
+                <option value="DISA I">DISA I</option>
+                <option value="DISA II">DISA II</option>
+                <option value="DISA III">DISA III</option>
+                <option value="DISA IV">DISA IV</option>
+              </select>
+            </div>
+
+            <div className="process-form-group">
+              <label>&nbsp;</label>
+              <button
+                className="process-lock-primary-btn"
+                type="button"
+                onClick={handlePrimarySubmit}
+                disabled={!isPrimarySaved && (!formData.date || !formData.disa)}
+              >
+                {isPrimarySaved ? 'Unlock Primary' : 'Lock Primary'}
+              </button>
+            </div>
+
+            {/* Divider line to separate primary data from other inputs */}
+            <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '1rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
             <div className="process-form-group">
               <label>Part Name</label>
