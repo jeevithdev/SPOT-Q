@@ -1150,14 +1150,6 @@ const DisamaticProduct = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Disamatic Product - Entry Form
-            <button 
-              className="disamatic-view-report-btn"
-              onClick={handleViewReport}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
@@ -1311,13 +1303,14 @@ const DisamaticProduct = () => {
               </div>
             </div>
             {/* Allow saving basic info even when locked to save new members */}
-            <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'flex-end' }}>
+            <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start' }}>
               <button
                 type="button"
                 onClick={handleBasicInfoSubmit}
                 disabled={loadingStates.basicInfo}
                 className="disamatic-submit-btn"
                 title={!isPrimaryLocked ? 'Save Primary' : 'Save Changes'}
+                style={{ marginTop: '1.75rem' }}
               >
                 {loadingStates.basicInfo ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
                 {loadingStates.basicInfo ? 'Saving...' : (!isPrimaryLocked ? 'Save Primary' : 'Save Changes')}
@@ -1481,6 +1474,7 @@ const DisamaticProduct = () => {
                       onChange={e => handleProductionTableChange(index, 'remarks', e.target.value)}
                       onKeyDown={(e) => handleTableKeyDown(e, 'production', index, 6, 7, productionSubmitRef)}
                       placeholder="Remarks"
+                      maxLength={60}
                       disabled={!isPrimaryLocked}
                       style={{ 
                         width: '100%', 
@@ -1490,7 +1484,8 @@ const DisamaticProduct = () => {
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        resize: 'none'
                       }}
                     />
                   </td>
@@ -1596,6 +1591,7 @@ const DisamaticProduct = () => {
                       onChange={e => handleNextShiftPlanChange(index, 'remarks', e.target.value)}
                       onKeyDown={(e) => handleTableKeyDown(e, 'nextShiftPlan', index, 2, 3, nextShiftPlanSubmitRef)}
                       placeholder="Remarks"
+                      maxLength={60}
                       disabled={!isPrimaryLocked}
                       style={{ 
                         width: '100%', 
@@ -1896,6 +1892,7 @@ const DisamaticProduct = () => {
                       onChange={e => handleMouldHardnessTableChange(index, 'remarks', e.target.value)}
                       onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 5, 6, mouldHardnessSubmitRef)}
                       placeholder="Remarks"
+                      maxLength={60}
                       disabled={!isPrimaryLocked}
                       style={{ 
                         width: '100%', 

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, X, PencilLine, BookOpenCheck } from 'lucide-react';
-import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
+import { X, PencilLine, BookOpenCheck } from 'lucide-react';
+import { DatePicker, EditActionButton, DeleteActionButton, FilterButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/TensileReport.css';
@@ -100,7 +100,7 @@ const TensileReport = () => {
   };
 
   const handleFilter = () => {
-    if (!startDate || !endDate) {
+    if (!startDate) {
       setFilteredItems(items);
       return;
     }
@@ -108,11 +108,19 @@ const TensileReport = () => {
     const filtered = items.filter(item => {
       if (!item.dateOfInspection) return false;
       const itemDate = new Date(item.dateOfInspection);
+      itemDate.setHours(0, 0, 0, 0);
       const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
+      start.setHours(0, 0, 0, 0);
       
-      return itemDate >= start && itemDate <= end;
+      // If end date is provided, filter by date range
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return itemDate >= start && itemDate <= end;
+      } else {
+        // If only start date is provided, show only records from that exact date
+        return itemDate.getTime() === start.getTime();
+      }
     });
 
     setFilteredItems(filtered);
@@ -125,20 +133,12 @@ const TensileReport = () => {
           <h2>
             <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
             Tensile Test - Report
-            <button 
-              className="tensile-report-entry-btn"
-              onClick={() => window.location.href = "/tensile"}
-              title="Entry"
-            >
-              <PencilLine size={16} />
-              <span>Entry</span>
-            </button>
           </h2>
         </div>
       </div>
 
-      <div className="tensile-filter-grid">
-        <div className="tensile-filter-group">
+      <div className="impact-filter-container">
+        <div className="impact-filter-group">
           <label>Start Date</label>
           <DatePicker
             value={startDate}
@@ -146,7 +146,7 @@ const TensileReport = () => {
             placeholder="Select start date"
           />
         </div>
-        <div className="tensile-filter-group">
+        <div className="impact-filter-group">
           <label>End Date</label>
           <DatePicker
             value={endDate}
@@ -154,22 +154,19 @@ const TensileReport = () => {
             placeholder="Select end date"
           />
         </div>
-        <div className="tensile-filter-btn-container">
-          <Button onClick={handleFilter} className="tensile-filter-btn" type="button">
-            <Filter size={18} />
-            Filter
-          </Button>
-        </div>
+        <FilterButton onClick={handleFilter} disabled={!startDate}>
+          Filter
+        </FilterButton>
       </div>
 
       {loading ? (
-        <div className="tensile-loader-container">
+        <div className="impact-loader-container">
           <Loader />
         </div>
       ) : (
-        <div className="tensile-table-card">
-          <div className="tensile-table-container">
-            <table className="tensile-table">
+        <div className="impact-details-card">
+          <div className="impact-table-container">
+            <table className="impact-table">
               <thead>
                 <tr>
                   <th>Date Of Inspection</th>
@@ -192,7 +189,7 @@ const TensileReport = () => {
               <tbody>
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan="15" className="tensile-no-records">
+                    <td colSpan="15" className="impact-no-records">
                       No records found
                     </td>
                   </tr>

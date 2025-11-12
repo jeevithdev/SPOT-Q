@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import styled from 'styled-components';
-import { Settings, Edit2, Trash2 } from 'lucide-react';
+import { Settings, Edit2, Trash2, Filter } from 'lucide-react';
 import CustomDatePicker from './CustomDatePicker';
 import '../styles/ComponentStyles/Buttons.css';
 
@@ -39,7 +39,7 @@ export const handleLogout = () => {
   window.location.href = '/login';
 };
 
-// Styled Logout Button with background (for Navbar)
+// Styled Logout Button with background
 export const LogoutButton = ({ onClick }) => (
   <LogoutWrapper>
     <button onClick={onClick || handleLogout}>
@@ -69,36 +69,23 @@ export const DeleteButton = ({ onClick }) => (
 // Eye Icon Button for toggling visibility
 export const EyeButton = ({ 
   onClick, 
-  isVisible = false, 
-  onMouseDown, 
-  onMouseUp, 
-  onMouseLeave,
-  onTouchStart,
-  onTouchEnd 
+  isVisible = false
 }) => (
   <EyeButtonWrapper>
     <button 
       onClick={onClick}
-      onMouseDown={(e) => {
-        e.preventDefault();
-        onMouseDown && onMouseDown(e);
-      }}
-      onMouseUp={onMouseUp}
-      onMouseLeave={onMouseLeave}
-      onTouchStart={onTouchStart}
-      onTouchEnd={onTouchEnd}
       type="button"
-      title={onClick ? "Toggle password visibility" : "Hold to show password"}
+      title={isVisible ? "Hide password" : "Show password"}
     >
       {isVisible ? (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-          <circle cx="12" cy="12" r="3"></circle>
+          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+          <line x1="1" y1="1" x2="23" y2="23"></line>
         </svg>
       ) : (
         <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-          <line x1="1" y1="1" x2="23" y2="23"></line>
+          <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+          <circle cx="12" cy="12" r="3"></circle>
         </svg>
       )}
     </button>
@@ -130,6 +117,16 @@ export const DeleteActionButton = ({ onClick }) => (
       <Trash2 size={16} />
     </button>
   </ActionButtonWrapper>
+);
+
+// Filter Button for report pages
+export const FilterButton = ({ onClick, disabled = false, children }) => (
+  <FilterButtonWrapper>
+    <button onClick={onClick} type="button" disabled={disabled} title="Filter">
+      <Filter size={18} />
+      {children || 'Filter'}
+    </button>
+  </FilterButtonWrapper>
 );
 
 // Unified DatePicker Component - Use this for all date inputs
@@ -491,6 +488,54 @@ const ActionButtonWrapper = styled.div`
   svg {
     width: 16px;
     height: 16px;
+    stroke-width: 2;
+  }
+`;
+
+// Filter Button Wrapper
+const FilterButtonWrapper = styled.div`
+  display: inline-block;
+
+  button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    padding: 0.625rem 1.5rem;
+    background: linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.875rem;
+    font-weight: 600;
+    font-family: 'Poppins', sans-serif;
+    box-shadow: 0 2px 6px rgba(255, 127, 80, 0.3);
+    transition: all 0.3s ease;
+    white-space: nowrap;
+    min-height: 42px;
+    width: 100%;
+  }
+
+  button:hover:not(:disabled) {
+    background: linear-gradient(135deg, #FF6A3D 0%, #FF5722 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(255, 127, 80, 0.5);
+  }
+
+  button:active:not(:disabled) {
+    transform: translateY(0);
+  }
+
+  button:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    transform: none;
+  }
+
+  svg {
+    width: 18px;
+    height: 18px;
     stroke-width: 2;
   }
 `;

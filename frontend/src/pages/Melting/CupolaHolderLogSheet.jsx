@@ -1,37 +1,56 @@
 import React, { useState, useEffect } from 'react';
-import { Save, RefreshCw, Loader2, FileText, RotateCcw } from 'lucide-react';
+import { Save, Loader2, RotateCcw } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Melting/CupolaHolderLogSheet.css';
 
 const CupolaHolderLogSheet = () => {
-  const [formData, setFormData] = useState({
+  // Primary Data
+  const [primaryData, setPrimaryData] = useState({
     date: '',
     shift: '',
     holderNumber: '',
-    heatNo: '',
-    // Additions
+    heatNo: ''
+  });
+
+  // Table Data
+  const [table1, setTable1] = useState({
     cpc: '',
     mFeSl: '',
     feMn: '',
     sic: '',
     pureMg: '',
     cu: '',
-    feCr: '',
-    // Tapping
+    feCr: ''
+  });
+
+  const [table2, setTable2] = useState({
     actualTime: '',
     tappingTime: '',
     tappingTemp: '',
-    metalKg: '',
-    // Pouring
+    metalKg: ''
+  });
+
+  const [table3, setTable3] = useState({
     disaLine: '',
     indFur: '',
     bailNo: '',
-    // Electrical
     tap: '',
-    kw: '',
+    kw: ''
+  });
+
+  const [table4, setTable4] = useState({
     remarks: ''
   });
+
+  // Combined formData for backward compatibility with existing logic
+  const formData = {
+    ...primaryData,
+    ...table1,
+    ...table2,
+    ...table3,
+    ...table4
+  };
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [primaryLoading, setPrimaryLoading] = useState(false);
@@ -97,9 +116,9 @@ const CupolaHolderLogSheet = () => {
 
   // Check for existing data when date or shift changes
   useEffect(() => {
-    if (formData.date && formData.shift) {
-      checkAndLockByDateAndShift(formData.date, formData.shift);
-    } else if (!formData.date || !formData.shift) {
+    if (primaryData.date && primaryData.shift) {
+      checkAndLockByDateAndShift(primaryData.date, primaryData.shift);
+    } else if (!primaryData.date || !primaryData.shift) {
       // Clear shift lock when date or shift is cleared (unless primaryId exists)
       if (!primaryId) {
         setPrimaryLocks(prev => {
@@ -110,42 +129,55 @@ const CupolaHolderLogSheet = () => {
       }
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.date, formData.shift]);
+  }, [primaryData.date, primaryData.shift]);
 
   // Fetch primary data when date, shift, or holderNumber changes
   useEffect(() => {
-    if (formData.date && formData.shift && formData.holderNumber) {
-      const dateStr = formData.date instanceof Date 
-        ? formData.date.toISOString().split('T')[0] 
-        : formData.date;
-      fetchPrimaryData(dateStr, formData.shift, formData.holderNumber);
-    } else if (!formData.date || !formData.shift || !formData.holderNumber) {
+    if (primaryData.date && primaryData.shift && primaryData.holderNumber) {
+      const dateStr = primaryData.date instanceof Date 
+        ? primaryData.date.toISOString().split('T')[0] 
+        : primaryData.date;
+      fetchPrimaryData(dateStr, primaryData.shift, primaryData.holderNumber);
+    } else if (!primaryData.date || !primaryData.shift || !primaryData.holderNumber) {
       // Clear primary ID and locks when primary fields are cleared
       setPrimaryId(null);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [formData.date, formData.shift, formData.holderNumber]);
+  }, [primaryData.date, primaryData.shift, primaryData.holderNumber]);
 
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
+  const handlePrimaryChange = (field, value) => {
     // Prevent changes to locked fields (except date)
-    if (name !== 'date' && isPrimaryFieldLocked(name)) {
-      e.preventDefault();
-      e.stopPropagation();
+    if (field !== 'date' && isPrimaryFieldLocked(field)) {
       return;
     }
     
-    // Prevent changes if field is disabled
-    if (e.target.disabled) {
-      e.preventDefault();
-      e.stopPropagation();
-      return;
-    }
-    
-    setFormData(prev => ({
+    setPrimaryData(prev => ({
       ...prev,
-      [name]: value
+      [field]: value
+    }));
+    
+    // When date changes, automatically fetch existing data
+    if (field === 'date' && value) {
+      const dateStr = value instanceof Date ? value.toISOString().split('T')[0] : value;
+      // Fetch will be triggered by useEffect
+    } else if (field === 'date' && !value) {
+      // Clear primary ID and locks when date is cleared
+      setPrimaryId(null);
+      setPrimaryLocks({});
+    }
+  };
+
+  const handleTableChange = (tableNum, field, value) => {
+    const setters = {
+      1: setTable1,
+      2: setTable2,
+      3: setTable3,
+      4: setTable4
+    };
+    
+    setters[tableNum](prev => ({
+      ...prev,
+      [field]: value
     }));
   };
 
@@ -161,14 +193,13 @@ const CupolaHolderLogSheet = () => {
       const response = await api.get(`/v1/cupola-holder-logs/primary/${dateStr}/${encodedShift}/${encodedHolder}`);
       
       if (response.success && response.data) {
-        // Populate form with fetched data
-        setFormData(prev => ({
-          ...prev,
+        // Populate primary data with fetched data
+        setPrimaryData({
           date: response.data.date ? new Date(response.data.date).toISOString().split('T')[0] : date,
           shift: response.data.shift || shift,
           holderNumber: response.data.holderNumber || holderNumber,
-          heatNo: response.data.heatNo || prev.heatNo
-        }));
+          heatNo: response.data.heatNo || ''
+        });
         setPrimaryId(response.data._id);
         
         // Lock all primary fields except date when data exists (date should remain changeable)
@@ -204,7 +235,7 @@ const CupolaHolderLogSheet = () => {
 
   const handlePrimarySubmit = async () => {
     // Validate required fields
-    if (!formData.date || !formData.shift || !formData.holderNumber) {
+    if (!primaryData.date || !primaryData.shift || !primaryData.holderNumber) {
       alert('Please fill in Date, Shift, and Holder Number');
       return;
     }
@@ -214,17 +245,17 @@ const CupolaHolderLogSheet = () => {
     try {
       const response = await api.post('/v1/cupola-holder-logs/primary', {
         primaryData: {
-          date: formData.date,
-          shift: formData.shift,
-          holderNumber: formData.holderNumber,
-          heatNo: formData.heatNo
+          date: primaryData.date,
+          shift: primaryData.shift,
+          holderNumber: primaryData.holderNumber,
+          heatNo: primaryData.heatNo
         }
       });
       
       if (response.success) {
         setPrimaryId(response.data._id);
-        // Update form data with response data to ensure consistency
-        setFormData(prev => ({
+        // Update primary data with response data to ensure consistency
+        setPrimaryData(prev => ({
           ...prev,
           date: response.data.date ? new Date(response.data.date).toISOString().split('T')[0] : prev.date,
           shift: response.data.shift || prev.shift,
@@ -234,21 +265,19 @@ const CupolaHolderLogSheet = () => {
         
         // After saving, check if data exists for this date+shift combination and lock shift accordingly
         // This will lock shift only if data exists for that specific date+shift combination
-        await checkAndLockByDateAndShift(formData.date, formData.shift);
+        await checkAndLockByDateAndShift(primaryData.date, primaryData.shift);
         
         // Lock all primary fields except date after saving
         // Shift lock is determined by checkAndLockByDateAndShift based on whether data exists for date+shift
         // Always lock holderNumber since it's a required field
-        setPrimaryLocks(prev => {
-          const locks = { ...prev };
-          // Shift lock is already set by checkAndLockByDateAndShift if data exists
-          locks.holderNumber = true; // Always lock holderNumber after saving
-          // Lock heatNo if it has a value
-          if (formData.heatNo !== undefined && formData.heatNo !== null && formData.heatNo !== '') {
-            locks.heatNo = true;
-          }
-          return locks;
-        });
+        const locks = {};
+        locks.shift = true; // Lock shift after saving
+        locks.holderNumber = true; // Always lock holderNumber after saving
+        // Lock heatNo if it has a value
+        if (primaryData.heatNo !== undefined && primaryData.heatNo !== null && primaryData.heatNo !== '') {
+          locks.heatNo = true;
+        }
+        setPrimaryLocks(locks);
         
         alert('Primary data saved successfully.');
       } else {
@@ -262,17 +291,9 @@ const CupolaHolderLogSheet = () => {
     }
   };
 
-  const handleSubmit = async () => {
-    const required = ['date', 'shift', 'holderNumber'];
-    const missing = required.filter(field => !formData[field]);
-
-    if (missing.length > 0) {
-      alert(`Please fill in the following required fields: ${missing.join(', ')}`);
-      return;
-    }
-
+  const handleAllTablesSubmit = async () => {
     // Ensure primary data exists (date is required)
-    if (!formData.date) {
+    if (!primaryData.date) {
       alert('Please enter a date first.');
       return;
     }
@@ -280,12 +301,20 @@ const CupolaHolderLogSheet = () => {
     try {
       setSubmitLoading(true);
       
+      // Combine all data (primary + tables)
+      const allData = {
+        ...primaryData,
+        ...table1,
+        ...table2,
+        ...table3,
+        ...table4
+      };
+      
       // Send all data (primary + other fields) combined to backend
       // Backend will find existing document by date+shift+holderNumber and update it, or create new one
-      const data = await api.post('/v1/cupola-holder-logs', formData);
+      const data = await api.post('/v1/cupola-holder-logs', allData);
       if (data.success) {
-        alert('Cupola holder log entry saved successfully!');
-        handleReset();
+        alert('All tables saved successfully!');
       }
     } catch (error) {
       console.error('Error saving cupola holder log:', error);
@@ -295,16 +324,33 @@ const CupolaHolderLogSheet = () => {
     }
   };
 
-
-  const handleReset = () => {
-    setFormData({
-      date: '', shift: '', holderNumber: '', heatNo: '', cpc: '', mFeSl: '', feMn: '', sic: '',
-      pureMg: '', cu: '', feCr: '', actualTime: '', tappingTime: '',
-      tappingTemp: '', metalKg: '', disaLine: '', indFur: '', bailNo: '',
-      tap: '', kw: '', remarks: ''
+  const handleAllTablesReset = () => {
+    if (!window.confirm('Are you sure you want to reset all table entries?')) return;
+    setTable1({
+      cpc: '',
+      mFeSl: '',
+      feMn: '',
+      sic: '',
+      pureMg: '',
+      cu: '',
+      feCr: ''
     });
-    setPrimaryId(null);
-    setPrimaryLocks({});
+    setTable2({
+      actualTime: '',
+      tappingTime: '',
+      tappingTemp: '',
+      metalKg: ''
+    });
+    setTable3({
+      disaLine: '',
+      indFur: '',
+      bailNo: '',
+      tap: '',
+      kw: ''
+    });
+    setTable4({
+      remarks: ''
+    });
   };
 
   return (
@@ -315,28 +361,20 @@ const CupolaHolderLogSheet = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Cupola Holder Log Sheet - Entry Form
-            <button 
-              className="cupola-holder-view-report-btn"
-              onClick={() => window.location.href = "/melting/cupola-holder-log-sheet/report"}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
 
-      <div className="cupola-holder-main-card">
-        <h3 className="cupola-holder-main-card-title primary-data-title">Primary Data :</h3>
-
-        <div className="cupola-holder-primary-row">
-          {/* Primary Information */}
+      {/* Primary Section */}
+      <div>
+        <h3 className="section-header">Primary Data</h3>
+        
+        <div className="cupola-holder-form-grid">
           <div className="cupola-holder-form-group">
             <label>Date *</label>
             <CustomDatePicker
-              value={formData.date}
-              onChange={(e) => handleChange({ target: { name: 'date', value: e.target.value } })}
+              value={primaryData.date}
+              onChange={(e) => handlePrimaryChange('date', e.target.value)}
               name="date"
               disabled={fetchingPrimary}
             />
@@ -347,8 +385,8 @@ const CupolaHolderLogSheet = () => {
             <label>Shift *</label>
             <select
               name="shift"
-              value={formData.shift}
-              onChange={handleChange}
+              value={primaryData.shift}
+              onChange={(e) => handlePrimaryChange('shift', e.target.value)}
               onMouseDown={(e) => {
                 if (isPrimaryFieldLocked('shift') || fetchingPrimary) {
                   e.preventDefault();
@@ -387,8 +425,8 @@ const CupolaHolderLogSheet = () => {
             <input
               type="text"
               name="holderNumber"
-              value={formData.holderNumber}
-              onChange={handleChange}
+              value={primaryData.holderNumber}
+              onChange={(e) => handlePrimaryChange('holderNumber', e.target.value)}
               placeholder="e.g: H001"
               disabled={isPrimaryFieldLocked('holderNumber') || fetchingPrimary}
               readOnly={isPrimaryFieldLocked('holderNumber')}
@@ -399,41 +437,13 @@ const CupolaHolderLogSheet = () => {
             />
           </div>
 
-          {/* Primary Submit Button */}
-          <div className="cupola-holder-primary-button-wrapper">
-            <button
-              className="cupola-holder-submit-btn"
-              type="button"
-              onClick={handlePrimarySubmit}
-              disabled={primaryLoading || fetchingPrimary || (!formData.date || !formData.shift || !formData.holderNumber)}
-            >
-              {primaryLoading ? (
-                <>
-                  <Loader2 size={18} className="animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save size={18} />
-                  Save Changes
-                </>
-              )}
-            </button>
-          </div>
-        </div>
-
-        {/* Divider line */}
-        <div style={{ marginTop: '1rem', marginBottom: '1rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
-
-        {/* Heat No */}
-        <div className="cupola-holder-form-grid">
-          <div className="cupola-holder-form-group" style={{ maxWidth: '300px' }}>
+          <div className="cupola-holder-form-group">
             <label>Heat No</label>
             <input
               type="text"
               name="heatNo"
-              value={formData.heatNo}
-              onChange={handleChange}
+              value={primaryData.heatNo}
+              onChange={(e) => handlePrimaryChange('heatNo', e.target.value)}
               placeholder="e.g: H2024-001"
               disabled={isPrimaryFieldLocked('heatNo')}
               readOnly={isPrimaryFieldLocked('heatNo')}
@@ -445,250 +455,272 @@ const CupolaHolderLogSheet = () => {
           </div>
         </div>
 
-        {/* Additions Section */}
-        <div className="cupola-holder-sub-section">
-          <h4 className="cupola-holder-sub-section-title">Additions</h4>
-          <div className="cupola-holder-form-grid">
-            <div className="cupola-holder-form-group">
-              <label>CPC</label>
-              <input
-                type="number"
-                name="cpc"
-                value={formData.cpc}
-                onChange={handleChange}
-                step="0.1"
-                placeholder="0"
-              />
-            </div>
-
-            <div className="cupola-holder-form-group">
-              <label>Fe Sl</label>
-              <input
-                type="number"
-                name="mFeSl"
-                value={formData.mFeSl}
-                onChange={handleChange}
-                step="0.1"
-                placeholder="0"
-              />
-            </div>
-
-            <div className="cupola-holder-form-group">
-              <label>Fe Mn</label>
-              <input
-                type="number"
-                name="feMn"
-                value={formData.feMn}
-                onChange={handleChange}
-                step="0.1"
-                placeholder="0"
-              />
-            </div>
-
-            <div className="cupola-holder-form-group">
-              <label>Sic</label>
-              <input
-                type="number"
-                name="sic"
-                value={formData.sic}
-                onChange={handleChange}
-                step="0.1"
-                placeholder="0"
-              />
-            </div>
-
-            <div className="cupola-holder-form-group">
-              <label>Pure Mg</label>
-              <input
-                type="number"
-                name="pureMg"
-                value={formData.pureMg}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="0"
-              />
-            </div>
-
-            <div className="cupola-holder-form-group">
-              <label>Cu</label>
-              <input
-                type="number"
-                name="cu"
-                value={formData.cu}
-                onChange={handleChange}
-                step="0.01"
-                placeholder="0"
-              />
-            </div>
-
-            <div className="cupola-holder-form-group">
-              <label>Fe Cr</label>
-              <input
-                type="number"
-                name="feCr"
-                value={formData.feCr}
-                onChange={handleChange}
-                step="0.1"
-                placeholder="0"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Tapping Section */}
-        <div className="cupola-holder-sub-section">
-          <h4 className="cupola-holder-sub-section-title">Tapping</h4>
-          <div className="cupola-holder-tapping-container">
-            <div className="cupola-holder-form-group">
-              <label>Actual Time</label>
-              <input
-                type="time"
-                name="actualTime"
-                value={formData.actualTime}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="cupola-holder-form-group">
-              <label>Tapping Time</label>
-              <input
-                type="time"
-                name="tappingTime"
-                value={formData.tappingTime}
-                onChange={handleChange}
-              />
-            </div>
-
-            <div className="cupola-holder-form-group">
-              <label>Temp (°C)</label>
-              <input
-                type="number"
-                name="tappingTemp"
-                value={formData.tappingTemp}
-                onChange={handleChange}
-                placeholder="e.g: 1500"
-              />
-            </div>
-
-            <div className="cupola-holder-form-group">
-              <label>Metal (KG)</label>
-              <input
-                type="number"
-                name="metalKg"
-                value={formData.metalKg}
-                onChange={handleChange}
-                step="0.1"
-                placeholder="e.g: 2000"
-              />
-            </div>
-          </div>
-        </div>
-
-        {/* Pouring and Electrical Sections - Same Row */}
-        <div className="cupola-holder-row-container">
-          {/* Pouring Section */}
-          <div className="cupola-holder-sub-section">
-            <h4 className="cupola-holder-sub-section-title">Pouring Details</h4>
-            <div className="cupola-holder-form-grid">
-              <div className="cupola-holder-form-group">
-                <label>DISA LINE</label>
-                <input
-                  type="text"
-                  name="disaLine"
-                  value={formData.disaLine}
-                  onChange={handleChange}
-                  placeholder="e.g: DISA-1"
-                />
-              </div>
-
-              <div className="cupola-holder-form-group">
-                <label>IND FUR</label>
-                <input
-                  type="text"
-                  name="indFur"
-                  value={formData.indFur}
-                  onChange={handleChange}
-                  placeholder="e.g: IND-FUR-1"
-                />
-              </div>
-
-              <div className="cupola-holder-form-group">
-                <label>BAIL NO</label>
-                <input
-                  type="text"
-                  name="bailNo"
-                  value={formData.bailNo}
-                  onChange={handleChange}
-                  placeholder="e.g: BAIL-001"
-                />
-              </div>
-            </div>
-          </div>
-
-          {/* Electrical Section */}
-          <div className="cupola-holder-sub-section">
-            <h4 className="cupola-holder-sub-section-title">Electrical Readings</h4>
-            <div className="cupola-holder-form-grid">
-              <div className="cupola-holder-form-group">
-                <label>TAP</label>
-                <input
-                  type="text"
-                  name="tap"
-                  value={formData.tap}
-                  onChange={handleChange}
-                  placeholder="Enter TAP value"
-                />
-              </div>
-
-              <div className="cupola-holder-form-group">
-                <label>KW</label>
-                <input
-                  type="number"
-                  name="kw"
-                  value={formData.kw}
-                  onChange={handleChange}
-                  step="0.1"
-                  placeholder="e.g: 2500"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Remarks */}
-        <div className="cupola-holder-form-grid">
-          <div className="cupola-holder-form-group" style={{ gridColumn: '1 / -1' }}>
-            <label>Remarks</label>
-            <textarea
-              name="remarks"
-              value={formData.remarks}
-              onChange={handleChange}
-              rows="3"
-              placeholder="Enter any additional notes or observations..."
-            />
-          </div>
-        </div>
-
         <div className="cupola-holder-submit-container">
-          <button
-            className="cupola-holder-reset-btn"
-            type="button"
-            onClick={handleReset}
-          >
-            <RotateCcw size={16} />
-            Reset
-          </button>
           <button
             className="cupola-holder-submit-btn"
             type="button"
-            onClick={handleSubmit}
-            disabled={submitLoading || !formData.date}
-            title={!formData.date ? 'Please enter a date first' : 'Submit Entry'}
+            onClick={handlePrimarySubmit}
+            disabled={primaryLoading || fetchingPrimary || (!primaryData.date || !primaryData.shift || !primaryData.holderNumber)}
           >
-            {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-            {submitLoading ? 'Saving...' : 'Submit Entry'}
+            {primaryLoading ? (
+              <>
+                <Loader2 size={18} className="animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save size={18} />
+                Save Changes
+              </>
+            )}
           </button>
         </div>
+        <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
+      </div>
+
+      {/* Table 1 */}
+      <div>
+        <h3 className="section-header">Table 1</h3>
+        
+        <div className="cupola-holder-form-grid">
+          <div className="cupola-holder-form-group">
+            <label>CPC</label>
+            <input
+              type="number"
+              value={table1.cpc || ''}
+              onChange={(e) => handleTableChange(1, 'cpc', e.target.value)}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Fe Sl</label>
+            <input
+              type="number"
+              value={table1.mFeSl || ''}
+              onChange={(e) => handleTableChange(1, 'mFeSl', e.target.value)}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Fe Mn</label>
+            <input
+              type="number"
+              value={table1.feMn || ''}
+              onChange={(e) => handleTableChange(1, 'feMn', e.target.value)}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Sic</label>
+            <input
+              type="number"
+              value={table1.sic || ''}
+              onChange={(e) => handleTableChange(1, 'sic', e.target.value)}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Pure Mg</label>
+            <input
+              type="number"
+              value={table1.pureMg || ''}
+              onChange={(e) => handleTableChange(1, 'pureMg', e.target.value)}
+              step="0.01"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Cu</label>
+            <input
+              type="number"
+              value={table1.cu || ''}
+              onChange={(e) => handleTableChange(1, 'cu', e.target.value)}
+              step="0.01"
+              placeholder="0"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Fe Cr</label>
+            <input
+              type="number"
+              value={table1.feCr || ''}
+              onChange={(e) => handleTableChange(1, 'feCr', e.target.value)}
+              step="0.1"
+              placeholder="0"
+            />
+          </div>
+        </div>
+        <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
+      </div>
+
+      {/* Table 2 */}
+      <div>
+        <h3 className="section-header">Table 2</h3>
+        
+        <div className="cupola-holder-form-grid">
+          <div className="cupola-holder-form-group">
+            <label>Actual Time</label>
+            <input
+              type="time"
+              value={table2.actualTime || ''}
+              onChange={(e) => handleTableChange(2, 'actualTime', e.target.value)}
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Tapping Time</label>
+            <input
+              type="time"
+              value={table2.tappingTime || ''}
+              onChange={(e) => handleTableChange(2, 'tappingTime', e.target.value)}
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Temp (°C)</label>
+            <input
+              type="number"
+              value={table2.tappingTemp || ''}
+              onChange={(e) => handleTableChange(2, 'tappingTemp', e.target.value)}
+              placeholder="e.g: 1500"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>Metal (KG)</label>
+            <input
+              type="number"
+              value={table2.metalKg || ''}
+              onChange={(e) => handleTableChange(2, 'metalKg', e.target.value)}
+              step="0.1"
+              placeholder="e.g: 2000"
+            />
+          </div>
+        </div>
+        <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
+      </div>
+
+      {/* Table 3 */}
+      <div>
+        <h3 className="section-header">Table 3</h3>
+        
+        <div className="cupola-holder-form-grid">
+          <div className="cupola-holder-form-group">
+            <label>DISA LINE</label>
+            <input
+              type="text"
+              value={table3.disaLine || ''}
+              onChange={(e) => handleTableChange(3, 'disaLine', e.target.value)}
+              placeholder="e.g: DISA-1"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>IND FUR</label>
+            <input
+              type="text"
+              value={table3.indFur || ''}
+              onChange={(e) => handleTableChange(3, 'indFur', e.target.value)}
+              placeholder="e.g: IND-FUR-1"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>BAIL NO</label>
+            <input
+              type="text"
+              value={table3.bailNo || ''}
+              onChange={(e) => handleTableChange(3, 'bailNo', e.target.value)}
+              placeholder="e.g: BAIL-001"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>TAP</label>
+            <input
+              type="text"
+              value={table3.tap || ''}
+              onChange={(e) => handleTableChange(3, 'tap', e.target.value)}
+              placeholder="Enter TAP value"
+            />
+          </div>
+
+          <div className="cupola-holder-form-group">
+            <label>KW</label>
+            <input
+              type="number"
+              value={table3.kw || ''}
+              onChange={(e) => handleTableChange(3, 'kw', e.target.value)}
+              step="0.1"
+              placeholder="e.g: 2500"
+            />
+          </div>
+        </div>
+        <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
+      </div>
+
+      {/* Table 4 */}
+      <div>
+        <h3 className="section-header">Table 4</h3>
+        
+        <div className="cupola-holder-form-grid">
+          <div className="cupola-holder-form-group" style={{ gridColumn: '1 / -1' }}>
+            <label>Remarks</label>
+            <input
+              type="text"
+              value={table4.remarks || ''}
+              onChange={(e) => handleTableChange(4, 'remarks', e.target.value)}
+              placeholder="Enter any additional notes or observations..."
+              maxLength={80}
+              style={{
+                width: '100%',
+                maxWidth: '500px',
+                resize: 'none'
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      {/* All Tables Submit and Reset Buttons */}
+      <div className="cupola-holder-submit-container" style={{ marginTop: '2rem' }}>
+        <button
+          className="cupola-holder-reset-btn"
+          type="button"
+          onClick={handleAllTablesReset}
+        >
+          <RotateCcw size={16} />
+          Reset All Tables
+        </button>
+        <button
+          className="cupola-holder-submit-btn"
+          type="button"
+          onClick={handleAllTablesSubmit}
+          disabled={submitLoading || !primaryData.date}
+          title={!primaryData.date ? 'Please enter a date first' : 'Save All Tables'}
+        >
+          {submitLoading ? (
+            <>
+              <Loader2 size={20} className="animate-spin" />
+              Saving All Tables...
+            </>
+          ) : (
+            <>
+              <Save size={18} />
+              Save All Tables
+            </>
+          )}
+        </button>
       </div>
     </>
   );

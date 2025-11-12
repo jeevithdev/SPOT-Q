@@ -982,14 +982,6 @@ export default function FoundrySandTestingNote() {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Foundry Sand Testing Note
-            <button 
-              className="foundry-view-report-btn"
-              onClick={handleViewReport}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
@@ -1713,16 +1705,20 @@ export default function FoundrySandTestingNote() {
         <h3 className="foundry-section-title">Remarks</h3>
         <div className="foundry-form-group">
           <label>Remarks</label>
-          <textarea
+          <input
+            type="text"
             ref={remarksFirstInputRef}
             value={sectionData.remarks || ''}
             onChange={(e) => handleInputChange("remarks", null, e.target.value)}
             onKeyDown={(e) => handleKeyDown(e, remarksSubmitRef, remarksFirstInputRef)}
             placeholder="Enter any additional remarks..."
-            rows="4"
+            maxLength={80}
             disabled={fieldLocks.remarks}
             readOnly={fieldLocks.remarks}
             style={{
+              width: '100%',
+              maxWidth: '500px',
+              resize: 'none',
               backgroundColor: fieldLocks.remarks ? '#f1f5f9' : '#ffffff',
               cursor: fieldLocks.remarks ? 'not-allowed' : 'text'
             }}

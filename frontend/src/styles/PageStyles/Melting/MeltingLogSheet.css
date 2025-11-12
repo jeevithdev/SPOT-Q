@@ -116,6 +116,15 @@
   padding: 0;
 }
 
+.section-header {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1e293b;
+  margin: 1.5rem 0 1rem 0;
+  padding: 0 0 0.75rem 0;
+  border-bottom: 2px solid #e2e8f0;
+}
+
 .melting-log-table {
   width: 100%;
   border-collapse: collapse;

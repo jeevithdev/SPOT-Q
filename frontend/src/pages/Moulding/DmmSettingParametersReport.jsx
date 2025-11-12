@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-import { PencilLine, BookOpenCheck, Filter } from 'lucide-react';
-import CustomDatePicker from '../../Components/CustomDatePicker';
+import { BookOpenCheck } from 'lucide-react';
+import { DatePicker, FilterButton } from '../../Components/Buttons';
 import '../../styles/PageStyles/Moulding/DmmSettingParametersReport.css';
 
 const DmmSettingParametersReport = () => {
@@ -19,47 +19,30 @@ const DmmSettingParametersReport = () => {
           <h2>
             <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
             DMM Setting Parameters Check Sheet - Report
-            <button 
-              className="dmm-report-entry-btn"
-              onClick={() => window.location.href = "/moulding/dmm-setting-parameters"}
-              title="Entry"
-            >
-              <PencilLine size={16} />
-              <span>Entry</span>
-            </button>
           </h2>
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="dmm-report-container">
-        <div className="dmm-filter-grid">
-          <div className="dmm-filter-group">
-            <label>From Date</label>
-            <CustomDatePicker
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              name="fromDate"
-            />
-          </div>
-          <div className="dmm-filter-group">
-            <label>To Date</label>
-            <CustomDatePicker
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              name="toDate"
-            />
-          </div>
-          <div className="dmm-filter-btn-container">
-            <button
-              className="dmm-filter-btn"
-              onClick={handleFilter}
-            >
-              <Filter size={16} />
-              Filter
-            </button>
-          </div>
+      <div className="dmm-filter-container">
+        <div className="dmm-filter-group">
+          <label>Start Date</label>
+          <DatePicker
+            value={fromDate}
+            onChange={(e) => setFromDate(e.target.value)}
+            placeholder="Select start date"
+          />
         </div>
+        <div className="dmm-filter-group">
+          <label>End Date</label>
+          <DatePicker
+            value={toDate}
+            onChange={(e) => setToDate(e.target.value)}
+            placeholder="Select end date"
+          />
+        </div>
+        <FilterButton onClick={handleFilter} disabled={!fromDate}>
+          Filter
+        </FilterButton>
       </div>
     </>
   );

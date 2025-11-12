@@ -3,11 +3,31 @@
 .dashboard-page-container {
   padding: var(--spacing-md, 1rem);
   background-color: #f8f9fa; /* A very light background for the content area */
-  min-height: calc(100vh - var(--navbar-height, 75px));
+  min-height: 100vh;
   box-sizing: border-box;
-  width: 100%;
-  max-width: 100vw;
-  overflow-x: hidden;
+  margin-left: 60px; /* Sidebar width when collapsed (icons visible) */
+  width: calc(100% - 60px);
+  transition: margin-left 0.3s ease, width 0.3s ease;
+}
+
+/* Adjust dashboard margin only when sidebar is pinned (not on hover) */
+body.sidebar-pinned-expanded .dashboard-page-container {
+  margin-left: 240px;
+  width: calc(100% - 240px);
+}
+
+body.sidebar-pinned-collapsed .dashboard-page-container {
+  margin-left: 60px;
+  width: calc(100% - 60px);
+}
+
+/* On mobile, sidebar can overlay */
+@media (max-width: 768px) {
+  .dashboard-page-container {
+    margin-left: 0;
+    width: 100%;
+    padding-left: 72px; /* Small padding for collapsed sidebar */
+  }
 }
 
 @media (min-width: 768px) {

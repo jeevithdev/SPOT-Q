@@ -140,14 +140,6 @@ const MicroTensile = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Micro Tensile Test - Entry Form
-            <button 
-              className="microtensile-view-report-btn"
-              onClick={() => window.location.href = "/micro-tensile/report"}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
@@ -320,14 +312,20 @@ const MicroTensile = () => {
 
             <div className="microtensile-form-group" style={{ gridColumn: 'span 2' }}>
               <label>Remarks</label>
-              <textarea
+              <input
+                type="text"
                 ref={el => inputRefs.current.remarks = el}
                 name="remarks"
                 value={formData.remarks}
                 onChange={handleChange}
-                onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleKeyDown(e, 'remarks'); } }}
-                rows="3"
+                onKeyDown={e => handleKeyDown(e, 'remarks')}
                 placeholder="Enter any additional notes or observations..."
+                maxLength={80}
+                style={{
+                  width: '100%',
+                  maxWidth: '500px',
+                  resize: 'none'
+                }}
               />
             </div>
 

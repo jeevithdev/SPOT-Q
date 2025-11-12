@@ -736,14 +736,6 @@ const SandTestingRecord = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Sand Testing Record
-            <button 
-              className="sand-view-report-btn"
-              onClick={handleViewReport}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
@@ -2262,12 +2254,18 @@ const SandTestingRecord = () => {
           </div>
           <div className="sand-table5-form-group sand-table5-form-group-full">
             <label>Remarks</label>
-            <textarea 
+            <input 
+              type="text"
               name="remarks" 
               value={table5.remarks || ''} 
               onChange={(e) => handleTableChange(5, 'remarks', e.target.value)} 
-              rows="4" 
               placeholder="Enter any additional notes..."
+              maxLength={80}
+              style={{
+                width: '100%',
+                maxWidth: '500px',
+                resize: 'none'
+              }}
               className="sand-table5-input"
             />
           </div>

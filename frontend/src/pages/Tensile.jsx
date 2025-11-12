@@ -170,14 +170,6 @@ const Tensile = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Tensile Test - Entry Form
-            <button 
-              className="tensile-view-report-btn"
-              onClick={() => window.location.href = "/tensile/report"}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
@@ -355,15 +347,20 @@ const Tensile = () => {
               />
             </div>
 
-            <div className="tensile-form-group full-width">
+            <div className="tensile-form-group">
               <label>Remarks</label>
-              <textarea
+              <input
+                type="text"
                 name="remarks"
                 value={formData.remarks}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                rows="3"
                 placeholder="Enter any additional notes or observations..."
+                maxLength={80}
+                style={{
+                  width: '100%',
+                  resize: 'none'
+                }}
                 className=""
               />
             </div>

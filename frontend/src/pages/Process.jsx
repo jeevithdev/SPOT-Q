@@ -150,24 +150,15 @@ export default function ProcessControl() {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Process Control - Entry Form
-            <button 
-              className="process-view-report-btn"
-              onClick={() => window.location.href = "/process/report"}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
 
       <div className="process-form-grid">
             {/* Primary Data Section */}
-            <div className="section-header">
+            <div className="section-header primary-data-header">
               <h3>Primary Data</h3>
             </div>
-
             <div className="process-form-group">
               <label>Date *</label>
               <DatePicker 
@@ -267,10 +258,9 @@ export default function ProcessControl() {
               <input ref={el => inputRefs.current.quantityOfMoulds = el} type="number" name="quantityOfMoulds" value={formData.quantityOfMoulds} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'quantityOfMoulds')} placeholder="Enter quantity" />
             </div>
 
-            <div className="section-header">
+            <div className="section-header metal-composition-header">
               <h3>Metal Composition (%)</h3>
             </div>
-
             {['C', 'Si', 'Mn', 'P', 'S', 'MgFL', 'Cu', 'Cr'].map(el => (
               <div className="process-form-group" key={el}>
                 <label>{el === 'MgFL' ? 'Mg F/L' : el}</label>
@@ -337,10 +327,9 @@ export default function ProcessControl() {
               <input ref={el => inputRefs.current.tappingTime = el} type="time" name="tappingTime" value={formData.tappingTime} onChange={handleChange} onKeyDown={e => handleKeyDown(e, 'tappingTime')} />
             </div>
 
-            <div className="section-header">
+            <div className="section-header corrective-addition-header">
               <h3>Corrective Addition (Kgs)</h3>
             </div>
-
             {['C', 'Si', 'Mn', 'S', 'Cr', 'Cu', 'Sn'].map(el => (
               <div className="process-form-group" key={`add-${el}`}>
                 <label>{el}</label>
@@ -399,16 +388,21 @@ export default function ProcessControl() {
               />
             </div>
 
-            <div className="process-form-group" style={{gridColumn: '1 / -1'}}>
+            <div className="process-form-group">
               <label>Remarks</label>
-              <textarea 
+              <input 
+                type="text"
                 ref={el => inputRefs.current.remarks = el} 
                 name="remarks" 
                 value={formData.remarks} 
                 onChange={handleChange} 
                 onKeyDown={e => handleKeyDown(e, 'remarks')}
-                rows="4" 
                 placeholder="Enter any additional notes..." 
+                maxLength={80}
+                style={{
+                  width: '100%',
+                  resize: 'none'
+                }}
               />
             </div>
       </div>

@@ -652,9 +652,18 @@
   font-size: 1rem;
   font-weight: 600;
   color: #334155;
-  padding-bottom: 0.5rem;
+  padding-bottom: 0.25rem;
   border-bottom: 2px solid #e2e8f0;
   margin-top: 0; /* Added to remove top margin */
+  margin-bottom: 0.5rem;
+}
+
+.primary-data-header h3,
+.metal-composition-header h3,
+.corrective-addition-header h3 {
+  border-bottom: none;
+  padding-bottom: 0;
+  margin-bottom: 0;
 }
 
 /* Remove up/down arrow buttons from number inputs */

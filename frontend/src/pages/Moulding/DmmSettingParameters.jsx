@@ -65,12 +65,12 @@ const DmmSettingParameters = () => {
   const [shift1Row, setShift1Row] = useState({ ...initialRow });
   const [shift2Row, setShift2Row] = useState({ ...initialRow });
   const [shift3Row, setShift3Row] = useState({ ...initialRow });
+  const [selectedShift, setSelectedShift] = useState(null); // 1, 2, 3, or null
+  const [currentRow, setCurrentRow] = useState({ ...initialRow }); // Current form data
   const [loadingStates, setLoadingStates] = useState({
     primary: false,
     operation: false,
-    shift1: false,
-    shift2: false,
-    shift3: false
+    shift: false
   });
   const [shiftCounts, setShiftCounts] = useState({
     shift1: 0,
@@ -78,13 +78,9 @@ const DmmSettingParameters = () => {
     shift3: 0
   });
   
-  // Refs for submit buttons and first inputs
-  const shift1SubmitRef = useRef(null);
-  const shift2SubmitRef = useRef(null);
-  const shift3SubmitRef = useRef(null);
-  const shift1FirstInputRef = useRef(null);
-  const shift2FirstInputRef = useRef(null);
-  const shift3FirstInputRef = useRef(null);
+  // Refs for submit button and first input
+  const shiftSubmitRef = useRef(null);
+  const shiftFirstInputRef = useRef(null);
 
   const handlePrimaryChange = (field, value) => {
     setPrimaryData((prev) => {
@@ -110,6 +106,8 @@ const DmmSettingParameters = () => {
         setShift1Row({ ...initialRow });
         setShift2Row({ ...initialRow });
         setShift3Row({ ...initialRow });
+        setSelectedShift(null);
+        setCurrentRow({ ...initialRow });
         
         // Check for data with common machines (1, 2, 3, etc.) for this date
         // Start with machine "1" as it's most common
@@ -210,17 +208,19 @@ const DmmSettingParameters = () => {
               setOperationData(newOperationData);
             }
             
-            // Load shift parameter data if it exists
-            // Note: Parameters are now arrays, so we don't load them into the form
-            // The form should always start empty for new entries
-            // Clear all shift rows - always start with empty form for new entry
-            setShift1Row({ ...initialRow });
-            setShift2Row({ ...initialRow });
-            setShift3Row({ ...initialRow });
-            
-            // Found data, stop checking other machines
-            setCheckingData(false);
-            return;
+        // Load shift parameter data if it exists
+        // Note: Parameters are now arrays, so we don't load them into the form
+        // The form should always start empty for new entries
+        // Clear all shift rows - always start with empty form for new entry
+        setShift1Row({ ...initialRow });
+        setShift2Row({ ...initialRow });
+        setShift3Row({ ...initialRow });
+        setSelectedShift(null);
+        setCurrentRow({ ...initialRow });
+        
+        // Found data, stop checking other machines
+        setCheckingData(false);
+        return;
           }
         }
       }
@@ -241,6 +241,8 @@ const DmmSettingParameters = () => {
       setShift1Row({ ...initialRow });
       setShift2Row({ ...initialRow });
       setShift3Row({ ...initialRow });
+      setSelectedShift(null);
+      setCurrentRow({ ...initialRow });
       setPrimaryData({
         date: date,
         machine: ''
@@ -274,6 +276,8 @@ const DmmSettingParameters = () => {
       setShift1Row({ ...initialRow });
       setShift2Row({ ...initialRow });
       setShift3Row({ ...initialRow });
+      setSelectedShift(null);
+      setCurrentRow({ ...initialRow });
       return;
     }
 
@@ -373,6 +377,8 @@ const DmmSettingParameters = () => {
         setShift1Row({ ...initialRow });
         setShift2Row({ ...initialRow });
         setShift3Row({ ...initialRow });
+        setSelectedShift(null);
+        setCurrentRow({ ...initialRow });
       } else {
         // No record exists for this date+machine - clear everything except machine (keep user input)
         setIsPrimaryLocked(false);
@@ -391,6 +397,8 @@ const DmmSettingParameters = () => {
         setShift1Row({ ...initialRow });
         setShift2Row({ ...initialRow });
         setShift3Row({ ...initialRow });
+        setSelectedShift(null);
+        setCurrentRow({ ...initialRow });
         // Keep machine field value that user entered (don't clear it)
         setPrimaryData({
           date: date,
@@ -415,6 +423,8 @@ const DmmSettingParameters = () => {
       setShift1Row({ ...initialRow });
       setShift2Row({ ...initialRow });
       setShift3Row({ ...initialRow });
+      setSelectedShift(null);
+      setCurrentRow({ ...initialRow });
     } finally {
       setCheckingData(false);
     }
@@ -487,13 +497,38 @@ const DmmSettingParameters = () => {
     }));
   };
 
-  const handleInputChange = (shift, field, value) => {
-    if (shift === 1) {
-      setShift1Row((prev) => ({ ...prev, [field]: value }));
-    } else if (shift === 2) {
-      setShift2Row((prev) => ({ ...prev, [field]: value }));
-    } else if (shift === 3) {
-      setShift3Row((prev) => ({ ...prev, [field]: value }));
+  const handleInputChange = (field, value) => {
+    setCurrentRow((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Handle shift selection from dropdown
+  const handleShiftChange = (shiftNumber) => {
+    // Save current row data to the previously selected shift before switching
+    if (selectedShift) {
+      if (selectedShift === 1) {
+        setShift1Row({ ...currentRow });
+      } else if (selectedShift === 2) {
+        setShift2Row({ ...currentRow });
+      } else if (selectedShift === 3) {
+        setShift3Row({ ...currentRow });
+      }
+    }
+
+    if (!shiftNumber) {
+      setSelectedShift(null);
+      setCurrentRow({ ...initialRow });
+      return;
+    }
+
+    setSelectedShift(shiftNumber);
+    
+    // Load the selected shift's data into current row
+    if (shiftNumber === 1) {
+      setCurrentRow({ ...shift1Row });
+    } else if (shiftNumber === 2) {
+      setCurrentRow({ ...shift2Row });
+    } else if (shiftNumber === 3) {
+      setCurrentRow({ ...shift3Row });
     }
   };
 
@@ -633,12 +668,18 @@ const DmmSettingParameters = () => {
     }
   }, [primaryData.date, primaryData.machine]);
 
-  const handleShiftSubmit = async (e, shiftNumber) => {
+  const handleShiftSubmit = async (e) => {
     e.preventDefault();
+    
+    // Ensure a shift is selected
+    if (!selectedShift) {
+      alert('Please select a shift first.');
+      return;
+    }
     
     // Ensure primary data is locked first
     if (!isPrimaryLocked) {
-      alert('Please lock Primary data first before submitting.');
+      alert('Please save Primary data first before submitting.');
       return;
     }
     
@@ -648,45 +689,53 @@ const DmmSettingParameters = () => {
     }
 
     try {
-      setLoadingStates(prev => ({ ...prev, [`shift${shiftNumber}`]: true }));
-      const shiftRow = shiftNumber === 1 ? shift1Row : shiftNumber === 2 ? shift2Row : shift3Row;
+      setLoadingStates(prev => ({ ...prev, shift: true }));
       
       const payload = {
         date: primaryData.date,
         machine: primaryData.machine,
-        section: `shift${shiftNumber}`,
+        section: `shift${selectedShift}`,
         parameters: {
-          [`shift${shiftNumber}`]: shiftRow
+          [`shift${selectedShift}`]: currentRow
         }
       };
 
       const data = await api.post('/v1/dmm-settings', payload);
       if (data.success) {
-        // Clear the shift row after successful submission
-        if (shiftNumber === 1) {
+        // Clear the corresponding shift row state after successful save
+        if (selectedShift === 1) {
           setShift1Row({ ...initialRow });
-        } else if (shiftNumber === 2) {
+        } else if (selectedShift === 2) {
           setShift2Row({ ...initialRow });
-        } else if (shiftNumber === 3) {
+        } else if (selectedShift === 3) {
           setShift3Row({ ...initialRow });
         }
+        
+        // Clear current row for next entry
+        setCurrentRow({ ...initialRow });
         
         // Fetch updated counts from database
         await fetchShiftCounts();
         
-        // Focus first input of the shift
-        focusFirstShiftInput(shiftNumber);
+        // Focus customer input (first input after shift dropdown)
+        setTimeout(() => {
+          if (shiftFirstInputRef.current) {
+            shiftFirstInputRef.current.focus();
+          }
+        }, 100);
+        
+        alert(`Shift ${selectedShift} parameters saved successfully!`);
       }
     } catch (error) {
-      console.error(`Error saving shift ${shiftNumber} data:`, error);
+      console.error(`Error saving shift ${selectedShift} data:`, error);
       alert('Failed to save: ' + (error.response?.data?.message || error.message));
     } finally {
-      setLoadingStates(prev => ({ ...prev, [`shift${shiftNumber}`]: false }));
+      setLoadingStates(prev => ({ ...prev, shift: false }));
     }
   };
 
   // Handle Enter key navigation for shift parameter inputs
-  const handleShiftKeyDown = (e, shiftNumber, submitButtonRef, firstInputRef) => {
+  const handleShiftKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
       
@@ -694,7 +743,7 @@ const DmmSettingParameters = () => {
       const shiftSection = e.target.closest('.dmm-section');
       if (!shiftSection) return;
       
-      const inputs = Array.from(shiftSection.querySelectorAll('input:not([type="button"])'));
+      const inputs = Array.from(shiftSection.querySelectorAll('input:not([type="button"]):not([disabled]), select:not([disabled])'));
       const currentIndex = inputs.indexOf(e.target);
       
       // If not the last input, move to next
@@ -702,33 +751,19 @@ const DmmSettingParameters = () => {
         inputs[currentIndex + 1].focus();
       } else {
         // Last input - focus submit button
-        if (submitButtonRef.current) {
-          submitButtonRef.current.focus();
+        if (shiftSubmitRef.current) {
+          shiftSubmitRef.current.focus();
         }
       }
     }
   };
 
   // Handle Enter key on submit button
-  const handleSubmitButtonKeyDown = (e, shiftNumber, submitHandler) => {
+  const handleSubmitButtonKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      submitHandler(e);
+      handleShiftSubmit(e);
     }
-  };
-
-  // Focus first input of a shift section
-  const focusFirstShiftInput = (shiftNumber) => {
-    setTimeout(() => {
-      let firstInputRef;
-      if (shiftNumber === 1) firstInputRef = shift1FirstInputRef;
-      else if (shiftNumber === 2) firstInputRef = shift2FirstInputRef;
-      else if (shiftNumber === 3) firstInputRef = shift3FirstInputRef;
-      
-      if (firstInputRef && firstInputRef.current) {
-        firstInputRef.current.focus();
-      }
-    }, 100);
   };
 
   // Separate reset functions for each section
@@ -749,256 +784,378 @@ const DmmSettingParameters = () => {
     });
   };
 
-  const resetShift1Row = () => {
-    if (!window.confirm('Are you sure you want to reset Shift 1 Parameters?')) return;
-    setShift1Row({ ...initialRow });
-  };
-
-  const resetShift2Row = () => {
-    if (!window.confirm('Are you sure you want to reset Shift 2 Parameters?')) return;
-    setShift2Row({ ...initialRow });
-  };
-
-  const resetShift3Row = () => {
-    if (!window.confirm('Are you sure you want to reset Shift 3 Parameters?')) return;
-    setShift3Row({ ...initialRow });
+  const resetShiftRow = () => {
+    if (!selectedShift) {
+      alert('Please select a shift first.');
+      return;
+    }
+    if (!window.confirm(`Are you sure you want to reset Shift ${selectedShift} Parameters?`)) return;
+    setCurrentRow({ ...initialRow });
   };
 
   const handleViewReport = () => {
     navigate('/moulding/dmm-setting-parameters/report');
   };
 
-  const renderRow = (row, shift) => {
-    const submitButtonRef = shift === 1 ? shift1SubmitRef : shift === 2 ? shift2SubmitRef : shift3SubmitRef;
-    const firstInputRef = shift === 1 ? shift1FirstInputRef : shift === 2 ? shift2FirstInputRef : shift3FirstInputRef;
-    
+  const renderRow = () => {
     return (
-    <div className="dmm-form-grid">
+    <div className="dmm-form-grid dmm-shift-form-grid">
+      <div className="dmm-form-group">
+        <label>Shift *</label>
+        <select
+          value={selectedShift || ''}
+          onChange={(e) => handleShiftChange(e.target.value ? parseInt(e.target.value) : null)}
+          onKeyDown={handleShiftKeyDown}
+          disabled={!isPrimaryLocked}
+          style={{
+            width: '100%',
+            padding: '0.625rem 0.875rem',
+            border: '2px solid #cbd5e1',
+            borderRadius: '8px',
+            fontSize: '0.875rem',
+            backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+            color: !isPrimaryLocked ? '#64748b' : '#1e293b',
+            cursor: !isPrimaryLocked ? 'not-allowed' : 'pointer'
+          }}
+        >
+          <option value="">Select Shift</option>
+          <option value="1">Shift 1 (Count: {shiftCounts.shift1})</option>
+          <option value="2">Shift 2 (Count: {shiftCounts.shift2})</option>
+          <option value="3">Shift 3 (Count: {shiftCounts.shift3})</option>
+        </select>
+      </div>
       <div className="dmm-form-group">
         <label>Customer</label>
         <input
           type="text"
-          ref={firstInputRef}
-          value={row.customer}
-          onChange={(e) => handleInputChange(shift, "customer", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          ref={shiftFirstInputRef}
+          value={currentRow.customer}
+          onChange={(e) => handleInputChange("customer", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., ABC Industries"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>Item Description</label>
         <input
           type="text"
-          value={row.itemDescription}
-          onChange={(e) => handleInputChange(shift, "itemDescription", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.itemDescription}
+          onChange={(e) => handleInputChange("itemDescription", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., Engine Block Casting"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>Time</label>
         <input
           type="text"
-          value={row.time}
-                        onChange={(e) => handleInputChange(shift, "time", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.time}
+          onChange={(e) => handleInputChange("time", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 08:30 AM"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>PP Thickness (mm)</label>
         <input
           type="number"
-          value={row.ppThickness}
-                        onChange={(e) => handleInputChange(shift, "ppThickness", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.ppThickness}
+          onChange={(e) => handleInputChange("ppThickness", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 25.5"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>PP Height (mm)</label>
         <input
           type="number"
-          value={row.ppHeight}
-                        onChange={(e) => handleInputChange(shift, "ppHeight", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.ppHeight}
+          onChange={(e) => handleInputChange("ppHeight", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 150.0"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>SP Thickness (mm)</label>
         <input
           type="number"
-          value={row.spThickness}
-                        onChange={(e) => handleInputChange(shift, "spThickness", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.spThickness}
+          onChange={(e) => handleInputChange("spThickness", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 30.2"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>SP Height (mm)</label>
         <input
           type="number"
-          value={row.spHeight}
-                        onChange={(e) => handleInputChange(shift, "spHeight", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.spHeight}
+          onChange={(e) => handleInputChange("spHeight", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 180.5"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>SP Core Mask Thickness (mm)</label>
         <input
           type="number"
-          value={row.spCoreMaskThickness}
-                        onChange={(e) => handleInputChange(shift, "spCoreMaskThickness", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.spCoreMaskThickness}
+          onChange={(e) => handleInputChange("spCoreMaskThickness", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 12.0"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>SP Core Mask Height (mm)</label>
         <input
           type="number"
-          value={row.spCoreMaskHeight}
-                        onChange={(e) => handleInputChange(shift, "spCoreMaskHeight", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.spCoreMaskHeight}
+          onChange={(e) => handleInputChange("spCoreMaskHeight", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 95.5"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>PP Core Mask Thickness (mm)</label>
         <input
           type="number"
-          value={row.ppCoreMaskThickness}
-                        onChange={(e) => handleInputChange(shift, "ppCoreMaskThickness", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.ppCoreMaskThickness}
+          onChange={(e) => handleInputChange("ppCoreMaskThickness", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 10.5"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>PP Core Mask Height (mm)</label>
         <input
           type="number"
-          value={row.ppCoreMaskHeight}
-                        onChange={(e) => handleInputChange(shift, "ppCoreMaskHeight", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.ppCoreMaskHeight}
+          onChange={(e) => handleInputChange("ppCoreMaskHeight", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 85.0"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>Sand Shot Pressure (Bar)</label>
         <input
           type="number"
-          value={row.sandShotPressureBar}
-                        onChange={(e) => handleInputChange(shift, "sandShotPressureBar", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.sandShotPressureBar}
+          onChange={(e) => handleInputChange("sandShotPressureBar", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 6.5"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>Correction Shot Time (s)</label>
         <input
           type="number"
-          value={row.correctionShotTime}
-                        onChange={(e) => handleInputChange(shift, "correctionShotTime", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.correctionShotTime}
+          onChange={(e) => handleInputChange("correctionShotTime", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 2.5"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>Squeeze Pressure (Kg/cm²)</label>
         <input
           type="number"
-          value={row.squeezePressure}
-                        onChange={(e) => handleInputChange(shift, "squeezePressure", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.squeezePressure}
+          onChange={(e) => handleInputChange("squeezePressure", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 45.0"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>PP Stripping Acceleration</label>
         <input
           type="number"
-          value={row.ppStrippingAcceleration}
-                        onChange={(e) => handleInputChange(shift, "ppStrippingAcceleration", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.ppStrippingAcceleration}
+          onChange={(e) => handleInputChange("ppStrippingAcceleration", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 3.2"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>PP Stripping Distance</label>
         <input
           type="number"
-          value={row.ppStrippingDistance}
-                        onChange={(e) => handleInputChange(shift, "ppStrippingDistance", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.ppStrippingDistance}
+          onChange={(e) => handleInputChange("ppStrippingDistance", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 120.0"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>SP Stripping Acceleration</label>
         <input
           type="number"
-          value={row.spStrippingAcceleration}
-                        onChange={(e) => handleInputChange(shift, "spStrippingAcceleration", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.spStrippingAcceleration}
+          onChange={(e) => handleInputChange("spStrippingAcceleration", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 2.8"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>SP Stripping Distance</label>
         <input
           type="number"
-          value={row.spStrippingDistance}
-                        onChange={(e) => handleInputChange(shift, "spStrippingDistance", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.spStrippingDistance}
+          onChange={(e) => handleInputChange("spStrippingDistance", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 140.0"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>Mould Thickness ±10mm</label>
         <input
           type="number"
-          value={row.mouldThicknessPlus10}
-                        onChange={(e) => handleInputChange(shift, "mouldThicknessPlus10", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.mouldThicknessPlus10}
+          onChange={(e) => handleInputChange("mouldThicknessPlus10", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 250.0"
           step="any"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>Close Up Force / Mould Close Up Pressure</label>
         <input
           type="text"
-          value={row.closeUpForceMouldCloseUpPressure}
-                        onChange={(e) => handleInputChange(shift, "closeUpForceMouldCloseUpPressure", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.closeUpForceMouldCloseUpPressure}
+          onChange={(e) => handleInputChange("closeUpForceMouldCloseUpPressure", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., 800 kN / 55 bar"
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
       <div className="dmm-form-group">
         <label>Remarks</label>
         <input
           type="text"
-          value={row.remarks}
-                        onChange={(e) => handleInputChange(shift, "remarks", e.target.value)}
-          onKeyDown={(e) => handleShiftKeyDown(e, shift, submitButtonRef, firstInputRef)}
+          value={currentRow.remarks}
+          onChange={(e) => handleInputChange("remarks", e.target.value)}
+          onKeyDown={handleShiftKeyDown}
           placeholder="e.g., All parameters OK"
+          maxLength={60}
+          disabled={!selectedShift || !isPrimaryLocked}
+          style={{
+            resize: 'none',
+            backgroundColor: (!selectedShift || !isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+            cursor: (!selectedShift || !isPrimaryLocked) ? 'not-allowed' : 'text'
+          }}
         />
       </div>
     </div>
@@ -1018,14 +1175,6 @@ const DmmSettingParameters = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             DMM Setting Parameters Check Sheet
-            <button 
-              className="dmm-view-report-btn"
-              onClick={handleViewReport}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
@@ -1299,86 +1448,39 @@ const DmmSettingParameters = () => {
             </div>
           </div>
 
-          {/* Shift 1 Section */}
+          {/* Shift Parameters Section */}
           <div className="dmm-section">
-            <h3 className="dmm-section-title">Shift 1 Parameters (Shift 1 Count: {shiftCounts.shift1})</h3>
-            {renderRow(shift1Row, 1)}
+            <h3 className="dmm-section-title">
+              Shift Parameters
+              {selectedShift && ` - Shift ${selectedShift} (Count: ${shiftCounts[`shift${selectedShift}`] || 0})`}
+            </h3>
+            {!isPrimaryLocked && (
+              <div style={{ marginBottom: '1rem', color: '#64748b', fontSize: '0.875rem' }}>
+                Please save Primary data first to enable shift parameters entry.
+              </div>
+            )}
+            {renderRow()}
             <div className="dmm-section-submit" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <button
                 type="button"
-                onClick={resetShift1Row}
+                onClick={resetShiftRow}
                 className="dmm-reset-btn"
+                disabled={!selectedShift}
               >
                 <RotateCcw size={16} />
                 Reset
               </button>
               <button
-                ref={shift1SubmitRef}
+                ref={shiftSubmitRef}
                 type="button"
-                onClick={(e) => handleShiftSubmit(e, 1)}
-                onKeyDown={(e) => handleSubmitButtonKeyDown(e, 1, (e) => handleShiftSubmit(e, 1))}
-                disabled={loadingStates.shift1 || !isPrimaryLocked}
-                title={!isPrimaryLocked ? 'Please save Primary data first' : 'Submit Shift 1'}
+                onClick={handleShiftSubmit}
+                onKeyDown={handleSubmitButtonKeyDown}
+                disabled={loadingStates.shift || !isPrimaryLocked || !selectedShift}
+                title={!isPrimaryLocked ? 'Please save Primary data first' : !selectedShift ? 'Please select a shift' : `Submit Shift ${selectedShift}`}
                 className="dmm-submit-btn"
               >
-                {loadingStates.shift1 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
-                Submit Shift 1
-              </button>
-            </div>
-          </div>
-
-          {/* Shift 2 Section */}
-          <div className="dmm-section">
-            <h3 className="dmm-section-title">Shift 2 Parameters (Shift 2 Count: {shiftCounts.shift2})</h3>
-            {renderRow(shift2Row, 2)}
-            <div className="dmm-section-submit" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button
-                type="button"
-                onClick={resetShift2Row}
-                className="dmm-reset-btn"
-              >
-                <RotateCcw size={16} />
-                Reset
-              </button>
-              <button
-                ref={shift2SubmitRef}
-                type="button"
-                onClick={(e) => handleShiftSubmit(e, 2)}
-                onKeyDown={(e) => handleSubmitButtonKeyDown(e, 2, (e) => handleShiftSubmit(e, 2))}
-                disabled={loadingStates.shift2 || !isPrimaryLocked}
-                title={!isPrimaryLocked ? 'Please save Primary data first' : 'Submit Shift 2'}
-                className="dmm-submit-btn"
-              >
-                {loadingStates.shift2 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
-                Submit Shift 2
-              </button>
-            </div>
-          </div>
-
-          {/* Shift 3 Section */}
-          <div className="dmm-section">
-            <h3 className="dmm-section-title">Shift 3 Parameters (Shift 3 Count: {shiftCounts.shift3})</h3>
-            {renderRow(shift3Row, 3)}
-            <div className="dmm-section-submit" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-              <button
-                type="button"
-                onClick={resetShift3Row}
-                className="dmm-reset-btn"
-              >
-                <RotateCcw size={16} />
-                Reset
-              </button>
-              <button
-                ref={shift3SubmitRef}
-                type="button"
-                onClick={(e) => handleShiftSubmit(e, 3)}
-                onKeyDown={(e) => handleSubmitButtonKeyDown(e, 3, (e) => handleShiftSubmit(e, 3))}
-                disabled={loadingStates.shift3 || !isPrimaryLocked}
-                title={!isPrimaryLocked ? 'Please save Primary data first' : 'Submit Shift 3'}
-                className="dmm-submit-btn"
-              >
-                {loadingStates.shift3 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
-                Submit Shift 3
+                {loadingStates.shift ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
+                {loadingStates.shift ? 'Saving...' : selectedShift ? `Submit Shift ${selectedShift}` : 'Submit'}
               </button>
             </div>
           </div>

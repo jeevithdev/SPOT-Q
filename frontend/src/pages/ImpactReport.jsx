@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, X, PencilLine, BookOpenCheck } from 'lucide-react';
-import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
+import { X, BookOpenCheck } from 'lucide-react';
+import { DatePicker, EditActionButton, DeleteActionButton, FilterButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/ImpactReport.css';
@@ -92,7 +92,7 @@ const ImpactReport = () => {
   };
 
   const handleFilter = () => {
-    if (!startDate || !endDate) {
+    if (!startDate) {
       setFilteredItems(items);
       return;
     }
@@ -100,11 +100,19 @@ const ImpactReport = () => {
     const filtered = items.filter(item => {
       if (!item.dateOfInspection) return false;
       const itemDate = new Date(item.dateOfInspection);
+      itemDate.setHours(0, 0, 0, 0);
       const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
+      start.setHours(0, 0, 0, 0);
       
-      return itemDate >= start && itemDate <= end;
+      // If end date is provided, filter by date range
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return itemDate >= start && itemDate <= end;
+      } else {
+        // If only start date is provided, show only records from that exact date
+        return itemDate.getTime() === start.getTime();
+      }
     });
 
     setFilteredItems(filtered);
@@ -117,19 +125,11 @@ const ImpactReport = () => {
           <h2>
             <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
             Impact Test - Report
-            <button 
-              className="impact-report-entry-btn"
-              onClick={() => window.location.href = "/impact"}
-              title="Entry"
-            >
-              <PencilLine size={16} />
-              <span>Entry</span>
-            </button>
           </h2>
         </div>
       </div>
 
-      <div className="impact-filter-grid">
+      <div className="impact-filter-container">
         <div className="impact-filter-group">
           <label>Start Date</label>
           <DatePicker
@@ -146,12 +146,9 @@ const ImpactReport = () => {
             placeholder="Select end date"
           />
         </div>
-        <div className="impact-filter-btn-container">
-          <Button onClick={handleFilter} className="impact-filter-btn" type="button">
-            <Filter size={18} />
-            Filter
-          </Button>
-        </div>
+        <FilterButton onClick={handleFilter} disabled={!startDate}>
+          Filter
+        </FilterButton>
       </div>
 
       {loading ? (
@@ -176,20 +173,20 @@ const ImpactReport = () => {
               <tbody>
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan="11" className="impact-no-records">
+                    <td colSpan="7" className="impact-no-records">
                       No records found
                     </td>
                   </tr>
                 ) : (
                   filteredItems.map((item, index) => (
                     <tr key={item._id || index}>
-                      <td>{item.dateOfInspection ? new Date(item.dateOfInspection).toLocaleDateString() : '-'}</td>
+                      <td>{item.dateOfInspection ? new Date(item.dateOfInspection).toLocaleDateString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric' }) : '-'}</td>
                       <td>{item.partName || '-'}</td>
                       <td>{item.dateCode || '-'}</td>
                       <td>{item.specification || '-'}</td>
                       <td>{item.observedValue !== undefined && item.observedValue !== null ? item.observedValue : '-'}</td>
                       <td>{item.remarks || '-'}</td>
-                      <td style={{ minWidth: '100px' }}>
+                      <td>
                         <EditActionButton onClick={() => handleEdit(item)} />
                         <DeleteActionButton onClick={() => handleDelete(item._id)} />
                       </td>
@@ -270,11 +267,17 @@ const ImpactReport = () => {
 
                 <div className="impact-form-group full-width">
                   <label>Remarks</label>
-                  <textarea
+                  <input
+                    type="text"
                     name="remarks"
                     value={editFormData.remarks}
                     onChange={handleEditChange}
-                    rows="3"
+                    placeholder="Enter any additional notes..."
+                    maxLength={80}
+                    style={{
+                      width: '100%',
+                      resize: 'none'
+                    }}
                   />
                 </div>
               </div>

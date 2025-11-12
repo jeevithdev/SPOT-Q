@@ -1,7 +1,7 @@
 import React, { useContext } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, Outlet } from 'react-router-dom';
 import { AuthContext } from './src/context/AuthContext';
-import { Navbar } from './src/Components/Navbar';
+import Sidebar from './src/Components/sidebar';
 import Dashboard from './src/Components/Dashboard';
 import DepartmentRouteGuard from './src/Components/DepartmentRouteGuard';
 
@@ -69,7 +69,7 @@ const ProtectedLayout = () => {
   if (!user) return <Navigate to="/login" replace />;
   return (
     <>
-      <Navbar />
+      <Sidebar />
       <Dashboard>
         <Outlet />
       </Dashboard>

@@ -142,14 +142,6 @@ const Impact = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Impact Test - Entry Form
-            <button 
-              className="impact-view-report-btn"
-              onClick={() => window.location.href = "/impact/report"}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
@@ -223,13 +215,19 @@ const Impact = () => {
 
             <div className="impact-form-group full-width">
               <label>Remarks</label>
-              <textarea
+              <input
+                type="text"
                 name="remarks"
                 value={formData.remarks}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                rows="3"
                 placeholder="Enter any additional notes or observations..."
+                maxLength={80}
+                style={{
+                  width: '100%',
+                  maxWidth: '500px',
+                  resize: 'none'
+                }}
                 className=""
               />
             </div>

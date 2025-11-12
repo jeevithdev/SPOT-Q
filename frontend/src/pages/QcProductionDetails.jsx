@@ -155,14 +155,6 @@ const QcProductionDetails = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             QC Production Details - Entry Form
-            <button 
-              className="qcproduction-view-report-btn"
-              onClick={() => window.location.href = "/qc-production-details/report"}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>

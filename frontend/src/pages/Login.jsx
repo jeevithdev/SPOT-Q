@@ -94,11 +94,7 @@ const Login = () => {
                 <div className="password-toggle">
                   <EyeButton
                     isVisible={showPassword}
-                    onMouseDown={() => setShowPassword(true)}
-                    onMouseUp={() => setShowPassword(false)}
-                    onMouseLeave={() => setShowPassword(false)}
-                    onTouchStart={() => setShowPassword(true)}
-                    onTouchEnd={() => setShowPassword(false)}
+                    onClick={() => setShowPassword(!showPassword)}
                   />
                 </div>
               </div>

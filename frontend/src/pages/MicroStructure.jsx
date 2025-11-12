@@ -196,14 +196,6 @@ const MicroStructure = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Micro Structure - Entry Form
-            <button 
-              className="microstructure-view-report-btn"
-              onClick={() => window.location.href = "/micro-structure/report"}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>

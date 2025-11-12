@@ -3,6 +3,7 @@
   overflow-x: auto;
   overflow-y: visible;
   position: relative;
+<<<<<<< Updated upstream
   max-width: 100%;
   border: 1px solid #e5e7eb;
   border-radius: 8px;
@@ -237,4 +238,75 @@
   .microstructure-table td {
     min-width: 120px;
   }
+=======
+}
+
+.microstructure-report-entry-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1.25rem;
+  margin-left: 1rem;
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
+}
+
+.microstructure-report-entry-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+}
+
+.microstructure-report-entry-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+/* Filter Section */
+.impact-filter-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.impact-filter-group {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.impact-filter-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #334155;
+  margin-bottom: 0.25rem;
+}
+
+.impact-filter-group input {
+  width: 160px;
+  padding: 0.625rem 0.875rem;
+  font-size: 0.875rem;
+}
+
+.impact-filter-container > div:has(button) {
+  display: inline-block;
+}
+
+.impact-filter-container button {
+  margin-bottom: 0;
+  min-height: 38px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  width: auto !important;
+>>>>>>> Stashed changes
 }

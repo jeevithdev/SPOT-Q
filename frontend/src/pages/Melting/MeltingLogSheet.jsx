@@ -1,13 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Save, RefreshCw, FileText, Loader2, RotateCcw } from 'lucide-react';
+import { Save, Loader2, RotateCcw } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Melting/MeltingLogSheet.css';
 
 const MeltingLogSheet = () => {
-  const navigate = useNavigate();
-  
   // Primary: Date, Shift, Furnace No., Panel, Cumulative Liquid metal, Final KWHr, Initial KWHr, Total Units, Cumulative Units
   const [primaryData, setPrimaryData] = useState({
     date: '',
@@ -218,6 +215,88 @@ const MeltingLogSheet = () => {
     }
   };
 
+  const handleAllTablesSubmit = async () => {
+    // Ensure primary data exists first
+    if (!primaryData.date) {
+      alert('Please enter a date first.');
+      return;
+    }
+
+    // Set all tables as loading
+    setLoadingStates({
+      table1: true,
+      table2: true,
+      table3: true,
+      table4: true,
+      table5: true
+    });
+
+    try {
+      // Submit all tables in parallel
+      const promises = [
+        api.post('/v1/melting-logs/table1', {
+          tableNum: 1,
+          primaryData: primaryData,
+          data: table1
+        }),
+        api.post('/v1/melting-logs/table2', {
+          tableNum: 2,
+          primaryData: primaryData,
+          data: table2
+        }),
+        api.post('/v1/melting-logs/table3', {
+          tableNum: 3,
+          primaryData: primaryData,
+          data: table3
+        }),
+        api.post('/v1/melting-logs/table4', {
+          tableNum: 4,
+          primaryData: primaryData,
+          data: table4
+        }),
+        api.post('/v1/melting-logs/table5', {
+          tableNum: 5,
+          primaryData: primaryData,
+          data: table5
+        })
+      ];
+
+      const results = await Promise.all(promises);
+      
+      // Check if all succeeded
+      const allSuccess = results.every(response => response.success);
+      
+      if (allSuccess) {
+        alert('All tables saved successfully!');
+      } else {
+        const failedTables = results
+          .map((response, index) => response.success ? null : index + 1)
+          .filter(num => num !== null);
+        alert(`Some tables failed to save: ${failedTables.join(', ')}`);
+      }
+    } catch (error) {
+      console.error('Error saving tables:', error);
+      alert('Failed to save tables. Please try again.');
+    } finally {
+      setLoadingStates({
+        table1: false,
+        table2: false,
+        table3: false,
+        table4: false,
+        table5: false
+      });
+    }
+  };
+
+  const handleAllTablesReset = () => {
+    if (!window.confirm('Are you sure you want to reset all table entries?')) return;
+    resetTable1();
+    resetTable2();
+    resetTable3();
+    resetTable4();
+    resetTable5();
+  };
+
   const fetchPrimaryData = async (date) => {
     if (!date) return;
     
@@ -362,7 +441,6 @@ const MeltingLogSheet = () => {
   };
 
   const resetTable1 = () => {
-    if (!window.confirm('Are you sure you want to reset Table 1?')) return;
     setTable1({
       heatNo: '',
       grade: '',
@@ -381,7 +459,6 @@ const MeltingLogSheet = () => {
   };
 
   const resetTable2 = () => {
-    if (!window.confirm('Are you sure you want to reset Table 2?')) return;
     setTable2({
       charCoal: '',
       cpcFur: '',
@@ -399,7 +476,6 @@ const MeltingLogSheet = () => {
   };
 
   const resetTable3 = () => {
-    if (!window.confirm('Are you sure you want to reset Table 3?')) return;
     setTable3({
       labCoinTime: '',
       labCoinTempC: '',
@@ -413,7 +489,6 @@ const MeltingLogSheet = () => {
   };
 
   const resetTable4 = () => {
-    if (!window.confirm('Are you sure you want to reset Table 4?')) return;
     setTable4({
       time: '',
       tempCSg: '',
@@ -427,7 +502,6 @@ const MeltingLogSheet = () => {
   };
 
   const resetTable5 = () => {
-    if (!window.confirm('Are you sure you want to reset Table 5?')) return;
     setTable5({
       furnace1Kw: '',
       furnace1A: '',
@@ -444,10 +518,6 @@ const MeltingLogSheet = () => {
     });
   };
 
-  const handleViewReport = () => {
-    navigate('/melting/melting-log-sheet/report');
-  };
-
   return (
     <>
       {/* Header */}
@@ -456,21 +526,13 @@ const MeltingLogSheet = () => {
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
             Melting Log Sheet - Entry Form
-            <button 
-              className="cupola-holder-view-report-btn"
-              onClick={handleViewReport}
-              title="View Reports"
-            >
-              <FileText size={16} />
-              <span>View Reports</span>
-            </button>
           </h2>
         </div>
       </div>
 
       {/* Primary Section */}
-      <div className="melting-log-main-card">
-        <h3 className="melting-log-main-card-title primary-data-title">Primary Data :</h3>
+      <div>
+        <h3 className="section-header">Primary Data</h3>
         
         <div className="melting-log-form-grid">
           <div className="melting-log-form-group">
@@ -661,11 +723,12 @@ const MeltingLogSheet = () => {
             )}
           </button>
         </div>
-            </div>
+        <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
+      </div>
 
       {/* Table 1 */}
-      <div className="melting-log-main-card">
-        <h3 className="melting-log-main-card-title">Table 1 - Charging Details</h3>
+      <div>
+        <h3 className="section-header">Table 1</h3>
         
         <div className="melting-log-form-grid">
           <div className="melting-log-form-group">
@@ -831,30 +894,12 @@ const MeltingLogSheet = () => {
           </div>
         </div>
 
-        <div className="melting-log-submit-container">
-          <button
-            className="melting-log-reset-btn"
-            onClick={resetTable1}
-            type="button"
-          >
-            <RotateCcw size={16} />
-            Reset
-          </button>
-          <button
-            className="cupola-holder-submit-btn"
-            onClick={() => handleTableSubmit(1)}
-            disabled={loadingStates.table1 || !primaryData.date}
-            title={!primaryData.date ? 'Please enter a date first' : 'Save Table 1'}
-          >
-            {loadingStates.table1 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-            {loadingStates.table1 ? 'Saving...' : 'Save Table 1'}
-          </button>
-        </div>
-            </div>
+        <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
+      </div>
 
       {/* Table 2 */}
-      <div className="melting-log-main-card">
-        <h3 className="melting-log-main-card-title">Table 2 - Additions (All in kgs)</h3>
+      <div>
+        <h3 className="section-header">Table 2</h3>
         
         <div className="melting-log-form-grid">
           <div className="melting-log-form-group">
@@ -1014,30 +1059,12 @@ const MeltingLogSheet = () => {
           </div>
         </div>
 
-        <div className="melting-log-submit-container">
-          <button
-            className="melting-log-reset-btn"
-            onClick={resetTable2}
-            type="button"
-          >
-            <RotateCcw size={16} />
-            Reset
-          </button>
-          <button
-            className="cupola-holder-submit-btn"
-            onClick={() => handleTableSubmit(2)}
-            disabled={loadingStates.table2 || !primaryData.date}
-            title={!primaryData.date ? 'Please enter a date first' : 'Save Table 2'}
-          >
-            {loadingStates.table2 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-            {loadingStates.table2 ? 'Saving...' : 'Save Table 2'}
-          </button>
-        </div>
-            </div>
+        <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
+      </div>
 
       {/* Table 3 */}
-      <div className="melting-log-main-card">
-        <h3 className="melting-log-main-card-title">Table 3 - Timing Details</h3>
+      <div>
+        <h3 className="section-header">Table 3</h3>
         
         <div className="melting-log-sub-section">
           <h4 className="melting-log-sub-section-title">Lab Coin</h4>
@@ -1133,30 +1160,12 @@ const MeltingLogSheet = () => {
           </div>
         </div>
 
-        <div className="melting-log-submit-container">
-          <button
-            className="melting-log-reset-btn"
-            onClick={resetTable3}
-            type="button"
-          >
-            <RotateCcw size={16} />
-            Reset
-          </button>
-          <button
-            className="cupola-holder-submit-btn"
-            onClick={() => handleTableSubmit(3)}
-            disabled={loadingStates.table3 || !primaryData.date}
-            title={!primaryData.date ? 'Please enter a date first' : 'Save Table 3'}
-          >
-            {loadingStates.table3 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-            {loadingStates.table3 ? 'Saving...' : 'Save Table 3'}
-          </button>
-        </div>
+        <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
       </div>
 
       {/* Table 4 - Metal Tapping in Kgs */}
-      <div className="melting-log-main-card">
-        <h3 className="melting-log-main-card-title">Table 4 - Metal Tapping (in Kgs)</h3>
+      <div>
+        <h3 className="section-header">Table 4</h3>
         
         <div className="melting-log-form-grid">
         <div className="melting-log-form-group">
@@ -1248,68 +1257,124 @@ const MeltingLogSheet = () => {
         </div>
       </div>
 
-        <div className="melting-log-submit-container">
-          <button
-            className="melting-log-reset-btn"
-            onClick={resetTable4}
-            type="button"
-          >
-            <RotateCcw size={16} />
-            Reset
-          </button>
-          <button
-            className="cupola-holder-submit-btn"
-            onClick={() => handleTableSubmit(4)}
-            disabled={loadingStates.table4 || !primaryData.date}
-            title={!primaryData.date ? 'Please enter a date first' : 'Save Metal Tapping in Kgs'}
-          >
-            {loadingStates.table4 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-            {loadingStates.table4 ? 'Saving...' : 'Save Metal Tapping in Kgs'}
-          </button>
-        </div>
+        <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
       </div>
 
       {/* Table 5 - Electrical Readings */}
-      <div className="melting-log-main-card">
-        <h3 className="melting-log-main-card-title">Table 5 - Electrical Readings</h3>
+      <div>
+        <h3 className="section-header">Table 5</h3>
         
         <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Furnace 1, 2, 3</h4>
+          <h4 className="melting-log-sub-section-title">Furnace 1</h4>
           <div className="melting-log-form-grid">
+            <div className="melting-log-form-group">
+              <label>Furnace 1 - Kw</label>
+              <input
+                type="number"
+                value={table5.furnace1Kw || ''}
+                onChange={(e) => handleTableChange(5, 'furnace1Kw', e.target.value)}
+                placeholder="Enter Kw"
+                step="0.01"
+              />
+            </div>
 
-        <div className="melting-log-form-group">
-          <label>Kw</label>
-          <input
-            type="number"
-            value={table5.furnace1Kw || ''}
-            onChange={(e) => handleTableChange(5, 'furnace1Kw', e.target.value)}
-            placeholder="Enter Kw"
-            step="0.01"
-          />
-        </div>
-
-        <div className="melting-log-form-group">
-          <label>A</label>
-          <input
+            <div className="melting-log-form-group">
+              <label>Furnace 1 - A</label>
+              <input
                 type="number"
                 value={table5.furnace1A || ''}
                 onChange={(e) => handleTableChange(5, 'furnace1A', e.target.value)}
                 placeholder="Enter A"
                 step="0.01"
-          />
-        </div>
+              />
+            </div>
 
-        <div className="melting-log-form-group">
-          <label>V</label>
-          <input
+            <div className="melting-log-form-group">
+              <label>Furnace 1 - V</label>
+              <input
                 type="number"
                 value={table5.furnace1V || ''}
                 onChange={(e) => handleTableChange(5, 'furnace1V', e.target.value)}
                 placeholder="Enter V"
                 step="0.01"
-          />
+              />
+            </div>
+          </div>
         </div>
 
+        <div className="melting-log-sub-section">
+          <h4 className="melting-log-sub-section-title">Furnace 2</h4>
+          <div className="melting-log-form-grid">
+            <div className="melting-log-form-group">
+              <label>Furnace 2 - Kw</label>
+              <input
+                type="number"
+                value={table5.furnace2Kw || ''}
+                onChange={(e) => handleTableChange(5, 'furnace2Kw', e.target.value)}
+                placeholder="Enter Kw"
+                step="0.01"
+              />
+            </div>
+
+            <div className="melting-log-form-group">
+              <label>Furnace 2 - A</label>
+              <input
+                type="number"
+                value={table5.furnace2A || ''}
+                onChange={(e) => handleTableChange(5, 'furnace2A', e.target.value)}
+                placeholder="Enter A"
+                step="0.01"
+              />
+            </div>
+
+            <div className="melting-log-form-group">
+              <label>Furnace 2 - V</label>
+              <input
+                type="number"
+                value={table5.furnace2V || ''}
+                onChange={(e) => handleTableChange(5, 'furnace2V', e.target.value)}
+                placeholder="Enter V"
+                step="0.01"
+              />
+            </div>
+          </div>
+        </div>
+
+        <div className="melting-log-sub-section">
+          <h4 className="melting-log-sub-section-title">Furnace 3</h4>
+          <div className="melting-log-form-grid">
+            <div className="melting-log-form-group">
+              <label>Furnace 3 - Kw</label>
+              <input
+                type="number"
+                value={table5.furnace3Kw || ''}
+                onChange={(e) => handleTableChange(5, 'furnace3Kw', e.target.value)}
+                placeholder="Enter Kw"
+                step="0.01"
+              />
+            </div>
+
+            <div className="melting-log-form-group">
+              <label>Furnace 3 - A</label>
+              <input
+                type="number"
+                value={table5.furnace3A || ''}
+                onChange={(e) => handleTableChange(5, 'furnace3A', e.target.value)}
+                placeholder="Enter A"
+                step="0.01"
+              />
+            </div>
+
+            <div className="melting-log-form-group">
+              <label>Furnace 3 - V</label>
+              <input
+                type="number"
+                value={table5.furnace3V || ''}
+                onChange={(e) => handleTableChange(5, 'furnace3V', e.target.value)}
+                placeholder="Enter V"
+                step="0.01"
+              />
+            </div>
           </div>
         </div>
 
@@ -1351,25 +1416,36 @@ const MeltingLogSheet = () => {
           </div>
         </div>
 
-        <div className="melting-log-submit-container">
-          <button
-            className="melting-log-reset-btn"
-            onClick={resetTable5}
-            type="button"
-          >
-            <RotateCcw size={16} />
-            Reset
-          </button>
-          <button
-            className="cupola-holder-submit-btn"
-            onClick={() => handleTableSubmit(5)}
-            disabled={loadingStates.table5 || !primaryData.date}
-            title={!primaryData.date ? 'Please enter a date first' : 'Save Electrical Readings'}
-          >
-            {loadingStates.table5 ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-            {loadingStates.table5 ? 'Saving...' : 'Save Electrical Readings'}
-          </button>
-        </div>
+      </div>
+
+      {/* All Tables Submit and Reset Buttons */}
+      <div className="melting-log-submit-container" style={{ marginTop: '2rem' }}>
+        <button
+          className="melting-log-reset-btn"
+          onClick={handleAllTablesReset}
+          type="button"
+        >
+          <RotateCcw size={16} />
+          Reset All Tables
+        </button>
+        <button
+          className="cupola-holder-submit-btn"
+          onClick={handleAllTablesSubmit}
+          disabled={loadingStates.table1 || loadingStates.table2 || loadingStates.table3 || loadingStates.table4 || loadingStates.table5 || !primaryData.date}
+          title={!primaryData.date ? 'Please enter a date first' : 'Save All Tables'}
+        >
+          {(loadingStates.table1 || loadingStates.table2 || loadingStates.table3 || loadingStates.table4 || loadingStates.table5) ? (
+            <>
+              <Loader2 size={20} className="animate-spin" />
+              Saving All Tables...
+            </>
+          ) : (
+            <>
+              <Save size={18} />
+              Save All Tables
+            </>
+          )}
+        </button>
       </div>
     </>
   );

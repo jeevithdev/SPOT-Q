@@ -85,11 +85,12 @@
 }
 
 /* Filter Section */
-.impact-filter-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 1rem;
-  align-items: end;
+.impact-filter-container {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
 }
 
 .impact-filter-group {
@@ -100,52 +101,28 @@
 
 .impact-filter-group label {
   display: block;
-  font-size: 0.875rem;
+  font-size: 0.75rem;
   font-weight: 500;
   color: #334155;
-  margin-bottom: 0.375rem;
+  margin-bottom: 0.25rem;
 }
 
-.impact-filter-btn-container {
-  display: flex;
-  align-items: flex-end;
-  min-width: 120px;
-}
-
-.impact-filter-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.5rem;
-  background: linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
+.impact-filter-group input {
+  width: 160px;
+  padding: 0.625rem 0.875rem;
   font-size: 0.875rem;
-  font-weight: 600;
-  font-family: 'Poppins', sans-serif;
-  box-shadow: 0 2px 6px rgba(255, 127, 80, 0.3);
-  transition: all 0.3s ease;
-  width: 100%;
-  white-space: nowrap;
-  min-height: 42px;
 }
 
-.impact-filter-btn:hover:not(:disabled) {
-  background: linear-gradient(135deg, #FF6A3D 0%, #FF5722 100%);
-  transform: scale(1.05);
-  box-shadow: 0 4px 12px rgba(255, 127, 80, 0.5);
+.impact-filter-container > div:has(button) {
+  display: inline-block;
 }
 
-.impact-filter-btn:active:not(:disabled) {
-  transform: scale(0.98);
-}
-
-.impact-filter-btn:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+.impact-filter-container button {
+  margin-bottom: 0;
+  min-height: 38px;
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  width: auto !important;
 }
 
 /* Loader Container */
@@ -161,14 +138,17 @@
   overflow-x: auto;
   border-radius: 8px;
   margin-top: 1.5rem;
+  border: 1px solid #e2e8f0;
+  background-color: white;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
 .impact-details-card {
-  background-color: white;
-  padding: 24px;
-  border-radius: 8px;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  margin-top: 20px;
+  background-color: transparent;
+  padding: 0;
+  border-radius: 0;
+  box-shadow: none;
+  margin-top: 0;
 }
 
 .impact-table {
@@ -179,7 +159,7 @@
 }
 
 .impact-table thead tr {
-  background: transparent;
+  background: #f8fafc;
   color: #1e293b;
 }
 
@@ -193,20 +173,55 @@
   font-size: 0.875rem;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: transparent;
+  background: #f8fafc;
+  border-bottom: 2px solid #e2e8f0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
+.impact-table th:nth-child(1) {
+  min-width: 140px;
+}
+
+.impact-table th:nth-child(2) {
+  min-width: 120px;
+}
+
+.impact-table th:nth-child(3) {
+  min-width: 120px;
+}
+
+.impact-table th:nth-child(4) {
+  min-width: 150px;
+}
+
+.impact-table th:nth-child(5) {
+  min-width: 130px;
+}
+
+.impact-table th:nth-child(6) {
+  min-width: 200px;
+}
+
+.impact-table th:nth-child(7) {
+  min-width: 120px;
+}
+
+/* Center align Actions column */
 .impact-table th:last-child {
+  text-align: center;
   border-right: none;
 }
 
 .impact-table tbody tr {
   border-bottom: 1px solid #e2e8f0;
-  background-color: transparent;
+  background-color: white;
+  transition: background-color 0.2s ease;
 }
 
 .impact-table tbody tr:hover {
-  background-color: transparent;
+  background-color: #f8fafc;
 }
 
 .impact-table tbody tr:last-child {
@@ -214,22 +229,33 @@
 }
 
 .impact-table tbody tr:nth-child(even) {
-  background-color: transparent;
+  background-color: #fafbfc;
 }
 
 .impact-table tbody tr:nth-child(even):hover {
-  background-color: transparent;
+  background-color: #f1f5f9;
 }
 
 .impact-table td {
   padding: 1rem 0.75rem;
   color: #334155;
-  white-space: nowrap;
+  white-space: normal;
   border-right: 1px solid #e2e8f0;
   vertical-align: middle;
+  text-align: left;
+  word-wrap: break-word;
 }
 
+.impact-table td:nth-child(6) {
+  white-space: normal;
+  max-width: 250px;
+  word-break: break-word;
+}
+
+/* Center align Actions column */
+.impact-table th:last-child,
 .impact-table td:last-child {
+  text-align: center;
   border-right: none;
 }
 
@@ -415,10 +441,6 @@
   }
 
   .impact-filter-btn-container {
-    width: 100%;
-  }
-
-  .impact-filter-btn {
     width: 100%;
   }
 

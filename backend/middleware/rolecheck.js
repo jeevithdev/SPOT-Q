@@ -1,9 +1,3 @@
-/**
- * Role and Department-based Access Control Middleware
- * Controls access based on user's department and role
- */
-
-// Map API routes to required departments
 const ROUTE_DEPARTMENT_MAP = {
     '/api/v1/tensile-tests': 'Tensile',
     '/api/v1/impact-tests': 'Impact',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { Filter, X, PencilLine, BookOpenCheck } from 'lucide-react';
-import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Components/Buttons';
+import { X, PencilLine, BookOpenCheck } from 'lucide-react';
+import { DatePicker, EditActionButton, DeleteActionButton, FilterButton } from '../Components/Buttons';
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/ImpactReport.css';
@@ -104,7 +104,7 @@ const QcProductionDetailsReport = () => {
   };
 
   const handleFilter = () => {
-    if (!startDate || !endDate) {
+    if (!startDate) {
       setFilteredItems(items);
       return;
     }
@@ -112,11 +112,19 @@ const QcProductionDetailsReport = () => {
     const filtered = items.filter(item => {
       if (!item.date) return false;
       const itemDate = new Date(item.date);
+      itemDate.setHours(0, 0, 0, 0);
       const start = new Date(startDate);
-      const end = new Date(endDate);
-      end.setHours(23, 59, 59, 999);
+      start.setHours(0, 0, 0, 0);
       
-      return itemDate >= start && itemDate <= end;
+      // If end date is provided, filter by date range
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return itemDate >= start && itemDate <= end;
+      } else {
+        // If only start date is provided, show only records from that exact date
+        return itemDate.getTime() === start.getTime();
+      }
     });
 
     setFilteredItems(filtered);
@@ -141,7 +149,7 @@ const QcProductionDetailsReport = () => {
         </div>
       </div>
 
-      <div className="impact-filter-grid">
+      <div className="impact-filter-container">
         <div className="impact-filter-group">
           <label>Start Date</label>
           <DatePicker
@@ -158,12 +166,9 @@ const QcProductionDetailsReport = () => {
             placeholder="Select end date"
           />
         </div>
-        <div className="impact-filter-btn-container">
-          <Button onClick={handleFilter} className="impact-filter-btn" type="button">
-            <Filter size={18} />
-            Filter
-          </Button>
-        </div>
+        <FilterButton onClick={handleFilter} disabled={!startDate}>
+          Filter
+        </FilterButton>
       </div>
 
       {loading ? (

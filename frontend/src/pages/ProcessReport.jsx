@@ -1,15 +1,63 @@
-import React, { useState } from 'react';
-import { PencilLine, BookOpenCheck, Filter } from 'lucide-react';
-import CustomDatePicker from '../Components/CustomDatePicker';
+import React, { useState, useEffect } from 'react';
+import { BookOpenCheck } from 'lucide-react';
+import { DatePicker, FilterButton } from '../Components/Buttons';
+import Loader from '../Components/Loader';
+import api from '../utils/api';
 import '../styles/PageStyles/ProcessReport.css';
+import '../styles/PageStyles/ImpactReport.css';
 
 const ProcessReport = () => {
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [items, setItems] = useState([]);
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchItems();
+  }, []);
+
+  const fetchItems = async () => {
+    try {
+      setLoading(true);
+      const data = await api.get('/v1/process-records');
+      
+      if (data.success) {
+        setItems(data.data || []);
+        setFilteredItems(data.data || []);
+      }
+    } catch (error) {
+      console.error('Error fetching process records:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleFilter = () => {
-    // TODO: Implement filter logic
-    console.log('Filtering from:', fromDate, 'to:', toDate);
+    if (!startDate) {
+      setFilteredItems(items);
+      return;
+    }
+
+    const filtered = items.filter(item => {
+      if (!item.date) return false;
+      const itemDate = new Date(item.date);
+      itemDate.setHours(0, 0, 0, 0);
+      const start = new Date(startDate);
+      start.setHours(0, 0, 0, 0);
+      
+      // If end date is provided, filter by date range
+      if (endDate) {
+        const end = new Date(endDate);
+        end.setHours(23, 59, 59, 999);
+        return itemDate >= start && itemDate <= end;
+      } else {
+        // If only start date is provided, show only records from that exact date
+        return itemDate.getTime() === start.getTime();
+      }
+    });
+
+    setFilteredItems(filtered);
   };
 
   return (
@@ -19,48 +67,74 @@ const ProcessReport = () => {
           <h2>
             <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
             Process Control - Report
-            <button 
-              className="process-report-entry-btn"
-              onClick={() => window.location.href = "/process"}
-              title="Entry"
-            >
-              <PencilLine size={16} />
-              <span>Entry</span>
-            </button>
           </h2>
         </div>
       </div>
 
-      {/* Filter Section */}
-      <div className="process-report-container">
-        <div className="process-filter-grid">
-          <div className="process-filter-group">
-            <label>From Date</label>
-            <CustomDatePicker
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              name="fromDate"
-            />
-          </div>
-          <div className="process-filter-group">
-            <label>To Date</label>
-            <CustomDatePicker
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              name="toDate"
-            />
-          </div>
-          <div className="process-filter-btn-container">
-            <button
-              className="process-filter-btn"
-              onClick={handleFilter}
-            >
-              <Filter size={16} />
-              Filter
-            </button>
+      <div className="impact-filter-container">
+        <div className="impact-filter-group">
+          <label>Start Date</label>
+          <DatePicker
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+            placeholder="Select start date"
+          />
+        </div>
+        <div className="impact-filter-group">
+          <label>End Date</label>
+          <DatePicker
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            placeholder="Select end date"
+          />
+        </div>
+        <FilterButton onClick={handleFilter} disabled={!startDate}>
+          Filter
+        </FilterButton>
+      </div>
+
+      {loading ? (
+        <div className="impact-loader-container">
+          <Loader />
+        </div>
+      ) : (
+        <div className="impact-details-card">
+          <div className="impact-table-container">
+            <table className="impact-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Disa</th>
+                  <th>Part Name</th>
+                  <th>Date Code</th>
+                  <th>Heat Code</th>
+                  <th>Qty. Of Moulds</th>
+                </tr>
+              </thead>
+              <tbody>
+                {filteredItems.length === 0 ? (
+                  <tr>
+                    <td colSpan="6" className="impact-no-records">
+                      No records found
+                    </td>
+                  </tr>
+                ) : (
+                  filteredItems.map((item, index) => (
+                    <tr key={item._id || index}>
+                      <td>{item.date ? new Date(item.date).toLocaleDateString() : '-'}</td>
+                      <td>{item.disa || '-'}</td>
+                      <td>{item.partName || '-'}</td>
+                      <td>{item.datecode || '-'}</td>
+                      <td>{item.heatcode || '-'}</td>
+                      <td>{item.quantityOfMoulds !== undefined && item.quantityOfMoulds !== null ? item.quantityOfMoulds : '-'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
-      </div>
+      )}
     </>
   );
 };

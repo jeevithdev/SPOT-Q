@@ -220,6 +220,12 @@
   margin-bottom: 0;
 }
 
+/* Ensure shift dropdown and customer are in the same column (stacked vertically) */
+.dmm-shift-form-grid .dmm-form-group:first-child,
+.dmm-shift-form-grid .dmm-form-group:nth-child(2) {
+  grid-column: 1;
+}
+
 /* Primary Row Layout */
 .dmm-primary-row {
   display: flex;

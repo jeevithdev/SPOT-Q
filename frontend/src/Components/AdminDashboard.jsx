@@ -333,14 +333,11 @@ const AdminDashboard = () => {
                     top: '50%', 
                     transform: 'translateY(-50%)'
                   }}
-                  onMouseDown={() => setShowCreatePassword(true)}
-                  onMouseUp={() => setShowCreatePassword(false)}
-                  onMouseLeave={() => setShowCreatePassword(false)}
-                  onTouchStart={() => setShowCreatePassword(true)}
-                  onTouchEnd={() => setShowCreatePassword(false)}
-                  title="Hold to show password"
                 >
-                  <EyeButton isVisible={showCreatePassword} />
+                  <EyeButton 
+                    isVisible={showCreatePassword}
+                    onClick={() => setShowCreatePassword(!showCreatePassword)}
+                  />
                 </div>
               </div>
             </div>
@@ -489,14 +486,11 @@ const AdminDashboard = () => {
                       top: '50%', 
                       transform: 'translateY(-50%)'
                     }}
-                    onMouseDown={() => setShowNewPassword(true)}
-                    onMouseUp={() => setShowNewPassword(false)}
-                    onMouseLeave={() => setShowNewPassword(false)}
-                    onTouchStart={() => setShowNewPassword(true)}
-                    onTouchEnd={() => setShowNewPassword(false)}
-                    title="Hold to show password"
                   >
-                    <EyeButton isVisible={showNewPassword} />
+                    <EyeButton 
+                      isVisible={showNewPassword}
+                      onClick={() => setShowNewPassword(!showNewPassword)}
+                    />
                   </div>
                 </div>
               </div>
@@ -558,14 +552,11 @@ const AdminDashboard = () => {
                       top: '50%', 
                       transform: 'translateY(-50%)'
                     }}
-                    onMouseDown={() => setShowAdminCurrentPassword(true)}
-                    onMouseUp={() => setShowAdminCurrentPassword(false)}
-                    onMouseLeave={() => setShowAdminCurrentPassword(false)}
-                    onTouchStart={() => setShowAdminCurrentPassword(true)}
-                    onTouchEnd={() => setShowAdminCurrentPassword(false)}
-                    title="Hold to show password"
                   >
-                    <EyeButton isVisible={showAdminCurrentPassword} />
+                    <EyeButton 
+                      isVisible={showAdminCurrentPassword}
+                      onClick={() => setShowAdminCurrentPassword(!showAdminCurrentPassword)}
+                    />
                   </div>
                 </div>
               </div>
@@ -590,14 +581,11 @@ const AdminDashboard = () => {
                       top: '50%', 
                       transform: 'translateY(-50%)'
                     }}
-                    onMouseDown={() => setShowAdminNewPassword(true)}
-                    onMouseUp={() => setShowAdminNewPassword(false)}
-                    onMouseLeave={() => setShowAdminNewPassword(false)}
-                    onTouchStart={() => setShowAdminNewPassword(true)}
-                    onTouchEnd={() => setShowAdminNewPassword(false)}
-                    title="Hold to show password"
                   >
-                    <EyeButton isVisible={showAdminNewPassword} />
+                    <EyeButton 
+                      isVisible={showAdminNewPassword}
+                      onClick={() => setShowAdminNewPassword(!showAdminNewPassword)}
+                    />
                   </div>
                 </div>
               </div>
@@ -622,14 +610,11 @@ const AdminDashboard = () => {
                       top: '50%', 
                       transform: 'translateY(-50%)'
                     }}
-                    onMouseDown={() => setShowAdminConfirmPassword(true)}
-                    onMouseUp={() => setShowAdminConfirmPassword(false)}
-                    onMouseLeave={() => setShowAdminConfirmPassword(false)}
-                    onTouchStart={() => setShowAdminConfirmPassword(true)}
-                    onTouchEnd={() => setShowAdminConfirmPassword(false)}
-                    title="Hold to show password"
                   >
-                    <EyeButton isVisible={showAdminConfirmPassword} />
+                    <EyeButton 
+                      isVisible={showAdminConfirmPassword}
+                      onClick={() => setShowAdminConfirmPassword(!showAdminConfirmPassword)}
+                    />
                   </div>
                 </div>
               </div>
