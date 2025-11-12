@@ -19,6 +19,12 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
         default: '',
         trim: true
     },
+    // Added ppOperator field (was referenced in controller & frontend but missing in schema, causing it not to persist)
+    ppOperator: {
+        type: String,
+        default: '',
+        trim: true
+    },
     memberspresent: {
         type: String,
         default: '',

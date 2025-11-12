@@ -3,7 +3,7 @@ const DismaticProductReportDISA = require('../models/Moulding-DismaticProductRep
 // Create new Dismatic Product Report or update existing one by section
 const createDismaticReport = async (req, res) => {
     try {
-        const { date, shift, section, ...data } = req.body;
+    const { date, shift, section, ...data } = req.body;
         
         // If section is provided, do a partial update based on date (primary identifier)
         if (section && date) {
@@ -49,6 +49,19 @@ const createDismaticReport = async (req, res) => {
             
             if (report) {
                 // Update specific section only - preserve all other sections
+                // Always update/refresh basic info snapshot when any section is saved
+                if (data.shift !== undefined) report.shift = String(data.shift || '').trim();
+                if (data.incharge !== undefined) report.incharge = String(data.incharge || '').trim();
+                if (data.ppOperator !== undefined) report.ppOperator = String(data.ppOperator || '').trim();
+                if (data.members !== undefined) {
+                    if (Array.isArray(data.members)) {
+                        const filteredMembers = data.members.filter(m => m && String(m).trim() !== '');
+                        report.memberspresent = filteredMembers.length > 0 ? filteredMembers.map(m => String(m).trim()).join(', ') : '';
+                    } else {
+                        report.memberspresent = String(data.members || '').trim();
+                    }
+                }
+
                 switch (section) {
                     case 'basicInfo':
                         if (data.shift !== undefined) report.shift = String(data.shift || '').trim();
@@ -194,9 +207,10 @@ const createDismaticReport = async (req, res) => {
                     shift: (data.shift !== undefined && String(data.shift).trim() !== '') 
                         ? String(data.shift).trim() 
                         : (shift && String(shift).trim() !== '' ? String(shift).trim() : 'Not Set'),
-                    incharge: section === 'basicInfo' ? String(data.incharge || '').trim() : '',
-                    ppOperator: section === 'basicInfo' ? String(data.ppOperator || '').trim() : '',
-                    memberspresent: section === 'basicInfo' && data.members 
+                    // Always include snapshot of primary info if provided
+                    incharge: String(data.incharge || '').trim(),
+                    ppOperator: String(data.ppOperator || '').trim(),
+                    memberspresent: data.members 
                         ? (Array.isArray(data.members) 
                             ? data.members.filter(m => m && String(m).trim() !== '').map(m => String(m).trim()).join(', ') 
                             : String(data.members || '').trim()) 
