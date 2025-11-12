@@ -1,146 +1,240 @@
-/* Micro Structure - Report Page Styles */
-
-.microstructure-report-header {
-  width: 100%;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-  margin: 0 0 1.5rem 0;
-  padding: 0 0 1rem 0;
-  border-bottom: 2px solid #e2e8f0;
-}
-
-.microstructure-report-header-text {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  margin: 0;
-  padding: 0;
-}
-
-.microstructure-report-header-text h2 {
-  font-size: 1.625rem;
-  font-weight: 700;
-  color: #1e293b;
-  margin: 0;
-  padding: 0;
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  line-height: 1;
-  width: 100%;
+/* Microstructure Table Container with Horizontal Scroll */
+.microstructure-table-container {
+  overflow-x: auto;
+  overflow-y: visible;
   position: relative;
-}
-
-.microstructure-report-entry-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.25rem;
-  margin-left: 1rem;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  color: white;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9375rem;
-  font-weight: 600;
-  transition: all 0.3s ease;
-  box-shadow: 0 2px 4px rgba(16, 185, 129, 0.3);
-}
-
-.microstructure-report-entry-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(16, 185, 129, 0.4);
-  background: linear-gradient(135deg, #059669 0%, #047857 100%);
-}
-
-.microstructure-report-entry-btn svg {
-  width: 16px;
-  height: 16px;
-}
-
-/* Report Container */
-.microstructure-report-container {
-  background: white;
-  border-radius: 12px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-  border: 1px solid #e2e8f0;
-  padding: 2rem;
-  margin-bottom: 2rem;
-}
-
-/* Filter Section */
-.microstructure-filter-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr auto;
-  gap: 1rem;
-  margin-bottom: 1.5rem;
-  align-items: end;
-}
-
-.microstructure-filter-group {
-  display: flex;
-  flex-direction: column;
-}
-
-.microstructure-filter-group label {
-  display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #334155;
-  margin-bottom: 0.5rem;
-}
-
-.microstructure-filter-btn-container {
-  display: flex;
-  align-items: flex-end;
-}
-
-.microstructure-filter-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.625rem 1.5rem;
-  background: linear-gradient(135deg, #FF7F50 0%, #FF6A3D 100%);
-  color: white;
-  border: none;
+  max-width: 100%;
+  border: 1px solid #e5e7eb;
   border-radius: 8px;
-  cursor: pointer;
-  font-size: 0.875rem;
+}
+
+/* Table Styling */
+.microstructure-table {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 14px;
+  background-color: white;
+}
+
+/* Consistent Header Background for All Columns */
+.microstructure-table thead th {
+  background-color: #f9fafb;
+  color: #374151;
   font-weight: 600;
-  box-shadow: 0 2px 6px rgba(255, 127, 80, 0.3);
-  transition: all 0.3s ease;
+  text-align: left;
+  padding: 12px 16px;
+  border-bottom: 2px solid #e5e7eb;
   white-space: nowrap;
-  min-height: 42px;
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 
-.microstructure-filter-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(255, 127, 80, 0.4);
-  background: linear-gradient(135deg, #FF6A3D 0%, #FF5722 100%);
+/* Body Cells */
+.microstructure-table tbody td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e5e7eb;
+  color: #1f2937;
+  white-space: nowrap;
 }
 
-.microstructure-filter-btn svg {
-  width: 16px;
-  height: 16px;
+.microstructure-table tbody tr:hover {
+  background-color: #f9fafb;
 }
 
-/* Responsive Design */
+.microstructure-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+/* Non-sticky columns minimum width */
+.microstructure-table th,
+.microstructure-table td {
+  min-width: 140px;
+}
+
+/* Actions column */
+.microstructure-table th:last-child,
+.microstructure-table td:last-child {
+  min-width: 120px;
+  text-align: center;
+}
+
+/* No records message */
+.impact-no-records {
+  text-align: center;
+  padding: 40px 20px !important;
+  color: #6b7280;
+  font-style: italic;
+}
+
+/* Scrollbar Styling */
+.microstructure-table-container::-webkit-scrollbar {
+  height: 8px;
+}
+
+.microstructure-table-container::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.microstructure-table-container::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+.microstructure-table-container::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Add borders between table columns */
+.microstructure-table th,
+.microstructure-table td {
+  border-right: 1px solid #e5e7eb;
+  padding: 12px 16px;
+}
+
+/* Remove border from the last column */
+.microstructure-table th:last-child,
+.microstructure-table td:last-child {
+  border-right: none;
+}
+
+/* Optional: Make header borders slightly darker */
+.microstructure-table thead th {
+  border-right: 1px solid #d1d5db;
+}
+
+.microstructure-table thead th:last-child {
+  border-right: none;
+}
+
+/* Ensure equal column spacing */
+.microstructure-table {
+  table-layout: fixed;
+  width: 100%;
+}
+
+.microstructure-table th,
+.microstructure-table td {
+  width: calc(100% / 14); /* 14 columns total */
+  text-align: left;
+  vertical-align: middle;
+}
+
+/* Actions column should be slightly wider */
+.microstructure-table th:last-child,
+.microstructure-table td:last-child {
+  width: 120px;
+  min-width: 120px;
+}
+
+/* Table container with horizontal scroll */
+.microstructure-table-container {
+  overflow-x: auto;
+  width: 100%;
+}
+
+/* Table styling */
+.microstructure-table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 1400px; /* Ensures table doesn't get too cramped */
+  background: white;
+}
+
+/* Table headers */
+.microstructure-table thead th {
+  background-color: #f9fafb;
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+  border-right: 1px solid #d1d5db;
+  border-bottom: 2px solid #e5e7eb;
+  white-space: nowrap;
+}
+
+/* Remove border from last header */
+.microstructure-table thead th:last-child {
+  border-right: none;
+}
+
+/* Table body cells */
+.microstructure-table tbody td {
+  padding: 12px 16px;
+  text-align: left;
+  font-size: 14px;
+  color: #1f2937;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #f3f4f6;
+  white-space: nowrap;
+}
+
+/* Remove border from last cell */
+.microstructure-table tbody td:last-child {
+  border-right: none;
+}
+
+/* Table rows hover effect */
+.microstructure-table tbody tr:hover {
+  background-color: #f9fafb;
+}
+
+/* Equal column widths */
+.microstructure-table th:nth-child(1),
+.microstructure-table td:nth-child(1) { min-width: 180px; } /* Date Of Inspection */
+
+.microstructure-table th:nth-child(2),
+.microstructure-table td:nth-child(2) { min-width: 80px; } /* Disa */
+
+.microstructure-table th:nth-child(3),
+.microstructure-table td:nth-child(3) { min-width: 120px; } /* Part Name */
+
+.microstructure-table th:nth-child(4),
+.microstructure-table td:nth-child(4) { min-width: 100px; } /* Date Code */
+
+.microstructure-table th:nth-child(5),
+.microstructure-table td:nth-child(5) { min-width: 100px; } /* Heat Code */
+
+.microstructure-table th:nth-child(6),
+.microstructure-table td:nth-child(6) { min-width: 100px; } /* Nodularity */
+
+.microstructure-table th:nth-child(7),
+.microstructure-table td:nth-child(7) { min-width: 110px; } /* Graphite Type */
+
+.microstructure-table th:nth-child(8),
+.microstructure-table td:nth-child(8) { min-width: 90px; } /* Count Nos */
+
+.microstructure-table th:nth-child(9),
+.microstructure-table td:nth-child(9) { min-width: 80px; } /* Size */
+
+.microstructure-table th:nth-child(10),
+.microstructure-table td:nth-child(10) { min-width: 90px; } /* Ferrite % */
+
+.microstructure-table th:nth-child(11),
+.microstructure-table td:nth-child(11) { min-width: 90px; } /* Pearlite % */
+
+.microstructure-table th:nth-child(12),
+.microstructure-table td:nth-child(12) { min-width: 90px; } /* Carbide % */
+
+.microstructure-table th:nth-child(13),
+.microstructure-table td:nth-child(13) { min-width: 150px; } /* Remarks */
+
+.microstructure-table th:nth-child(14),
+.microstructure-table td:nth-child(14) { min-width: 120px; } /* Actions */
+
+/* Responsive adjustments */
 @media (max-width: 768px) {
-  .microstructure-filter-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  .microstructure-table thead th,
+  .microstructure-table tbody td {
+    padding: 8px 12px;
+    font-size: 13px;
   }
-
-  .microstructure-filter-btn-container {
-    align-items: stretch;
-  }
-
-  .microstructure-filter-btn {
-    width: 100%;
+  
+  .microstructure-table th,
+  .microstructure-table td {
+    min-width: 120px;
   }
 }

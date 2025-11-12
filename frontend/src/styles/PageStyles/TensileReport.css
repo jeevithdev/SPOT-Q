@@ -129,6 +129,20 @@
   height: 16px;
 }
 
+.tensile-table-card {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  margin-top: 20px;
+}
+
+.tensile-table-container {
+  overflow-x: auto;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .tensile-filter-grid {
@@ -144,3 +158,4 @@
     width: 100%;
   }
 }
+

@@ -4,6 +4,7 @@ import { Button, DatePicker, EditActionButton, DeleteActionButton } from '../Com
 import Loader from '../Components/Loader';
 import api from '../utils/api';
 import '../styles/PageStyles/ImpactReport.css';
+import '../styles/PageStyles/MicroStructureReport.css';
 
 const MicroStructureReport = () => {
   const [startDate, setStartDate] = useState(null);
@@ -51,6 +52,8 @@ const MicroStructureReport = () => {
     setEditFormData({
       dateOfInspection: item.dateOfInspection ? new Date(item.dateOfInspection).toISOString().split('T')[0] : '',
       disa: item.disa || '',
+      partName: item.partName|| '',
+      dateCode: item.dateCode || '',
       heatCode: item.heatCode || '',
       nodularity: item.nodularity || '',
       graphiteType: item.graphiteType || '',
@@ -165,12 +168,14 @@ const MicroStructureReport = () => {
         </div>
       ) : (
         <div className="impact-details-card">
-          <div className="impact-table-container">
-            <table className="impact-table">
+          <div className="microstructure-table-container">
+            <table className="microstructure-table">
               <thead>
                 <tr>
                   <th>Date Of Inspection</th>
                   <th>Disa</th>
+                  <th>Part Name</th>
+                  <th>Date Code</th>
                   <th>Heat Code</th>
                   <th>Nodularity</th>
                   <th>Graphite Type</th>
@@ -186,7 +191,7 @@ const MicroStructureReport = () => {
               <tbody>
                 {filteredItems.length === 0 ? (
                   <tr>
-                    <td colSpan="12" className="impact-no-records">
+                    <td colSpan="14" className="impact-no-records">
                       No records found
                     </td>
                   </tr>
@@ -195,6 +200,8 @@ const MicroStructureReport = () => {
                     <tr key={item._id || index}>
                       <td>{item.dateOfInspection ? new Date(item.dateOfInspection).toLocaleDateString() : '-'}</td>
                       <td>{item.disa || '-'}</td>
+                      <td>{item.partName || '-'}</td>
+                      <td>{item.dateCode || '-'}</td>
                       <td>{item.heatCode || '-'}</td>
                       <td>{item.nodularity || '-'}</td>
                       <td>{item.graphiteType || '-'}</td>
@@ -251,13 +258,35 @@ const MicroStructureReport = () => {
                 </div>
 
                 <div className="impact-form-group">
+                  <label>Part Name *</label>
+                  <input
+                    type="text"
+                    name="partName"
+                    value={editFormData.partName}
+                    onChange={handleEditChange}
+                    placeholder="e.g: Gear shaft"
+                  />
+                </div>
+
+                <div className="impact-form-group">
+                  <label>Date Code *</label>
+                  <input
+                    type="text"
+                    name="dateCode"
+                    value={editFormData.dateCode}
+                    onChange={handleEditChange}
+                    placeholder="e.g: HC-2024-001"
+                  />
+                </div>
+
+                <div className="impact-form-group">
                   <label>Heat Code *</label>
                   <input
                     type="text"
                     name="heatCode"
                     value={editFormData.heatCode}
                     onChange={handleEditChange}
-                    placeholder="e.g: HC-2024-001"
+                    placeholder="e.g: HT-12345"
                   />
                 </div>
 

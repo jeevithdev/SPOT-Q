@@ -1,6 +1,5 @@
 // Centralized API utility for making authenticated requests
-
-const API_URL = import.meta.env.VITE_API_URL || '/api';
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
 
 /**
  * Make an authenticated API call
@@ -16,20 +15,19 @@ export const apiCall = async (endpoint, options = {}) => {
     ...(token && { Authorization: `Bearer ${token}` }),
     ...options.headers,
   };
-  
-  const config = {
-    ...options,
-    headers,
-  };
-  
+
+  const config = { ...options, headers };
+
   try {
-    const response = await fetch(`${API_URL}${endpoint}`, config);
+    // ✅ Ensure single slash between base and endpoint
+    const response = await fetch(`${API_URL.replace(/\/$/, '')}${endpoint}`, config);
+
     const data = await response.json();
-    
+
     if (!response.ok) {
       throw new Error(data.message || `Request failed with status ${response.status}`);
     }
-    
+
     return data;
   } catch (error) {
     console.error('API call error:', error);
@@ -40,19 +38,9 @@ export const apiCall = async (endpoint, options = {}) => {
 // Convenience methods
 export const api = {
   get: (endpoint) => apiCall(endpoint, { method: 'GET' }),
-  
-  post: (endpoint, body) => apiCall(endpoint, {
-    method: 'POST',
-    body: JSON.stringify(body),
-  }),
-  
-  put: (endpoint, body) => apiCall(endpoint, {
-    method: 'PUT',
-    body: JSON.stringify(body),
-  }),
-  
+  post: (endpoint, body) => apiCall(endpoint, { method: 'POST', body: JSON.stringify(body) }),
+  put: (endpoint, body) => apiCall(endpoint, { method: 'PUT', body: JSON.stringify(body) }),
   delete: (endpoint) => apiCall(endpoint, { method: 'DELETE' }),
 };
 
 export default api;
-
