@@ -11,12 +11,16 @@ const TensileReport = () => {
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
   // Edit states
   const [showEditModal, setShowEditModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null);
   const [editFormData, setEditFormData] = useState({});
   const [editLoading, setEditLoading] = useState(false);
+
+  // Remarks preview modal
+  const [showRemarksModal, setShowRemarksModal] = useState(false);
+  const [remarksText, setRemarksText] = useState('');
 
   useEffect(() => {
     fetchItems();
@@ -26,7 +30,7 @@ const TensileReport = () => {
     try {
       setLoading(true);
       const data = await api.get('/v1/tensile-tests');
-      
+
       if (data.success) {
         setItems(data.data || []);
         setFilteredItems(data.data || []);
@@ -36,6 +40,28 @@ const TensileReport = () => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Helpers for remarks truncation and modal
+  const splitIntoSentences = (text) => {
+    if (!text) return [];
+    return text
+      .replace(/\n+/g, ' ')
+      .trim()
+      .split(/(?<=[.!?])\s+/)
+      .filter(Boolean);
+  };
+
+  const getTwoSentencePreview = (text) => {
+    const sentences = splitIntoSentences(text);
+    if (sentences.length <= 2) return { preview: text, truncated: false };
+    const preview = sentences.slice(0, 2).join(' ');
+    return { preview, truncated: true };
+  };
+
+  const openRemarks = (full) => {
+    setRemarksText(full || '');
+    setShowRemarksModal(true);
   };
 
   const handleEditChange = (e) => {
@@ -71,7 +97,7 @@ const TensileReport = () => {
     try {
       setEditLoading(true);
       const data = await api.put(`/v1/tensile-tests/${editingItem._id}`, editFormData);
-      
+
       if (data.success) {
         setShowEditModal(false);
         fetchItems();
@@ -88,7 +114,7 @@ const TensileReport = () => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
       try {
         const data = await api.delete(`/v1/tensile-tests/${id}`);
-        
+
         if (data.success) {
           fetchItems();
         }
@@ -111,7 +137,7 @@ const TensileReport = () => {
       itemDate.setHours(0, 0, 0, 0);
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
-      
+
       // If end date is provided, filter by date range
       if (endDate) {
         const end = new Date(endDate);
@@ -209,7 +235,24 @@ const TensileReport = () => {
                       <td>{item.ys !== undefined && item.ys !== null ? item.ys : '-'}</td>
                       <td>{item.elongation !== undefined && item.elongation !== null ? item.elongation : '-'}</td>
                       <td>{item.testedBy || '-'}</td>
-                      <td>{item.remarks || '-'}</td>
+                      <td>
+                        {(() => {
+                          const value = typeof item.remarks === 'string' ? item.remarks : '';
+                          if (!value) return '-';
+                          const short = value.length > 6 ? value.slice(0, 5) + '..' : value;
+                          return (
+                            <span
+                              onClick={() => openRemarks(value)}
+                              title={value}
+                              style={{ cursor: 'pointer', color: '#0ea5e9', textDecoration: 'underline dotted' }}
+                              aria-label="View full remarks"
+                            >
+                              {short}
+                            </span>
+                          );
+                        })()}
+                      </td>
+
                       <td style={{ minWidth: '100px' }}>
                         <EditActionButton onClick={() => handleEdit(item)} />
                         <DeleteActionButton onClick={() => handleDelete(item._id)} />
@@ -219,6 +262,25 @@ const TensileReport = () => {
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {showRemarksModal && (
+        <div className="modal-overlay" onClick={() => setShowRemarksModal(false)}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>Remarks</h2>
+              <button className="modal-close-btn" onClick={() => setShowRemarksModal(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{remarksText}</div>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-submit-btn" onClick={() => setShowRemarksModal(false)}>Close</button>
+            </div>
           </div>
         </div>
       )}

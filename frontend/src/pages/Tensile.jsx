@@ -1,12 +1,27 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
-import { DatePicker } from '../Components/Buttons';
 import api from '../utils/api';
 import '../styles/PageStyles/Tensile.css';
 
 const Tensile = () => {
+  // Helper function to get today's date in YYYY-MM-DD format
+  const getTodayDate = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
+  // Helper to display date as DD/MM/YYYY
+  const formatDisplayDate = (iso) => {
+    if (!iso || typeof iso !== 'string' || !iso.includes('-')) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
   const [formData, setFormData] = useState({
-    dateOfInspection: '',
+    dateOfInspection: getTodayDate(), // Set today's date as default
     item: '',
     dateCode: '',
     heatCode: '',
@@ -31,6 +46,12 @@ const Tensile = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Prevent date changes
+    if (name === 'dateOfInspection') {
+      return;
+    }
+    
     setFormData(prev => ({
       ...prev,
       [name]: value
@@ -79,9 +100,9 @@ const Tensile = () => {
         return;
       }
       
-      // For other fields, move to next input
+      // For other fields, move to next input (excluding disabled/readonly fields)
       const form = e.target.form;
-      const inputs = Array.from(form.querySelectorAll('input, textarea, select'));
+      const inputs = Array.from(form.querySelectorAll('input:not([readonly]):not([disabled]), textarea'));
       const currentIndex = inputs.indexOf(e.target);
       const nextInput = inputs[currentIndex + 1];
       
@@ -99,7 +120,7 @@ const Tensile = () => {
   };
 
   const handleSubmit = async () => {
-    const required = ['dateOfInspection', 'item', 'dateCode', 'heatCode', 'dia', 'lo', 'li', 
+    const required = ['item', 'dateCode', 'heatCode', 'dia', 'lo', 'li', 
                      'breakingLoad', 'yieldLoad', 'uts', 'ys', 'elongation', 'testedBy' ];
     const missing = required.filter(field => !formData[field]);
     
@@ -134,11 +155,24 @@ const Tensile = () => {
       if (data.success) {
         alert('Tensile test entry created successfully!');
         setFormData({
-          dateOfInspection: '', item: '', dateCode: '', heatCode: '', dia: '', lo: '', li: '',
-          breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: '', testedBy: ''
+          dateOfInspection: getTodayDate(), // Reset to today's date
+          item: '', 
+          dateCode: '', 
+          heatCode: '', 
+          dia: '', 
+          lo: '', 
+          li: '',
+          breakingLoad: '', 
+          yieldLoad: '', 
+          uts: '', 
+          ys: '', 
+          elongation: '', 
+          remarks: '', 
+          testedBy: ''
         });
+        setValidationErrors({});
         
-        // Focus first field for next entry
+        // Focus first editable field for next entry
         setTimeout(() => {
           firstFieldRef.current?.focus();
         }, 100);
@@ -151,13 +185,25 @@ const Tensile = () => {
     }
   };
 
-  const handleReset= () => {
+  const handleReset = () => {
     setFormData({
-      dateOfInspection: '', item: '', dateCode: '', heatCode: '', dia: '', lo: '', li: '',
-      breakingLoad: '', yieldLoad: '', uts: '', ys: '', elongation: '', remarks: '', testedBy: ''
+      dateOfInspection: getTodayDate(), // Reset to today's date
+      item: '', 
+      dateCode: '', 
+      heatCode: '', 
+      dia: '', 
+      lo: '', 
+      li: '',
+      breakingLoad: '', 
+      yieldLoad: '', 
+      uts: '', 
+      ys: '', 
+      elongation: '', 
+      remarks: '', 
+      testedBy: ''
     });
     setValidationErrors({});
-    // Focus first field after reset
+    // Focus first editable field after reset
     setTimeout(() => {
       firstFieldRef.current?.focus();
     }, 100);
@@ -172,25 +218,17 @@ const Tensile = () => {
             Tensile Test - Entry Form
           </h2>
         </div>
+        <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c' }}>
+          {`DATE : ${formatDisplayDate(formData.dateOfInspection)}`}
+        </div>
       </div>
 
       {/* Entry Form */}
       <form className="tensile-form-grid">
             <div className="tensile-form-group">
-              <label>Date of Inspection *</label>
-              <DatePicker
-                ref={firstFieldRef}
-                name="dateOfInspection"
-                value={formData.dateOfInspection}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                className={validationErrors.dateOfInspection ? 'invalid-input' : ''}
-              />
-            </div>
-
-            <div className="tensile-form-group">
               <label>Item *</label>
               <input
+                ref={firstFieldRef}
                 type="text"
                 name="item"
                 value={formData.item}
@@ -379,15 +417,7 @@ const Tensile = () => {
             </div>
       </form>
 
-      <div className="tensile-submit-container">
-        <button 
-          className="tensile-reset-btn"
-          onClick={handleReset}
-          type="button"
-        >
-          <RefreshCw size={18} />
-          Reset Form
-        </button>
+      <div className="tensile-submit-container" style={{ justifyContent: 'flex-end' }}>
         <button 
           ref={submitButtonRef}
           className="tensile-submit-btn" 
@@ -397,7 +427,7 @@ const Tensile = () => {
           disabled={submitLoading}
         >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-          {submitLoading ? 'Saving...' : 'Submit Entry'}
+          {submitLoading ? 'Saving...' : 'Submit All'}
         </button>
       </div>
     </>
