@@ -1,5 +1,10 @@
 /* Sand Testing Record - Report Page Styles */
 
+/* Page container padding to avoid cramped edges */
+.sand-testing-report-container {
+  padding: 12px 18px;
+}
+
 .sand-testing-report-header {
   width: 100%;
   display: flex;
@@ -7,9 +12,9 @@
   align-items: center;
   flex-wrap: wrap;
   gap: 1rem;
-  margin: 0 0 1.5rem 0;
-  padding: 0 0 1rem 0;
-  border-bottom: 2px solid #e2e8f0;
+  margin: 0 0 1.75rem 0;
+  padding: 0 0 1.25rem 0;
+  border-bottom: 1px solid #e5e7eb;
 }
 
 .sand-testing-report-header-text {
@@ -66,7 +71,8 @@
 .sand-testing-filter-container {
   display: flex;
   align-items: flex-end;
-  gap: 0.75rem;
+  justify-content: flex-start;
+  gap: 1rem;
   margin-bottom: 1.5rem;
   flex-wrap: wrap;
 }
@@ -79,15 +85,15 @@
 
 .sand-testing-filter-group label {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.6875rem;
   font-weight: 500;
   color: #334155;
-  margin-bottom: 0.25rem;
+  margin-bottom: 0.15rem;
 }
 
 .sand-testing-filter-group input {
-  width: 160px;
-  padding: 0.625rem 0.875rem;
+  width: 190px;
+  padding: 0.6rem 1rem;
   font-size: 0.875rem;
 }
 

@@ -8,7 +8,7 @@ const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
  * @returns {Promise} - Response data
  */
 export const apiCall = async (endpoint, options = {}) => {
-  const token = localStorage.getItem('token');
+  const token = localStorage.getItem('token') || sessionStorage.getItem('token');
   
   const headers = {
     'Content-Type': 'application/json',
@@ -25,6 +25,19 @@ export const apiCall = async (endpoint, options = {}) => {
     const data = await response.json();
 
     if (!response.ok) {
+      if (response.status === 401 || response.status === 403) {
+        try {
+          localStorage.removeItem('token');
+          localStorage.removeItem('user');
+          sessionStorage.removeItem('token');
+          sessionStorage.removeItem('user');
+        } catch {}
+        if (!String(endpoint).startsWith('/auth')) {
+          if (typeof window !== 'undefined') {
+            window.location.href = '/login';
+          }
+        }
+      }
       throw new Error(data.message || `Request failed with status ${response.status}`);
     }
 

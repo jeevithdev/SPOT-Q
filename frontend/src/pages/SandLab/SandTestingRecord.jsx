@@ -166,7 +166,8 @@ const SandTestingRecord = () => {
     table1: {},
     table2: {},
     table3: {},
-    table4: {}
+    table4: {},
+    table5: {}
   });
 
   const handleTableChange = (tableNum, field, value, nestedField = null) => {
@@ -199,7 +200,7 @@ const SandTestingRecord = () => {
     } else {
       setters[tableNum](prev => ({
           ...prev,
-            [field]: value
+            [field]: tableNum === 5 && ['permeability', 'gcsValue', 'wts', 'moisture', 'compactability', 'compressability', 'waterLitrePerKgMix', 'sandTempBC', 'sandTempWU', 'sandTempSSU', 'newSandKgsPerMould', 'bentoniteWithPremix', 'bentoniteOnly', 'premixKgsMix', 'coalDustKgsMix', 'CompactabilitySettings', 'lcScmCompactabilityValue', 'shearStrengthSetting', 'mouldStrength', 'mouldStrengthShearValue', 'preparedSandLumpsPerKg'].includes(field) ? (value === '' ? '' : Number(value)) : value
       }));
     }
   };
@@ -213,10 +214,10 @@ const SandTestingRecord = () => {
     const tables = { 1: table1, 2: table2, 3: table3, 4: table4, 5: table5 };
     const tableData = tables[tableNum];
     
-    // For tables 1-4, only send unlocked/empty fields
+    // For tables 1-5, only send unlocked/empty fields
     let dataToSend = tableData;
-    if (tableNum <= 4) {
-      const locks = tableLocks[`table${tableNum}`];
+    if (tableNum <= 5) {
+      const locks = tableLocks[`table${tableNum}`] || {};
       if (tableNum === 1) {
         // Filter out locked fields for table 1 and transform batchNo structure
         const filtered = {
@@ -252,6 +253,60 @@ const SandTestingRecord = () => {
           });
         });
         dataToSend = filtered;
+      } else if (tableNum === 5) {
+        // Build backend testParameter structure from flat table5 data
+        const tp = {};
+        tp.sno = tableData.sno;
+        if (tableData.time) {
+          const tstr = String(tableData.time).trim();
+          const hhmm = tstr.includes(':') ? tstr.replace(':', '') : tstr;
+          const tnum = Number(hhmm);
+          if (!Number.isNaN(tnum)) {
+            tp.time = tnum;
+          }
+        }
+        tp.mixno = tableData.mixNo;
+        tp.permeability = tableData.permeability;
+        // GCS: send numeric value to the selected checkpoint field only
+        if (tableData.gcsCheckpoint === 'fdyA' && tableData.gcsValue !== '' && !Number.isNaN(Number(tableData.gcsValue))) {
+          tp.gcsFdyA = Number(tableData.gcsValue);
+        } else if (tableData.gcsCheckpoint === 'fdyB' && tableData.gcsValue !== '' && !Number.isNaN(Number(tableData.gcsValue))) {
+          tp.gcsFdyB = Number(tableData.gcsValue);
+        }
+        tp.wts = tableData.wts;
+        tp.moisture = tableData.moisture;
+        tp.compactability = tableData.compactability;
+        tp.compressibility = tableData.compressability;
+        tp.waterLitre = tableData.waterLitrePerKgMix;
+        // sand temp nested
+        tp.sandTemp = {
+          BC: tableData.sandTempBC,
+          WU: tableData.sandTempWU,
+          SSUmax: tableData.sandTempSSU
+        };
+        tp.newSandKgs = tableData.newSandKgsPerMould;
+        // nested materials
+        tp.bentoniteWithPremix = { Kgs: tableData.bentoniteWithPremix };
+        tp.bentonite = { Kgs: tableData.bentoniteOnly };
+        tp.premix = { Kgs: tableData.premixKgsMix };
+        tp.coalDust = { Kgs: tableData.coalDustKgsMix };
+        // numeric settings and values only
+        if (tableData.lcScmCompactabilityValue !== '' && !Number.isNaN(Number(tableData.lcScmCompactabilityValue))) {
+          tp.CompactabilitySettings = Number(tableData.lcScmCompactabilityValue);
+        }
+        if (tableData.mouldStrengthShearValue !== '' && !Number.isNaN(Number(tableData.mouldStrengthShearValue))) {
+          // do not send checkpoint string to numeric field; omit shearStrengthSetting entirely
+          // backend will use mouldStrength as the measured value
+        }
+        tp.lc = tableData.lcScmCompactabilityValue;
+        tp.mouldStrength = tableData.mouldStrengthShearValue;
+        // additional checkpoints
+        tp.bentoniteCheckpoint = tableData.bentoniteCheckpoint;
+        tp.premixCoalDustCheckpoint = tableData.premixCoalDustCheckpoint;
+        tp.preparedSandlumps = tableData.preparedSandLumpsPerKg;
+        tp.itemName = tableData.itemName;
+        tp.remarks = tableData.remarks;
+        dataToSend = tp;
       } else if (tableNum === 2) {
         const filtered = {
           shiftI: {},
@@ -374,7 +429,7 @@ const SandTestingRecord = () => {
       }
     } catch (error) {
       console.error(`Error saving table ${tableNum}:`, error);
-      alert(`Failed to save table ${tableNum}. Please try again.`);
+      alert(`Failed to save table ${tableNum}: ${error.message || 'Please try again.'}`);
     } finally {
       setLoadingStates(prev => ({ ...prev, [`table${tableNum}`]: false }));
     }
@@ -703,6 +758,18 @@ const SandTestingRecord = () => {
     return locks && locks[fieldPath] === true;
   };
 
+  const handleEnterToNext = (e) => {
+    if (e.key !== 'Enter') return;
+    const container = e.target.closest('.sand-shift-table, .sand-table5-form-grid, .sand-primary-container');
+    if (!container) return;
+    e.preventDefault();
+    const inputs = Array.from(container.querySelectorAll('input:not([disabled]):not([readonly]), textarea:not([disabled]):not([readonly]), select:not([disabled]):not([readonly])'));
+    const idx = inputs.indexOf(e.target);
+    if (idx > -1 && idx < inputs.length - 1) {
+      inputs[idx + 1].focus();
+    }
+  };
+
   const renderTableRow = (tableNum, field, label, type = "text") => (
     <tr>
       <td>{label}</td>
@@ -741,7 +808,7 @@ const SandTestingRecord = () => {
       </div>
 
       {/* Primary Data Section */}
-      <div className="sand-primary-container">
+      <div className="sand-primary-container" onKeyDown={handleEnterToNext}>
         <div className="sand-section-header">
           <h3 className="primary-data-title">Primary Data :</h3>
         </div>
@@ -761,7 +828,7 @@ const SandTestingRecord = () => {
       <div className="sand-section-header">
         <h3>Table 1</h3>
             </div>
-      <table className="sand-shift-table">
+      <table className="sand-shift-table" onKeyDown={handleEnterToNext}>
         <thead>
           <tr>
             <th>Shift</th>
@@ -1065,7 +1132,7 @@ const SandTestingRecord = () => {
       <div className="sand-section-header">
         <h3>Table 2</h3>
             </div>
-      <table className="sand-shift-table">
+      <table className="sand-shift-table" onKeyDown={handleEnterToNext}>
         <thead>
           <tr>
             <th>Shift</th>
@@ -1437,7 +1504,7 @@ const SandTestingRecord = () => {
       <div className="sand-section-header">
         <h3>Table 3</h3>
             </div>
-      <table className="sand-shift-table">
+      <table className="sand-shift-table" onKeyDown={handleEnterToNext}>
         <thead>
           <tr>
             <th rowSpan={2} style={{ width: '60px', minWidth: '60px' }}>Shift</th>
@@ -1769,7 +1836,7 @@ const SandTestingRecord = () => {
             </tr>
           </tbody>
         </table>
-        <table className="sand-shift-table">
+        <table className="sand-shift-table" onKeyDown={handleEnterToNext}>
           <thead>
             <tr>
               <th>Shift</th>
@@ -1854,7 +1921,7 @@ const SandTestingRecord = () => {
       <div className="sand-table5-main-card">
         <h4 className="sand-table5-main-card-title">Sand Properties & Test Parameters</h4>
 
-        <div className="sand-table5-form-grid">
+        <div className="sand-table5-form-grid" onKeyDown={handleEnterToNext}>
           <div className="sand-table5-form-group">
             <label>Sno</label>
             <input 
