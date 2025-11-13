@@ -1,12 +1,27 @@
 import React, { useState, useRef } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
-import { DatePicker } from '../Components/Buttons';
 import api from '../utils/api';
 import '../styles/PageStyles/QcProductionDetails.css';
 
 const QcProductionDetails = () => {
+  // Helper: today's date in YYYY-MM-DD
+  const getTodayDate = () => {
+    const today = new Date();
+    const y = today.getFullYear();
+    const m = String(today.getMonth() + 1).padStart(2, '0');
+    const d = String(today.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+
+  // Helper: display DD/MM/YYYY
+  const formatDisplayDate = (iso) => {
+    if (!iso || typeof iso !== 'string' || !iso.includes('-')) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
   const [formData, setFormData] = useState({
-    date: '',
+    date: getTodayDate(),
     partName: '',
     noOfMoulds: '',
     cPercent: '',
@@ -28,19 +43,20 @@ const QcProductionDetails = () => {
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  
+
   // Refs for navigation
   const submitButtonRef = useRef(null);
   const firstInputRef = useRef(null);
 
-
   const handleChange = (e) => {
     const { name, value } = e.target;
+    // Prevent programmatic/user changes to date
+    if (name === 'date') return;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
-    
+
     // Clear validation error when user starts typing
     if (validationErrors[name]) {
       setValidationErrors(prev => {
@@ -53,12 +69,12 @@ const QcProductionDetails = () => {
 
   const handleBlur = (e) => {
     const { name, value, type } = e.target;
-    
+
     // Auto-format single digit numbers with leading zero
     if (type === 'number' && value && !isNaN(value) && parseFloat(value) >= 0 && parseFloat(value) <= 9 && !value.includes('.') && value.length === 1) {
       const formattedValue = '0' + value;
       setFormData(prev => ({
-      ...prev,
+        ...prev,
         [name]: formattedValue
       }));
     }
@@ -71,7 +87,7 @@ const QcProductionDetails = () => {
       const inputs = Array.from(form.querySelectorAll('input, textarea'));
       const currentIndex = inputs.indexOf(e.target);
       const nextInput = inputs[currentIndex + 1];
-      
+
       if (nextInput) {
         nextInput.focus();
       } else {
@@ -90,13 +106,12 @@ const QcProductionDetails = () => {
     }
   };
 
-
   const handleSubmit = async () => {
-    const required = ['date', 'partName', 'noOfMoulds', 'cPercent', 'siPercent', 'mnPercent',
+    const required = ['partName', 'noOfMoulds', 'cPercent', 'siPercent', 'mnPercent',
                      'pPercent', 'sPercent', 'mgPercent', 'cuPercent', 'crPercent',
                      'nodularity', 'graphiteType', 'pearliteFerrite', 'hardnessBHN', 'ts', 'ys', 'el'];
     const missing = required.filter(field => !formData[field]);
-    
+
     // Set validation errors for missing fields
     const errors = {};
     missing.forEach(field => {
@@ -107,18 +122,18 @@ const QcProductionDetails = () => {
     if (missing.length > 0) {
       return;
     }
-    
+
     // Clear validation errors if all fields are valid
     setValidationErrors({});
 
     try {
       setSubmitLoading(true);
       const data = await api.post('/v1/qc-reports', formData);
-      
+
       if (data.success) {
         alert('QC Production report created successfully!');
         setFormData({
-          date: '', partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
+          date: getTodayDate(), partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
           pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
           nodularity: '', graphiteType: '', pearliteFerrite: '', hardnessBHN: '', ts: '', ys: '', el: ''
         });
@@ -138,10 +153,9 @@ const QcProductionDetails = () => {
     }
   };
 
-
   const handleReset = () => {
     setFormData({
-      date: '', partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
+      date: getTodayDate(), partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
       pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
       nodularity: '', graphiteType: '', pearliteFerrite: '', hardnessBHN: '', ts: '', ys: '', el: ''
     });
@@ -157,24 +171,17 @@ const QcProductionDetails = () => {
             QC Production Details - Entry Form
           </h2>
         </div>
+        <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c' }}>
+          {`DATE : ${formatDisplayDate(formData.date)}`}
+        </div>
       </div>
 
       <form className="qcproduction-form-grid">
-            <div className="qcproduction-form-group">
-              <label>Date *</label>
-              <DatePicker
-                ref={firstInputRef}
-                name="date"
-                value={formData.date}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                className={validationErrors.date ? 'invalid-input' : ''}
-              />
-            </div>
 
             <div className="qcproduction-form-group">
               <label>Part Name *</label>
               <input
+                ref={firstInputRef}
                 type="text"
                 name="partName"
                 value={formData.partName}
@@ -412,15 +419,7 @@ const QcProductionDetails = () => {
             </div>
       </form>
 
-      <div className="qcproduction-submit-container">
-        <button 
-          className="qcproduction-reset-btn"
-          onClick={handleReset}
-          type="button"
-        >
-          <RefreshCw size={18} />
-          Reset Form
-        </button>
+      <div className="qcproduction-submit-container" style={{ justifyContent: 'flex-end' }}>
         <button 
           ref={submitButtonRef}
           className="qcproduction-submit-btn" 
@@ -430,7 +429,7 @@ const QcProductionDetails = () => {
           disabled={submitLoading}
         >
           {submitLoading ? <Loader2 size={20} className="animate-spin" /> : <Save size={18} />}
-          {submitLoading ? 'Saving...' : 'Submit Entry'}
+          {submitLoading ? 'Saving...' : 'Submit All'}
         </button>
       </div>
     </>

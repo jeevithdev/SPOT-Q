@@ -40,6 +40,12 @@ const QcProductionDetailsReport = () => {
 
   const handleEditChange = (e) => {
     const { name, value } = e.target;
+    
+    // Prevent date changes
+    if (name === 'date') {
+      return;
+    }
+    
     setEditFormData(prev => ({
       ...prev,
       [name]: value
@@ -137,14 +143,6 @@ const QcProductionDetailsReport = () => {
           <h2>
             <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
             QC Production Details - Report
-            <button 
-              className="impact-report-entry-btn"
-              onClick={() => window.location.href = "/qc-production-details"}
-              title="Entry"
-            >
-              <PencilLine size={16} />
-              <span>Entry</span>
-            </button>
           </h2>
         </div>
       </div>
@@ -181,9 +179,9 @@ const QcProductionDetailsReport = () => {
             <table className="impact-table">
               <thead>
                 <tr>
-                  <th className="sticky-col col-1">Date </th>
-                  <th className="sticky-col col-2">Part Name</th>
-                  <th className="sticky-col col-3">No.Of Moulds</th>
+                  <th>Date </th>
+                  <th>Part Name</th>
+                  <th>No.Of Moulds</th>
                   <th>C %</th>
                   <th>Si %</th>
                   <th>Mn %</th>
@@ -212,14 +210,14 @@ const QcProductionDetailsReport = () => {
                 ) : (
                   filteredItems.map((item, index) => (
                     <tr key={item._id || index}>
-                      <td className="sticky-col col-1">{item.date? new Date(item.date).toLocaleDateString() : '-'}</td>
-                      <td className="sticky-col col-2">{item.partName || '-'}</td>
-                      <td className="sticky-col col-3">{item.noOfMoulds|| '-'}</td>
-                      <td>{item.cPercent !== undefined && item.cPercent !== null ? item.cPercent : '-'}</td>
+                      <td>{item.date? new Date(item.date).toLocaleDateString() : '-'}</td>
+                      <td>{item.partName || '-'}</td>
+                      <td>{item.noOfMoulds|| '-'}</td>
+                      <td>{item.cPercent  !== undefined && item.cPercent  !== null ? item.cPercent  : '-'}</td>
                       <td>{item.siPercent !== undefined && item.siPercent !== null ? item.siPercent : '-'}</td>
                       <td>{item.mnPercent !== undefined && item.mnPercent !== null ? item.mnPercent : '-'}</td>
-                      <td>{item.pPercent !== undefined && item.pPercent !== null ? item.pPercent : '-'}</td>
-                      <td>{item.sPercent !== undefined && item.sPercent !== null ? item.sPercent : '-'}</td>
+                      <td>{item.pPercent  !== undefined && item.pPercent  !== null ? item.pPercent  : '-'}</td>
+                      <td>{item.sPercent  !== undefined && item.sPercent  !== null ? item.sPercent  : '-'}</td>
                       <td>{item.mgPercent !== undefined && item.mgPercent !== null ? item.mgPercent : '-'}</td>
                       <td>{item.cuPercent !== undefined && item.cuPercent !== null ? item.cuPercent : '-'}</td>
                       <td>{item.crPercent !== undefined && item.crPercent !== null ? item.crPercent : '-'}</td>
@@ -262,6 +260,9 @@ const QcProductionDetailsReport = () => {
                     name="date"
                     value={editFormData.date}
                     onChange={handleEditChange}
+                    readOnly
+                    disabled
+                    style={{ cursor: 'not-allowed', opacity: 0.7 }}
                   />
                 </div>
 
