@@ -102,9 +102,17 @@ const MicroTensileReport = () => {
 
   const formatDate = (d) => {
     if (!d) return '';
+    if (typeof d === 'string' && /^\d{4}-\d{2}-\d{2}/.test(d)) {
+      const [y, m, rest] = d.split('-');
+      const day = rest.slice(0, 2);
+      return `${day}-${m}-${y}`;
+    }
     const date = new Date(d);
     if (Number.isNaN(date.getTime())) return String(d);
-    return date.toISOString().split('T')[0];
+    const dd = String(date.getDate()).padStart(2, '0');
+    const mm = String(date.getMonth() + 1).padStart(2, '0');
+    const yyyy = date.getFullYear();
+    return `${dd}-${mm}-${yyyy}`;
   };
 
   const handleFilter = async () => {

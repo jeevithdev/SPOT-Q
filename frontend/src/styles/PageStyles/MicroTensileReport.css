@@ -155,3 +155,18 @@
   white-space: nowrap;
   min-width: 120px;
 }
+
+/* Subtle background only for Primary Data section */
+.chr-primary-table-wrap {
+  background-color: #f8fafc; /* slate-50 */
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+/* Ensure inner table doesn't paint over wrapper */
+.chr-primary-table-wrap .chr-primary-table,
+.chr-primary-table-wrap .chr-primary-table th,
+.chr-primary-table-wrap .chr-primary-table td {
+  background: transparent !important;
+}
