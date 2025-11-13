@@ -631,3 +631,20 @@
   opacity: 0.6;
   cursor: not-allowed;
 }
+
+.microtensile-error-outline {
+  outline: none !important;
+}
+.microtensile-error-outline input,
+.microtensile-error-outline select,
+.microtensile-error-outline textarea,
+.microtensile-error-outline .custom-date-picker .date-input {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.12) !important;
+}
+.microtensile-error-outline .microtensile-disa-checklist {
+  outline: 2px solid #ef4444 !important;
+  outline-offset: 2px;
+  border-radius: 6px;
+  padding: 6px;
+}

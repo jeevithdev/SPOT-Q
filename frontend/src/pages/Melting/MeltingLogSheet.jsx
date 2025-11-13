@@ -22,6 +22,15 @@ const MeltingLogSheet = () => {
   const [fetchingPrimary, setFetchingPrimary] = useState(false);
   const [primaryLocks, setPrimaryLocks] = useState({});
 
+  // Validation flag and helper for primary section
+  const [primarySubmitted, setPrimarySubmitted] = useState(false);
+  const classFor = (value, submitted, required = false) => {
+    const has = value !== undefined && value !== null && String(value).trim() !== '';
+    if (has) return 'melting-success-outline';
+    if (submitted && required) return 'melting-error-outline';
+    return '';
+  };
+
   // Check if there's data for the specific date+shift combination and lock shift dropdown
   const checkAndLockByDateAndShift = async (date, shift) => {
     if (!date || !shift) {
@@ -371,6 +380,7 @@ const MeltingLogSheet = () => {
   };
 
   const handlePrimarySubmit = async () => {
+    setPrimarySubmitted(true);
     // Validate required fields
     if (!primaryData.date) {
       alert('Please fill in Date');
@@ -438,6 +448,24 @@ const MeltingLogSheet = () => {
   // Helper function to check if a primary field is locked
   const isPrimaryFieldLocked = (field) => {
     return primaryLocks[field] === true;
+  };
+
+  const handleEnterFocusNext = (e) => {
+    if (e.key !== 'Enter') return;
+
+    const target = e.target;
+    if (!(target && (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA'))) return;
+
+    const value = target.value != null ? String(target.value).trim() : '';
+    if (value === '') return; // Only move when current field has a value
+
+    e.preventDefault();
+    const focusables = Array.from(document.querySelectorAll('input, select, textarea'))
+      .filter(el => !el.disabled && el.type !== 'hidden' && el.offsetParent !== null);
+    const idx = focusables.indexOf(document.activeElement);
+    if (idx > -1 && idx < focusables.length - 1) {
+      focusables[idx + 1].focus();
+    }
   };
 
   const resetTable1 = () => {
@@ -519,7 +547,7 @@ const MeltingLogSheet = () => {
   };
 
   return (
-    <>
+    <div onKeyDown={handleEnterFocusNext}>
       {/* Header */}
       <div className="cupola-holder-header">
         <div className="cupola-holder-header-text">
@@ -535,7 +563,7 @@ const MeltingLogSheet = () => {
         <h3 className="section-header">Primary Data</h3>
         
         <div className="melting-log-form-grid">
-          <div className="melting-log-form-group">
+          <div className={`melting-log-form-group ${classFor(primaryData.date, primarySubmitted, true)}`}>
             <label>Date *</label>
               <CustomDatePicker
                 value={primaryData.date}
@@ -546,7 +574,7 @@ const MeltingLogSheet = () => {
               {fetchingPrimary && <span style={{ fontSize: '12px', color: '#666', marginLeft: '8px' }}>Loading...</span>}
           </div>
 
-          <div className="melting-log-form-group">
+          <div className={`melting-log-form-group ${classFor(primaryData.shift, primarySubmitted, true)}`}>
             <label>Shift</label>
             <select
               name="shift"
@@ -586,7 +614,7 @@ const MeltingLogSheet = () => {
             </select>
           </div>
 
-          <div className="melting-log-form-group">
+          <div className={`melting-log-form-group ${classFor(primaryData.furnaceNo, primarySubmitted, true)}`}>
             <label>Furnace No.</label>
           <input
                 type="text"
@@ -602,7 +630,7 @@ const MeltingLogSheet = () => {
             />
           </div>
 
-          <div className="melting-log-form-group">
+          <div className={`melting-log-form-group ${classFor(primaryData.panel, primarySubmitted, true)}`}>
             <label>Panel</label>
           <input
                 type="text"
@@ -618,7 +646,7 @@ const MeltingLogSheet = () => {
             />
           </div>
 
-          <div className="melting-log-form-group">
+          <div className={`melting-log-form-group ${classFor(primaryData.cumulativeLiquidMetal, primarySubmitted, true)}`}>
             <label>Cumulative Liquid Metal</label>
           <input
                 type="number"
@@ -635,7 +663,7 @@ const MeltingLogSheet = () => {
             />
           </div>
 
-          <div className="melting-log-form-group">
+          <div className={`melting-log-form-group ${classFor(primaryData.finalKWHr, primarySubmitted, true)}`}>
             <label>Final KWHr</label>
           <input
                 type="number"
@@ -652,7 +680,7 @@ const MeltingLogSheet = () => {
             />
           </div>
 
-          <div className="melting-log-form-group">
+          <div className={`melting-log-form-group ${classFor(primaryData.initialKWHr, primarySubmitted, true)}`}>
             <label>Initial KWHr</label>
           <input
                 type="number"
@@ -669,7 +697,7 @@ const MeltingLogSheet = () => {
             />
           </div>
 
-          <div className="melting-log-form-group">
+          <div className={`melting-log-form-group ${classFor(primaryData.totalUnits, primarySubmitted, true)}`}>
             <label>Total Units</label>
           <input
                 type="number"
@@ -686,7 +714,7 @@ const MeltingLogSheet = () => {
             />
           </div>
 
-          <div className="melting-log-form-group">
+          <div className={`melting-log-form-group ${classFor(primaryData.cumulativeUnits, primarySubmitted, true)}`}>
             <label>Cumulative Units</label>
           <input
                 type="number"
@@ -705,6 +733,16 @@ const MeltingLogSheet = () => {
         </div>
 
         <div className="melting-log-submit-container">
+          <button
+            type="button"
+            className="melting-log-reset-btn"
+            onClick={resetPrimaryData}
+            disabled={primaryLoading || fetchingPrimary}
+          >
+            <RotateCcw size={18} />
+            Reset Primary
+          </button>
+
           <button
             className="cupola-holder-submit-btn"
             onClick={handlePrimarySubmit}
@@ -1447,7 +1485,7 @@ const MeltingLogSheet = () => {
           )}
         </button>
       </div>
-    </>
+    </div>
   );
 };
 
