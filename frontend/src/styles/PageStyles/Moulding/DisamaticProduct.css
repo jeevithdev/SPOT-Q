@@ -159,6 +159,58 @@
   letter-spacing: 0.5px;
 }
 
+/* Primary Section Specific Styles */
+.primary-section {
+  margin-bottom: 2rem;
+}
+
+.primary-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #5B9AA9;
+  margin-bottom: 1.25rem;
+}
+
+.primary-section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  padding: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: none;
+}
+
+.primary-date-display {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.primary-fields-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.primary-fields-row .disamatic-form-group:nth-child(1),
+.primary-fields-row .disamatic-form-group:nth-child(2),
+.primary-fields-row .disamatic-form-group:nth-child(3) {
+  flex: 0 0 auto;
+  width: 280px;
+  min-width: 0;
+}
+
+.primary-fields-row .disamatic-form-group:nth-child(4) {
+  flex: 1 1 auto;
+  min-width: 200px;
+}
+
 /* Form Grid */
 .disamatic-form-grid {
   display: grid;
@@ -690,6 +742,21 @@
     margin-top: 1.5rem;
     padding: 0;
   }
+
+  .primary-fields-row {
+    flex-wrap: wrap;
+  }
+
+  .primary-fields-row .disamatic-form-group:nth-child(1),
+  .primary-fields-row .disamatic-form-group:nth-child(2),
+  .primary-fields-row .disamatic-form-group:nth-child(3) {
+    flex: 1 1 calc(50% - 0.625rem);
+    width: auto;
+  }
+
+  .primary-fields-row .disamatic-form-group:nth-child(4) {
+    flex: 1 1 100%;
+  }
 }
 
 @media (max-width: 640px) {
@@ -718,6 +785,22 @@
 
   .disamatic-submit-container {
     justify-content: stretch;
+  }
+
+  .primary-fields-row {
+    flex-direction: column;
+  }
+
+  .primary-fields-row .disamatic-form-group:nth-child(1),
+  .primary-fields-row .disamatic-form-group:nth-child(2),
+  .primary-fields-row .disamatic-form-group:nth-child(3),
+  .primary-fields-row .disamatic-form-group:nth-child(4) {
+    flex: 1 1 100%;
+    width: 100%;
+  }
+
+  .primary-date-display {
+    font-size: 0.8125rem;
   }
 }
 

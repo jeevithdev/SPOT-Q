@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpenCheck } from 'lucide-react';
+import { BookOpenCheck, Edit, X, Save } from 'lucide-react';
 import { DatePicker, FilterButton, DeleteActionButton } from '../../Components/Buttons';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
@@ -14,6 +14,9 @@ const DmmSettingParametersReport = () => {
   const [reports, setReports] = useState([]);
   const [filtered, setFiltered] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [editingReport, setEditingReport] = useState(null);
+  const [editFormData, setEditFormData] = useState(null);
+  const [updating, setUpdating] = useState(false);
 
   useEffect(() => { fetchReports(); }, []);
 
@@ -76,6 +79,75 @@ const DmmSettingParametersReport = () => {
       console.error('Delete failed', err);
       alert('Failed to delete: ' + (err.message || 'Unknown error'));
     }
+  };
+
+  const handleEditClick = (report) => {
+    setEditingReport(report._id);
+    setEditFormData({
+      date: report.date ? new Date(report.date).toISOString().split('T')[0] : '',
+      machine: report.machine || '',
+      shifts: report.shifts || {
+        shift1: { operatorName: '', checkedBy: '' },
+        shift2: { operatorName: '', checkedBy: '' },
+        shift3: { operatorName: '', checkedBy: '' }
+      },
+      parameters: report.parameters || {
+        shift1: [],
+        shift2: [],
+        shift3: []
+      }
+    });
+  };
+
+  const handleUpdateReport = async () => {
+    if (!editFormData) return;
+    
+    try {
+      setUpdating(true);
+      const res = await api.put(`/v1/dmm-settings/${editingReport}`, editFormData);
+      if (res.success) {
+        alert('Report updated successfully!');
+        setEditingReport(null);
+        setEditFormData(null);
+        fetchReports();
+      }
+    } catch (err) {
+      console.error('Update failed', err);
+      alert('Failed to update: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+    } finally {
+      setUpdating(false);
+    }
+  };
+
+  const handleOperationChange = (shift, field, value) => {
+    setEditFormData(prev => ({
+      ...prev,
+      shifts: {
+        ...prev.shifts,
+        [shift]: {
+          ...prev.shifts[shift],
+          [field]: value
+        }
+      }
+    }));
+  };
+
+  const handleParameterChange = (shiftKey, rowIndex, field, value) => {
+    setEditFormData(prev => {
+      const newParams = { ...prev.parameters };
+      const shiftParams = [...(newParams[shiftKey] || [])];
+      if (shiftParams[rowIndex]) {
+        shiftParams[rowIndex] = {
+          ...shiftParams[rowIndex],
+          [field]: value
+        };
+        newParams[shiftKey] = shiftParams;
+      }
+      return {
+        ...prev,
+        parameters: newParams
+      };
+    });
   };
 
   return (
@@ -159,14 +231,243 @@ const DmmSettingParametersReport = () => {
                       <td>{row.mouldThickness || '-'}</td>
                       <td>{row.closeUpForceMouldCloseUpPressure || '-'}</td>
                       <td>{row.remarks || '-'}</td>
-                      <td style={{ minWidth: '80px' }}>
-                        <DeleteActionButton onClick={() => deleteWholeReport(row._id)} />
+                      <td style={{ minWidth: '120px' }}>
+                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                          <button 
+                            onClick={() => {
+                              // Find the full report object for this row
+                              const fullReport = reports.find(r => r._id === row._id);
+                              if (fullReport) handleEditClick(fullReport);
+                            }}
+                            style={{
+                              padding: '0.5rem',
+                              background: '#5B9AA9',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '4px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center'
+                            }}
+                          >
+                            <Edit size={16} />
+                          </button>
+                          <DeleteActionButton onClick={() => deleteWholeReport(row._id)} />
+                        </div>
                       </td>
                     </tr>
                   ))
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Edit Modal */}
+      {editingReport && editFormData && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 1000,
+          padding: '2rem'
+        }}>
+          <div style={{
+            background: 'white',
+            borderRadius: '12px',
+            maxWidth: '1200px',
+            width: '100%',
+            maxHeight: '90vh',
+            overflow: 'auto',
+            padding: '2rem'
+          }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.5rem', fontWeight: 600 }}>Edit DMM Settings Report</h3>
+              <button onClick={() => { setEditingReport(null); setEditFormData(null); }}
+                style={{ background: 'none', border: 'none', cursor: 'pointer' }}>
+                <X size={24} />
+              </button>
+            </div>
+
+            {/* Primary Information */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>Primary Information</h4>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '1rem' }}>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Date</label>
+                  <input type="date" value={editFormData.date}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, date: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                </div>
+                <div>
+                  <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 500 }}>Machine</label>
+                  <input type="text" value={editFormData.machine}
+                    onChange={(e) => setEditFormData(prev => ({ ...prev, machine: e.target.value }))}
+                    style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                </div>
+              </div>
+            </div>
+
+            {/* Operation Information */}
+            <div style={{ marginBottom: '1.5rem' }}>
+              <h4 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>Operation Information</h4>
+              <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                <thead>
+                  <tr style={{ background: '#f1f5f9' }}>
+                    <th style={{ padding: '0.75rem', border: '1px solid #cbd5e1', textAlign: 'left' }}>Parameter</th>
+                    <th style={{ padding: '0.75rem', border: '1px solid #cbd5e1', textAlign: 'left' }}>Shift I</th>
+                    <th style={{ padding: '0.75rem', border: '1px solid #cbd5e1', textAlign: 'left' }}>Shift II</th>
+                    <th style={{ padding: '0.75rem', border: '1px solid #cbd5e1', textAlign: 'left' }}>Shift III</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td style={{ padding: '0.5rem', border: '1px solid #cbd5e1', fontWeight: 500 }}>Operator Name</td>
+                    <td style={{ padding: '0.5rem', border: '1px solid #cbd5e1' }}>
+                      <input type="text" value={editFormData.shifts.shift1.operatorName}
+                        onChange={(e) => handleOperationChange('shift1', 'operatorName', e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </td>
+                    <td style={{ padding: '0.5rem', border: '1px solid #cbd5e1' }}>
+                      <input type="text" value={editFormData.shifts.shift2.operatorName}
+                        onChange={(e) => handleOperationChange('shift2', 'operatorName', e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </td>
+                    <td style={{ padding: '0.5rem', border: '1px solid #cbd5e1' }}>
+                      <input type="text" value={editFormData.shifts.shift3.operatorName}
+                        onChange={(e) => handleOperationChange('shift3', 'operatorName', e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </td>
+                  </tr>
+                  <tr>
+                    <td style={{ padding: '0.5rem', border: '1px solid #cbd5e1', fontWeight: 500 }}>Checked By</td>
+                    <td style={{ padding: '0.5rem', border: '1px solid #cbd5e1' }}>
+                      <input type="text" value={editFormData.shifts.shift1.checkedBy}
+                        onChange={(e) => handleOperationChange('shift1', 'checkedBy', e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </td>
+                    <td style={{ padding: '0.5rem', border: '1px solid #cbd5e1' }}>
+                      <input type="text" value={editFormData.shifts.shift2.checkedBy}
+                        onChange={(e) => handleOperationChange('shift2', 'checkedBy', e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </td>
+                    <td style={{ padding: '0.5rem', border: '1px solid #cbd5e1' }}>
+                      <input type="text" value={editFormData.shifts.shift3.checkedBy}
+                        onChange={(e) => handleOperationChange('shift3', 'checkedBy', e.target.value)}
+                        style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px' }} />
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+
+            {/* Shift Parameters - Show each shift's parameters */}
+            {['shift1', 'shift2', 'shift3'].map((shiftKey, shiftIdx) => {
+              const shiftParams = editFormData.parameters[shiftKey] || [];
+              if (shiftParams.length === 0) return null;
+              
+              return (
+                <div key={shiftKey} style={{ marginBottom: '1.5rem' }}>
+                  <h4 style={{ marginBottom: '1rem', fontSize: '1.1rem', fontWeight: 600 }}>
+                    Shift {shiftIdx + 1} Parameters
+                  </h4>
+                  {shiftParams.map((param, rowIdx) => (
+                    <div key={rowIdx} style={{ marginBottom: '1rem', padding: '1rem', border: '1px solid #cbd5e1', borderRadius: '8px' }}>
+                      <h5 style={{ marginBottom: '0.75rem', fontSize: '0.95rem', fontWeight: 500 }}>Entry #{param.sNo}</h5>
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1rem' }}>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem' }}>Customer</label>
+                          <input type="text" value={param.customer || ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'customer', e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem' }}>Item Description</label>
+                          <input type="text" value={param.itemDescription || ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'itemDescription', e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem' }}>Time</label>
+                          <input type="text" value={param.time || ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'time', e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem' }}>PP Thickness</label>
+                          <input type="number" value={param.ppThickness || ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'ppThickness', e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem' }}>PP Height</label>
+                          <input type="number" value={param.ppHeight || param.ppheight || ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'ppHeight', e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem' }}>SP Thickness</label>
+                          <input type="number" value={param.spThickness || ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'spThickness', e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem' }}>SP Height</label>
+                          <input type="number" value={param.spHeight || ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'spHeight', e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem' }} />
+                        </div>
+                        <div>
+                          <label style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.85rem' }}>Remarks</label>
+                          <input type="text" value={param.remarks || ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'remarks', e.target.value)}
+                            style={{ width: '100%', padding: '0.5rem', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '0.875rem' }} />
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              );
+            })}
+
+            {/* Action Buttons */}
+            <div style={{ display: 'flex', gap: '1rem', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+              <button onClick={() => { setEditingReport(null); setEditFormData(null); }}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#f1f5f9',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: 'pointer',
+                  fontWeight: 500
+                }}>
+                Cancel
+              </button>
+              <button onClick={handleUpdateReport} disabled={updating}
+                style={{
+                  padding: '0.75rem 1.5rem',
+                  background: '#5B9AA9',
+                  color: 'white',
+                  border: 'none',
+                  borderRadius: '8px',
+                  cursor: updating ? 'not-allowed' : 'pointer',
+                  fontWeight: 500,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem'
+                }}>
+                <Save size={18} />
+                {updating ? 'Updating...' : 'Update Report'}
+              </button>
+            </div>
           </div>
         </div>
       )}

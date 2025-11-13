@@ -783,9 +783,10 @@ const DmmSettingParameters = () => {
       if (currentIndex < inputs.length - 1) {
         inputs[currentIndex + 1].focus();
       } else {
-        // Last input - focus submit button
-        if (shiftSubmitRef.current) {
-          shiftSubmitRef.current.focus();
+        // Last input - focus Save All button
+        const saveAllBtn = document.querySelector('button[title*="Save all"]');
+        if (saveAllBtn) {
+          saveAllBtn.focus();
         }
       }
     }
@@ -840,24 +841,65 @@ const DmmSettingParameters = () => {
 
     setAllSubmitting(true);
     try {
-      // 1) Save primary if not locked
-      if (!isPrimaryLocked) {
-        await handlePrimarySubmit();
-      }
+      // Build consolidated payload with all sections
+      const consolidated = {
+        date: primaryData.date,
+        machine: primaryData.machine,
+        section: 'all',
+        shifts: {
+          shift1: {
+            operatorName: operationData.shift1.operatorName || '',
+            checkedBy: operationData.shift1.operatedBy || ''
+          },
+          shift2: {
+            operatorName: operationData.shift2.operatorName || '',
+            checkedBy: operationData.shift2.operatedBy || ''
+          },
+          shift3: {
+            operatorName: operationData.shift3.operatorName || '',
+            checkedBy: operationData.shift3.operatedBy || ''
+          }
+        },
+        selectedShift: selectedShift,
+        shiftParameters: hasShiftParameterData() ? currentRow : null
+      };
 
-      // 2) Save operation if present
-      if (hasOperationData()) {
-        await handleOperationSubmit();
-      }
+      const res = await api.post('/v1/dmm-settings', consolidated);
+      if (!res.success) throw new Error(res.message || 'Save failed');
 
-      // 3) Save currently selected shift parameters (if a shift selected and has data)
-      if (selectedShift && hasShiftParameterData()) {
-        await handleShiftSubmit();
-      }
-
-      alert('All sections saved successfully.');
-      // redirect to report page
-      navigate('/moulding/dmm-setting-parameters/report');
+      alert('All data saved successfully! Ready for next entry.');
+      
+      // Reset only operation and shift data (keep primary locked)
+      setOperationData({
+        shift1: { operatorName: '', operatedBy: '' },
+        shift2: { operatorName: '', operatedBy: '' },
+        shift3: { operatorName: '', operatedBy: '' }
+      });
+      setOperationFieldLocked({
+        shift1: { operatorName: false, operatedBy: false },
+        shift2: { operatorName: false, operatedBy: false },
+        shift3: { operatorName: false, operatedBy: false }
+      });
+      
+      // Reset shift parameters
+      setCurrentRow({ ...initialRow });
+      setShift1Row({ ...initialRow });
+      setShift2Row({ ...initialRow });
+      setShift3Row({ ...initialRow });
+      setSelectedShift(null);
+      
+      // Update shift counts
+      await fetchShiftCounts();
+      
+      // Focus back to first operation field
+      setTimeout(() => {
+        const firstInput = document.getElementById('shift1-operatorName');
+        if (firstInput) {
+          firstInput.focus();
+        }
+      }, 100);
+      
+      // Don't navigate to report - stay on entry page for next data set
     } catch (err) {
       console.error('Save All error:', err);
       alert('Failed to Save All: ' + (err.response?.data?.message || err.message || 'Unknown error'));
@@ -872,6 +914,7 @@ const DmmSettingParameters = () => {
       <div className="dmm-form-group">
         <label>Shift *</label>
         <select
+          id="shift-selector"
           value={selectedShift || ''}
           onChange={(e) => handleShiftChange(e.target.value ? parseInt(e.target.value) : null)}
           onKeyDown={handleShiftKeyDown}
@@ -1284,7 +1327,21 @@ const DmmSettingParameters = () => {
                 type="text"
                 value={primaryData.machine}
                 onChange={(e) => handlePrimaryChange("machine", e.target.value)}
-                onKeyDown={(e) => handleEnterKeyNavigation(e, 'shift1-operatorName')}
+                onKeyDown={async (e) => {
+                  if (e.key === 'Enter') {
+                    e.preventDefault();
+                    // Lock primary and navigate to first operation field
+                    if (primaryData.date && primaryData.machine && !isPrimaryLocked) {
+                      // Save primary to lock it
+                      await handlePrimarySubmit();
+                    }
+                    // Navigate to first operation field
+                    const nextField = document.getElementById('shift1-operatorName');
+                    if (nextField) {
+                      setTimeout(() => nextField.focus(), 100);
+                    }
+                  }
+                }}
                 disabled={primaryFieldLocked.machine || checkingData || isPrimaryLocked}
                 readOnly={primaryFieldLocked.machine || isPrimaryLocked}
                 placeholder="e.g., 1, 2, 3"
@@ -1307,6 +1364,13 @@ const DmmSettingParameters = () => {
                         setPrimaryData({ date: '', machine: '' });
                         setIsPrimaryLocked(false);
                         setPrimaryFieldLocked({ date: false, machine: false });
+                        setOperationData({
+                          shift1: { operatorName: '', operatedBy: '' },
+                          shift2: { operatorName: '', operatedBy: '' },
+                          shift3: { operatorName: '', operatedBy: '' }
+                        });
+                        setCurrentRow({ ...initialRow });
+                        setSelectedShift(null);
                       }
                     }}
                     style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
@@ -1316,16 +1380,6 @@ const DmmSettingParameters = () => {
                     Reset Primary
                   </button>
                 )}
-                <button
-                  type="button"
-                  className="dmm-submit-btn"
-                  onClick={handlePrimarySubmit}
-                  disabled={isPrimaryLocked || checkingData || !primaryData.date || !primaryData.machine}
-                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem' }}
-                  title={!primaryData.date || !primaryData.machine ? 'Please fill Date and Machine' : 'Save Primary Data'}
-                >
-                  <Save size={14} /> Save
-                </button>
               </div>
             </div>
           </div>
@@ -1494,12 +1548,10 @@ const DmmSettingParameters = () => {
                         onKeyDown={(e) => {
                           if (e.key === 'Enter') {
                             e.preventDefault();
-                            const form = e.target.closest('form');
-                            const inputs = Array.from(form.querySelectorAll('input, textarea'));
-                            const currentIndex = inputs.indexOf(e.target);
-                            const nextInput = inputs[currentIndex + 1];
-                            if (nextInput) {
-                              nextInput.focus();
+                            // Navigate to shift selector after last operation field
+                            const shiftSelector = document.getElementById('shift-selector');
+                            if (shiftSelector) {
+                              shiftSelector.focus();
                             }
                           }
                         }}

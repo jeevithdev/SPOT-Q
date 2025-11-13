@@ -232,6 +232,35 @@ const CupolaHolderLogSheet = () => {
     return primaryLocks[field] === true;
   };
 
+  const resetPrimaryData = () => {
+    if (!window.confirm('Are you sure you want to reset Primary data?')) return;
+    setPrimaryData({
+      date: '',
+      shift: '',
+      holderNumber: '',
+      heatNo: ''
+    });
+    setPrimaryId(null);
+    setPrimaryLocks({});
+  };
+
+  const handleEnterFocusNext = (e) => {
+    if (e.key !== 'Enter') return;
+
+    const target = e.target;
+    if (!(target && (target.tagName === 'INPUT' || target.tagName === 'SELECT' || target.tagName === 'TEXTAREA'))) return;
+
+    const value = target.value != null ? String(target.value).trim() : '';
+    if (value === '') return; // Only move when current field has a value
+
+    e.preventDefault();
+    const focusables = Array.from(document.querySelectorAll('input, select, textarea'))
+      .filter(el => !el.disabled && el.type !== 'hidden' && el.offsetParent !== null);
+    const idx = focusables.indexOf(document.activeElement);
+    if (idx > -1 && idx < focusables.length - 1) {
+      focusables[idx + 1].focus();
+    }
+  };
 
   const handlePrimarySubmit = async () => {
     // Validate required fields
@@ -354,7 +383,7 @@ const CupolaHolderLogSheet = () => {
   };
 
   return (
-    <>
+    <div onKeyDown={handleEnterFocusNext}>
 
       <div className="cupola-holder-header">
         <div className="cupola-holder-header-text">
@@ -455,7 +484,17 @@ const CupolaHolderLogSheet = () => {
           </div>
         </div>
 
-        <div className="cupola-holder-submit-container">
+        <div className="cupola-holder-submit-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+          <button
+            className="cupola-holder-reset-btn"
+            type="button"
+            onClick={resetPrimaryData}
+            disabled={primaryLoading || fetchingPrimary}
+          >
+            <RotateCcw size={16} />
+            Reset Primary
+          </button>
+
           <button
             className="cupola-holder-submit-btn"
             type="button"
@@ -722,7 +761,7 @@ const CupolaHolderLogSheet = () => {
           )}
         </button>
       </div>
-    </>
+    </div>
   );
 };
 

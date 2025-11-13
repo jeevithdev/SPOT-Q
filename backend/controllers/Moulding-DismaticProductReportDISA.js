@@ -63,6 +63,86 @@ const createDismaticReport = async (req, res) => {
                 }
 
                 switch (section) {
+                    case 'all':
+                        // Handle Save All - append all table data at once
+                        if (data.productionTable && Array.isArray(data.productionTable)) {
+                            const existingProductionCount = report.productionDetails ? report.productionDetails.length : 0;
+                            const newProductionEntries = data.productionTable
+                                .filter(row => row && (row.counterNo || row.componentName || row.produced || row.poured || row.cycleTime || row.mouldsPerHour || row.remarks))
+                                .map((row, index) => ({
+                                    sNo: existingProductionCount + index + 1,
+                                    counterNo: String(row.counterNo || '').trim(),
+                                    componentName: String(row.componentName || '').trim(),
+                                    produced: (row.produced && String(row.produced).trim() !== '') ? parseFloat(row.produced) : 0,
+                                    poured: (row.poured && String(row.poured).trim() !== '') ? parseFloat(row.poured) : 0,
+                                    cycleTime: String(row.cycleTime || '').trim(),
+                                    mouldsPerHour: (row.mouldsPerHour && String(row.mouldsPerHour).trim() !== '') ? parseFloat(row.mouldsPerHour) : 0,
+                                    remarks: String(row.remarks || '').trim()
+                                }));
+                            report.productionDetails = [...(report.productionDetails || []), ...newProductionEntries];
+                        }
+                        if (data.nextShiftPlanTable && Array.isArray(data.nextShiftPlanTable)) {
+                            const existingNextShiftPlanCount = report.nextShiftPlan ? report.nextShiftPlan.length : 0;
+                            const newNextShiftPlanEntries = data.nextShiftPlanTable
+                                .filter(row => row && (row.componentName || row.plannedMoulds || row.remarks))
+                                .map((row, index) => ({
+                                    sNo: existingNextShiftPlanCount + index + 1,
+                                    componentName: String(row.componentName || '').trim(),
+                                    plannedMoulds: (row.plannedMoulds && String(row.plannedMoulds).trim() !== '') ? parseFloat(row.plannedMoulds) : 0,
+                                    remarks: String(row.remarks || '').trim()
+                                }));
+                            report.nextShiftPlan = [...(report.nextShiftPlan || []), ...newNextShiftPlanEntries];
+                        }
+                        if (data.delaysTable && Array.isArray(data.delaysTable)) {
+                            const existingDelaysCount = report.delays ? report.delays.length : 0;
+                            const newDelaysEntries = data.delaysTable
+                                .filter(row => row && (row.delays || row.durationMinutes || row.durationTime))
+                                .map((row, index) => ({
+                                    sNo: existingDelaysCount + index + 1,
+                                    delays: String(row.delays || '').trim(),
+                                    durationMinutes: (row.durationMinutes && String(row.durationMinutes).trim() !== '') ? parseFloat(row.durationMinutes) : 0,
+                                    durationTime: String(row.durationTime || '').trim()
+                                }));
+                            report.delays = [...(report.delays || []), ...newDelaysEntries];
+                        }
+                        if (data.mouldHardnessTable && Array.isArray(data.mouldHardnessTable)) {
+                            const existingMouldHardnessCount = report.mouldHardness ? report.mouldHardness.length : 0;
+                            const newMouldHardnessEntries = data.mouldHardnessTable
+                                .filter(row => row && (row.componentName || row.mpPP || row.mpSP || row.bsPP || row.bsSP || row.remarks))
+                                .map((row, index) => ({
+                                    sNo: existingMouldHardnessCount + index + 1,
+                                    componentName: String(row.componentName || '').trim(),
+                                    mpPP: (row.mpPP && String(row.mpPP).trim() !== '') ? parseFloat(row.mpPP) : 0,
+                                    mpSP: (row.mpSP && String(row.mpSP).trim() !== '') ? parseFloat(row.mpSP) : 0,
+                                    bsPP: (row.bsPP && String(row.bsPP).trim() !== '') ? parseFloat(row.bsPP) : 0,
+                                    bsSP: (row.bsSP && String(row.bsSP).trim() !== '') ? parseFloat(row.bsSP) : 0,
+                                    remarks: String(row.remarks || '').trim()
+                                }));
+                            report.mouldHardness = [...(report.mouldHardness || []), ...newMouldHardnessEntries];
+                        }
+                        if (data.patternTempTable && Array.isArray(data.patternTempTable)) {
+                            const existingPatternTempCount = report.patternTemperature ? report.patternTemperature.length : 0;
+                            const newPatternTempEntries = data.patternTempTable
+                                .filter(row => row && (row.item || row.pp || row.sp))
+                                .map((row, index) => ({
+                                    sNo: existingPatternTempCount + index + 1,
+                                    item: String(row.item || '').trim(),
+                                    pp: (row.pp && String(row.pp).trim() !== '') ? parseFloat(row.pp) : 0,
+                                    sp: (row.sp && String(row.sp).trim() !== '') ? parseFloat(row.sp) : 0
+                                }));
+                            report.patternTemperature = [...(report.patternTemperature || []), ...newPatternTempEntries];
+                        }
+                        // Update event section fields if provided
+                        if (data.significantEvent !== undefined && String(data.significantEvent || '').trim() !== '') {
+                            report.significantEvent = String(data.significantEvent).trim();
+                        }
+                        if (data.maintenance !== undefined && String(data.maintenance || '').trim() !== '') {
+                            report.maintenance = String(data.maintenance).trim();
+                        }
+                        if (data.supervisorName !== undefined && String(data.supervisorName || '').trim() !== '') {
+                            report.supervisorName = String(data.supervisorName).trim();
+                        }
+                        break;
                     case 'basicInfo':
                         if (data.shift !== undefined) report.shift = String(data.shift || '').trim();
                         if (data.incharge !== undefined) report.incharge = String(data.incharge || '').trim();

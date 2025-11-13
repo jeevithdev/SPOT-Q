@@ -48,6 +48,12 @@ const userSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
+    },
+
+    // Track login timestamps (UTC ISO strings) for user activity auditing
+    loginHistory: {
+        type: [Date],
+        default: []
     }
 }, 
 { timestamps: true });

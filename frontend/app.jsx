@@ -32,6 +32,7 @@ import DmmSettingParametersReport from './src/pages/Moulding/DmmSettingParameter
 import AdminDashboard from './src/Components/AdminDashboard';
 import Impact from './src/pages/Impact';
 import ImpactReport from './src/pages/ImpactReport';
+import UserProfile from './src/pages/UserProfile';
 
 /**
  * Component to redirect users to their department's default page
@@ -142,6 +143,9 @@ const App = () => {
           <Route path="moulding/disamatic-product/report" element={<DepartmentRouteGuard><DisamaticProductReport /></DepartmentRouteGuard>} />
           <Route path="moulding/dmm-setting-parameters" element={<DepartmentRouteGuard><DmmSettingParameters /></DepartmentRouteGuard>} />
           <Route path="moulding/dmm-setting-parameters/report" element={<DepartmentRouteGuard><DmmSettingParametersReport /></DepartmentRouteGuard>} />
+
+          {/* User Profile */}
+          <Route path="user-profile" element={<UserProfile />} />
         </Route>
 
         {/* Fallback */}

@@ -774,7 +774,11 @@ const Sidebar = () => {
             <RiExpandRightFill />
           </button>
           
-          <div className="menu-item">
+          <div 
+            className="menu-item" 
+            onClick={() => navigate('/user-profile')}
+            style={{ cursor: 'pointer' }}
+          >
             <span className="menu-icon"><UserCog /></span>
             {!isExpanded && <span className="menu-tooltip">User Profile</span>}
             {isExpanded && <span className="menu-text">User Profile</span>}

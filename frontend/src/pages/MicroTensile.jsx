@@ -23,6 +23,7 @@ const MicroTensile = () => {
     testedBy: ''
   });
 
+  const [errors, setErrors] = useState({});
   const [submitLoading, setSubmitLoading] = useState(false);
 
   const disaOptions = ['DISA 1', 'DISA 2', 'DISA 3', 'DISA 4'];
@@ -31,12 +32,17 @@ const MicroTensile = () => {
   const fieldOrder = ['disa', 'dateOfInspection', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
                      'maxLoad', 'yieldLoad', 'tensileStrength', 'yieldStrength', 'elongation', 'remarks', 'testedBy'];
 
+  // Only these fields must be filled before moving on Enter
+  const requiredFields = ['disa', 'dateOfInspection', 'item', 'dateCode', 'heatCode', 'barDia', 'gaugeLength',
+                          'maxLoad', 'yieldLoad', 'tensileStrength', 'yieldStrength', 'elongation', 'testedBy'];
+
   const handleChange = (e) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
     }));
+    setErrors(prev => ({ ...prev, [name]: false }));
   };
 
   const handleDisaChange = (disaValue) => {
@@ -52,6 +58,7 @@ const MicroTensile = () => {
         disa: newDisa
       };
     });
+    setErrors(prev => ({ ...prev, disa: false }));
   };
 
   const handleDateChange = (e) => {
@@ -59,11 +66,25 @@ const MicroTensile = () => {
       ...prev,
       dateOfInspection: e.target.value
     }));
+    setErrors(prev => ({ ...prev, dateOfInspection: false }));
   };
 
   const handleKeyDown = (e, field) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+
+      // If the current field is required, only proceed when it has a value
+      if (requiredFields.includes(field)) {
+        const isFilled = field === 'disa'
+          ? (Array.isArray(formData.disa) && formData.disa.length > 0)
+          : Boolean(formData[field]);
+
+        if (!isFilled) {
+          setErrors(prev => ({ ...prev, [field]: true }));
+          return;
+        }
+      }
+
       const idx = fieldOrder.indexOf(field);
       if (idx < fieldOrder.length - 1) {
         inputRefs.current[fieldOrder[idx + 1]]?.focus();
@@ -83,7 +104,12 @@ const MicroTensile = () => {
     }
 
     if (missing.length > 0) {
-      alert(`Please fill in the following required fields: ${missing.join(', ')}`);
+      const nextErrors = missing.reduce((acc, key) => { acc[key] = true; return acc; }, {});
+      setErrors(nextErrors);
+      const first = missing[0];
+      if (first && first !== 'disa') {
+        inputRefs.current[first]?.focus();
+      }
       return;
     }
 
@@ -102,6 +128,7 @@ const MicroTensile = () => {
           }
         });
         setFormData(resetData);
+        setErrors({});
         
         // Focus on Date of Inspection for next entry
         setTimeout(() => {
@@ -126,6 +153,7 @@ const MicroTensile = () => {
       }
     });
     setFormData(resetData);
+    setErrors({});
     // Focus on Date of Inspection for next entry
     setTimeout(() => {
       inputRefs.current.dateOfInspection?.focus();
@@ -145,7 +173,7 @@ const MicroTensile = () => {
       </div>
 
       <div className="microtensile-form-grid">
-            <div className="microtensile-form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className={`microtensile-form-group ${errors.disa ? 'microtensile-error-outline' : ''}`} style={{ gridColumn: '1 / -1' }}>
               <label>DISA *</label>
               <div className="microtensile-disa-checklist">
                 {disaOptions.map((option) => (
@@ -154,6 +182,7 @@ const MicroTensile = () => {
                       type="checkbox"
                       checked={formData.disa?.includes(option) || false}
                       onChange={() => handleDisaChange(option)}
+                      onKeyDown={(e) => handleKeyDown(e, 'disa')}
                       className="microtensile-checkbox"
                     />
                     <span>{option}</span>
@@ -162,7 +191,7 @@ const MicroTensile = () => {
               </div>
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.dateOfInspection ? 'microtensile-error-outline' : ''}`}>
               <label>Date of Inspection *</label>
               <CustomDatePicker
                 ref={el => inputRefs.current.dateOfInspection = el}
@@ -173,7 +202,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.item ? 'microtensile-error-outline' : ''}`}>
               <label>Item *</label>
               <input
                 ref={el => inputRefs.current.item = el}
@@ -186,7 +215,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.dateCode ? 'microtensile-error-outline' : ''}`}>
               <label>Date Code *</label>
               <input
                 ref={el => inputRefs.current.dateCode = el}
@@ -199,7 +228,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.heatCode ? 'microtensile-error-outline' : ''}`}>
               <label>Heat Code *</label>
               <input
                 ref={el => inputRefs.current.heatCode = el}
@@ -212,7 +241,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.barDia ? 'microtensile-error-outline' : ''}`}>
               <label>Bar Dia (mm) *</label>
               <input
                 ref={el => inputRefs.current.barDia = el}
@@ -226,7 +255,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.gaugeLength ? 'microtensile-error-outline' : ''}`}>
               <label>Gauge Length (mm) *</label>
               <input
                 ref={el => inputRefs.current.gaugeLength = el}
@@ -240,7 +269,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.maxLoad ? 'microtensile-error-outline' : ''}`}>
               <label>Max Load (Kgs) or KN *</label>
               <input
                 ref={el => inputRefs.current.maxLoad = el}
@@ -254,7 +283,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.yieldLoad ? 'microtensile-error-outline' : ''}`}>
               <label>Yield Load (Kgs) or KN *</label>
               <input
                 ref={el => inputRefs.current.yieldLoad = el}
@@ -268,7 +297,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.tensileStrength ? 'microtensile-error-outline' : ''}`}>
               <label>Tensile Strength (Kg/mm² or Mpa) *</label>
               <input
                 ref={el => inputRefs.current.tensileStrength = el}
@@ -282,7 +311,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.yieldStrength ? 'microtensile-error-outline' : ''}`}>
               <label>Yield Strength (Kg/mm² or Mpa) *</label>
               <input
                 ref={el => inputRefs.current.yieldStrength = el}
@@ -296,7 +325,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.elongation ? 'microtensile-error-outline' : ''}`}>
               <label>Elongation % *</label>
               <input
                 ref={el => inputRefs.current.elongation = el}
@@ -329,7 +358,7 @@ const MicroTensile = () => {
               />
             </div>
 
-            <div className="microtensile-form-group">
+            <div className={`microtensile-form-group ${errors.testedBy ? 'microtensile-error-outline' : ''}`}>
               <label>Tested By *</label>
               <input
                 ref={el => inputRefs.current.testedBy = el}

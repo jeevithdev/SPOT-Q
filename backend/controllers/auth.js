@@ -35,13 +35,21 @@ exports.login = async (req, res) => {
         }
         
         const token = generateToken(user._id);
-        
-        res.status(200).json({ 
+
+        // Append login timestamp (keep last 50 for size control)
+        user.loginHistory = user.loginHistory || [];
+        user.loginHistory.push(new Date());
+        if (user.loginHistory.length > 50) {
+            user.loginHistory = user.loginHistory.slice(-50);
+        }
+        await user.save();
+
+        res.status(200).json({
             success: true,
             message: 'Login successful.',
             token,
-            user: user.toJSON() 
-        }); 
+            user: user.toJSON()
+        });
     } catch (error) {
         console.error('❌ Login error:', error);
         res.status(500).json({ success: false, message: 'Server error during login.' });
@@ -56,6 +64,17 @@ exports.verify = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error during verification.' });
+    }
+};
+
+// Fetch login history for the authenticated user
+exports.getLoginHistory = async (req, res) => {
+    try {
+        const history = (req.user.loginHistory || []).sort((a, b) => new Date(b) - new Date(a));
+        res.status(200).json({ success: true, count: history.length, data: history });
+    } catch (error) {
+        console.error('❌ Get login history error:', error);
+        res.status(500).json({ success: false, message: 'Server error retrieving login history.' });
     }
 };
 
