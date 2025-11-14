@@ -14,6 +14,26 @@ const DisamaticProductReport = () => {
   const [editingReport, setEditingReport] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
   const [updating, setUpdating] = useState(false);
+  const [showSections, setShowSections] = useState({
+    productionDetails: true,
+    nextShiftPlan: true,
+    delays: true,
+    mouldHardness: true,
+    patternTemperature: true
+  });
+  const [remarksModal, setRemarksModal] = useState({ show: false, content: '', title: 'Remarks' });
+
+  const toggleSection = (section) => {
+    setShowSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const showRemarksPopup = (content, title = 'Remarks') => {
+    setRemarksModal({ show: true, content, title });
+  };
+
+  const closeRemarksModal = () => {
+    setRemarksModal({ show: false, content: '', title: 'Remarks' });
+  };
 
   useEffect(() => {
     fetchReports();
@@ -142,6 +162,64 @@ const DisamaticProductReport = () => {
         <FilterButton onClick={handleFilter} disabled={!startDate}>Filter</FilterButton>
       </div>
 
+      {/* Section Checkboxes */}
+      <div style={{ 
+        background: 'white', 
+        padding: '1rem', 
+        borderRadius: '8px', 
+        marginBottom: '1rem',
+        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
+      }}>
+        <div style={{ fontWeight: 600, marginBottom: '0.75rem', color: '#334155' }}>Sections Filter:</div>
+        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={showSections.productionDetails} 
+              onChange={() => toggleSection('productionDetails')}
+              style={{ cursor: 'pointer' }}
+            />
+            <span>Production Details</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={showSections.nextShiftPlan} 
+              onChange={() => toggleSection('nextShiftPlan')}
+              style={{ cursor: 'pointer' }}
+            />
+            <span>Next Shift Plan</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={showSections.delays} 
+              onChange={() => toggleSection('delays')}
+              style={{ cursor: 'pointer' }}
+            />
+            <span>Delays</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={showSections.mouldHardness} 
+              onChange={() => toggleSection('mouldHardness')}
+              style={{ cursor: 'pointer' }}
+            />
+            <span>Mould Hardness</span>
+          </label>
+          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
+            <input 
+              type="checkbox" 
+              checked={showSections.patternTemperature} 
+              onChange={() => toggleSection('patternTemperature')}
+              style={{ cursor: 'pointer' }}
+            />
+            <span>Pattern Temperature</span>
+          </label>
+        </div>
+      </div>
+
       {loading ? (
         <div className="impact-loader-container"><Loader /></div>
       ) : (
@@ -150,97 +228,296 @@ const DisamaticProductReport = () => {
             <table className="impact-table">
               <thead>
                 <tr>
-                  <th>Date</th>
-                  <th>Shift</th>
-                  <th>Incharge</th>
-                  <th>PP Operator</th>
-                  <th>Members Present</th>
-                  <th>Production Details</th>
-                  <th>Next Shift Plan</th>
-                  <th>Delays</th>
-                  <th>Mould Hardness</th>
-                  <th>Pattern Temperature</th>
-                  <th>Significant Event</th>
-                  <th>Maintenance</th>
-                  <th>Supervisor Name</th>
-                  <th>Actions</th>
+                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Date</th>
+                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Shift</th>
+                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Incharge</th>
+                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>PP Operator</th>
+                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Members Present</th>
+                  {showSections.productionDetails && (
+                    <th colSpan="7" style={{ background: '#e0f2f1', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Production Details</th>
+                  )}
+                  {showSections.nextShiftPlan && (
+                    <th colSpan="3" style={{ background: '#fff3e0', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Next Shift Plan</th>
+                  )}
+                  {showSections.delays && (
+                    <th colSpan="3" style={{ background: '#fce4ec', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Delays</th>
+                  )}
+                  {showSections.mouldHardness && (
+                    <th colSpan="6" style={{ background: '#f3e5f5', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Mould Hardness</th>
+                  )}
+                  {showSections.patternTemperature && (
+                    <th colSpan="3" style={{ background: '#e8f5e9', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Pattern Temperature</th>
+                  )}
+                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Significant Event</th>
+                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Maintenance</th>
+                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Supervisor Name</th>
+                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Actions</th>
+                </tr>
+                <tr>
+                  {showSections.productionDetails && (
+                    <>
+                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Counter No</th>
+                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Component</th>
+                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Produced</th>
+                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Poured</th>
+                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Cycle Time</th>
+                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Moulds/Hr</th>
+                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
+                    </>
+                  )}
+                  {showSections.nextShiftPlan && (
+                    <>
+                      <th style={{ background: '#fff3e0', padding: '12px 16px', textAlign: 'center' }}>Component</th>
+                      <th style={{ background: '#fff3e0', padding: '12px 16px', textAlign: 'center' }}>Planned Moulds</th>
+                      <th style={{ background: '#fff3e0', padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
+                    </>
+                  )}
+                  {showSections.delays && (
+                    <>
+                      <th style={{ background: '#fce4ec', padding: '12px 16px', textAlign: 'center' }}>Delays</th>
+                      <th style={{ background: '#fce4ec', padding: '12px 16px', textAlign: 'center' }}>Duration (min)</th>
+                      <th style={{ background: '#fce4ec', padding: '12px 16px', textAlign: 'center' }}>Duration Time</th>
+                    </>
+                  )}
+                  {showSections.mouldHardness && (
+                    <>
+                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>Component</th>
+                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>MP PP</th>
+                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>MP SP</th>
+                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>BS PP</th>
+                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>BS SP</th>
+                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
+                    </>
+                  )}
+                  {showSections.patternTemperature && (
+                    <>
+                      <th style={{ background: '#e8f5e9', padding: '12px 16px', textAlign: 'center' }}>Item</th>
+                      <th style={{ background: '#e8f5e9', padding: '12px 16px', textAlign: 'center' }}>PP</th>
+                      <th style={{ background: '#e8f5e9', padding: '12px 16px', textAlign: 'center' }}>SP</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
                 {filteredReports.length === 0 ? (
-                  <tr><td colSpan="14" className="impact-no-records">No records found</td></tr>
+                  <tr><td colSpan="50" className="impact-no-records">No records found</td></tr>
                 ) : (
-                  filteredReports.map((report) => (
-                    <tr key={report._id}>
-                      <td>{report.date ? new Date(report.date).toLocaleDateString('en-GB') : '-'}</td>
-                      <td>{report.shift || '-'}</td>
-                      <td>{report.incharge || '-'}</td>
-                      <td>{report.ppOperator || '-'}</td>
-                      <td>{report.memberspresent || '-'}</td>
-                      <td>
-                        {report.productionDetails && report.productionDetails.length > 0 
-                          ? report.productionDetails.map(item => 
-                              `${item.componentName || '-'} (${item.produced || 0})`
-                            ).join(', ')
-                          : '-'}
-                      </td>
-                      <td>
-                        {report.nextShiftPlan && report.nextShiftPlan.length > 0
-                          ? report.nextShiftPlan.map(item => 
-                              `${item.componentName || '-'} (${item.plannedMoulds || 0})`
-                            ).join(', ')
-                          : '-'}
-                      </td>
-                      <td>
-                        {report.delays && report.delays.length > 0
-                          ? report.delays.map(item => 
-                              `${item.delays || '-'} (${item.durationMinutes || 0}min)`
-                            ).join(', ')
-                          : '-'}
-                      </td>
-                      <td>
-                        {report.mouldHardness && report.mouldHardness.length > 0
-                          ? report.mouldHardness.map(item => 
-                              `${item.componentName || '-'}`
-                            ).join(', ')
-                          : '-'}
-                      </td>
-                      <td>
-                        {report.patternTemperature && report.patternTemperature.length > 0
-                          ? report.patternTemperature.map(item => 
-                              `${item.item || '-'}`
-                            ).join(', ')
-                          : '-'}
-                      </td>
-                      <td>{report.significantEvent || '-'}</td>
-                      <td>{report.maintenance || '-'}</td>
-                      <td>{report.supervisorName || '-'}</td>
-                      <td style={{ minWidth: '120px' }}>
-                        <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                          <button 
-                            onClick={() => handleEditClick(report)}
-                            style={{
-                              padding: '0.5rem',
-                              background: '#5B9AA9',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '4px',
-                              cursor: 'pointer',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center'
+                  filteredReports.map((report) => {
+                    const maxRows = Math.max(
+                      showSections.productionDetails ? (report.productionDetails?.length || 1) : 1,
+                      showSections.nextShiftPlan ? (report.nextShiftPlan?.length || 1) : 1,
+                      showSections.delays ? (report.delays?.length || 1) : 1,
+                      showSections.mouldHardness ? (report.mouldHardness?.length || 1) : 1,
+                      showSections.patternTemperature ? (report.patternTemperature?.length || 1) : 1
+                    );
+
+                    return Array.from({ length: maxRows }).map((_, rowIdx) => (
+                      <tr key={`${report._id}-${rowIdx}`}>
+                        {rowIdx === 0 && (
+                          <>
+                            <td rowSpan={maxRows} style={{ padding: '10px 16px', textAlign: 'center' }}>{report.date ? new Date(report.date).toLocaleDateString('en-GB') : '-'}</td>
+                            <td rowSpan={maxRows} style={{ padding: '10px 16px', textAlign: 'center' }}>{report.shift || '-'}</td>
+                            <td rowSpan={maxRows} style={{ padding: '10px 16px', textAlign: 'center' }}>{report.incharge || '-'}</td>
+                            <td rowSpan={maxRows} style={{ padding: '10px 16px', textAlign: 'center' }}>{report.ppOperator || '-'}</td>
+                            <td rowSpan={maxRows} style={{ 
+                              maxWidth: '150px',
+                              cursor: report.memberspresent ? 'pointer' : 'default',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              padding: '10px 16px',
+                              textAlign: 'center'
                             }}
-                          >
-                            <Edit size={16} />
-                          </button>
-                          <DeleteActionButton onClick={() => handleDeleteReport(report._id)} />
-                        </div>
-                      </td>
-                    </tr>
-                  ))
+                              onClick={() => report.memberspresent && showRemarksPopup(report.memberspresent, 'Members Present')}>
+                              {report.memberspresent || '-'}
+                            </td>
+                          </>
+                        )}
+                        {showSections.productionDetails && (
+                          <>
+                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.counterNo || '-'}</td>
+                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.componentName || '-'}</td>
+                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.produced || '-'}</td>
+                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.poured || '-'}</td>
+                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.cycleTime || '-'}</td>
+                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.mouldsPerHour || '-'}</td>
+                            <td style={{ 
+                              background: '#f1fffe', 
+                              cursor: report.productionDetails?.[rowIdx]?.remarks ? 'pointer' : 'default',
+                              maxWidth: '150px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              padding: '10px 16px',
+                              textAlign: 'center'
+                            }}
+                              onClick={() => report.productionDetails?.[rowIdx]?.remarks && showRemarksPopup(report.productionDetails[rowIdx].remarks, 'Production Details - Remarks')}>
+                              {report.productionDetails?.[rowIdx]?.remarks || '-'}
+                            </td>
+                          </>
+                        )}
+                        {showSections.nextShiftPlan && (
+                          <>
+                            <td style={{ background: '#fffbf5', padding: '10px 16px', textAlign: 'center' }}>{report.nextShiftPlan?.[rowIdx]?.componentName || '-'}</td>
+                            <td style={{ background: '#fffbf5', padding: '10px 16px', textAlign: 'center' }}>{report.nextShiftPlan?.[rowIdx]?.plannedMoulds || '-'}</td>
+                            <td style={{ 
+                              background: '#fffbf5', 
+                              cursor: report.nextShiftPlan?.[rowIdx]?.remarks ? 'pointer' : 'default',
+                              maxWidth: '150px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              padding: '10px 16px',
+                              textAlign: 'center'
+                            }}
+                              onClick={() => report.nextShiftPlan?.[rowIdx]?.remarks && showRemarksPopup(report.nextShiftPlan[rowIdx].remarks, 'Next Shift Plan - Remarks')}>
+                              {report.nextShiftPlan?.[rowIdx]?.remarks || '-'}
+                            </td>
+                          </>
+                        )}
+                        {showSections.delays && (
+                          <>
+                            <td style={{ background: '#fff9fb', padding: '10px 16px', textAlign: 'center' }}>{report.delays?.[rowIdx]?.delays || '-'}</td>
+                            <td style={{ background: '#fff9fb', padding: '10px 16px', textAlign: 'center' }}>{report.delays?.[rowIdx]?.durationMinutes || '-'}</td>
+                            <td style={{ background: '#fff9fb', padding: '10px 16px', textAlign: 'center' }}>{report.delays?.[rowIdx]?.durationTime || '-'}</td>
+                          </>
+                        )}
+                        {showSections.mouldHardness && (
+                          <>
+                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.componentName || '-'}</td>
+                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.mpPP || '-'}</td>
+                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.mpSP || '-'}</td>
+                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.bsPP || '-'}</td>
+                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.bsSP || '-'}</td>
+                            <td style={{ 
+                              background: '#fbf8fc', 
+                              cursor: report.mouldHardness?.[rowIdx]?.remarks ? 'pointer' : 'default',
+                              maxWidth: '150px',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              padding: '10px 16px',
+                              textAlign: 'center'
+                            }}
+                              onClick={() => report.mouldHardness?.[rowIdx]?.remarks && showRemarksPopup(report.mouldHardness[rowIdx].remarks, 'Mould Hardness - Remarks')}>
+                              {report.mouldHardness?.[rowIdx]?.remarks || '-'}
+                            </td>
+                          </>
+                        )}
+                        {showSections.patternTemperature && (
+                          <>
+                            <td style={{ background: '#f7fcf8', padding: '10px 16px', textAlign: 'center' }}>{report.patternTemperature?.[rowIdx]?.item || '-'}</td>
+                            <td style={{ background: '#f7fcf8', padding: '10px 16px', textAlign: 'center' }}>{report.patternTemperature?.[rowIdx]?.pp || '-'}</td>
+                            <td style={{ background: '#f7fcf8', padding: '10px 16px', textAlign: 'center' }}>{report.patternTemperature?.[rowIdx]?.sp || '-'}</td>
+                          </>
+                        )}
+                        {rowIdx === 0 && (
+                          <>
+                            <td rowSpan={maxRows} style={{ 
+                              maxWidth: '200px',
+                              cursor: report.significantEvent ? 'pointer' : 'default',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              padding: '10px 16px',
+                              textAlign: 'center'
+                            }}
+                              onClick={() => report.significantEvent && showRemarksPopup(report.significantEvent, 'Significant Event')}>
+                              {report.significantEvent || '-'}
+                            </td>
+                            <td rowSpan={maxRows} style={{ 
+                              maxWidth: '200px',
+                              cursor: report.maintenance ? 'pointer' : 'default',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              padding: '10px 16px',
+                              textAlign: 'center'
+                            }}
+                              onClick={() => report.maintenance && showRemarksPopup(report.maintenance, 'Maintenance')}>
+                              {report.maintenance || '-'}
+                            </td>
+                            <td rowSpan={maxRows} style={{ 
+                              maxWidth: '150px',
+                              cursor: report.supervisorName ? 'pointer' : 'default',
+                              overflow: 'hidden',
+                              textOverflow: 'ellipsis',
+                              whiteSpace: 'nowrap',
+                              padding: '10px 16px',
+                              textAlign: 'center'
+                            }}
+                              onClick={() => report.supervisorName && showRemarksPopup(report.supervisorName, 'Supervisor Name')}>
+                              {report.supervisorName || '-'}
+                            </td>
+                            <td rowSpan={maxRows} style={{ minWidth: '120px', padding: '10px 16px', textAlign: 'center' }}>
+                              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
+                                <button 
+                                  onClick={() => handleEditClick(report)}
+                                  style={{
+                                    padding: '0.5rem',
+                                    background: '#5B9AA9',
+                                    color: 'white',
+                                    border: 'none',
+                                    borderRadius: '4px',
+                                    cursor: 'pointer',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center'
+                                  }}
+                                >
+                                  <Edit size={16} />
+                                </button>
+                                <DeleteActionButton onClick={() => handleDeleteReport(report._id)} />
+                              </div>
+                            </td>
+                          </>
+                        )}
+                      </tr>
+                    ));
+                  })
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* Remarks Modal */}
+      {remarksModal.show && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          background: 'rgba(0,0,0,0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }} onClick={closeRemarksModal}>
+          <div style={{
+            background: 'white',
+            padding: '2rem',
+            borderRadius: '8px',
+            maxWidth: '500px',
+            width: '90%',
+            maxHeight: '300px',
+            overflowY: 'auto',
+            boxShadow: '0 4px 6px rgba(0,0,0,0.1)'
+          }} onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>{remarksModal.title}</h3>
+              <button onClick={closeRemarksModal} style={{
+                background: 'none',
+                border: 'none',
+                fontSize: '1.5rem',
+                cursor: 'pointer',
+                padding: '0',
+                color: '#64748b'
+              }}>&times;</button>
+            </div>
+            <p style={{ margin: 0, lineHeight: '1.6', color: '#334155' }}>{remarksModal.content}</p>
           </div>
         </div>
       )}
@@ -267,7 +544,6 @@ const DisamaticProductReport = () => {
                       type="date" 
                       value={editFormData.date} 
                       onChange={(e) => handleEditChange('date', e.target.value)}
-                      disabled
                     />
                   </div>
                   <div className="disamatic-form-group">
@@ -549,21 +825,21 @@ const DisamaticProductReport = () => {
               {/* Event Section */}
               <div className="edit-section">
                 <h3 className="edit-section-title">Event Information</h3>
-                <div className="disamatic-form-grid">
-                  <div className="disamatic-form-group full-width">
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '1.5rem' }}>
+                  <div className="disamatic-form-group">
                     <label>Significant Event</label>
-                    <textarea 
+                    <input 
+                      type="text" 
                       value={editFormData.significantEvent} 
                       onChange={(e) => handleEditChange('significantEvent', e.target.value)}
-                      rows={3}
                     />
                   </div>
-                  <div className="disamatic-form-group full-width">
+                  <div className="disamatic-form-group">
                     <label>Maintenance</label>
-                    <textarea 
+                    <input 
+                      type="text" 
                       value={editFormData.maintenance} 
                       onChange={(e) => handleEditChange('maintenance', e.target.value)}
-                      rows={3}
                     />
                   </div>
                   <div className="disamatic-form-group">
