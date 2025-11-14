@@ -1,9 +1,11 @@
 const User = require('../models/user');
-const { generateToken } = require('../utils/jwt'); 
+const LoginActivity = require('../models/LoginActivity');
+const { generateToken } = require('../utils/jwt');
+const bcrypt = require('bcryptjs'); 
 
 // Hardcoded list of departments for controller validation
 const DEPARTMENTS = [
-    'All', 'Melting', 'Sand Lab', 'Moulding', 'Process', 'Micro Tensile', 
+    'Melting', 'Sand Lab', 'Moulding', 'Process', 'Micro Tensile',
     'Tensile', 'QC - production', 'Micro Structure', 'Impact', 'Admin'
 ];
 
@@ -19,7 +21,8 @@ exports.login = async (req, res) => {
             return res.status(400).json({ success: false, message: 'ID and password are required.' });
         }
         
-        const user = await User.findOne({ employeeId: employeeId.toUpperCase() });
+        // Fetch user with password field selected
+        const user = await User.findOne({ employeeId: employeeId.toUpperCase() }).select('+password');
         
         if (!user) {
             return res.status(401).json({ success: false, message: 'Invalid credentials.' });
@@ -29,30 +32,38 @@ exports.login = async (req, res) => {
             return res.status(401).json({ success: false, message: 'Account deactivated. Contact administrator.' });
         }
         
-        const isMatch = await user.comparePassword(password);
+        // Compare password directly using bcrypt
+        const isMatch = await bcrypt.compare(password, user.password);
+
         if (!isMatch) {
             return res.status(401).json({ success: false, message: 'Invalid credentials.' });
         }
-        
+
         const token = generateToken(user._id);
 
-        // Append login timestamp (keep last 50 for size control)
-        user.loginHistory = user.loginHistory || [];
-        user.loginHistory.push(new Date());
-        if (user.loginHistory.length > 50) {
-            user.loginHistory = user.loginHistory.slice(-50);
+        // Store login activity
+        try {
+            await LoginActivity.create({
+                userId: user._id,
+                employeeId: user.employeeId,
+                department: user.department,
+                ip: req.ip || req.connection.remoteAddress || req.headers['x-forwarded-for'],
+                userAgent: req.headers['user-agent'] || 'Unknown'
+            });
+        } catch (loginActivityError) {
+            // Log the error but don't fail the login
+            console.error('Error storing login activity:', loginActivityError);
         }
-        await user.save();
 
         res.status(200).json({
             success: true,
             message: 'Login successful.',
             token,
             user: user.toJSON()
-        });
+        }); 
     } catch (error) {
         console.error('❌ Login error:', error);
-        res.status(500).json({ success: false, message: 'Server error during login.' });
+        res.status(500).json({ success: false, message: 'Server error during login.', error: error.message });
     }
 };
 
@@ -64,17 +75,6 @@ exports.verify = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error during verification.' });
-    }
-};
-
-// Fetch login history for the authenticated user
-exports.getLoginHistory = async (req, res) => {
-    try {
-        const history = (req.user.loginHistory || []).sort((a, b) => new Date(b) - new Date(a));
-        res.status(200).json({ success: true, count: history.length, data: history });
-    } catch (error) {
-        console.error('❌ Get login history error:', error);
-        res.status(500).json({ success: false, message: 'Server error retrieving login history.' });
     }
 };
 
@@ -163,13 +163,25 @@ exports.createEmployee = async (req, res) => {
 exports.getAllUsers = async (req, res) => {
     try {
         const users = await User.find().sort({ createdAt: -1 });
-        
+
+        // Get last login for each user
+        const usersWithLastLogin = await Promise.all(users.map(async (user) => {
+            const lastLogin = await LoginActivity.findOne({ userId: user._id })
+                .sort({ loginAt: -1 })
+                .limit(1);
+
+            const userObj = user.toJSON();
+            userObj.lastLogin = lastLogin ? lastLogin.loginAt : null;
+            return userObj;
+        }));
+
         res.status(200).json({
             success: true,
-            count: users.length,
-            data: users.map(user => user.toJSON()) 
+            count: usersWithLastLogin.length,
+            data: usersWithLastLogin
         });
     } catch (error) {
+        console.error('Error fetching users:', error);
         res.status(500).json({ success: false, message: 'Server error while fetching users.' });
     }
 };
@@ -234,18 +246,14 @@ exports.getDepartments = async (req, res) => {
     try {
         // Option to exclude Admin department via query parameter
         const { excludeAdmin } = req.query;
-        
+
         let departments = DEPARTMENTS;
-        
-        // Always filter out "All" from the list (it's used for validation/assignment, not display)
-        // Keep it for create/update validation but don't send to frontend lists
-        departments = departments.filter(d => d !== 'All');
-        
+
         // Filter out Admin department if requested
         if (excludeAdmin === 'true') {
             departments = departments.filter(d => d !== 'Admin');
         }
-        
+
         res.status(200).json({
             success: true,
             data: departments

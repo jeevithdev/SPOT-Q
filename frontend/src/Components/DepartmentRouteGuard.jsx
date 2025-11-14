@@ -45,8 +45,7 @@ const DEPARTMENT_DEFAULT_ROUTE = {
   'Process': '/process',
   'Melting': '/melting/melting-log-sheet',
   'Moulding': '/moulding/disamatic-product',
-  'Sand Lab': '/sand-lab/sand-testing-record',
-  'All': '/micro-tensile'
+  'Sand Lab': '/sand-lab/sand-testing-record'
 };
 
 /**
@@ -99,12 +98,7 @@ function hasDepartmentAccess(user, requiredDepartment) {
   if (user.role === 'admin' || user.department === 'Admin') {
     return true;
   }
-  
-  // Users with 'All' department have access to everything
-  if (user.department === 'All') {
-    return true;
-  }
-  
+
   // Check if user's department matches the required department
   return user.department === requiredDepartment;
 }

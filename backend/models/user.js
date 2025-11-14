@@ -27,7 +27,7 @@ const userSchema = new mongoose.Schema({
 
     department: {
         type: String,
-        enum: ['All', 'Melting', 'Sand Lab', 'Moulding', 'Process', 'Micro Tensile', 'Tensile', 'QC - production', 'Micro Structure', 'Impact', 'Admin'],
+        enum: ['Melting', 'Sand Lab', 'Moulding', 'Process', 'Micro Tensile', 'Tensile', 'QC - production', 'Micro Structure', 'Impact', 'Admin'],
         required: true
     },
 
@@ -48,12 +48,6 @@ const userSchema = new mongoose.Schema({
     isActive: {
         type: Boolean,
         default: true
-    },
-
-    // Track login timestamps (UTC ISO strings) for user activity auditing
-    loginHistory: {
-        type: [Date],
-        default: []
     }
 }, 
 { timestamps: true });

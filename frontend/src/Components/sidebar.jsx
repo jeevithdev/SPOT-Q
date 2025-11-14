@@ -210,7 +210,7 @@ const Sidebar = () => {
 
   // Filter departments based on user's department
   const filterDepartments = (departments) => {
-    if (isAdmin || user?.department === 'All' || user?.department === 'Admin') {
+    if (isAdmin || user?.department === 'Admin') {
       return departments;
     }
     return departments.filter(dept => departmentMap[dept.name] === user?.department);

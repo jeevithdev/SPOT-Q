@@ -2,7 +2,7 @@
 
 const express = require('express');
 const router = express.Router();
-const { login, verify, createEmployee, getAllUsers, updateEmployee, deleteEmployee, changePassword, getDepartments, getLoginHistory } = require('../controllers/auth');
+const { login, verify, createEmployee, getAllUsers, updateEmployee, deleteEmployee, changePassword, getDepartments } = require('../controllers/auth');
 const { protect } = require('../middleware/auth');
 const { checkAdminAccess } = require('../middleware/rolecheck');
 
@@ -12,7 +12,6 @@ router.post('/login', login);
 // === PROTECTED USER ROUTES ===
 router.get('/verify', protect, verify);
 router.put('/changepassword', protect, changePassword); // For both Admin and Employee
-router.get('/login-history', protect, getLoginHistory); // Fetch own login history
 
 // === ADMIN ROUTES ===
 const adminRoutes = router.route('/admin/users');

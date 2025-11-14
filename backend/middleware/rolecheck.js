@@ -57,12 +57,7 @@ function hasDepartmentAccess(user, requiredDepartment) {
     if (user.department === 'Admin') {
         return true;
     }
-    
-    // Users with 'All' department have access to everything
-    if (user.department === 'All') {
-        return true;
-    }
-    
+
     // Check if user's department matches the required department
     return user.department === requiredDepartment;
 }

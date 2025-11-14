@@ -38,7 +38,7 @@ mongoose.connect(process.env.MONGODB_URI)
 
 // Mount Routes
 // Public routes (no authentication required)
-app.use('/api/auth', authRoutes);
+app.use('/api/v1/auth', authRoutes);
 
 // Protected routes with department-based access control
 // QC Testing Routes

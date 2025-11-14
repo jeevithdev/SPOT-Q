@@ -3,6 +3,9 @@ import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import api from '../utils/api';
 import { handleLogout, AdminLogoutButton, SettingsButton, DeleteButton, EyeButton } from './Buttons';
+import { IoMdPersonAdd } from "react-icons/io";
+import { HiUsers } from "react-icons/hi";
+import { MdRefresh } from "react-icons/md";
 import '../styles/PageStyles/AdminDashboard.css';
 
 const AdminDashboard = () => {
@@ -12,7 +15,10 @@ const AdminDashboard = () => {
   const [users, setUsers] = useState([]);
   const [departments, setDepartments] = useState([]);
   const [loading, setLoading] = useState(false);
-  
+
+  // View mode: 'add' or 'view'
+  const [currentView, setCurrentView] = useState('add');
+
   // Department filter state
   const [selectedDepartment, setSelectedDepartment] = useState('All');
   
@@ -60,7 +66,6 @@ const AdminDashboard = () => {
   useEffect(() => {
     if (isAdmin) {
       fetchDepartments();
-      fetchUsers();
     }
   }, [isAdmin]);
 
@@ -87,6 +92,13 @@ const AdminDashboard = () => {
       console.error('Error fetching users:', error);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleViewChange = (view) => {
+    setCurrentView(view);
+    if (view === 'view' && users.length === 0) {
+      fetchUsers();
     }
   };
 
@@ -131,9 +143,11 @@ const AdminDashboard = () => {
           department: ''
         });
         setShowCreatePassword(false);
-        // Refresh user list
-        fetchUsers();
-        
+        // Refresh user list if we're on the view page
+        if (currentView === 'view') {
+          fetchUsers();
+        }
+
         // Clear success message after 5 seconds
         setTimeout(() => setFormSuccess(''), 5000);
       }
@@ -277,10 +291,29 @@ const AdminDashboard = () => {
       {/* Main Content */}
       <div className="admin-dashboard-container">
         <h1 className="admin-dashboard-title">👤 Employee Management</h1>
-        
-        {/* Add Employee Form */}
+
+        {/* View Toggle Navigation */}
+        <div className="view-toggle-nav">
+          <button
+            className={`nav-btn ${currentView === 'add' ? 'active' : ''}`}
+            onClick={() => handleViewChange('add')}
+          >
+            <IoMdPersonAdd className="nav-icon" />
+            <span className="nav-text">Add Employee</span>
+          </button>
+          <button
+            className={`nav-btn ${currentView === 'view' ? 'active' : ''}`}
+            onClick={() => handleViewChange('view')}
+          >
+            <HiUsers className="nav-icon" />
+            <span className="nav-text">View Employees</span>
+          </button>
+        </div>
+
+        {/* Add Employee View */}
+        {currentView === 'add' && (
         <div className="add-employee-card">
-        <h2> Add New Employee</h2>
+        <h2><IoMdPersonAdd style={{ marginRight: '10px', verticalAlign: 'middle' }} /> Add New Employee</h2>
         <form onSubmit={handleSubmit} className="employee-form">
           <div className="form-row">
             <div className="form-field">
@@ -352,7 +385,6 @@ const AdminDashboard = () => {
                 disabled={formLoading}
               >
                 <option value="">-- Select Department --</option>
-                <option value="All">All Departments</option>
                 {departments.filter(d => d !== 'Admin').map(dept => (
                   <option key={dept} value={dept}>{dept}</option>
                 ))}
@@ -372,8 +404,8 @@ const AdminDashboard = () => {
             </div>
           )}
 
-          <button 
-            type="submit" 
+          <button
+            type="submit"
             className="btn-submit"
             disabled={formLoading}
           >
@@ -381,79 +413,114 @@ const AdminDashboard = () => {
           </button>
         </form>
       </div>
-
-      {/* Employee List */}
-      <div className="employee-list-card">
-        <div className="employee-list-header">
-          <h2>Employee List ({selectedDepartment === 'All' ? users.length : users.filter(u => u.department === selectedDepartment).length})</h2>
-          
-          {/* Department Filter */}
-          <div className="department-filter">
-            <label htmlFor="dept-filter">Filter by Department:</label>
-            <select 
-              id="dept-filter"
-              value={selectedDepartment} 
-              onChange={(e) => setSelectedDepartment(e.target.value)}
-              className="filter-select"
-            >
-              <option value="All">All Departments</option>
-              {departments.map(dept => (
-                <option key={dept} value={dept}>{dept}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-        
-        {loading ? (
-          <div className="loading-state">Loading employees...</div>
-        ) : users.filter(u => selectedDepartment === 'All' || u.department === selectedDepartment).length > 0 ? (
-          <div className="table-wrapper">
-            <table className="employee-table">
-              <thead>
-                <tr>
-                  <th>Employee ID</th>
-                  <th>Name</th>
-                  <th>Department</th>
-                  <th>Role</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {users.filter(u => selectedDepartment === 'All' || u.department === selectedDepartment).map((u) => (
-                  <tr key={u._id}>
-                    <td className="emp-id">{u.employeeId}</td>
-                    <td>{u.name}</td>
-                    <td>
-                      <span className={`badge ${u.department === 'All' ? 'badge-dept-all' : 'badge-dept'}`}>
-                        {u.department === 'All' ? 'All Departments' : u.department}
-                      </span>
-                    </td>
-                    <td>
-                      <span className={`badge badge-${u.role}`}>
-                        {u.role.toUpperCase()}
-                      </span>
-                    </td>
-                    <td className="actions">
-                      {u.role !== 'admin' && (
-                        <>
-                          <SettingsButton onClick={() => handleOpenPasswordModal(u)} />
-                          <DeleteButton onClick={() => handleDelete(u._id, u.employeeId)} />
-                        </>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="empty-state">
-            {selectedDepartment === 'All' 
-              ? 'No employees found. Create your first employee above!' 
-              : `No employees found in ${selectedDepartment} department.`}
-          </div>
         )}
-      </div>
+
+      {/* View Employee List */}
+      {currentView === 'view' && (
+        <div className="employee-list-card">
+          <div className="employee-list-header">
+            <div className="header-title-section">
+              <h2><HiUsers style={{ marginRight: '10px', verticalAlign: 'middle' }} /> Employee List</h2>
+              <span className="employee-count">
+                ({selectedDepartment === 'All' ? users.length : users.filter(u => u.department === selectedDepartment).length} employees)
+              </span>
+            </div>
+
+            {/* Department Filter */}
+            <div className="department-filter">
+              <label htmlFor="dept-filter">Filter by Department:</label>
+              <select
+                id="dept-filter"
+                value={selectedDepartment}
+                onChange={(e) => setSelectedDepartment(e.target.value)}
+                className="filter-select"
+              >
+                <option value="All">All Departments</option>
+                {departments.map(dept => (
+                  <option key={dept} value={dept}>{dept}</option>
+                ))}
+              </select>
+              <button
+                className="refresh-btn"
+                onClick={fetchUsers}
+                title="Refresh employee list"
+              >
+                <MdRefresh />
+              </button>
+            </div>
+          </div>
+
+          {loading ? (
+            <div className="loading-state">Loading employees...</div>
+          ) : users.filter(u => selectedDepartment === 'All' || u.department === selectedDepartment).length > 0 ? (
+            <div className="table-wrapper">
+              <table className="employee-table">
+                <thead>
+                  <tr>
+                    <th>Employee ID</th>
+                    <th>Name</th>
+                    <th>Department</th>
+                    <th>Role</th>
+                    <th>Last Login</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {users.filter(u => selectedDepartment === 'All' || u.department === selectedDepartment).map((u) => (
+                    <tr key={u._id}>
+                      <td className="emp-id">{u.employeeId}</td>
+                      <td>{u.name}</td>
+                      <td>
+                        <span className="badge badge-dept">
+                          {u.department}
+                        </span>
+                      </td>
+                      <td>
+                        <span className={`badge badge-${u.role}`}>
+                          {u.role.toUpperCase()}
+                        </span>
+                      </td>
+                      <td className="last-login">
+                        {u.lastLogin ? (
+                          <span className="login-datetime">
+                            {new Date(u.lastLogin).toLocaleDateString('en-GB', {
+                              day: '2-digit',
+                              month: '2-digit',
+                              year: '2-digit'
+                            })}
+                            {' - '}
+                            {new Date(u.lastLogin).toLocaleTimeString('en-US', {
+                              hour: '2-digit',
+                              minute: '2-digit',
+                              hour12: true
+                            }).toLowerCase()}
+                          </span>
+                        ) : (
+                          <span className="no-login">Never</span>
+                        )}
+                      </td>
+                      <td className="actions">
+                        {u.role !== 'admin' && (
+                          <>
+                            <SettingsButton onClick={() => handleOpenPasswordModal(u)} />
+                            <DeleteButton onClick={() => handleDelete(u._id, u.employeeId)} />
+                          </>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="empty-state">
+              {selectedDepartment === 'All'
+                ? 'No employees found. Create your first employee above!'
+                : `No employees found in ${selectedDepartment} department.`}
+            </div>
+          )}
+        </div>
+      )}
       </div>
 
       {/* Change User Password Modal */}

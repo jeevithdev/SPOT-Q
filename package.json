@@ -1,18 +1,31 @@
 {
   "name": "spot-q",
-  "private": true,
   "version": "1.0.0",
-  "description": "Root package for SPOT-Q to simplify dev commands",
-  "workspaces": [
-    "frontend",
-    "backend"
-  ],
+  "description": "SPOT-Q - Quality Control and Process Management System",
+  "private": true,
   "scripts": {
-    "dev": "npm run dev --prefix frontend",
-    "dev:frontend": "npm run dev --prefix frontend",
-    "dev:backend": "npm run dev --prefix backend",
-    "start": "npm run start --prefix backend",
-    "build": "npm run build --prefix frontend",
-    "preview": "npm run preview --prefix frontend"
+    "dev:backend": "cd backend && npm run dev",
+    "dev:frontend": "cd frontend && npm run dev",
+    "dev": "npm run dev:backend & npm run dev:frontend",
+    "build:frontend": "cd frontend && npm run build",
+    "start:backend": "cd backend && npm run start",
+    "lint:frontend": "cd frontend && npm run lint",
+    "create-admin": "cd backend && npm run create-admin"
+  },
+  "keywords": [
+    "quality-control",
+    "manufacturing",
+    "process-management",
+    "react",
+    "express",
+    "mongodb",
+    "authentication"
+  ],
+  "author": "Sakthi Auto",
+  "license": "MIT",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
   }
 }
+

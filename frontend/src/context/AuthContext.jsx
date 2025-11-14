@@ -22,7 +22,7 @@ export const AuthProvider = ({ children }) => {
 
   // Safe env access for Vite
   const env = (typeof import.meta !== 'undefined' && import.meta.env) ? import.meta.env : {};
-  const API_URL = env.VITE_API_URL ? `${env.VITE_API_URL}/auth` : '/api/auth';
+  const API_URL = env.VITE_API_URL ? `${env.VITE_API_URL}/auth` : '/api/v1/auth';
 
   useEffect(() => {
     if (token) {
