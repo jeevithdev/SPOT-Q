@@ -1,16 +1,17 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpenCheck, Trash2, Edit, X, Save } from 'lucide-react';
+import { BookOpenCheck, Trash2, Edit, X, Save, ChevronDown, ChevronUp } from 'lucide-react';
 import { DatePicker, FilterButton, DeleteActionButton } from '../../Components/Buttons';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Moulding/DisamaticProductReport.css';
 
 const DisamaticProductReport = () => {
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedShift, setSelectedShift] = useState('All');
   const [reports, setReports] = useState([]);
-  const [filteredReports, setFilteredReports] = useState([]);
+  const [currentReport, setCurrentReport] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [showSectionDropdown, setShowSectionDropdown] = useState(false);
   const [editingReport, setEditingReport] = useState(null);
   const [editFormData, setEditFormData] = useState(null);
   const [updating, setUpdating] = useState(false);
@@ -21,10 +22,21 @@ const DisamaticProductReport = () => {
     mouldHardness: true,
     patternTemperature: true
   });
+  const [collapsedSections, setCollapsedSections] = useState({
+    productionDetails: false,
+    nextShiftPlan: false,
+    delays: false,
+    mouldHardness: false,
+    patternTemperature: false
+  });
   const [remarksModal, setRemarksModal] = useState({ show: false, content: '', title: 'Remarks' });
 
   const toggleSection = (section) => {
     setShowSections(prev => ({ ...prev, [section]: !prev[section] }));
+  };
+
+  const toggleCollapse = (section) => {
+    setCollapsedSections(prev => ({ ...prev, [section]: !prev[section] }));
   };
 
   const showRemarksPopup = (content, title = 'Remarks') => {
@@ -42,10 +54,16 @@ const DisamaticProductReport = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const data = await api.get('/v1/dismatic-reports');
-      if (data.success) {
+      const data = await api.get('/dismatic-reports');
+      if (data.success && data.data && data.data.length > 0) {
         setReports(data.data || []);
-        setFilteredReports(data.data || []);
+        
+        // Get the latest/last entered date
+        const sortedReports = [...data.data].sort((a, b) => new Date(b.date) - new Date(a.date));
+        const latestDate = sortedReports[0].date;
+        
+        setSelectedDate(latestDate ? new Date(latestDate).toISOString().split('T')[0] : null);
+        filterReportByDateAndShift(latestDate, 'All', data.data);
       }
     } catch (err) {
       console.error('Failed to fetch disamatic reports', err);
@@ -54,35 +72,56 @@ const DisamaticProductReport = () => {
     }
   };
 
-  const handleFilter = () => {
-    if (!startDate) {
-      setFilteredReports(reports);
+  const filterReportByDateAndShift = (date, shift, reportsData = reports) => {
+    if (!date) {
+      setCurrentReport(null);
       return;
     }
-    let filtered = reports.filter(r => {
+    
+    const report = reportsData.find(r => {
       if (!r.date) return false;
-      const d = new Date(r.date); d.setHours(0,0,0,0);
-      const start = new Date(startDate); start.setHours(0,0,0,0);
-      if (endDate) {
-        const end = new Date(endDate); end.setHours(23,59,59,999);
-        return d >= start && d <= end;
+      const reportDate = new Date(r.date).toISOString().split('T')[0];
+      const dateMatch = reportDate === date;
+      
+      // If specific shift is selected, check if it matches
+      if (shift !== 'All') {
+        return dateMatch && r.shift === shift;
       }
-      return d.getTime() === start.getTime();
+      return dateMatch;
     });
-    setFilteredReports(filtered);
+
+    setCurrentReport(report || null);
+  };
+
+  const handleFilter = () => {
+    if (!selectedDate) {
+      alert('Please select a date');
+      return;
+    }
+    filterReportByDateAndShift(selectedDate, selectedShift);
   };
 
   const handleDeleteReport = async (id) => {
     if (!window.confirm('Delete this entire report and all its data?')) return;
     try {
-      const res = await api.delete(`/v1/dismatic-reports/${id}`);
+      const res = await api.delete(`/dismatic-reports/${id}`);
       if (res.success) {
+        alert('Report deleted successfully');
         fetchReports();
       }
     } catch (err) {
       console.error('Delete failed', err);
       alert('Failed to delete report: ' + (err.message || 'Unknown error'));
     }
+  };
+
+  // Filter section data by shift
+  const filterDataByShift = (dataArray) => {
+    if (!dataArray || !Array.isArray(dataArray) || dataArray.length === 0) return [];
+    if (selectedShift === 'All') return dataArray;
+    
+    // Since shift is stored at report level, all data belongs to that shift
+    return dataArray;
   };
 
   const handleEditClick = (report) => {
@@ -124,7 +163,7 @@ const DisamaticProductReport = () => {
         section: 'all'
       };
       
-      const res = await api.put(`/v1/dismatic-reports/${editingReport._id}`, payload);
+      const res = await api.put(`/dismatic-reports/${editingReport._id}`, payload);
       if (res.success) {
         alert('Report updated successfully!');
         setEditingReport(null);
@@ -150,336 +189,569 @@ const DisamaticProductReport = () => {
         </div>
       </div>
 
-      <div className="impact-filter-container">
-        <div className="impact-filter-group">
-          <label>Start Date</label>
-          <DatePicker value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Select start date" />
-        </div>
-        <div className="impact-filter-group">
-          <label>End Date</label>
-          <DatePicker value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="Select end date" />
-        </div>
-        <FilterButton onClick={handleFilter} disabled={!startDate}>Filter</FilterButton>
-      </div>
-
-      {/* Section Checkboxes */}
-      <div style={{ 
+      {/* Filter Section */}
+      <div className="impact-filter-container" style={{ 
         background: 'white', 
-        padding: '1rem', 
+        padding: '1.5rem', 
         borderRadius: '8px', 
         marginBottom: '1rem',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ fontWeight: 600, marginBottom: '0.75rem', color: '#334155' }}>Sections Filter:</div>
-        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.productionDetails} 
-              onChange={() => toggleSection('productionDetails')}
-              style={{ cursor: 'pointer' }}
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '1rem' }}>
+          <div className="impact-filter-group">
+            <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>Select Date</label>
+            <DatePicker 
+              value={selectedDate} 
+              onChange={(e) => setSelectedDate(e.target.value)} 
+              placeholder="Select date" 
             />
-            <span>Production Details</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.nextShiftPlan} 
-              onChange={() => toggleSection('nextShiftPlan')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Next Shift Plan</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.delays} 
-              onChange={() => toggleSection('delays')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Delays</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.mouldHardness} 
-              onChange={() => toggleSection('mouldHardness')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Mould Hardness</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.patternTemperature} 
-              onChange={() => toggleSection('patternTemperature')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Pattern Temperature</span>
-          </label>
+          </div>
+          <div className="impact-filter-group">
+            <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>Select Shift</label>
+            <select
+              value={selectedShift}
+              onChange={(e) => setSelectedShift(e.target.value)}
+              style={{
+                padding: '0.625rem 0.875rem',
+                border: '2px solid #cbd5e1',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                backgroundColor: '#ffffff',
+                cursor: 'pointer',
+                minWidth: '150px'
+              }}
+            >
+              <option value="All">All Shifts</option>
+              <option value="Shift 1">Shift 1</option>
+              <option value="Shift 2">Shift 2</option>
+              <option value="Shift 3">Shift 3</option>
+            </select>
+          </div>
+          <FilterButton onClick={handleFilter} disabled={!selectedDate}>Apply Filter</FilterButton>
+        </div>
+
+        {/* Section Filter Dropdown */}
+        <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '1rem', position: 'relative' }}>
+          <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block', color: '#334155' }}>Show Sections</label>
+          <div style={{ position: 'relative', minWidth: '250px', maxWidth: '400px' }}>
+            <button
+              onClick={() => setShowSectionDropdown(!showSectionDropdown)}
+              style={{
+                width: '100%',
+                padding: '0.625rem 0.875rem',
+                border: '2px solid #cbd5e1',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                backgroundColor: '#ffffff',
+                cursor: 'pointer',
+                textAlign: 'left',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center'
+              }}
+            >
+              <span>{Object.values(showSections).filter(v => v).length} sections selected</span>
+              <span>{showSectionDropdown ? '▲' : '▼'}</span>
+            </button>
+            
+            {showSectionDropdown && (
+              <div style={{
+                position: 'absolute',
+                top: '100%',
+                left: 0,
+                right: 0,
+                marginTop: '0.25rem',
+                background: 'white',
+                border: '2px solid #cbd5e1',
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px rgba(0,0,0,0.1)',
+                zIndex: 1000,
+                padding: '0.5rem'
+              }}>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', cursor: 'pointer', borderRadius: '4px' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  <input 
+                    type="checkbox" 
+                    checked={showSections.productionDetails} 
+                    onChange={() => toggleSection('productionDetails')}
+                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '0.875rem' }}>Production Details</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', cursor: 'pointer', borderRadius: '4px' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  <input 
+                    type="checkbox" 
+                    checked={showSections.nextShiftPlan} 
+                    onChange={() => toggleSection('nextShiftPlan')}
+                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '0.875rem' }}>Next Shift Plan</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', cursor: 'pointer', borderRadius: '4px' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  <input 
+                    type="checkbox" 
+                    checked={showSections.delays} 
+                    onChange={() => toggleSection('delays')}
+                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '0.875rem' }}>Delays</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', cursor: 'pointer', borderRadius: '4px' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  <input 
+                    type="checkbox" 
+                    checked={showSections.mouldHardness} 
+                    onChange={() => toggleSection('mouldHardness')}
+                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '0.875rem' }}>Mould Hardness</span>
+                </label>
+                <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem', cursor: 'pointer', borderRadius: '4px' }}
+                  onMouseEnter={(e) => e.currentTarget.style.background = '#f1f5f9'}
+                  onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}>
+                  <input 
+                    type="checkbox" 
+                    checked={showSections.patternTemperature} 
+                    onChange={() => toggleSection('patternTemperature')}
+                    style={{ cursor: 'pointer', width: '16px', height: '16px' }}
+                  />
+                  <span style={{ fontSize: '0.875rem' }}>Pattern Temperature</span>
+                </label>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
       {loading ? (
         <div className="impact-loader-container"><Loader /></div>
-      ) : (
+      ) : !currentReport ? (
         <div className="impact-details-card">
-          <div className="impact-table-container">
-            <table className="impact-table">
-              <thead>
-                <tr>
-                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Date</th>
-                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Shift</th>
-                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Incharge</th>
-                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>PP Operator</th>
-                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Members Present</th>
-                  {showSections.productionDetails && (
-                    <th colSpan="7" style={{ background: '#e0f2f1', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Production Details</th>
-                  )}
-                  {showSections.nextShiftPlan && (
-                    <th colSpan="3" style={{ background: '#fff3e0', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Next Shift Plan</th>
-                  )}
-                  {showSections.delays && (
-                    <th colSpan="3" style={{ background: '#fce4ec', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Delays</th>
-                  )}
-                  {showSections.mouldHardness && (
-                    <th colSpan="6" style={{ background: '#f3e5f5', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Mould Hardness</th>
-                  )}
-                  {showSections.patternTemperature && (
-                    <th colSpan="3" style={{ background: '#e8f5e9', borderBottom: '2px solid #5B9AA9', padding: '12px 16px', textAlign: 'center' }}>Pattern Temperature</th>
-                  )}
-                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Significant Event</th>
-                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Maintenance</th>
-                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Supervisor Name</th>
-                  <th rowSpan="2" style={{ verticalAlign: 'middle', padding: '12px 16px', textAlign: 'center' }}>Actions</th>
-                </tr>
-                <tr>
-                  {showSections.productionDetails && (
-                    <>
-                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Counter No</th>
-                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Component</th>
-                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Produced</th>
-                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Poured</th>
-                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Cycle Time</th>
-                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Moulds/Hr</th>
-                      <th style={{ background: '#e0f2f1', padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
-                    </>
-                  )}
-                  {showSections.nextShiftPlan && (
-                    <>
-                      <th style={{ background: '#fff3e0', padding: '12px 16px', textAlign: 'center' }}>Component</th>
-                      <th style={{ background: '#fff3e0', padding: '12px 16px', textAlign: 'center' }}>Planned Moulds</th>
-                      <th style={{ background: '#fff3e0', padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
-                    </>
-                  )}
-                  {showSections.delays && (
-                    <>
-                      <th style={{ background: '#fce4ec', padding: '12px 16px', textAlign: 'center' }}>Delays</th>
-                      <th style={{ background: '#fce4ec', padding: '12px 16px', textAlign: 'center' }}>Duration (min)</th>
-                      <th style={{ background: '#fce4ec', padding: '12px 16px', textAlign: 'center' }}>Duration Time</th>
-                    </>
-                  )}
-                  {showSections.mouldHardness && (
-                    <>
-                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>Component</th>
-                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>MP PP</th>
-                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>MP SP</th>
-                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>BS PP</th>
-                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>BS SP</th>
-                      <th style={{ background: '#f3e5f5', padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
-                    </>
-                  )}
-                  {showSections.patternTemperature && (
-                    <>
-                      <th style={{ background: '#e8f5e9', padding: '12px 16px', textAlign: 'center' }}>Item</th>
-                      <th style={{ background: '#e8f5e9', padding: '12px 16px', textAlign: 'center' }}>PP</th>
-                      <th style={{ background: '#e8f5e9', padding: '12px 16px', textAlign: 'center' }}>SP</th>
-                    </>
-                  )}
-                </tr>
-              </thead>
-              <tbody>
-                {filteredReports.length === 0 ? (
-                  <tr><td colSpan="50" className="impact-no-records">No records found</td></tr>
-                ) : (
-                  filteredReports.map((report) => {
-                    const maxRows = Math.max(
-                      showSections.productionDetails ? (report.productionDetails?.length || 1) : 1,
-                      showSections.nextShiftPlan ? (report.nextShiftPlan?.length || 1) : 1,
-                      showSections.delays ? (report.delays?.length || 1) : 1,
-                      showSections.mouldHardness ? (report.mouldHardness?.length || 1) : 1,
-                      showSections.patternTemperature ? (report.patternTemperature?.length || 1) : 1
-                    );
-
-                    return Array.from({ length: maxRows }).map((_, rowIdx) => (
-                      <tr key={`${report._id}-${rowIdx}`}>
-                        {rowIdx === 0 && (
-                          <>
-                            <td rowSpan={maxRows} style={{ padding: '10px 16px', textAlign: 'center' }}>{report.date ? new Date(report.date).toLocaleDateString('en-GB') : '-'}</td>
-                            <td rowSpan={maxRows} style={{ padding: '10px 16px', textAlign: 'center' }}>{report.shift || '-'}</td>
-                            <td rowSpan={maxRows} style={{ padding: '10px 16px', textAlign: 'center' }}>{report.incharge || '-'}</td>
-                            <td rowSpan={maxRows} style={{ padding: '10px 16px', textAlign: 'center' }}>{report.ppOperator || '-'}</td>
-                            <td rowSpan={maxRows} style={{ 
-                              maxWidth: '150px',
-                              cursor: report.memberspresent ? 'pointer' : 'default',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              padding: '10px 16px',
-                              textAlign: 'center'
-                            }}
-                              onClick={() => report.memberspresent && showRemarksPopup(report.memberspresent, 'Members Present')}>
-                              {report.memberspresent || '-'}
-                            </td>
-                          </>
-                        )}
-                        {showSections.productionDetails && (
-                          <>
-                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.counterNo || '-'}</td>
-                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.componentName || '-'}</td>
-                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.produced || '-'}</td>
-                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.poured || '-'}</td>
-                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.cycleTime || '-'}</td>
-                            <td style={{ background: '#f1fffe', padding: '10px 16px', textAlign: 'center' }}>{report.productionDetails?.[rowIdx]?.mouldsPerHour || '-'}</td>
-                            <td style={{ 
-                              background: '#f1fffe', 
-                              cursor: report.productionDetails?.[rowIdx]?.remarks ? 'pointer' : 'default',
-                              maxWidth: '150px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              padding: '10px 16px',
-                              textAlign: 'center'
-                            }}
-                              onClick={() => report.productionDetails?.[rowIdx]?.remarks && showRemarksPopup(report.productionDetails[rowIdx].remarks, 'Production Details - Remarks')}>
-                              {report.productionDetails?.[rowIdx]?.remarks || '-'}
-                            </td>
-                          </>
-                        )}
-                        {showSections.nextShiftPlan && (
-                          <>
-                            <td style={{ background: '#fffbf5', padding: '10px 16px', textAlign: 'center' }}>{report.nextShiftPlan?.[rowIdx]?.componentName || '-'}</td>
-                            <td style={{ background: '#fffbf5', padding: '10px 16px', textAlign: 'center' }}>{report.nextShiftPlan?.[rowIdx]?.plannedMoulds || '-'}</td>
-                            <td style={{ 
-                              background: '#fffbf5', 
-                              cursor: report.nextShiftPlan?.[rowIdx]?.remarks ? 'pointer' : 'default',
-                              maxWidth: '150px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              padding: '10px 16px',
-                              textAlign: 'center'
-                            }}
-                              onClick={() => report.nextShiftPlan?.[rowIdx]?.remarks && showRemarksPopup(report.nextShiftPlan[rowIdx].remarks, 'Next Shift Plan - Remarks')}>
-                              {report.nextShiftPlan?.[rowIdx]?.remarks || '-'}
-                            </td>
-                          </>
-                        )}
-                        {showSections.delays && (
-                          <>
-                            <td style={{ background: '#fff9fb', padding: '10px 16px', textAlign: 'center' }}>{report.delays?.[rowIdx]?.delays || '-'}</td>
-                            <td style={{ background: '#fff9fb', padding: '10px 16px', textAlign: 'center' }}>{report.delays?.[rowIdx]?.durationMinutes || '-'}</td>
-                            <td style={{ background: '#fff9fb', padding: '10px 16px', textAlign: 'center' }}>{report.delays?.[rowIdx]?.durationTime || '-'}</td>
-                          </>
-                        )}
-                        {showSections.mouldHardness && (
-                          <>
-                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.componentName || '-'}</td>
-                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.mpPP || '-'}</td>
-                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.mpSP || '-'}</td>
-                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.bsPP || '-'}</td>
-                            <td style={{ background: '#fbf8fc', padding: '10px 16px', textAlign: 'center' }}>{report.mouldHardness?.[rowIdx]?.bsSP || '-'}</td>
-                            <td style={{ 
-                              background: '#fbf8fc', 
-                              cursor: report.mouldHardness?.[rowIdx]?.remarks ? 'pointer' : 'default',
-                              maxWidth: '150px',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              padding: '10px 16px',
-                              textAlign: 'center'
-                            }}
-                              onClick={() => report.mouldHardness?.[rowIdx]?.remarks && showRemarksPopup(report.mouldHardness[rowIdx].remarks, 'Mould Hardness - Remarks')}>
-                              {report.mouldHardness?.[rowIdx]?.remarks || '-'}
-                            </td>
-                          </>
-                        )}
-                        {showSections.patternTemperature && (
-                          <>
-                            <td style={{ background: '#f7fcf8', padding: '10px 16px', textAlign: 'center' }}>{report.patternTemperature?.[rowIdx]?.item || '-'}</td>
-                            <td style={{ background: '#f7fcf8', padding: '10px 16px', textAlign: 'center' }}>{report.patternTemperature?.[rowIdx]?.pp || '-'}</td>
-                            <td style={{ background: '#f7fcf8', padding: '10px 16px', textAlign: 'center' }}>{report.patternTemperature?.[rowIdx]?.sp || '-'}</td>
-                          </>
-                        )}
-                        {rowIdx === 0 && (
-                          <>
-                            <td rowSpan={maxRows} style={{ 
-                              maxWidth: '200px',
-                              cursor: report.significantEvent ? 'pointer' : 'default',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              padding: '10px 16px',
-                              textAlign: 'center'
-                            }}
-                              onClick={() => report.significantEvent && showRemarksPopup(report.significantEvent, 'Significant Event')}>
-                              {report.significantEvent || '-'}
-                            </td>
-                            <td rowSpan={maxRows} style={{ 
-                              maxWidth: '200px',
-                              cursor: report.maintenance ? 'pointer' : 'default',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              padding: '10px 16px',
-                              textAlign: 'center'
-                            }}
-                              onClick={() => report.maintenance && showRemarksPopup(report.maintenance, 'Maintenance')}>
-                              {report.maintenance || '-'}
-                            </td>
-                            <td rowSpan={maxRows} style={{ 
-                              maxWidth: '150px',
-                              cursor: report.supervisorName ? 'pointer' : 'default',
-                              overflow: 'hidden',
-                              textOverflow: 'ellipsis',
-                              whiteSpace: 'nowrap',
-                              padding: '10px 16px',
-                              textAlign: 'center'
-                            }}
-                              onClick={() => report.supervisorName && showRemarksPopup(report.supervisorName, 'Supervisor Name')}>
-                              {report.supervisorName || '-'}
-                            </td>
-                            <td rowSpan={maxRows} style={{ minWidth: '120px', padding: '10px 16px', textAlign: 'center' }}>
-                              <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
-                                <button 
-                                  onClick={() => handleEditClick(report)}
-                                  style={{
-                                    padding: '0.5rem',
-                                    background: '#5B9AA9',
-                                    color: 'white',
-                                    border: 'none',
-                                    borderRadius: '4px',
-                                    cursor: 'pointer',
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    justifyContent: 'center'
-                                  }}
-                                >
-                                  <Edit size={16} />
-                                </button>
-                                <DeleteActionButton onClick={() => handleDeleteReport(report._id)} />
-                              </div>
-                            </td>
-                          </>
-                        )}
-                      </tr>
-                    ));
-                  })
-                )}
-              </tbody>
-            </table>
+          <div style={{ textAlign: 'center', padding: '3rem', color: '#64748b' }}>
+            <p style={{ fontSize: '1.125rem', fontWeight: 500 }}>No data found for the selected date and shift</p>
+            <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>Please select a different date or shift</p>
           </div>
         </div>
+      ) : (
+        <>
+          {/* Primary Information & Event Information - Non-table Format */}
+          <div className="impact-details-card" style={{ marginBottom: '1rem' }}>
+            <div style={{ 
+              background: 'linear-gradient(135deg, #5B9AA9 0%, #4a7d8a 100%)', 
+              padding: '1.5rem',
+              borderRadius: '8px 8px 0 0',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              color: 'white'
+            }}>
+              <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>
+                Report Information
+              </h3>
+              <div style={{ display: 'flex', gap: '0.5rem' }}>
+                <button 
+                  onClick={() => handleEditClick(currentReport)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: 'rgba(255,255,255,0.2)',
+                    color: 'white',
+                    border: '1px solid rgba(255,255,255,0.3)',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: 500
+                  }}
+                >
+                  <Edit size={16} />
+                  Edit
+                </button>
+                <button 
+                  onClick={() => handleDeleteReport(currentReport._id)}
+                  style={{
+                    padding: '0.5rem 1rem',
+                    background: 'rgba(239,68,68,0.9)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '6px',
+                    cursor: 'pointer',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    fontSize: '0.875rem',
+                    fontWeight: 500
+                  }}
+                >
+                  <Trash2 size={16} />
+                  Delete
+                </button>
+              </div>
+            </div>
+
+            <div style={{ padding: '1.5rem' }}>
+              {/* Primary Info Grid */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', 
+                gap: '1.5rem',
+                marginBottom: '1.5rem',
+                paddingBottom: '1.5rem',
+                borderBottom: '2px solid #e2e8f0'
+              }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Date</label>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '1rem', fontWeight: 500, color: '#1e293b' }}>
+                    {currentReport.date ? new Date(currentReport.date).toLocaleDateString('en-GB') : '-'}
+                  </p>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Shift</label>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '1rem', fontWeight: 500, color: '#1e293b' }}>
+                    {currentReport.shift || '-'}
+                  </p>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Incharge</label>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '1rem', fontWeight: 500, color: '#1e293b' }}>
+                    {currentReport.incharge || '-'}
+                  </p>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>PP Operator</label>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '1rem', fontWeight: 500, color: '#1e293b' }}>
+                    {currentReport.ppOperator || '-'}
+                  </p>
+                </div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Members Present</label>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '1rem', fontWeight: 500, color: '#1e293b' }}>
+                    {currentReport.memberspresent || '-'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Event Information Grid */}
+              <div style={{ 
+                display: 'grid', 
+                gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', 
+                gap: '1.5rem'
+              }}>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Significant Event</label>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9375rem', color: '#334155', lineHeight: '1.6' }}>
+                    {currentReport.significantEvent || '-'}
+                  </p>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Maintenance</label>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9375rem', color: '#334155', lineHeight: '1.6' }}>
+                    {currentReport.maintenance || '-'}
+                  </p>
+                </div>
+                <div>
+                  <label style={{ fontSize: '0.75rem', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.05em' }}>Supervisor Name</label>
+                  <p style={{ margin: '0.25rem 0 0 0', fontSize: '0.9375rem', color: '#334155', lineHeight: '1.6' }}>
+                    {currentReport.supervisorName || '-'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Production Details Section */}
+          {showSections.productionDetails && currentReport.productionDetails && currentReport.productionDetails.length > 0 && (
+            <div className="impact-details-card" style={{ marginBottom: '1rem' }}>
+              <div style={{
+                background: '#f8fafc',
+                padding: '1rem 1.5rem',
+                borderRadius: '8px 8px 0 0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                borderBottom: '2px solid #e2e8f0'
+              }}
+                onClick={() => toggleCollapse('productionDetails')}
+              >
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#1e293b' }}>
+                  Production Details ({filterDataByShift(currentReport.productionDetails).length} entries)
+                </h3>
+                {collapsedSections.productionDetails ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+              </div>
+              {!collapsedSections.productionDetails && (
+                <div className="impact-table-container">
+                  <table className="impact-table">
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>S.No</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Counter No</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Component Name</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Produced</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Poured</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Cycle Time</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Moulds/Hr</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filterDataByShift(currentReport.productionDetails).map((item, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '10px 16px', textAlign: 'center', background: '#f8fafc', fontWeight: 500 }}>{idx + 1}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.counterNo || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.componentName || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.produced || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.poured || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.cycleTime || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.mouldsPerHour || '-'}</td>
+                          <td style={{ 
+                            padding: '10px 16px', 
+                            textAlign: 'center',
+                            maxWidth: '200px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            cursor: item.remarks ? 'pointer' : 'default'
+                          }}
+                            onClick={() => item.remarks && showRemarksPopup(item.remarks, 'Production Remarks')}>
+                            {item.remarks || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Next Shift Plan Section */}
+          {showSections.nextShiftPlan && currentReport.nextShiftPlan && currentReport.nextShiftPlan.length > 0 && (
+            <div className="impact-details-card" style={{ marginBottom: '1rem' }}>
+              <div style={{
+                background: '#f8fafc',
+                padding: '1rem 1.5rem',
+                borderRadius: '8px 8px 0 0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                borderBottom: '2px solid #e2e8f0'
+              }}
+                onClick={() => toggleCollapse('nextShiftPlan')}
+              >
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#1e293b' }}>
+                  Next Shift Plan ({filterDataByShift(currentReport.nextShiftPlan).length} entries)
+                </h3>
+                {collapsedSections.nextShiftPlan ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+              </div>
+              {!collapsedSections.nextShiftPlan && (
+                <div className="impact-table-container">
+                  <table className="impact-table">
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>S.No</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Component Name</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Planned Moulds</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filterDataByShift(currentReport.nextShiftPlan).map((item, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '10px 16px', textAlign: 'center', background: '#f8fafc', fontWeight: 500 }}>{idx + 1}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.componentName || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.plannedMoulds || '-'}</td>
+                          <td style={{ 
+                            padding: '10px 16px', 
+                            textAlign: 'center',
+                            maxWidth: '200px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            cursor: item.remarks ? 'pointer' : 'default'
+                          }}
+                            onClick={() => item.remarks && showRemarksPopup(item.remarks, 'Next Shift Plan Remarks')}>
+                            {item.remarks || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Delays Section */}
+          {showSections.delays && currentReport.delays && currentReport.delays.length > 0 && (
+            <div className="impact-details-card" style={{ marginBottom: '1rem' }}>
+              <div style={{
+                background: '#f8fafc',
+                padding: '1rem 1.5rem',
+                borderRadius: '8px 8px 0 0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                borderBottom: '2px solid #e2e8f0'
+              }}
+                onClick={() => toggleCollapse('delays')}
+              >
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#1e293b' }}>
+                  Delays ({filterDataByShift(currentReport.delays).length} entries)
+                </h3>
+                {collapsedSections.delays ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+              </div>
+              {!collapsedSections.delays && (
+                <div className="impact-table-container">
+                  <table className="impact-table">
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>S.No</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Delays</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Duration (Minutes)</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Duration (Time)</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filterDataByShift(currentReport.delays).map((item, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '10px 16px', textAlign: 'center', background: '#f8fafc', fontWeight: 500 }}>{idx + 1}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.delays || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.durationMinutes || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.durationTime || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Mould Hardness Section */}
+          {showSections.mouldHardness && currentReport.mouldHardness && currentReport.mouldHardness.length > 0 && (
+            <div className="impact-details-card" style={{ marginBottom: '1rem' }}>
+              <div style={{
+                background: '#f8fafc',
+                padding: '1rem 1.5rem',
+                borderRadius: '8px 8px 0 0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                borderBottom: '2px solid #e2e8f0'
+              }}
+                onClick={() => toggleCollapse('mouldHardness')}
+              >
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#1e293b' }}>
+                  Mould Hardness ({filterDataByShift(currentReport.mouldHardness).length} entries)
+                </h3>
+                {collapsedSections.mouldHardness ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+              </div>
+              {!collapsedSections.mouldHardness && (
+                <div className="impact-table-container">
+                  <table className="impact-table">
+                    <thead>
+                      <tr>
+                        <th rowSpan="2" style={{ padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>S.No</th>
+                        <th rowSpan="2" style={{ padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>Component Name</th>
+                        <th colSpan="2" style={{ padding: '12px 16px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>Mould Penetrant (N/cm²)</th>
+                        <th colSpan="2" style={{ padding: '12px 16px', textAlign: 'center', borderBottom: '1px solid #e2e8f0' }}>B-Scale</th>
+                        <th rowSpan="2" style={{ padding: '12px 16px', textAlign: 'center', verticalAlign: 'middle' }}>Remarks</th>
+                      </tr>
+                      <tr>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filterDataByShift(currentReport.mouldHardness).map((item, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '10px 16px', textAlign: 'center', background: '#f8fafc', fontWeight: 500 }}>{idx + 1}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.componentName || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.mpPP || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.mpSP || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.bsPP || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.bsSP || '-'}</td>
+                          <td style={{ 
+                            padding: '10px 16px', 
+                            textAlign: 'center',
+                            maxWidth: '200px',
+                            overflow: 'hidden',
+                            textOverflow: 'ellipsis',
+                            whiteSpace: 'nowrap',
+                            cursor: item.remarks ? 'pointer' : 'default'
+                          }}
+                            onClick={() => item.remarks && showRemarksPopup(item.remarks, 'Mould Hardness Remarks')}>
+                            {item.remarks || '-'}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Pattern Temperature Section */}
+          {showSections.patternTemperature && currentReport.patternTemperature && currentReport.patternTemperature.length > 0 && (
+            <div className="impact-details-card" style={{ marginBottom: '1rem' }}>
+              <div style={{
+                background: '#f8fafc',
+                padding: '1rem 1.5rem',
+                borderRadius: '8px 8px 0 0',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                cursor: 'pointer',
+                borderBottom: '2px solid #e2e8f0'
+              }}
+                onClick={() => toggleCollapse('patternTemperature')}
+              >
+                <h3 style={{ margin: 0, fontSize: '1.125rem', fontWeight: 600, color: '#1e293b' }}>
+                  Pattern Temperature ({filterDataByShift(currentReport.patternTemperature).length} entries)
+                </h3>
+                {collapsedSections.patternTemperature ? <ChevronDown size={20} /> : <ChevronUp size={20} />}
+              </div>
+              {!collapsedSections.patternTemperature && (
+                <div className="impact-table-container">
+                  <table className="impact-table">
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>S.No</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>Item</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP</th>
+                        <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {filterDataByShift(currentReport.patternTemperature).map((item, idx) => (
+                        <tr key={idx}>
+                          <td style={{ padding: '10px 16px', textAlign: 'center', background: '#f8fafc', fontWeight: 500 }}>{idx + 1}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.item || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.pp || '-'}</td>
+                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{item.sp || '-'}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+            </div>
+          )}
+        </>
       )}
 
       {/* Remarks Modal */}

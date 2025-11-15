@@ -9,8 +9,25 @@ import '../../styles/PageStyles/Moulding/DisamaticProductReport.css';
 // Each parameter row gains Date + Machine + Shift context columns.
 
 const DmmSettingParametersReport = () => {
-  const [startDate, setStartDate] = useState(null);
-  const [endDate, setEndDate] = useState(null);
+  // Use LOCAL date (not UTC) to avoid off-by-one issues
+  const formatDate = (d) => {
+    if (!d) return '';
+    const dt = new Date(d);
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth() + 1).padStart(2, '0');
+    const day = String(dt.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+  const getTodayLocal = () => {
+    const now = new Date();
+    const y = now.getFullYear();
+    const m = String(now.getMonth() + 1).padStart(2, '0');
+    const d = String(now.getDate()).padStart(2, '0');
+    return `${y}-${m}-${d}`;
+  };
+  const todayStr = getTodayLocal();
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [selectedShift, setSelectedShift] = useState('All');
   const [reports, setReports] = useState([]);
   const [filteredReports, setFilteredReports] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -18,19 +35,8 @@ const DmmSettingParametersReport = () => {
   const [editFormData, setEditFormData] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [remarksModal, setRemarksModal] = useState({ show: false, content: '', title: 'Remarks' });
-  const [showSections, setShowSections] = useState({
-    basicInfo: true,
-    ppParameters: true,
-    spParameters: true,
-    coreMaskParameters: true,
-    pressureParameters: true,
-    strippingParameters: true,
-    mouldParameters: true
-  });
 
-  const toggleSection = (section) => {
-    setShowSections(prev => ({ ...prev, [section]: !prev[section] }));
-  };
+  // Section checkboxes removed – always show all columns
 
   const showRemarksPopup = (content, title = 'Remarks') => {
     setRemarksModal({ show: true, content, title });
@@ -45,36 +51,58 @@ const DmmSettingParametersReport = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const resp = await api.get('/v1/dmm-settings');
+      const resp = await api.get('/dmm-settings');
       if (resp.success) {
-        setReports(resp.data || []);
-        setFilteredReports(resp.data || []);
+        const all = resp.data || [];
+        setReports(all);
+        if (all.length === 0) { setFilteredReports([]); return; }
+        let dateToUse = selectedDate || todayStr;
+        const hasToday = all.some(r => r.date && formatDate(r.date) === todayStr);
+        if (!hasToday) {
+          const latest = [...all].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+          if (latest?.date) {
+            dateToUse = formatDate(latest.date);
+            setSelectedDate(dateToUse);
+          }
+        }
+        setFilteredReports(all.filter(r => r.date && formatDate(r.date) === dateToUse));
       }
     } catch (err) {
       console.error('Failed to fetch dmm settings', err);
     } finally { setLoading(false); }
   };
 
-  const handleFilter = () => {
-    if (!startDate) { setFilteredReports(reports); return; }
-    const start = new Date(startDate); start.setHours(0,0,0,0);
-    const filtered = reports.filter(r => {
-      if (!r.date) return false;
-      const d = new Date(r.date); d.setHours(0,0,0,0);
-      if (endDate) {
-        const end = new Date(endDate); end.setHours(23,59,59,999);
-        return d >= start && d <= end;
+  const applyFilters = (date, shift, allReports = reports) => {
+    let dateToUse = date || todayStr;
+    let filtered = allReports.filter(r => r.date && formatDate(r.date) === dateToUse);
+    if (filtered.length === 0 && dateToUse === todayStr && allReports.length > 0) {
+      const latest = [...allReports].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
+      if (latest?.date) {
+        const latestDate = formatDate(latest.date);
+        setSelectedDate(latestDate);
+        filtered = allReports.filter(r => r.date && formatDate(r.date) === latestDate);
       }
-      return d.getTime() === start.getTime();
-    });
+    }
     setFilteredReports(filtered);
   };
+
+  const handleFilter = () => {
+    applyFilters(selectedDate, selectedShift, reports);
+  };
+
+  useEffect(() => {
+    if (reports && reports.length >= 0) {
+      applyFilters(selectedDate, selectedShift, reports);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedDate, selectedShift, reports]);
 
   // Flatten each shift's parameter arrays into unified list of rows.
   const flattenedRows = filteredReports.flatMap(report => {
     const rows = [];
     if (report.parameters) {
       ['shift1','shift2','shift3'].forEach(shiftKey => {
+        if (selectedShift !== 'All' && selectedShift !== shiftKey.replace('shift','Shift ')) return;
         const arr = report.parameters[shiftKey];
         if (Array.isArray(arr) && arr.length > 0) {
           arr.forEach(param => {
@@ -83,8 +111,8 @@ const DmmSettingParametersReport = () => {
               date: report.date,
               machine: report.machine,
               shift: shiftKey.replace('shift','Shift '),
-                            operatorName: report.shifts?.[shiftKey]?.operatorName || '-',
-                            checkedBy: report.shifts?.[shiftKey]?.checkedBy || '-',
+              operatorName: report.shifts?.[shiftKey]?.operatorName || '-',
+              checkedBy: report.shifts?.[shiftKey]?.checkedBy || '-',
               ...param
             });
           });
@@ -97,7 +125,7 @@ const DmmSettingParametersReport = () => {
   const deleteWholeReport = async (id) => {
     if (!window.confirm('Delete entire machine report (all shift rows)?')) return;
     try {
-      const res = await api.delete(`/v1/dmm-settings/${id}`);
+      const res = await api.delete(`/dmm-settings/${id}`);
       if (res.success) fetchReports();
     } catch (err) {
       console.error('Delete failed', err);
@@ -110,9 +138,9 @@ const DmmSettingParametersReport = () => {
     const byId = reports.find(r => r._id === row._id);
     if (byId) return byId;
     try {
-      const rowDateKey = row.date ? new Date(row.date).toISOString().split('T')[0] : '';
+      const rowDateKey = row.date ? formatDate(row.date) : '';
       return reports.find(r => {
-        const repDateKey = r.date ? new Date(r.date).toISOString().split('T')[0] : '';
+        const repDateKey = r.date ? formatDate(r.date) : '';
         return repDateKey === rowDateKey && String(r.machine) === String(row.machine);
       }) || null;
     } catch {
@@ -183,7 +211,7 @@ const DmmSettingParametersReport = () => {
 
     try {
       setUpdating(true);
-      const res = await api.put(`/v1/dmm-settings/${editingReport}`, normalized);
+      const res = await api.put(`/dmm-settings/${editingReport}`, normalized);
       if (res.success) {
         alert('Report updated successfully!');
         setEditingReport(null);
@@ -240,93 +268,44 @@ const DmmSettingParametersReport = () => {
         </div>
       </div>
 
-      <div className="impact-filter-container">
-        <div className="impact-filter-group">
-          <label>Start Date</label>
-          <DatePicker value={startDate} onChange={(e) => setStartDate(e.target.value)} placeholder="Select start date" />
-        </div>
-        <div className="impact-filter-group">
-          <label>End Date</label>
-          <DatePicker value={endDate} onChange={(e) => setEndDate(e.target.value)} placeholder="Select end date" />
-        </div>
-        <FilterButton onClick={handleFilter} disabled={!startDate}>Filter</FilterButton>
-      </div>
-
-      {/* Section Checkboxes */}
-      <div style={{ 
-        background: 'white', 
-        padding: '1rem', 
-        borderRadius: '8px', 
+      <div className="impact-filter-container" style={{
+        background: 'white',
+        padding: '1.5rem',
+        borderRadius: '8px',
         marginBottom: '1rem',
         boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
       }}>
-        <div style={{ fontWeight: 600, marginBottom: '0.75rem', color: '#334155' }}>Sections Filter:</div>
-        <div style={{ display: 'flex', gap: '1.5rem', flexWrap: 'wrap' }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.basicInfo} 
-              onChange={() => toggleSection('basicInfo')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Basic Info</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.ppParameters} 
-              onChange={() => toggleSection('ppParameters')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>PP Parameters</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.spParameters} 
-              onChange={() => toggleSection('spParameters')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>SP Parameters</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.coreMaskParameters} 
-              onChange={() => toggleSection('coreMaskParameters')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Core Mask Parameters</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.pressureParameters} 
-              onChange={() => toggleSection('pressureParameters')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Pressure Parameters</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.strippingParameters} 
-              onChange={() => toggleSection('strippingParameters')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Stripping Parameters</span>
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', cursor: 'pointer' }}>
-            <input 
-              type="checkbox" 
-              checked={showSections.mouldParameters} 
-              onChange={() => toggleSection('mouldParameters')}
-              style={{ cursor: 'pointer' }}
-            />
-            <span>Mould Parameters</span>
-          </label>
+        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
+          <div className="impact-filter-group">
+            <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>Select Date</label>
+            <DatePicker value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} placeholder="Select date" />
+          </div>
+          <div className="impact-filter-group">
+            <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>Select Shift</label>
+            <select
+              value={selectedShift}
+              onChange={(e) => setSelectedShift(e.target.value)}
+              style={{
+                padding: '0.625rem 0.875rem',
+                border: '2px solid #cbd5e1',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                backgroundColor: '#ffffff',
+                cursor: 'pointer',
+                minWidth: '150px'
+              }}
+            >
+              <option value="All">All Shifts</option>
+              <option value="Shift 1">Shift 1</option>
+              <option value="Shift 2">Shift 2</option>
+              <option value="Shift 3">Shift 3</option>
+            </select>
+          </div>
+          <FilterButton onClick={handleFilter}>Apply Filter</FilterButton>
         </div>
       </div>
+
+      {/* Section checkboxes removed */}
 
       {loading ? <div className="impact-loader-container"><Loader /></div> : (
         <div className="impact-details-card">
@@ -339,53 +318,25 @@ const DmmSettingParametersReport = () => {
                   <th style={{ padding: '12px 16px', textAlign: 'center' }}>Shift</th>
                                     <th style={{ padding: '12px 16px', textAlign: 'center' }}>Operator Name</th>
                                     <th style={{ padding: '12px 16px', textAlign: 'center' }}>Checked By</th>
-                  {showSections.basicInfo && (
-                    <>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>S.No</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Customer</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Item Description</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Time</th>
-                    </>
-                  )}
-                  {showSections.ppParameters && (
-                    <>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Thickness (mm)</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Height (mm)</th>
-                    </>
-                  )}
-                  {showSections.spParameters && (
-                    <>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Thickness (mm)</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Height (mm)</th>
-                    </>
-                  )}
-                  {showSections.coreMaskParameters && (
-                    <>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Core Mask Thickness (mm)</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Core Mask Height (mm)</th>
-                    </>
-                  )}
-                  {showSections.pressureParameters && (
-                    <>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Sand Shot Pressure (Bar)</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Correction Shot Time (s)</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Squeeze Pressure (Kg/cm²)</th>
-                    </>
-                  )}
-                  {showSections.strippingParameters && (
-                    <>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Stripping Acceleration</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Stripping Distance</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Stripping Acceleration</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Stripping Distance</th>
-                    </>
-                  )}
-                  {showSections.mouldParameters && (
-                    <>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Mould Thickness ±10mm</th>
-                      <th style={{ padding: '12px 16px', textAlign: 'center' }}>Close Up Force/Pressure</th>
-                    </>
-                  )}
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>S.No</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Customer</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Item Description</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Time</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Thickness (mm)</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Height (mm)</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Thickness (mm)</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Height (mm)</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Core Mask Thickness (mm)</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Core Mask Height (mm)</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Sand Shot Pressure (Bar)</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Correction Shot Time (s)</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Squeeze Pressure (Kg/cm²)</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Stripping Acceleration</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Stripping Distance</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Stripping Acceleration</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Stripping Distance</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Mould Thickness ±10mm</th>
+                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Close Up Force / Mould Close Up Pressure</th>
                   <th style={{ padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
                   <th style={{ padding: '12px 16px', textAlign: 'center' }}>Actions</th>
                 </tr>
@@ -401,53 +352,25 @@ const DmmSettingParametersReport = () => {
                       <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.shift}</td>
                                             <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.operatorName}</td>
                                             <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.checkedBy}</td>
-                      {showSections.basicInfo && (
-                        <>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.sNo || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.customer || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.itemDescription || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.time || '-'}</td>
-                        </>
-                      )}
-                      {showSections.ppParameters && (
-                        <>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppThickness || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppHeight || row.ppheight || '-'}</td>
-                        </>
-                      )}
-                      {showSections.spParameters && (
-                        <>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spThickness || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spHeight || '-'}</td>
-                        </>
-                      )}
-                      {showSections.coreMaskParameters && (
-                        <>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.CoreMaskThickness ?? row.spCoreMaskThickness ?? row.ppCoreMaskThickness ?? '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.CoreMaskHeight ?? row.spCoreMaskHeight ?? row.ppCoreMaskHeight ?? '-'}</td>
-                        </>
-                      )}
-                      {showSections.pressureParameters && (
-                        <>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.sandShotPressurebar || row.sandShotPressureBar || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.correctionShotTime || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.squeezePressure || '-'}</td>
-                        </>
-                      )}
-                      {showSections.strippingParameters && (
-                        <>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppStrippingAcceleration || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppStrippingDistance || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spStrippingAcceleration || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spStrippingDistance || '-'}</td>
-                        </>
-                      )}
-                      {showSections.mouldParameters && (
-                        <>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.mouldThickness || row.mouldThicknessPlus10 || '-'}</td>
-                          <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.closeUpForcePressure || row.closeUpForceMouldCloseUpPressure || '-'}</td>
-                        </>
-                      )}
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.sNo || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.customer || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.itemDescription || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.time || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppThickness || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppHeight || row.ppheight || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spThickness || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spHeight || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.CoreMaskThickness ?? row.spCoreMaskThickness ?? row.ppCoreMaskThickness ?? '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.CoreMaskHeight ?? row.spCoreMaskHeight ?? row.ppCoreMaskHeight ?? '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.sandShotPressurebar || row.sandShotPressureBar || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.correctionShotTime || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.squeezePressure || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppStrippingAcceleration || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppStrippingDistance || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spStrippingAcceleration || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spStrippingDistance || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.mouldThickness || row.mouldThicknessPlus10 || '-'}</td>
+                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.closeUpForceMouldCloseUpPressure || row.closeUpForcePressure || '-'}</td>
                       <td style={{ 
                         cursor: row.remarks ? 'pointer' : 'default',
                         maxWidth: '150px',

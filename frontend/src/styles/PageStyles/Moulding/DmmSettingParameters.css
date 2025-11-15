@@ -58,6 +58,54 @@
   position: relative;
 }
 
+/* Primary Section (mirrors Disamatic styling) */
+.primary-section {
+  margin-bottom: 2rem;
+  padding: 0;
+  background: transparent;
+  border: none;
+}
+
+.primary-header-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #5B9AA9;
+  margin-bottom: 1.25rem;
+}
+
+.primary-section-title {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin: 0;
+  padding: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: none;
+}
+
+.primary-date-display {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: #1e293b;
+  white-space: nowrap;
+}
+
+.primary-fields-row {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 1.25rem;
+  align-items: flex-start;
+}
+
+.primary-fields-row .dmm-form-group {
+  flex: 0 0 auto;
+  width: 220px;
+  min-width: 0;
+}
+
 .dmm-view-report-btn {
   display: inline-flex;
   align-items: center;
@@ -173,7 +221,7 @@
 /* Form Grid */
 .dmm-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 1rem;
   margin-bottom: 1.5rem;
   background: transparent;
@@ -189,6 +237,58 @@
 .dmm-shift-form-grid .dmm-form-group:first-child,
 .dmm-shift-form-grid .dmm-form-group:nth-child(2) {
   grid-column: 1;
+}
+
+/* Shift parameters alignment tweaks */
+.dmm-shift-form-grid .dmm-form-group {
+  min-width: 240px;
+}
+
+/* Shift Parameters Grid: align inputs into consistent columns */
+.dmm-shift-form-grid {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+.dmm-shift-form-grid .dmm-form-group label {
+  white-space: normal; /* allow long labels to wrap */
+}
+
+/* Ensure labels align to bottom so inputs line up across the grid */
+.dmm-shift-form-grid .dmm-form-group label,
+.dmm-form-grid .dmm-form-group label {
+  min-height: 2.5rem;
+  display: flex;
+  align-items: flex-end;
+}
+
+/* Make inputs consistent height for neat alignment */
+.dmm-shift-form-grid .dmm-form-group input,
+.dmm-shift-form-grid .dmm-form-group select,
+.dmm-form-grid .dmm-form-group input,
+.dmm-form-grid .dmm-form-group select {
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+@media (max-width: 1200px) {
+  .dmm-shift-form-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 968px) {
+  .dmm-shift-form-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .dmm-shift-form-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 /* Primary Row Layout */

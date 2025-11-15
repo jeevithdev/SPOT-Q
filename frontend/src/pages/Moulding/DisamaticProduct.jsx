@@ -66,6 +66,26 @@ const DisamaticProduct = () => {
     members: false
   });
   
+  // Total rows for Production and Delays tables
+  const [productionTotal, setProductionTotal] = useState({
+    counterNo: '',
+    componentName: '',
+    produced: 0,
+    poured: 0,
+    cycleTime: '',
+    mouldsPerHour: 0,
+    remarks: ''
+  });
+  
+  // Field validation states for tables
+  const [fieldValidation, setFieldValidation] = useState({});
+  
+  const [delaysTotal, setDelaysTotal] = useState({
+    delays: '',
+    durationMinutes: 0,
+    durationTime: ''
+  });
+  
   // Auto-update date if user keeps page open past midnight
   useEffect(() => {
     const interval = setInterval(() => {
@@ -77,6 +97,38 @@ const DisamaticProduct = () => {
     }, 60 * 1000); // check every minute
     return () => clearInterval(interval);
   }, [formData.date]);
+  
+  // Auto-calculate totals for Production table
+  useEffect(() => {
+    const producedTotal = formData.productionTable.reduce((sum, row) => {
+      const val = parseFloat(row.produced) || 0;
+      return sum + val;
+    }, 0);
+    
+    const pouredTotal = formData.productionTable.reduce((sum, row) => {
+      const val = parseFloat(row.poured) || 0;
+      return sum + val;
+    }, 0);
+    
+    setProductionTotal(prev => ({
+      ...prev,
+      produced: producedTotal,
+      poured: pouredTotal
+    }));
+  }, [formData.productionTable]);
+  
+  // Auto-calculate totals for Delays table
+  useEffect(() => {
+    const durationTotal = formData.delaysTable.reduce((sum, row) => {
+      const val = parseFloat(row.durationMinutes) || 0;
+      return sum + val;
+    }, 0);
+    
+    setDelaysTotal(prev => ({
+      ...prev,
+      durationMinutes: durationTotal
+    }));
+  }, [formData.delaysTable]);
   
   // Validate primary field in real-time
   const validateField = (field, value) => {
@@ -216,7 +268,7 @@ const DisamaticProduct = () => {
         }
       }
 
-      const data = await api.post('/v1/dismatic-reports', payload);
+      const data = await api.post('/dismatic-reports', payload);
       
       if (data.success) {
         setPrimaryId(data.data?._id || null);
@@ -245,14 +297,9 @@ const DisamaticProduct = () => {
   };
   
   const handleChange = (field, value) => {
-    // Date is always fixed to today, ignore any change attempts
-    if (field === 'date') {
-      return; // Do nothing - date is locked to today
-    }
-    
+    // Ignore date change attempts (date locked to today)
+    if (field === 'date') return;
     setFormData(prev => ({ ...prev, [field]: value }));
-    
-    // Validate the field
     if (['shift', 'incharge', 'ppOperator'].includes(field)) {
       validateField(field, value);
     }
@@ -306,6 +353,29 @@ const DisamaticProduct = () => {
     const updatedTable = [...formData.patternTempTable];
     updatedTable[index] = { ...updatedTable[index], [field]: value };
     setFormData(prev => ({ ...prev, patternTempTable: updatedTable }));
+  };
+  
+  // Handle manual input for production total row
+  const handleProductionTotalChange = (field, value) => {
+    setProductionTotal(prev => ({ ...prev, [field]: value }));
+  };
+  
+  // Handle manual input for delays total row
+  const handleDelaysTotalChange = (field, value) => {
+    setDelaysTotal(prev => ({ ...prev, [field]: value }));
+  };
+  
+  // Helper function to get border color based on validation
+  const getBorderColor = (value, isNumeric = false) => {
+    if (value === '' || value === null || value === undefined) {
+      return '#cbd5e1'; // Default grey
+    }
+    if (isNumeric) {
+      const num = parseFloat(value);
+      if (isNaN(num)) return '#ef4444'; // Red for invalid
+      return '#22c55e'; // Green for valid
+    }
+    return String(value).trim() !== '' ? '#22c55e' : '#cbd5e1'; // Green if filled, grey if empty
   };
 
   // Add row functions
@@ -392,15 +462,26 @@ const DisamaticProduct = () => {
       const inputs = Array.from(currentRow.querySelectorAll('input:not([disabled]), textarea:not([disabled])'));
       const currentInputIndex = inputs.indexOf(e.target);
       
-      // If not the last input in the row, move to next input
+      // If not the last input in the row, move to next input in same row
       if (currentInputIndex < inputs.length - 1) {
         inputs[currentInputIndex + 1].focus();
         return;
       }
       
-      // If this is the last input in the row, just move to next section (no save)
+      // If this is the last input in the row, move to next row's first input
       if (currentInputIndex === inputs.length - 1) {
-        // Just navigate to the next section without saving
+        const nextRow = currentRow.nextElementSibling;
+        
+        // Check if next row exists and is not the total row
+        if (nextRow && !nextRow.textContent.includes('TOTAL')) {
+          const nextRowInputs = Array.from(nextRow.querySelectorAll('input:not([disabled]), textarea:not([disabled])'));
+          if (nextRowInputs.length > 0) {
+            nextRowInputs[0].focus();
+            return;
+          }
+        }
+        
+        // If no next row or next row is total row, move to next section
         const nextSection = {
           'production': 'nextShiftPlan',
           'nextShiftPlan': 'delays',
@@ -449,11 +530,9 @@ const DisamaticProduct = () => {
       
       if (targetSection) {
         if (tableSection === 'eventSection') {
-          // For event section, focus on the first textarea (Significant Event)
-          const firstTextarea = targetSection.querySelector('textarea:not([disabled])');
-          if (firstTextarea) {
-            firstTextarea.focus();
-          }
+          // For event section, focus on the first input or textarea (Significant Event or other fields)
+          const firstField = targetSection.querySelector('input:not([disabled]), textarea:not([disabled])');
+          if (firstField) firstField.focus();
         } else {
           const tableWrapper = targetSection.querySelector('.disamatic-table-wrapper');
           if (tableWrapper) {
@@ -557,7 +636,7 @@ const DisamaticProduct = () => {
   };
 
   // Check if primary data exists for date (similar to DmmSettingParameters)
-  const checkExistingPrimaryData = async (date) => {
+  const checkExistingPrimaryData = async (date, skipLoadFull = false) => {
     if (!date || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
       // Reset all locks when no valid date
       setPrimaryId(null);
@@ -574,7 +653,7 @@ const DisamaticProduct = () => {
     try {
       setCheckingData(true);
       // Get report by date (primary identifier) - date is unique
-      const response = await api.get(`/v1/dismatic-reports/date?date=${encodeURIComponent(date)}`);
+      const response = await api.get(`/dismatic-reports/date?date=${encodeURIComponent(date)}`);
       
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
@@ -633,10 +712,12 @@ const DisamaticProduct = () => {
             return updated;
           });
           
-          // Immediately check for full data since date record exists
-          setTimeout(() => {
-            checkExistingData();
-          }, 100);
+          // If not in fresh mode, load full data; otherwise keep entry clean
+          if (!skipLoadFull) {
+            setTimeout(() => {
+              checkExistingData();
+            }, 100);
+          }
         } else {
           // No primary data exists - unlock all fields
           setBasicInfoLocked(false);
@@ -702,7 +783,7 @@ const DisamaticProduct = () => {
     try {
       setCheckingData(true);
       // Get report by date (primary identifier) - date is unique
-      const response = await api.get(`/v1/dismatic-reports/date?date=${encodeURIComponent(formData.date)}`);
+      const response = await api.get(`/dismatic-reports/date?date=${encodeURIComponent(formData.date)}`);
       
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
@@ -878,21 +959,21 @@ const DisamaticProduct = () => {
     }
   };
 
-  // Check for primary data when date changes (date is always today, so only check once on mount)
+  // On mount: always present a fresh entry form for today (keep primary locked if exists)
   useEffect(() => {
-    // Date is always set to today, so check primary data once on mount
     if (formData.date) {
-      checkExistingPrimaryData(formData.date);
+      // Only lock/load primary; skip full data load
+      checkExistingPrimaryData(formData.date, true);
+      // Reset non-primary sections for fresh entry while keeping primary locked
+      resetProductionTable();
+      resetNextShiftPlanTable();
+      resetDelaysTable();
+      resetMouldHardnessTable();
+      resetPatternTempTable();
+      setFormData(prev => ({ ...prev, significantEvent: '', maintenance: '', supervisorName: '' }));
+      setEventSectionLocked({ significantEvent: false, maintenance: false, supervisorName: false });
     }
-  }, []); // Only run once on mount since date never changes
-
-  // Check for full form lock when component mounts (date is always today)
-  useEffect(() => {
-    // Date is always today, check once on mount
-    if (formData.date) {
-      checkExistingData();
-    }
-  }, []); // Only run once on mount since date never changes
+  }, []);
 
   // Handle click on locked input fields to show popup
   const handleLockedFieldClick = (fieldName) => {
@@ -924,7 +1005,7 @@ const DisamaticProduct = () => {
     if (!date || !shift) return;
     
     try {
-      const response = await api.get(`/v1/dismatic-reports/date?date=${encodeURIComponent(date)}`);
+      const response = await api.get(`/dismatic-reports/date?date=${encodeURIComponent(date)}`);
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
         if (report.shift && String(report.shift).trim() === String(shift).trim()) {
@@ -953,7 +1034,7 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, production: true }));
-      const data = await api.post('/v1/dismatic-reports', {
+      const data = await api.post('/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         productionTable: formData.productionTable,
@@ -964,8 +1045,6 @@ const DisamaticProduct = () => {
         alert('Production data saved successfully!');
         // Clear production table after successful save to allow entering next entry
         resetProductionTable();
-        // Update next S.No based on database (without loading data into form)
-        await updateNextSNoForTable('production');
         // Focus first input for next entry
         focusFirstTableInput('production');
       }
@@ -994,7 +1073,7 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, nextShiftPlan: true }));
-      const data = await api.post('/v1/dismatic-reports', {
+      const data = await api.post('/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         nextShiftPlanTable: formData.nextShiftPlanTable,
@@ -1005,8 +1084,6 @@ const DisamaticProduct = () => {
         alert('Next Shift Plan data saved successfully!');
         // Clear next shift plan table after successful save to allow entering next entry
         resetNextShiftPlanTable();
-        // Update next S.No based on database (without loading data into form)
-        await updateNextSNoForTable('nextShiftPlan');
         // Focus first input for next entry
         focusFirstTableInput('nextShiftPlan');
       }
@@ -1035,7 +1112,7 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, delays: true }));
-      const data = await api.post('/v1/dismatic-reports', {
+      const data = await api.post('/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         delaysTable: formData.delaysTable,
@@ -1046,8 +1123,6 @@ const DisamaticProduct = () => {
         alert('Delays data saved successfully!');
         // Clear delays table after successful save to allow entering next entry
         resetDelaysTable();
-        // Update next S.No based on database (without loading data into form)
-        await updateNextSNoForTable('delays');
         // Focus first input for next entry
         focusFirstTableInput('delays');
       }
@@ -1076,7 +1151,7 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, mouldHardness: true }));
-      const data = await api.post('/v1/dismatic-reports', {
+      const data = await api.post('/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         mouldHardnessTable: formData.mouldHardnessTable,
@@ -1087,8 +1162,6 @@ const DisamaticProduct = () => {
         alert('Mould Hardness data saved successfully!');
         // Clear mould hardness table after successful save to allow entering next entry
         resetMouldHardnessTable();
-        // Update next S.No based on database (without loading data into form)
-        await updateNextSNoForTable('mouldHardness');
         // Focus first input for next entry
         focusFirstTableInput('mouldHardness');
       }
@@ -1117,7 +1190,7 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, patternTemp: true }));
-      const data = await api.post('/v1/dismatic-reports', {
+      const data = await api.post('/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         patternTempTable: formData.patternTempTable,
@@ -1128,8 +1201,6 @@ const DisamaticProduct = () => {
         alert('Pattern Temperature data saved successfully!');
         // Clear pattern temp table after successful save to allow entering next entry
         resetPatternTempTable();
-        // Update next S.No based on database (without loading data into form)
-        await updateNextSNoForTable('patternTemp');
         // Focus first input for next entry
         focusFirstTableInput('patternTemp');
       }
@@ -1184,7 +1255,7 @@ const DisamaticProduct = () => {
         payload.supervisorName = formData.supervisorName;
       }
       
-      const data = await api.post('/v1/dismatic-reports', payload);
+      const data = await api.post('/dismatic-reports', payload);
       
       if (data.success) {
         // Lock only the fields that were actually saved (have non-empty values)
@@ -1220,21 +1291,16 @@ const DisamaticProduct = () => {
 
   // Combined "Save All" handler - saves primary first (if needed) then other sections that have data
   const handleSubmitAll = async () => {
-    // Always sync date to current day before saving all
-    const today = getTodaysDate();
-    if (formData.date !== today) {
-      setFormData(prev => ({ ...prev, date: today }));
-    }
-    if (!today) {
-      alert('Date unavailable');
+    const targetDate = formData.date;
+    if (!targetDate || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(targetDate)) {
+      alert('Please select a valid date before saving all');
       return;
     }
-
     setAllSubmitting(true);
     try {
       // Build single consolidated payload
       const consolidated = {
-        date: today,
+        date: targetDate,
         shift: formData.shift || '',
         incharge: formData.incharge || '',
         ppOperator: formData.ppOperator || '',
@@ -1250,10 +1316,10 @@ const DisamaticProduct = () => {
         section: 'all'
       };
 
-      const res = await api.post('/v1/dismatic-reports', consolidated);
+      const res = await api.post('/dismatic-reports', consolidated);
       if (!res.success) throw new Error(res.message || 'Save failed');
 
-      alert('All data saved successfully for ' + today + '! Ready for next entry.');
+      alert('All data saved successfully for ' + targetDate + '! Ready for next entry.');
       
       // Reset only non-primary sections for next entry (keep primary locked and intact)
       resetProductionTable();
@@ -1525,12 +1591,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.counterNo)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1545,12 +1612,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.componentName)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1566,12 +1634,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.produced, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1587,12 +1656,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.poured, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1607,12 +1677,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.cycleTime)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1628,12 +1699,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.mouldsPerHour, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1649,18 +1721,130 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.remarks)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
                         cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
-                        resize: 'none'
+                        resize: 'none',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
                 </tr>
               ))}
+              {/* Total Row */}
+              <tr style={{ background: '#f8fafc', borderTop: '3px solid #5B9AA9', fontWeight: 600 }}>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', background: '#f8fafc' }}>TOTAL</td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <input
+                    type="text"
+                    value={productionTotal.counterNo}
+                    onChange={e => handleProductionTotalChange('counterNo', e.target.value)}
+                    placeholder="Total Counter"
+                    disabled={!isPrimaryLocked}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.5rem', 
+                      border: '1.5px solid #cbd5e1', 
+                      borderRadius: '4px', 
+                      fontSize: '0.875rem', 
+                      textAlign: 'center',
+                      fontWeight: 600,
+                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                    }}
+                  />
+                </td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <input
+                    type="text"
+                    value={productionTotal.componentName}
+                    onChange={e => handleProductionTotalChange('componentName', e.target.value)}
+                    placeholder="-"
+                    disabled={!isPrimaryLocked}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.5rem', 
+                      border: '1.5px solid #cbd5e1', 
+                      borderRadius: '4px', 
+                      fontSize: '0.875rem', 
+                      textAlign: 'center',
+                      fontWeight: 600,
+                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                    }}
+                  />
+                </td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#1e293b', fontSize: '0.9375rem' }}>
+                  {productionTotal.produced.toFixed(1)}
+                </td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#1e293b', fontSize: '0.9375rem' }}>
+                  {productionTotal.poured.toFixed(1)}
+                </td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <input
+                    type="text"
+                    value={productionTotal.cycleTime}
+                    onChange={e => handleProductionTotalChange('cycleTime', e.target.value)}
+                    placeholder="-"
+                    disabled={!isPrimaryLocked}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.5rem', 
+                      border: '1.5px solid #cbd5e1', 
+                      borderRadius: '4px', 
+                      fontSize: '0.875rem', 
+                      textAlign: 'center',
+                      fontWeight: 600,
+                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                    }}
+                  />
+                </td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <input
+                    type="text"
+                    value={productionTotal.mouldsPerHour}
+                    onChange={e => handleProductionTotalChange('mouldsPerHour', e.target.value)}
+                    placeholder="-"
+                    disabled={!isPrimaryLocked}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.5rem', 
+                      border: '1.5px solid #cbd5e1', 
+                      borderRadius: '4px', 
+                      fontSize: '0.875rem', 
+                      textAlign: 'center',
+                      fontWeight: 600,
+                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                    }}
+                  />
+                </td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <input
+                    type="text"
+                    value={productionTotal.remarks}
+                    onChange={e => handleProductionTotalChange('remarks', e.target.value)}
+                    placeholder="Total Remarks"
+                    maxLength={60}
+                    disabled={!isPrimaryLocked}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.5rem', 
+                      border: '1.5px solid #cbd5e1', 
+                      borderRadius: '4px', 
+                      fontSize: '0.875rem', 
+                      textAlign: 'center',
+                      fontWeight: 600,
+                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                    }}
+                  />
+                </td>
+              </tr>
             </tbody>
           </table>
                 </div>
@@ -1744,12 +1928,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.componentName)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1765,12 +1950,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.plannedMoulds, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1786,12 +1972,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.remarks)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1876,12 +2063,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.delays)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1897,12 +2085,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.durationMinutes, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -1917,17 +2106,65 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.durationTime)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
                 </tr>
               ))}
+              {/* Total Row */}
+              <tr style={{ background: '#f8fafc', borderTop: '3px solid #5B9AA9', fontWeight: 600 }}>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', background: '#f8fafc' }}>TOTAL</td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <input
+                    type="text"
+                    value={delaysTotal.delays}
+                    onChange={e => handleDelaysTotalChange('delays', e.target.value)}
+                    placeholder="Total Delays"
+                    disabled={!isPrimaryLocked}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.5rem', 
+                      border: '1.5px solid #cbd5e1', 
+                      borderRadius: '4px', 
+                      fontSize: '0.875rem', 
+                      textAlign: 'center',
+                      fontWeight: 600,
+                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                    }}
+                  />
+                </td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0', background: '#f8fafc', color: '#1e293b', fontSize: '0.9375rem' }}>
+                  {delaysTotal.durationMinutes.toFixed(1)}
+                </td>
+                <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
+                  <input
+                    type="text"
+                    value={delaysTotal.durationTime}
+                    onChange={e => handleDelaysTotalChange('durationTime', e.target.value)}
+                    placeholder="Total Time"
+                    disabled={!isPrimaryLocked}
+                    style={{ 
+                      width: '100%', 
+                      padding: '0.5rem', 
+                      border: '1.5px solid #cbd5e1', 
+                      borderRadius: '4px', 
+                      fontSize: '0.875rem', 
+                      textAlign: 'center',
+                      fontWeight: 600,
+                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
+                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                    }}
+                  />
+                </td>
+              </tr>
             </tbody>
           </table>
         </div>
@@ -2014,12 +2251,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.componentName)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -2035,12 +2273,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.mpPP, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -2056,12 +2295,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.mpSP, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -2077,12 +2317,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.bsPP, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -2098,12 +2339,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.bsSP, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -2119,12 +2361,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.remarks)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -2209,12 +2452,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.item)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -2230,12 +2474,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.pp, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
@@ -2251,12 +2496,13 @@ const DisamaticProduct = () => {
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: '1.5px solid #cbd5e1', 
+                        border: `1.5px solid ${getBorderColor(row.sp, true)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
+                        transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
