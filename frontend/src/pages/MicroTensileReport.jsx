@@ -248,7 +248,7 @@ const MicroTensileReport = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="microtensile-report-header">
         <div className="microtensile-report-header-text">
           <h2>
@@ -444,7 +444,7 @@ const MicroTensileReport = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

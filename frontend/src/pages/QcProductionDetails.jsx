@@ -163,8 +163,8 @@ const QcProductionDetails = () => {
   };
 
   return (
-    <>
-      <div className="qcproduction-header">
+    <div className="page-wrapper">
+      <div className="qc-production-header">
         <div className="qcproduction-header-text">
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
@@ -432,7 +432,7 @@ const QcProductionDetails = () => {
           {submitLoading ? 'Saving...' : 'Submit All'}
         </button>
       </div>
-    </>
+    </div>
   );
 };
 

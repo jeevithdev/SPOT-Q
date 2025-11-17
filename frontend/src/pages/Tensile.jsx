@@ -210,7 +210,7 @@ const Tensile = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="tensile-header">
         <div className="tensile-header-text">
           <h2>
@@ -430,7 +430,7 @@ const Tensile = () => {
           {submitLoading ? 'Saving...' : 'Submit All'}
         </button>
       </div>
-    </>
+    </div>
   );
 };
 

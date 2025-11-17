@@ -288,7 +288,7 @@ const CupolaHolderLogSheetReport = () => {
   );
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="cupola-holder-report-header">
         <div className="cupola-holder-report-header-text">
           <h2>
@@ -498,7 +498,7 @@ const CupolaHolderLogSheetReport = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

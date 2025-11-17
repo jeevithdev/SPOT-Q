@@ -127,7 +127,7 @@ const MicroStructureReport = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="impact-report-header">
         <div className="impact-report-header-text">
           <h2>
@@ -405,7 +405,7 @@ const MicroStructureReport = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

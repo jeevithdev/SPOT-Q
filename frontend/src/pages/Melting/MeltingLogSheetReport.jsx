@@ -329,7 +329,7 @@ const MeltingLogSheetReport = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="melting-log-report-header">
         <div className="melting-log-report-header-text">
           <h2>
@@ -706,7 +706,7 @@ const MeltingLogSheetReport = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

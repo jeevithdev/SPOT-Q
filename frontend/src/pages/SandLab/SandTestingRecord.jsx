@@ -796,7 +796,7 @@ const SandTestingRecord = () => {
   );
 
   return (
-    <>
+    <div className="page-wrapper">
       {/* Header */}
       <div className="sand-header">
         <div className="sand-header-text">
@@ -2358,8 +2358,7 @@ const SandTestingRecord = () => {
           </button>
         </div>
       </div>
-
-    </>
+    </div>
   );
 };
 

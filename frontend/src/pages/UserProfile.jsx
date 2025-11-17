@@ -47,7 +47,7 @@ const UserProfile = () => {
   if (!user) return null;
 
   return (
-    <div style={{ padding: 16 }}>
+    <div className="page-wrapper" style={{ padding: 16 }}>
       <h2 style={{ fontSize: 22, marginBottom: 6 }}>User Profile</h2>
       <p style={{ color: '#6B7280', marginBottom: 20 }}>Your account information and recent login activity.</p>
 

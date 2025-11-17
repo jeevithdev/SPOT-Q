@@ -1289,7 +1289,7 @@ const DisamaticProduct = () => {
     }
   };
 
-  // Combined "Save All" handler - saves primary first (if needed) then other sections that have data
+  // Combined "Save All" handler - saves all sections at once using consolidated 'all' section
   const handleSubmitAll = async () => {
     const targetDate = formData.date;
     if (!targetDate || !/^[0-9]{4}-[0-9]{2}-[0-9]{2}$/.test(targetDate)) {
@@ -1298,7 +1298,7 @@ const DisamaticProduct = () => {
     }
     setAllSubmitting(true);
     try {
-      // Build single consolidated payload
+      // Build single consolidated payload with section='all'
       const consolidated = {
         date: targetDate,
         shift: formData.shift || '',
@@ -1320,6 +1320,10 @@ const DisamaticProduct = () => {
       if (!res.success) throw new Error(res.message || 'Save failed');
 
       alert('All data saved successfully for ' + targetDate + '! Ready for next entry.');
+      
+      // Lock primary locally and refresh locks from backend
+      setIsPrimaryLocked(true);
+      await checkExistingPrimaryData(targetDate, false);
       
       // Reset only non-primary sections for next entry (keep primary locked and intact)
       resetProductionTable();
@@ -1371,7 +1375,7 @@ const DisamaticProduct = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       {checkingData && (
         <div className="disamatic-loader-overlay">
           <Loader />
@@ -2708,7 +2712,7 @@ const DisamaticProduct = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 }
 

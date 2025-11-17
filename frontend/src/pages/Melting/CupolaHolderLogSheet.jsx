@@ -383,7 +383,7 @@ const CupolaHolderLogSheet = () => {
   };
 
   return (
-    <div onKeyDown={handleEnterFocusNext}>
+    <div className="page-wrapper" onKeyDown={handleEnterFocusNext}>
 
       <div className="cupola-holder-header">
         <div className="cupola-holder-header-text">

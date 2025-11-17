@@ -190,7 +190,7 @@ const MicroStructure = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="microstructure-header">
         <div className="microstructure-header-text">
           <h2>
@@ -409,7 +409,7 @@ const MicroStructure = () => {
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>
-    </>
+    </div>
   );
 };
 

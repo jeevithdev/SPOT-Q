@@ -143,8 +143,7 @@ export default function ProcessControl() {
   };
 
   return (
-    <>
-
+    <div className="page-wrapper">
       <div className="process-header">
         <div className="process-header-text">
           <h2>
@@ -429,6 +428,6 @@ export default function ProcessControl() {
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>
-    </>
+    </div>
   );
 }

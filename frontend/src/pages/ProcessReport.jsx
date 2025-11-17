@@ -61,8 +61,8 @@ const ProcessReport = () => {
   };
 
   return (
-    <>
-      <div className="process-report-header">
+    <div className="page-wrapper">
+      <div className="process-report-container">
         <div className="process-report-header-text">
           <h2>
             <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
@@ -135,7 +135,7 @@ const ProcessReport = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

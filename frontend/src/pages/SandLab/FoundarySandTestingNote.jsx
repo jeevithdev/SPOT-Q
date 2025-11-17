@@ -970,7 +970,7 @@ export default function FoundrySandTestingNote() {
   ];
 
   return (
-    <>
+    <div className="page-wrapper">
       {checkingData && (
         <div className="foundry-loader-overlay">
           <Loader />
@@ -1747,6 +1747,6 @@ export default function FoundrySandTestingNote() {
           </button>
         </div>
       </div>
-    </>
+    </div>
   );
 }

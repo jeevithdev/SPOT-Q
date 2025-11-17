@@ -136,7 +136,7 @@ const Impact = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="impact-header">
         <div className="impact-header-text">
           <h2>
@@ -254,7 +254,7 @@ const Impact = () => {
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>
-    </>
+    </div>
   );
 };
 

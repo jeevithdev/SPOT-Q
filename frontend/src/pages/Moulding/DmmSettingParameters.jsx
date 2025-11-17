@@ -817,7 +817,7 @@ const DmmSettingParameters = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       {checkingData && (
         <div className="dmm-loader-overlay">
           <Loader />
@@ -1051,11 +1051,10 @@ const DmmSettingParameters = () => {
           >
             {allSubmitting ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
             {allSubmitting ? 'Saving...' : 'Save All'}
-          </button>
-        </div>
-      </>
+        </button>
+      </div>
+    </div>
   );
 };
 
 export default DmmSettingParameters;
-

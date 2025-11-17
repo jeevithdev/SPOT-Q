@@ -161,8 +161,7 @@ const MicroTensile = () => {
   };
 
   return (
-    <>
-
+    <div className="page-wrapper">
       <div className="microtensile-header">
         <div className="microtensile-header-text">
           <h2>
@@ -391,7 +390,7 @@ const MicroTensile = () => {
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>
-    </>
+    </div>
   );
 };
 

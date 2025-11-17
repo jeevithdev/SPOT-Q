@@ -153,7 +153,7 @@ const TensileReport = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="tensile-report-header">
         <div className="tensile-report-header-text">
           <h2>
@@ -474,7 +474,7 @@ const TensileReport = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

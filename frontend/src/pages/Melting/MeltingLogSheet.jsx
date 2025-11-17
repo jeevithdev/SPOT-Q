@@ -547,7 +547,7 @@ const MeltingLogSheet = () => {
   };
 
   return (
-    <div onKeyDown={handleEnterFocusNext}>
+    <div className="page-wrapper" onKeyDown={handleEnterFocusNext}>
       {/* Header */}
       <div className="cupola-holder-header">
         <div className="cupola-holder-header-text">

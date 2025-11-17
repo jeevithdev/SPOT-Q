@@ -6,6 +6,16 @@ import api from '../../utils/api';
 import '../../styles/PageStyles/Moulding/DisamaticProductReport.css';
 
 const DisamaticProductReport = () => {
+  // Format a date to YYYY-MM-DD using local timezone (avoids UTC shift)
+  const formatInputDateLocal = (d) => {
+    if (!d) return '';
+    const date = new Date(d);
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${y}-${m}-${day}`;
+  };
+
   const [selectedDate, setSelectedDate] = useState(null);
   const [selectedShift, setSelectedShift] = useState('All');
   const [reports, setReports] = useState([]);
@@ -61,9 +71,9 @@ const DisamaticProductReport = () => {
         // Get the latest/last entered date
         const sortedReports = [...data.data].sort((a, b) => new Date(b.date) - new Date(a.date));
         const latestDate = sortedReports[0].date;
-        
-        setSelectedDate(latestDate ? new Date(latestDate).toISOString().split('T')[0] : null);
-        filterReportByDateAndShift(latestDate, 'All', data.data);
+
+        setSelectedDate(latestDate ? formatInputDateLocal(latestDate) : null);
+        filterReportByDateAndShift(latestDate ? formatInputDateLocal(latestDate) : null, 'All', data.data);
       }
     } catch (err) {
       console.error('Failed to fetch disamatic reports', err);
@@ -80,7 +90,7 @@ const DisamaticProductReport = () => {
     
     const report = reportsData.find(r => {
       if (!r.date) return false;
-      const reportDate = new Date(r.date).toISOString().split('T')[0];
+      const reportDate = formatInputDateLocal(r.date);
       const dateMatch = reportDate === date;
       
       // If specific shift is selected, check if it matches
@@ -179,7 +189,7 @@ const DisamaticProductReport = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="impact-report-header">
         <div className="impact-report-header-text">
           <h2>
@@ -1137,7 +1147,7 @@ const DisamaticProductReport = () => {
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

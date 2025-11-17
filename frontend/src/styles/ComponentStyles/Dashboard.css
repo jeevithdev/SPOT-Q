@@ -8,12 +8,13 @@
   margin-left: 60px; /* Sidebar width when collapsed (icons visible) */
   width: calc(100% - 60px);
   transition: margin-left 0.3s ease, width 0.3s ease;
+  overflow-x: hidden;
 }
 
 /* Adjust dashboard margin only when sidebar is pinned (not on hover) */
 body.sidebar-pinned-expanded .dashboard-page-container {
-  margin-left: 240px;
-  width: calc(100% - 240px);
+  margin-left: 248px; /* Match expanded sidebar width */
+  width: calc(100% - 248px);
 }
 
 body.sidebar-pinned-collapsed .dashboard-page-container {

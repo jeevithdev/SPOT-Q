@@ -13,7 +13,7 @@ const FoundrySandTestingReport = () => {
   };
 
   return (
-    <>
+    <div className="page-wrapper">
       <div className="foundry-sand-report-header">
         <div className="foundry-sand-report-header-text">
           <h2>
@@ -44,7 +44,7 @@ const FoundrySandTestingReport = () => {
           Filter
         </FilterButton>
       </div>
-    </>
+    </div>
   );
 };
 

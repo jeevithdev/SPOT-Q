@@ -1040,7 +1040,7 @@ const SandTestingRecordReport = () => {
     );
   };
   return (
-    <>
+    <div className="page-wrapper">
       {toast.show && (
         <div
           role="status"
@@ -1977,7 +1977,7 @@ const SandTestingRecordReport = () => {
           </div>
         )}
       </div>
-      </>
+    </div>
   );
 };
 
