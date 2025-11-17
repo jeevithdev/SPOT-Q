@@ -208,6 +208,10 @@
   align-items: start;
 }
 
+.cupola-holder-table2-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
 .cupola-holder-form-group {
   display: flex;
   flex-direction: column;

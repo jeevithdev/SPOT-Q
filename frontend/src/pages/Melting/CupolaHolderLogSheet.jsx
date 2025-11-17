@@ -398,7 +398,7 @@ const CupolaHolderLogSheet = () => {
       <div>
         <h3 className="section-header">Primary Data</h3>
         
-        <div className="cupola-holder-form-grid">
+        <div className="cupola-holder-form-grid cupola-holder-table2-grid">
           <div className="cupola-holder-form-group">
             <label>Date *</label>
             <CustomDatePicker
@@ -482,6 +482,9 @@ const CupolaHolderLogSheet = () => {
               }}
             />
           </div>
+
+          {/* Empty placeholder to make 5 fields in the row */}
+          <div className="cupola-holder-form-group" />
         </div>
 
         <div className="cupola-holder-submit-container" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
@@ -606,7 +609,7 @@ const CupolaHolderLogSheet = () => {
       <div>
         <h3 className="section-header">Table 2</h3>
         
-        <div className="cupola-holder-form-grid">
+        <div className="cupola-holder-form-grid cupola-holder-table2-grid">
           <div className="cupola-holder-form-group">
             <label>Actual Time</label>
             <input
@@ -645,6 +648,9 @@ const CupolaHolderLogSheet = () => {
               placeholder="e.g: 2000"
             />
           </div>
+
+          {/* Empty placeholder to make 5 fields in the row */}
+          <div className="cupola-holder-form-group" />
         </div>
         <div style={{ gridColumn: '1 / -1', height: '1px', backgroundColor: '#e2e8f0', margin: '1.5rem 0' }}></div>
       </div>

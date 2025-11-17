@@ -310,6 +310,24 @@
   margin: 1rem 0;
 }
 
+/* Row layout for paired sub-sections (e.g., Charging + Liquid Metal) */
+.melting-log-row-two {
+  display: flex;
+  gap: 1.25rem;
+  align-items: stretch;
+}
+
+.melting-log-row-two > .melting-log-sub-section {
+  flex: 1;
+  margin: 1rem 0;
+}
+
+@media (max-width: 968px) {
+  .melting-log-row-two {
+    flex-direction: column;
+  }
+}
+
 .melting-log-sub-section-title {
   font-size: 0.95rem;
   font-weight: 600;
@@ -324,6 +342,10 @@
   grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 1.25rem;
   align-items: start;
+}
+
+.melting-log-table5-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
 }
 
 .melting-log-form-group {
