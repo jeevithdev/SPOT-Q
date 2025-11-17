@@ -1,11 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { PencilLine, Filter as FilterIcon, Trash2, BookOpen } from 'lucide-react';
+import { PencilLine, Trash2, BookOpen } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import api from '../../utils/api';
 
 import '../../styles/PageStyles/Sandlab/SandTestingRecordReport.css';
-
-const TABS = ['All Data', 'Table 1', 'Table 2', 'Table 3', 'Table 4', 'Sand Properties & Test Parameters'];
 
 const TABLE5_ROWS = [
   'S.No',
@@ -53,11 +51,8 @@ const TABLE5_KEYS = [
 ];
 
 const SandTestingRecordReport = () => {
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
-  // show only "Sand Properties & Test Parameters" inline by default.
-  // Table 1-4 buttons will open card-size modals instead of switching inline view.
-  const [activeTab, setActiveTab] = useState('Sand Properties & Test Parameters');
+  const [selectedDate, setSelectedDate] = useState('');
+  // Tabs removed; we will render all tables inline in rows as per new layout
   const [records, setRecords] = useState([]);
   const [displayRecords, setDisplayRecords] = useState([]);
 
@@ -116,7 +111,7 @@ const SandTestingRecordReport = () => {
     ShiftI: { mixnoStart: '', mixnoEnd: '', mixnoTotal: '', numberOfMixRejected: '', returnSandHopperLevel: '' },
     ShiftII: { mixnoStart: '', mixnoEnd: '', mixnoTotal: '', numberOfMixRejected: '', returnSandHopperLevel: '' },
     ShiftIII: { mixnoStart: '', mixnoEnd: '', mixnoTotal: '', numberOfMixRejected: '', returnSandHopperLevel: '' },
-    total: { mixnoStart: '', mixnoEnd: '', mixnoTotal: '' }
+    total: { mixnoStart: '', mixnoEnd: '', mixnoTotal: '', numberOfMixRejected: '' }
   });
   const [t3EditMeta, setT3EditMeta] = useState({ id: null, date: null });
 
@@ -124,27 +119,41 @@ const SandTestingRecordReport = () => {
   const [t4EditForm, setT4EditForm] = useState({ sandLump: '', newSandWt: '', sandFriability: { shiftI: '', shiftII: '', shiftIII: '' } });
   const [t4EditMeta, setT4EditMeta] = useState({ id: null, date: null });
 
-  // Modal states for all tables
-  const [table1ModalOpen, setTable1ModalOpen] = useState(false);
-  const [table2ModalOpen, setTable2ModalOpen] = useState(false);
-  const [table3ModalOpen, setTable3ModalOpen] = useState(false);
-  const [table4ModalOpen, setTable4ModalOpen] = useState(false);
   
-  const openTable1Modal = () => setTable1ModalOpen(true);
-  const closeTable1Modal = () => setTable1ModalOpen(false);
-  const openTable2Modal = () => setTable2ModalOpen(true);
-  const closeTable2Modal = () => setTable2ModalOpen(false);
-  const openTable3Modal = () => setTable3ModalOpen(true);
-  const closeTable3Modal = () => setTable3ModalOpen(false);
-  const openTable4Modal = () => setTable4ModalOpen(true);
-  const closeTable4Modal = () => setTable4ModalOpen(false);
   
   // lightweight toast for success/error
   const [toast, setToast] = useState({ show: false, message: '', type: 'success' });
+  const [deleting, setDeleting] = useState({}); // map of id:true while delete in-flight
   const showToast = (message, type = 'success', duration = 2000) => {
     setToast({ show: true, message, type });
     window.clearTimeout(showToast._t);
     showToast._t = window.setTimeout(() => setToast({ show: false, message: '', type }), duration);
+  };
+
+  // deep checker for any non-empty value inside an object/array
+  const hasAnyValue = (val) => {
+    if (val == null) return false;
+    if (typeof val === 'string') return val.trim() !== '';
+    if (typeof val === 'number') return !Number.isNaN(val) && val !== 0; // treat 0 as empty for counts? keep as value
+    if (typeof val === 'boolean') return val === true; // booleans usually flags
+    if (Array.isArray(val)) return val.some(hasAnyValue);
+    if (typeof val === 'object') return Object.values(val).some(hasAnyValue);
+    return false;
+  };
+
+  // determine if a record has any meaningful data across tables
+  const isRecordEmpty = (r) => {
+    if (!r) return true;
+    const hasSandShifts = hasAnyValue(r?.sandShifts);
+    const hasClayShifts = hasAnyValue(r?.clayShifts);
+    const hasMix = hasAnyValue(r?.mixshifts);
+    const hasSandProps = (
+      (r?.sandLump != null && String(r.sandLump).trim() !== '') ||
+      (r?.newSandWt != null && String(r.newSandWt).trim() !== '') ||
+      hasAnyValue(r?.sandFriability)
+    );
+    const hasTP = hasAnyValue(r?.testParameter);
+    return !(hasSandShifts || hasClayShifts || hasMix || hasSandProps || hasTP);
   };
 
   const openT2EditModal = (rec) => {
@@ -186,6 +195,77 @@ const SandTestingRecordReport = () => {
     }
   };
 
+  // specific getters for Table 1 Batch No parts
+  const getBatchNoPart = (rec, key, part) => {
+    if (!rec) return '';
+    const altKey = key === 'shiftI' ? 'ShiftI' : (key === 'shiftII' ? 'ShiftII' : 'ShiftIII');
+    const s = (rec.sandShifts && (rec.sandShifts[key] || rec.sandShifts[altKey])) || {};
+    // prefer structured batchNo object
+    const bn = s?.batchNo;
+    if (bn && typeof bn === 'object') {
+      // direct match for requested part
+      const tryKeys = part === 'coalDustPremix'
+        ? ['coalDustPremix','coalDust','premix']
+        : ['bentonite'];
+      for (const k of tryKeys) {
+        const v = (bn[k]?.batchNo) || (bn[k]?.no) || (bn[k]?.value) || bn[k];
+        if (v != null && String(v).trim() !== '') return v;
+      }
+    }
+    // try common flat aliases that include type in key
+    if (part === 'bentonite') {
+      const v = s.batchNoBentonite || s.bentoniteBatch || s.bentonite_no || s.BatchNoBentonite;
+      if (v != null && String(v).trim() !== '') return v;
+    } else if (part === 'coalDustPremix') {
+      const v1 = s.batchNoCoalDustPremix || s.coalDustBatch || s.coal_dust_no || s.BatchNoCoalDustPremix;
+      const v2 = s.premixBatch || s.premix_no;
+      if (v1 != null && String(v1).trim() !== '') return v1;
+      if (v2 != null && String(v2).trim() !== '') return v2;
+    }
+    // nothing found
+    return '';
+  };
+  const getBatchNoBentonite = (rec, key) => getBatchNoPart(rec, key, 'bentonite');
+  const getBatchNoCoalDustPremix = (rec, key) => getBatchNoPart(rec, key, 'coalDustPremix');
+
+  // Dedicated getters for Coal Dust and Premix columns in report (Option B)
+  const extractVal = (obj) => (obj?.batchNo ?? obj?.no ?? obj?.value ?? obj);
+  const getBatchNoCoalDust = (rec, key) => {
+    if (!rec) return '';
+    const altKey = key === 'shiftI' ? 'ShiftI' : (key === 'shiftII' ? 'ShiftII' : 'ShiftIII');
+    const s = (rec.sandShifts && (rec.sandShifts[key] || rec.sandShifts[altKey])) || {};
+    const bn = s?.batchNo;
+    // Prefer explicit coalDust
+    if (bn && typeof bn === 'object') {
+      const v1 = extractVal(bn.coalDust);
+      if (v1 != null && String(v1).trim() !== '') return v1;
+      // Default combined to Coal Dust (Option B)
+      const vCombo = extractVal(bn.coalDustPremix);
+      if (vCombo != null && String(vCombo).trim() !== '') return vCombo;
+    }
+    // Flat aliases
+    const v2 = s.coalDustBatch || s.coal_dust_no || s.BatchNoCoalDust;
+    if (v2 != null && String(v2).trim() !== '') return v2;
+    // Also allow combined flat to map to Coal Dust by default
+    const vComboFlat = s.batchNoCoalDustPremix || s.BatchNoCoalDustPremix;
+    if (vComboFlat != null && String(vComboFlat).trim() !== '') return vComboFlat;
+    return '';
+  };
+  const getBatchNoPremix = (rec, key) => {
+    if (!rec) return '';
+    const altKey = key === 'shiftI' ? 'ShiftI' : (key === 'shiftII' ? 'ShiftII' : 'ShiftIII');
+    const s = (rec.sandShifts && (rec.sandShifts[key] || rec.sandShifts[altKey])) || {};
+    const bn = s?.batchNo;
+    if (bn && typeof bn === 'object') {
+      const v1 = extractVal(bn.premix);
+      if (v1 != null && String(v1).trim() !== '') return v1;
+    }
+    const v2 = s.premixBatch || s.premix_no || s.BatchNoPremix;
+    if (v2 != null && String(v2).trim() !== '') return v2;
+    // Do NOT map combined to Premix by default
+    return '';
+  };
+
   const openT3EditModal = (rec) => {
     const ms = rec?.mixshifts || {};
     const s1 = ms.ShiftI || {};
@@ -196,7 +276,7 @@ const SandTestingRecordReport = () => {
       ShiftI: { mixnoStart: s1?.mixno?.start || '', mixnoEnd: s1?.mixno?.end || '', mixnoTotal: s1?.mixno?.total || '', numberOfMixRejected: s1.numberOfMixRejected || '', returnSandHopperLevel: s1.returnSandHopperLevel || '' },
       ShiftII: { mixnoStart: s2?.mixno?.start || '', mixnoEnd: s2?.mixno?.end || '', mixnoTotal: s2?.mixno?.total || '', numberOfMixRejected: s2.numberOfMixRejected || '', returnSandHopperLevel: s2.returnSandHopperLevel || '' },
       ShiftIII: { mixnoStart: s3?.mixno?.start || '', mixnoEnd: s3?.mixno?.end || '', mixnoTotal: s3?.mixno?.total || '', numberOfMixRejected: s3.numberOfMixRejected || '', returnSandHopperLevel: s3.returnSandHopperLevel || '' },
-      total: { mixnoStart: total?.mixno?.start || '', mixnoEnd: total?.mixno?.end || '', mixnoTotal: total?.mixno?.total || '' }
+      total: { mixnoStart: total?.mixno?.start || '', mixnoEnd: total?.mixno?.end || '', mixnoTotal: total?.mixno?.total || '', numberOfMixRejected: total?.numberOfMixRejected || '' }
     });
     setT3EditMeta({ id: rec?._id || rec?.id || null, date: rec?.date || null });
     setT3EditModalOpen(true);
@@ -223,8 +303,8 @@ const SandTestingRecordReport = () => {
           numberOfMixRejected: toNum(t3EditForm.ShiftIII.numberOfMixRejected),
           returnSandHopperLevel: toNum(t3EditForm.ShiftIII.returnSandHopperLevel)
         },
-        // We can keep total for UI, backend schema ignores it; safe to send
-        total: { mixno: { start: t3EditForm.total.mixnoStart, end: t3EditForm.total.mixnoEnd, total: t3EditForm.total.mixnoTotal } }
+        // Include totals so they can be stored if backend supports it
+        total: { mixno: { start: t3EditForm.total.mixnoStart, end: t3EditForm.total.mixnoEnd, total: t3EditForm.total.mixnoTotal }, numberOfMixRejected: toNum(t3EditForm.total.numberOfMixRejected) }
       };
       const payload = { tableNum: 3, data };
       const res = await api.post('/v1/sand-testing-records/table3', payload);
@@ -284,7 +364,7 @@ const SandTestingRecordReport = () => {
       const response = await api.get('/v1/sand-testing-records?limit=1000&order=desc');
       if (response.success && Array.isArray(response.data)) {
         setRecords(response.data);
-        setDisplayRecords(response.data);
+        setDisplayRecords(response.data.filter(r => !isRecordEmpty(r)));
       }
     } catch (error) {
       console.error('Error fetching records:', error);
@@ -294,36 +374,19 @@ const SandTestingRecordReport = () => {
   };
 
   const refetchByDateOrRange = async () => {
-    const from = normalizeDateYMD(fromDate);
-    const to = normalizeDateYMD(toDate);
+    const sel = normalizeDateYMD(selectedDate);
     try {
-      if (!from && !to) {
-        setDisplayRecords(records);
+      if (!sel) {
+        setDisplayRecords((records || []).filter(r => !isRecordEmpty(r)));
         return;
       }
-      // handle single-date filter if only one of from/to is set or both equal
-      if ((from && (!to || to === from)) || (!from && to)) {
-        const sel = from || to;
-        const res = await api.get(`/v1/sand-testing-records/date/${sel}`);
-        if (res.success && Array.isArray(res.data)) {
-          setRecords(res.data);
-          setDisplayRecords(res.data);
-        } else {
-          setRecords([]);
-          setDisplayRecords([]);
-        }
-        return;
-      }
-      if (from && to && to !== from) {
-        const res = await api.get(`/v1/sand-testing-records?startDate=${from}&endDate=${to}&limit=1000&order=desc`);
-        if (res.success && Array.isArray(res.data)) {
-          setRecords(res.data);
-          setDisplayRecords(res.data);
-        } else {
-          setRecords([]);
-          setDisplayRecords([]);
-        }
-        return;
+      const res = await api.get(`/v1/sand-testing-records/date/${sel}`);
+      if (res.success && Array.isArray(res.data)) {
+        setRecords(res.data);
+        setDisplayRecords(res.data.filter(r => !isRecordEmpty(r)));
+      } else {
+        setRecords([]);
+        setDisplayRecords([]);
       }
     } catch (e) {
       console.error('Error refetching records:', e);
@@ -332,9 +395,7 @@ const SandTestingRecordReport = () => {
     }
   };
 
-  const handleFilter = () => {
-    refetchByDateOrRange();
-  };
+  // no manual filter; auto-refetch on date change
 
   const openEditTpModal = (rec) => {
     const tp = rec?.testParameter || {};
@@ -343,8 +404,8 @@ const SandTestingRecordReport = () => {
       time: tp.time ? String(tp.time).padStart(4, '0').replace(/(\d{2})(\d{2})/, '$1:$2') : '',
       mixNo: tp.mixno ?? '',
       permeability: tp.permeability ?? '',
-      gcsCheckpoint: tp.gcsFdyA != null ? 'fdyA' : (tp.gcsFdyB != null ? 'fdyB' : ''),
-      gcsValue: tp.gcsFdyA ?? tp.gcsFdyB ?? '',
+      gcsCheckpoint: (typeof tp.gcsFdyA === 'number' && tp.gcsFdyA > 0) ? 'fdyA' : ((typeof tp.gcsFdyB === 'number' && tp.gcsFdyB > 0) ? 'fdyB' : ''),
+      gcsValue: (typeof tp.gcsFdyA === 'number' && tp.gcsFdyA > 0) ? tp.gcsFdyA : ((typeof tp.gcsFdyB === 'number' && tp.gcsFdyB > 0) ? tp.gcsFdyB : ''),
       wts: tp.wts ?? '',
       moisture: tp.moisture ?? '',
       compactability: tp.compactability ?? '',
@@ -380,6 +441,12 @@ const SandTestingRecordReport = () => {
     const s1 = ss.shiftI || {};
     const s2 = ss.shiftII || ss.ShiftII || {};
     const s3 = ss.shiftIII || ss.ShiftIII || {};
+    const pickBn = (s, key) => {
+      const bn = s?.batchNo;
+      if (!bn) return '';
+      if (key === 'bentonite') return bn.bentonite || bn.Bentonite || '';
+      return bn.coalDustPremix || bn.coalDust || bn.premix || bn.CoalDust || bn.Premix || '';
+    };
     setT1EditForm({
       shiftI: {
         rSand: s1.rSand || '',
@@ -387,8 +454,8 @@ const SandTestingRecordReport = () => {
         mixingMode: s1.mixingMode || '',
         bentonite: s1.bentonite || '',
         coalDustPremix: s1.coalDustPremix || '',
-        batchNoBentonite: s1.batchNo?.bentonite || '',
-        batchNoCoalDustPremix: s1.batchNo?.coalDustPremix || ''
+        batchNoBentonite: pickBn(s1, 'bentonite') || '',
+        batchNoCoalDustPremix: pickBn(s1, 'coal') || ''
       },
       shiftII: {
         rSand: s2.rSand || '',
@@ -396,8 +463,8 @@ const SandTestingRecordReport = () => {
         mixingMode: s2.mixingMode || '',
         bentonite: s2.bentonite || '',
         coalDustPremix: s2.coalDustPremix || '',
-        batchNoBentonite: s2.batchNo?.bentonite || '',
-        batchNoCoalDustPremix: s2.batchNo?.coalDustPremix || ''
+        batchNoBentonite: pickBn(s2, 'bentonite') || '',
+        batchNoCoalDustPremix: pickBn(s2, 'coal') || ''
       },
       shiftIII: {
         rSand: s3.rSand || '',
@@ -405,8 +472,8 @@ const SandTestingRecordReport = () => {
         mixingMode: s3.mixingMode || '',
         bentonite: s3.bentonite || '',
         coalDustPremix: s3.coalDustPremix || '',
-        batchNoBentonite: s3.batchNo?.bentonite || '',
-        batchNoCoalDustPremix: s3.batchNo?.coalDustPremix || ''
+        batchNoBentonite: pickBn(s3, 'bentonite') || '',
+        batchNoCoalDustPremix: pickBn(s3, 'coal') || ''
       }
     });
     setT1EditMeta({ id: rec?._id || rec?.id || null, date: rec?.date || null });
@@ -484,11 +551,15 @@ const SandTestingRecordReport = () => {
       }
       data.mixno = num(td.mixNo);
       data.permeability = num(td.permeability);
+      // GCS: clear both by default to 0 so backend $set overwrites previous values
+      data.gcsFdyA = 0;
+      data.gcsFdyB = 0;
       if (td.gcsCheckpoint === 'fdyA' && td.gcsValue !== '' && !Number.isNaN(Number(td.gcsValue))) {
         data.gcsFdyA = Number(td.gcsValue);
       } else if (td.gcsCheckpoint === 'fdyB' && td.gcsValue !== '' && !Number.isNaN(Number(td.gcsValue))) {
         data.gcsFdyB = Number(td.gcsValue);
       }
+
       data.wts = num(td.wts);
       data.moisture = num(td.moisture);
       data.compactability = num(td.compactability);
@@ -543,7 +614,32 @@ const SandTestingRecordReport = () => {
     const id = rec?._id || rec?.id || rec?.recordId || rec?.Id || rec?.ID;
     const date = rec?.date;
     if (!id) return alert('Record id missing.');
-    if (!window.confirm('Delete only this table\'s data? This cannot be undone.')) return;
+    // If no table specified and record is empty, allow deleting the entire record (date)
+    if (!table && isRecordEmpty(rec)) {
+      if (!window.confirm('This date has no data. Delete the date?')) return;
+      setDeleting(prev => ({ ...prev, [id]: true }));
+      try {
+        const delRes = await api.delete(`/v1/sand-testing-records/${id}`);
+        const ok = (delRes && (delRes.success === true || delRes.status === 200 || delRes.ok === true));
+        if (ok) {
+          setRecords(prev => prev.filter(r => (r?._id || r?.id) !== id));
+          setDisplayRecords(prev => prev.filter(r => (r?._id || r?.id) !== id));
+          showToast('Deleted record and date', 'success');
+        } else {
+          alert('Delete failed.');
+        }
+      } catch (e) {
+        console.error('Error deleting whole record:', e);
+        alert('Delete failed.');
+      } finally {
+        setDeleting(prev => { const cp = { ...prev }; delete cp[id]; return cp; });
+      }
+      return;
+    }
+    // Ask for confirmation before proceeding for per-table delete
+    if (!window.confirm("Are you sure you want to delete only this table's data? This cannot be undone.")) return;
+    // single-click delete with in-flight disabling
+    setDeleting(prev => ({ ...prev, [id]: true }));
     try {
       let res;
       // Prefer scoped clear per-table. If backend only supports updates, send minimal clearing payloads.
@@ -563,11 +659,11 @@ const SandTestingRecordReport = () => {
           sandTemp: { BC: '', WU: '', SSUmax: '' },
           newSandKgs: '',
           bentoniteCheckpoint: '',
-          bentoniteWithPremix: { Kgs: '' },
-          bentonite: { Kgs: '' },
+          bentoniteWithPremix: { Kgs: null },
+          bentonite: { Kgs: null },
           premixCoalDustCheckpoint: '',
-          premix: { Kgs: '' },
-          coalDust: { Kgs: '' },
+          premix: { Kgs: null },
+          coalDust: { Kgs: null },
           CompactabilitySettings: '',
           lc: '',
           shearStrengthSetting: '',
@@ -598,29 +694,72 @@ const SandTestingRecordReport = () => {
 
       const ok = (res && (res.success === true || res.status === 200 || res.ok === true));
       if (ok) {
+        // Helper to determine if a record has any meaningful table data remaining
+        const isRecordDataEmpty = (r) => {
+          const hasSandShifts = r?.sandShifts && Object.keys(r.sandShifts).length > 0;
+          const hasClayShifts = r?.clayShifts && Object.keys(r.clayShifts).length > 0;
+          const hasMix = r?.mixshifts && Object.keys(r.mixshifts).length > 0;
+          const hasSandProps = (
+            (r?.sandLump != null && String(r.sandLump).trim() !== '') ||
+            (r?.newSandWt != null && String(r.newSandWt).trim() !== '') ||
+            (r?.sandFriability && Object.values(r.sandFriability).some(v => v != null && String(v).trim() !== ''))
+          );
+          const hasTP = r?.testParameter && Object.values(r.testParameter).some(v => {
+            if (v == null) return false;
+            if (typeof v === 'object') return Object.values(v).some(x => x != null && String(x).trim() !== '');
+            return String(v).trim() !== '';
+          });
+          return !(hasSandShifts || hasClayShifts || hasMix || hasSandProps || hasTP);
+        };
+
         // Optimistic local update: clear only the scoped section for matching record id
-        setRecords(prev => prev.map(r => {
-          const rid = r?._id || r?.id;
-          if (rid !== id) return r;
-          const copy = { ...r };
-          if (table === 'table5') copy.testParameter = {};
-          if (table === 'table1') copy.sandShifts = {};
-          if (table === 'table2') copy.clayShifts = {};
-          if (table === 'table3') copy.mixshifts = {};
-          if (table === 'table4') { copy.sandLump = undefined; copy.newSandWt = undefined; copy.sandFriability = {}; }
-          return copy;
-        }));
-        setDisplayRecords(prev => prev.map(r => {
-          const rid = r?._id || r?.id;
-          if (rid !== id) return r;
-          const copy = { ...r };
-          if (table === 'table5') copy.testParameter = {};
-          if (table === 'table1') copy.sandShifts = {};
-          if (table === 'table2') copy.clayShifts = {};
-          if (table === 'table3') copy.mixshifts = {};
-          if (table === 'table4') { copy.sandLump = undefined; copy.newSandWt = undefined; copy.sandFriability = {}; }
-          return copy;
-        }));
+        let updatedRecords;
+        setRecords(prev => {
+          updatedRecords = prev.map(r => {
+            const rid = r?._id || r?.id;
+            if (rid !== id) return r;
+            const copy = { ...r };
+            if (table === 'table5') copy.testParameter = {};
+            if (table === 'table1') copy.sandShifts = {};
+            if (table === 'table2') copy.clayShifts = {};
+            if (table === 'table3') copy.mixshifts = {};
+            if (table === 'table4') { copy.sandLump = undefined; copy.newSandWt = undefined; copy.sandFriability = {}; }
+            return copy;
+          });
+          return updatedRecords;
+        });
+        let updatedDisplay;
+        setDisplayRecords(prev => {
+          updatedDisplay = prev.map(r => {
+            const rid = r?._id || r?.id;
+            if (rid !== id) return r;
+            const copy = { ...r };
+            if (table === 'table5') copy.testParameter = {};
+            if (table === 'table1') copy.sandShifts = {};
+            if (table === 'table2') copy.clayShifts = {};
+            if (table === 'table3') copy.mixshifts = {};
+            if (table === 'table4') { copy.sandLump = undefined; copy.newSandWt = undefined; copy.sandFriability = {}; }
+            return copy;
+          });
+          return updatedDisplay;
+        });
+
+        // Find the updated record and if it's empty, delete the whole entry by id
+        const updatedRec = (updatedRecords || []).find(r => (r?._id || r?.id) === id) || (updatedDisplay || []).find(r => (r?._id || r?.id) === id);
+        if (updatedRec && isRecordDataEmpty(updatedRec)) {
+          try {
+            const delRes = await api.delete(`/v1/sand-testing-records/${id}`);
+            if (delRes?.success || delRes?.status === 200) {
+              setRecords(prev => prev.filter(r => (r?._id || r?.id) !== id));
+              setDisplayRecords(prev => prev.filter(r => (r?._id || r?.id) !== id));
+              showToast('Deleted record and date', 'success');
+              return;
+            }
+          } catch (e) {
+            console.error('Error deleting whole record:', e);
+          }
+        }
+
         await refetchByDateOrRange();
         showToast('Deleted successfully', 'success');
       } else {
@@ -630,6 +769,9 @@ const SandTestingRecordReport = () => {
     } catch (e) {
       console.error('Delete error:', e);
       alert('Delete failed.');
+    }
+    finally {
+      setDeleting(prev => { const cp = { ...prev }; delete cp[id]; return cp; });
     }
   };
 
@@ -706,33 +848,17 @@ const SandTestingRecordReport = () => {
     return `${day}-${m}-${y}`;
   };
 
-  // records to show in modals: respects fromDate/toDate if provided, otherwise shows all displayRecords
-  const getRecordsForModal = () => {
-    const from = normalizeDateYMD(fromDate);
-    const to = normalizeDateYMD(toDate);
-    // if user supplied neither, show current displayRecords (unfiltered)
-    if (!from && !to) return displayRecords;
-
-    return records.filter(rec => {
-      const r = normalizeDateYMD(rec?.date);
-      if (!r) return false;
-      if (from && r < from) return false;
-      if (to && r > to) return false;
-      return true;
-    });
-  };
-
   // NEW: Only show entries that exactly match a single chosen date.
   // Uses fromDate if set, otherwise toDate. If neither set returns [].
   const getRecordsForModalBySingleDate = () => {
-    const sel = normalizeDateYMD(fromDate || toDate);
+    const sel = normalizeDateYMD(selectedDate);
     if (!sel) return [];
     return records.filter(rec => normalizeDateYMD(rec?.date) === sel);
   };
 
   useEffect(() => {
     refetchByDateOrRange();
-  }, [fromDate, toDate]);
+  }, [selectedDate]);
 
   // build headers for "All Data" (label + getter) — removed "TableX -" prefixes
   const buildAllHeaders = () => {
@@ -747,8 +873,15 @@ const SandTestingRecordReport = () => {
         { label: `N. Sand (${shift.label})`, get: rec => getAt(rec, `sandShifts.${key}.nSand`) || getAt(rec, `sandShifts.${altKey}.nSand`) || '' },
         { label: `Mixing Mode (${shift.label})`, get: rec => getAt(rec, `sandShifts.${key}.mixingMode`) || getAt(rec, `sandShifts.${altKey}.mixingMode`) || '' },
         { label: `Bentonite (${shift.label})`, get: rec => getAt(rec, `sandShifts.${key}.bentonite`) || getAt(rec, `sandShifts.${altKey}.bentonite`) || '' },
-        { label: `Batch NO (${shift.label})`, get: rec => getBatchNoDisplay(rec, key) }
       );
+      if (key === 'shiftI') {
+        headers.push({ label: `Batch NO (Bentonite) (${shift.label})`, get: rec => getBatchNoBentonite(rec, key) });
+      } else {
+        headers.push(
+          { label: `Batch NO (Coal Dust) (${shift.label})`, get: rec => getBatchNoCoalDust(rec, key) },
+          { label: `Batch NO (Premix) (${shift.label})`, get: rec => getBatchNoPremix(rec, key) }
+        );
+      }
     });
 
     // Table2 clay params (no prefix)
@@ -795,8 +928,20 @@ const SandTestingRecordReport = () => {
         case 'time': return tp.time ?? '';
         case 'mixNo': return tp.mixno ?? '';
         case 'permeability': return tp.permeability ?? '';
-        case 'gcsCheckpoint': return tp.gcsFdyA ?? '';
-        case 'gcsValue': return tp.gcsFdyB ?? '';
+        case 'gcsCheckpoint': {
+          const a = typeof tp.gcsFdyA === 'number' ? tp.gcsFdyA : 0;
+          const b = typeof tp.gcsFdyB === 'number' ? tp.gcsFdyB : 0;
+          if (a > 0) return 'FDY-A';
+          if (b > 0) return 'FDY-B';
+          return '';
+        }
+        case 'gcsValue': {
+          const a = typeof tp.gcsFdyA === 'number' ? tp.gcsFdyA : 0;
+          const b = typeof tp.gcsFdyB === 'number' ? tp.gcsFdyB : 0;
+          if (a > 0) return a;
+          if (b > 0) return b;
+          return '';
+        }
         case 'wts': return tp.wts ?? '';
         case 'moisture': return tp.moisture ?? '';
         case 'compactability': return tp.compactability ?? '';
@@ -813,8 +958,14 @@ const SandTestingRecordReport = () => {
           if (kOnly && Number(kOnly) > 0) return 'Only';
           return '';
         }
-        case 'bentoniteWithPremix': return tp.bentoniteWithPremix?.Kgs ?? tp.bentoniteWithPremix?.Percent ?? '';
-        case 'bentoniteOnly': return tp.bentonite?.Kgs ?? tp.bentonite?.Percent ?? '';
+        case 'bentoniteWithPremix': {
+          const v = tp.bentoniteWithPremix?.Kgs ?? tp.bentoniteWithPremix?.Percent ?? '';
+          return (v === 0 || v === '0') ? '' : v;
+        }
+        case 'bentoniteOnly': {
+          const v = tp.bentonite?.Kgs ?? tp.bentonite?.Percent ?? '';
+          return (v === 0 || v === '0') ? '' : v;
+        }
         case 'premixCoalDustCheckpoint': {
           const kPremix = (tp.premix?.Kgs ?? tp.premix?.Percent) ?? 0;
           const kCoal = (tp.coalDust?.Kgs ?? tp.coalDust?.Percent) ?? 0;
@@ -859,47 +1010,705 @@ const SandTestingRecordReport = () => {
             </tr>
           </thead>
           <tbody>
-            {rows.length > 0 ? rows.map((rec, rIdx) => (
-              <tr key={rIdx}>
-                {headers.map((h, cIdx) => (
-                  <td key={cIdx} style={{ padding: '8px 10px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
-                    {h.label === 'Actions' ? (
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <button
-                          title="Edit"
-                          onClick={() => openEditTpModal(rec)}
-                          style={{ border: '1px solid #3b82f6', color: '#1d4ed8', background: '#fff', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}
-                        >
-                          <PencilLine size={16} />
-                        </button>
-                        <button
-                          title="Delete"
-                          onClick={() => handleDeleteRecord(rec)}
-                          style={{ border: '1px solid #ef4444', color: '#dc2626', background: '#fff', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    ) : (
-                      String(h.get(rec) ?? '')
-                    )}
+            {(() => {
+              if (rows.length === 0) {
+                return (
+                  <tr>
+                    <td colSpan={headers.length} style={{ padding: 20, textAlign: 'left' }}>
+                      No records found.
+                    </td>
+                  </tr>
+                );
+              }
+              // Group rows by display date key
+              const groupsMap = rows.reduce((acc, rec) => {
+                const k = formatDateDMY(rec.date) || '';
+                if (!acc[k]) acc[k] = [];
+                acc[k].push(rec);
+                return acc;
+              }, {});
+              const groups = Object.entries(groupsMap);
 
-                  </td>
-                ))}
-              </tr>
-            )) : (
-              <tr>
-                <td colSpan={headers.length} style={{ padding: 20, textAlign: 'center' }}>
-                  No records found.
-                </td>
-              </tr>
-            )}
+              return groups.flatMap(([dateKey, recs]) =>
+                recs.map((rec, idx) => (
+                  <tr key={`${dateKey}-${idx}`}>
+                    {headers.map((h, cIdx) => {
+                      // Date column (first header): render once per group with rowSpan
+                      if (cIdx === 0) {
+                        if (idx === 0) {
+                          return (
+                            <td key={`date-${dateKey}`} rowSpan={recs.length} style={{ padding: '8px 10px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
+                              {dateKey}
+                            </td>
+                          );
+                        }
+                        return null;
+                      }
+                      // Other columns
+                      return (
+                        <td key={cIdx} style={{ padding: '8px 10px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
+                          {h.label === 'Actions' ? (
+                            <div style={{ display: 'flex', gap: 8 }}>
+                              <button
+                                title="Edit"
+                                onClick={() => openEditTpModal(rec)}
+                                style={{ border: '1px solid #3b82f6', color: '#1d4ed8', background: '#fff', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}
+                              >
+                                <PencilLine size={16} />
+                              </button>
+                              <button
+                                title="Delete"
+                                onClick={() => handleDeleteRecord(rec)}
+                                disabled={!!deleting[(rec?._id || rec?.id || rec?.recordId || rec?.Id || rec?.ID)]}
+                                style={{ border: '1px solid #ef4444', color: '#dc2626', background: '#fff', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', opacity: deleting[(rec?._id || rec?.id || rec?.recordId || rec?.Id || rec?.ID)] ? 0.6 : 1 }}
+                              >
+                                <Trash2 size={16} />
+                              </button>
+                            </div>
+                          ) : (
+                            String(h.get(rec) ?? '')
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))
+              );
+            })()}
           </tbody>
         </table>
       </div>
     );
   };
 
+  // Inline renderers for Table 1–4 (columnar tables like Table 5)
+  const buildTable1Headers = () => {
+    const headers = [{ label: 'Date', get: rec => formatDateDMY(rec.date) || '' }];
+    SHIFTS.forEach(shift => {
+      const key = shift.key;
+      const altKey = key === 'shiftI' ? 'ShiftI' : (key === 'shiftII' ? 'ShiftII' : 'ShiftIII');
+      headers.push(
+        { label: `R. Sand (${shift.label})`, get: rec => getAt(rec, `sandShifts.${key}.rSand`) || getAt(rec, `sandShifts.${altKey}.rSand`) || '' },
+        { label: `N. Sand (${shift.label})`, get: rec => getAt(rec, `sandShifts.${key}.nSand`) || getAt(rec, `sandShifts.${altKey}.nSand`) || '' },
+        { label: `Mixing Mode (${shift.label})`, get: rec => getAt(rec, `sandShifts.${key}.mixingMode`) || getAt(rec, `sandShifts.${altKey}.mixingMode`) || '' },
+        { label: `Bentonite (${shift.label})`, get: rec => getAt(rec, `sandShifts.${key}.bentonite`) || getAt(rec, `sandShifts.${altKey}.bentonite`) || '' },
+      );
+      if (key === 'shiftI') {
+        headers.push({ label: `Batch NO (Bentonite) (${shift.label})`, get: rec => getBatchNoBentonite(rec, key) });
+      } else {
+        headers.push(
+          { label: `Batch NO (Coal Dust) (${shift.label})`, get: rec => getBatchNoCoalDust(rec, key) },
+          { label: `Batch NO (Premix) (${shift.label})`, get: rec => getBatchNoPremix(rec, key) }
+        );
+      }
+    });
+    return headers;
+  };
+
+  const renderTable1Inline = () => {
+    const data = getRecordsForModalBySingleDate();
+    if (!data.length) {
+      return (
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', marginTop: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ fontWeight: 600 }}>Table 1</div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>SHIFT</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>I</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>II</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>III</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={4} style={{ padding: '14px 10px', borderBottom: '1px solid #eef2f7', color: '#64748b' }}>No records found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+    const groups = data.reduce((acc, rec) => {
+      const k = formatDateDMY(rec.date) || '';
+      (acc[k] ||= []).push(rec);
+      return acc;
+    }, {});
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {Object.entries(groups).map(([dateKey, recs]) =>
+          recs.map((rec, idx) => (
+            <div key={`${dateKey}-t1b-${idx}`} style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e5e7eb' }}>
+                <div style={{ fontWeight: 600 }}>Table 1</div>
+                {(() => {
+                  const rid = rec?._id || rec?.id;
+                  const isEditing = t1EditModalOpen && t1EditMeta?.id === rid;
+                  return (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {!isEditing ? (
+                        <>
+                          <button title="Edit" onClick={() => openT1EditModal(rec)} style={{ border: '1px solid #3b82f6', color: '#1d4ed8', background: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+                            <PencilLine size={16} />
+                          </button>
+                          <button title="Delete" onClick={() => handleDeleteRecord(rec, 'table1')} disabled={!!deleting[rid]} style={{ border: '1px solid #ef4444', color: '#dc2626', background: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', opacity: deleting[rid] ? 0.6 : 1 }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button title="Save" onClick={submitT1Edit} style={{ border: 'none', color: '#fff', background: '#16a34a', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Save</button>
+                          <button title="Cancel" onClick={closeT1EditModal} style={{ border: '1px solid #d1d5db', color: '#111827', background: '#fff', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Cancel</button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Shift</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>I</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>II</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>III</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const rid = rec?._id || rec?.id;
+                      const isEditing = t1EditModalOpen && t1EditMeta?.id === rid;
+                      const inputStyle = { width: '100%', padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6 };
+                      const rows = [
+                        { label: 'R. Sand ( Kgs/Mix )', key: 'rSand' },
+                        { label: 'N. Sand ( Kgs/Mix )', key: 'nSand' },
+                        { label: 'Mixing Mode', key: 'mixingMode' },
+                        { label: 'Bentonite ( Kgs/Mix )', key: 'bentonite' },
+                      ];
+                      const readVal = (k, field) => getAt(rec, `sandShifts.${k}.${field}`) || getAt(rec, `sandShifts.${k === 'shiftI' ? 'ShiftI' : k === 'shiftII' ? 'ShiftII' : 'ShiftIII'}.${field}`) || '';
+                      return rows.map((row) => (
+                        <tr key={row.label}>
+                          <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7', whiteSpace: 'nowrap' }}>{row.label}</td>
+                          {['shiftI','shiftII','shiftIII'].map((sk) => (
+                            <td key={sk} style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                              {!isEditing ? (
+                                String(readVal(sk, row.key) ?? '')
+                              ) : (
+                                <input
+                                  value={t1EditForm[sk][row.key] ?? ''}
+                                  onChange={(e) => setT1EditForm(p => ({ ...p, [sk]: { ...p[sk], [row.key]: e.target.value } }))}
+                                  style={inputStyle}
+                                />
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+
+              <div style={{ overflowX: 'auto', borderTop: '1px solid #e5e7eb' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>BATCH No.</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Bentonite</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', borderBottom: '1px solid #e5e7eb' }}>Coal Dust / Premix</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const rid = rec?._id || rec?.id;
+                      const isEditing = t1EditModalOpen && t1EditMeta?.id === rid;
+                      const inputStyle = { width: '100%', padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6 };
+                      const coalDisplay = (
+                        getBatchNoCoalDust(rec, 'shiftII') || getBatchNoPremix(rec, 'shiftII') ||
+                        getBatchNoCoalDust(rec, 'shiftIII') || getBatchNoPremix(rec, 'shiftIII') ||
+                        getBatchNoCoalDust(rec, 'shiftI') || getBatchNoPremix(rec, 'shiftI') ||
+                        ''
+                      );
+                      const coalValue = (
+                        t1EditForm.shiftII?.batchNoCoalDustPremix ||
+                        t1EditForm.shiftIII?.batchNoCoalDustPremix ||
+                        t1EditForm.shiftI?.batchNoCoalDustPremix ||
+                        ''
+                      );
+                      return (
+                        <tr>
+                          <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7', whiteSpace: 'nowrap' }}></td>
+                          <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                            {!isEditing ? (
+                              String(getBatchNoBentonite(rec, 'shiftI') || '')
+                            ) : (
+                              <input
+                                value={t1EditForm.shiftI?.batchNoBentonite ?? ''}
+                                onChange={(e) => setT1EditForm(p => ({ ...p, shiftI: { ...p.shiftI, batchNoBentonite: e.target.value } }))}
+                                style={inputStyle}
+                              />
+                            )}
+                          </td>
+                          <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                            {!isEditing ? (
+                              String(coalDisplay)
+                            ) : (
+                              <input
+                                value={coalValue}
+                                onChange={(e) => setT1EditForm(p => ({
+                                  ...p,
+                                  shiftII: { ...p.shiftII, batchNoCoalDustPremix: e.target.value },
+                                  shiftIII: { ...p.shiftIII, batchNoCoalDustPremix: e.target.value }
+                                }))}
+                                style={inputStyle}
+                              />
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    );
+  };
+
+  const buildTable2Headers = () => {
+    const headers = [{ label: 'Date', get: rec => formatDateDMY(rec.date) || '' }];
+    SHIFTS.forEach(shift => {
+      const altKey = shift.key === 'shiftI' ? 'shiftI' : (shift.key === 'shiftII' ? 'ShiftII' : 'ShiftIII');
+      headers.push(
+        { label: `Total Clay (${shift.label})`, get: rec => getAt(rec, `clayShifts.${shift.key}.totalClay`) || getAt(rec, `clayShifts.${altKey}.totalClay`) || '' },
+        { label: `Active Clay (${shift.label})`, get: rec => getAt(rec, `clayShifts.${shift.key}.activeClay`) || getAt(rec, `clayShifts.${altKey}.activeClay`) || '' },
+        { label: `Dead Clay (${shift.label})`, get: rec => getAt(rec, `clayShifts.${shift.key}.deadClay`) || getAt(rec, `clayShifts.${altKey}.deadClay`) || '' },
+        { label: `V.C.M (${shift.label})`, get: rec => getAt(rec, `clayShifts.${shift.key}.vcm`) || getAt(rec, `clayShifts.${altKey}.vcm`) || '' },
+        { label: `L.O.I (${shift.label})`, get: rec => getAt(rec, `clayShifts.${shift.key}.loi`) || getAt(rec, `clayShifts.${altKey}.loi`) || '' },
+        { label: `AFS No (${shift.label})`, get: rec => getAt(rec, `clayShifts.${shift.key}.afsNo`) || getAt(rec, `clayShifts.${altKey}.afsNo`) || '' },
+        { label: `Fines (${shift.label})`, get: rec => getAt(rec, `clayShifts.${shift.key}.fines`) || getAt(rec, `clayShifts.${altKey}.fines`) || '' }
+      );
+    });
+    return headers;
+  };
+
+  const renderTable2Inline = () => {
+    const data = getRecordsForModalBySingleDate();
+    if (!data.length) {
+      return (
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', marginTop: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ fontWeight: 600 }}>Table 2</div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Shift</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>I</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>II</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>III</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={4} style={{ padding: '14px 10px', borderBottom: '1px solid #eef2f7', color: '#64748b' }}>No records found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+    const groups = data.reduce((acc, rec) => {
+      const k = formatDateDMY(rec.date) || '';
+      (acc[k] ||= []).push(rec);
+      return acc;
+    }, {});
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {Object.entries(groups).map(([dateKey, recs]) =>
+          recs.map((rec, idx) => (
+            <div key={`${dateKey}-t2b-${idx}`} style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e5e7eb' }}>
+                <div style={{ fontWeight: 600 }}>Table 2</div>
+                {(() => {
+                  const rid = rec?._id || rec?.id;
+                  const isEditing = t2EditModalOpen && t2EditMeta?.id === rid;
+                  return (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {!isEditing ? (
+                        <>
+                          <button title="Edit" onClick={() => openT2EditModal(rec)} style={{ border: '1px solid #3b82f6', color: '#1d4ed8', background: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+                            <PencilLine size={16} />
+                          </button>
+                          <button title="Delete" onClick={() => handleDeleteRecord(rec, 'table2')} disabled={!!deleting[rid]} style={{ border: '1px solid #ef4444', color: '#dc2626', background: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', opacity: deleting[rid] ? 0.6 : 1 }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button title="Save" onClick={submitT2Edit} style={{ border: 'none', color: '#fff', background: '#16a34a', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Save</button>
+                          <button title="Cancel" onClick={closeT2EditModal} style={{ border: '1px solid #d1d5db', color: '#111827', background: '#fff', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Cancel</button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Shift</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>I</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>II</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>III</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const rid = rec?._id || rec?.id;
+                      const isEditing = t2EditModalOpen && t2EditMeta?.id === rid;
+                      const inputStyle = { width: '100%', padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6 };
+                      const rows = [
+                        { label: 'Total Clay', key: 'totalClay' },
+                        { label: 'Active Clay', key: 'activeClay' },
+                        { label: 'Dead Clay', key: 'deadClay' },
+                        { label: 'V.C.M', key: 'vcm' },
+                        { label: 'L.O.I', key: 'loi' },
+                        { label: 'AFS No', key: 'afsNo' },
+                        { label: 'Fines', key: 'fines' },
+                      ];
+                      const readVal = (sk, k) => getAt(rec, `clayShifts.${sk}.${k}`) || getAt(rec, `clayShifts.${sk === 'shiftI' ? 'ShiftI' : sk === 'shiftII' ? 'ShiftII' : 'ShiftIII'}.${k}`) || '';
+                      return rows.map(row => (
+                        <tr key={row.label}>
+                          <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7', whiteSpace: 'nowrap' }}>{row.label}</td>
+                          {['shiftI','shiftII','shiftIII'].map(sk => (
+                            <td key={sk} style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                              {!isEditing ? (
+                                String(readVal(sk, row.key) ?? '')
+                              ) : (
+                                <input
+                                  value={t2EditForm[sk][row.key] ?? ''}
+                                  onChange={(e) => setT2EditForm(p => ({ ...p, [sk]: { ...p[sk], [row.key]: e.target.value } }))}
+                                  style={inputStyle}
+                                />
+                              )}
+                            </td>
+                          ))}
+                        </tr>
+                      ));
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    );
+  };
+
+  const buildTable3Headers = () => {
+    const headers = [{ label: 'Date', get: rec => formatDateDMY(rec.date) || '' }];
+    ['shiftI','shiftII','shiftIII','total'].forEach(shiftKey => {
+      const labelShift = shiftKey === 'total' ? 'Total' : (shiftKey === 'shiftI' ? 'Shift I' : shiftKey === 'shiftII' ? 'Shift II' : 'Shift III');
+      const bk = shiftKey === 'shiftI' ? 'ShiftI' : (shiftKey === 'shiftII' ? 'ShiftII' : (shiftKey === 'shiftIII' ? 'ShiftIII' : 'total'));
+      headers.push(
+        { label: `Mix No Start (${labelShift})`, get: rec => getAt(rec, `mixshifts.${bk}.mixno.start`) || '' },
+        { label: `Mix No End (${labelShift})`, get: rec => getAt(rec, `mixshifts.${bk}.mixno.end`) || '' },
+        { label: `Mix No Total (${labelShift})`, get: rec => getAt(rec, `mixshifts.${bk}.mixno.total`) || '' },
+        ...(shiftKey !== 'total' ? [
+          { label: `No. Of Mix Rejected (${labelShift})`, get: rec => getAt(rec, `mixshifts.${bk}.numberOfMixRejected`) || '' },
+          { label: `Return Sand Hopper Level (${labelShift})`, get: rec => getAt(rec, `mixshifts.${bk}.returnSandHopperLevel`) || '' }
+        ] : [])
+      );
+    });
+    return headers;
+  };
+
+  const renderTable3Inline = () => {
+    const data = getRecordsForModalBySingleDate();
+    if (!data.length) {
+      return (
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', marginTop: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ fontWeight: 600 }}>Table 3</div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Shift</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Start</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>End</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Total</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>No. of Mix Rejected</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Return sand Hopper level</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={6} style={{ padding: '14px 10px', borderBottom: '1px solid #eef2f7', color: '#64748b' }}>No records found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+    const groups = data.reduce((acc, rec) => {
+      const k = formatDateDMY(rec.date) || '';
+      (acc[k] ||= []).push(rec);
+      return acc;
+    }, {});
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {Object.entries(groups).map(([dateKey, recs]) =>
+          recs.map((rec, idx) => (
+            <div key={`${dateKey}-t3b-${idx}`} style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e5e7eb' }}>
+                <div style={{ fontWeight: 600 }}>Table 3</div>
+                {(() => {
+                  const rid = rec?._id || rec?.id;
+                  const isEditing = t3EditModalOpen && t3EditMeta?.id === rid;
+                  return (
+                    <div style={{ display: 'flex', gap: 8 }}>
+                      {!isEditing ? (
+                        <>
+                          <button title="Edit" onClick={() => openT3EditModal(rec)} style={{ border: '1px solid #3b82f6', color: '#1d4ed8', background: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+                            <PencilLine size={16} />
+                          </button>
+                          <button title="Delete" onClick={() => handleDeleteRecord(rec, 'table3')} disabled={!!deleting[rid]} style={{ border: '1px solid #ef4444', color: '#dc2626', background: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', opacity: deleting[rid] ? 0.6 : 1 }}>
+                            <Trash2 size={16} />
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button title="Save" onClick={submitT3Edit} style={{ border: 'none', color: '#fff', background: '#16a34a', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Save</button>
+                          <button title="Cancel" onClick={closeT3EditModal} style={{ border: '1px solid #d1d5db', color: '#111827', background: '#fff', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Cancel</button>
+                        </>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+              <div style={{ overflowX: 'auto' }}>
+                <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                  <thead>
+                    <tr>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Shift</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Start</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>End</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Total</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>No. of Mix Rejected</th>
+                      <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Return sand Hopper level</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {(() => {
+                      const rid = rec?._id || rec?.id;
+                      const isEditing = t3EditModalOpen && t3EditMeta?.id === rid;
+                      const inputStyle = { width: '100%', padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6 };
+                      const renderCell = (val, onChange) => !isEditing ? String(val ?? '') : (
+                        <input value={val ?? ''} onChange={(e) => onChange(e.target.value)} style={inputStyle} />
+                      );
+                      const rows = ['ShiftI','ShiftII','ShiftIII'];
+                      return (
+                        <>
+                          {rows.map((k, i) => (
+                            <tr key={k}>
+                              <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7', whiteSpace: 'nowrap' }}>{i === 0 ? 'I' : i === 1 ? 'II' : 'III'}</td>
+                              <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                                {renderCell(getAt(rec, `mixshifts.${k}.mixno.start`) || '', v => setT3EditForm(p => ({ ...p, [k]: { ...p[k], mixnoStart: v } })))}
+                              </td>
+                              <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                                {renderCell(getAt(rec, `mixshifts.${k}.mixno.end`) || '', v => setT3EditForm(p => ({ ...p, [k]: { ...p[k], mixnoEnd: v } })))}
+                              </td>
+                              <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                                {renderCell(getAt(rec, `mixshifts.${k}.mixno.total`) || '', v => setT3EditForm(p => ({ ...p, [k]: { ...p[k], mixnoTotal: v } })))}
+                              </td>
+                              <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                                {renderCell(getAt(rec, `mixshifts.${k}.numberOfMixRejected`) || '', v => setT3EditForm(p => ({ ...p, [k]: { ...p[k], numberOfMixRejected: v } })))}
+                              </td>
+                              <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                                {renderCell(getAt(rec, `mixshifts.${k}.returnSandHopperLevel`) || '', v => setT3EditForm(p => ({ ...p, [k]: { ...p[k], returnSandHopperLevel: v } })))}
+                              </td>
+                            </tr>
+                          ))}
+                          <tr>
+                            <td style={{ padding: '8px 10px', borderTop: '1px solid #e5e7eb', fontWeight: 600 }}>Total</td>
+                            <td style={{ padding: '8px 10px', borderTop: '1px solid #e5e7eb' }}>
+                              {renderCell(getAt(rec, 'mixshifts.total.mixno.start') || '', v => setT3EditForm(p => ({ ...p, total: { ...p.total, mixnoStart: v } })))}
+                            </td>
+                            <td style={{ padding: '8px 10px', borderTop: '1px solid #e5e7eb' }}>
+                              {renderCell(getAt(rec, 'mixshifts.total.mixno.end') || '', v => setT3EditForm(p => ({ ...p, total: { ...p.total, mixnoEnd: v } })))}
+                            </td>
+                            <td style={{ padding: '8px 10px', borderTop: '1px solid #e5e7eb' }}>
+                              {renderCell(getAt(rec, 'mixshifts.total.mixno.total') || '', v => setT3EditForm(p => ({ ...p, total: { ...p.total, mixnoTotal: v } })))}
+                            </td>
+                            <td style={{ padding: '8px 10px', borderTop: '1px solid #e5e7eb' }}>
+                              {renderCell(getAt(rec, 'mixshifts.total.numberOfMixRejected') || '', v => setT3EditForm(p => ({ ...p, total: { ...p.total, numberOfMixRejected: v } })))}
+                            </td>
+                            <td style={{ padding: '8px 10px', borderTop: '1px solid #e5e7eb' }}></td>
+                          </tr>
+                        </>
+                      );
+                    })()}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    );
+  };
+
+  const buildTable4Headers = () => {
+    const headers = [
+      { label: 'Date', get: rec => formatDateDMY(rec.date) || '' },
+      { label: 'Sand Lump', get: rec => getAt(rec, 'sandLump') || '' },
+      { label: 'New Sand Wt', get: rec => getAt(rec, 'newSandWt') || '' }
+    ];
+    SHIFTS.forEach(shift => {
+      headers.push({ label: `Friability (${shift.label})`, get: rec => getAt(rec, `sandFriability.${shift.key}`) || '' });
+    });
+    return headers;
+  };
+
+  const renderTable4Inline = () => {
+    const data = getRecordsForModalBySingleDate();
+    if (!data.length) {
+      return (
+        <div style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden', marginTop: 16 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e5e7eb' }}>
+            <div style={{ fontWeight: 600 }}>Table 4</div>
+          </div>
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+              <thead>
+                <tr>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Shift</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>I</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>II</th>
+                  <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>III</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr>
+                  <td colSpan={4} style={{ padding: '14px 10px', borderBottom: '1px solid #eef2f7', color: '#64748b' }}>No records found.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      );
+    }
+    const groups = data.reduce((acc, rec) => {
+      const k = formatDateDMY(rec.date) || '';
+      (acc[k] ||= []).push(rec);
+      return acc;
+    }, {});
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+        {Object.entries(groups).map(([dateKey, recs]) =>
+          recs.map((rec, idx) => {
+            const rid = rec?._id || rec?.id;
+            const isEditing = t4EditModalOpen && t4EditMeta?.id === rid;
+            const inputStyle = { width: '100%', padding: '6px 8px', border: '1px solid #d1d5db', borderRadius: 6 };
+            const val = (path, fallback = '') => getAt(rec, path) ?? fallback;
+            return (
+              <div key={`${dateKey}-t4-${idx}`} style={{ border: '1px solid #e5e7eb', borderRadius: 8, overflow: 'hidden' }}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc', padding: '8px 12px', borderBottom: '1px solid #e5e7eb' }}>
+                  <div style={{ fontWeight: 600 }}>Table 4</div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    {!isEditing ? (
+                      <>
+                        <button title="Edit" onClick={() => openT4EditModal(rec)} style={{ border: '1px solid #3b82f6', color: '#1d4ed8', background: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer' }}>
+                          <PencilLine size={16} />
+                        </button>
+                        <button title="Delete" onClick={() => handleDeleteRecord(rec, 'table4')} disabled={!!deleting[rid]} style={{ border: '1px solid #ef4444', color: '#dc2626', background: '#fff', borderRadius: 6, padding: '4px 10px', cursor: 'pointer', opacity: deleting[rid] ? 0.6 : 1 }}>
+                          <Trash2 size={16} />
+                        </button>
+                      </>
+                    ) : (
+                      <>
+                        <button title="Save" onClick={submitT4Edit} style={{ border: 'none', color: '#fff', background: '#16a34a', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Save</button>
+                        <button title="Cancel" onClick={closeT4EditModal} style={{ border: '1px solid #d1d5db', color: '#111827', background: '#fff', borderRadius: 6, padding: '6px 12px', cursor: 'pointer' }}>Cancel</button>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* Top: Sand Lump & New Sand Wt */}
+                <div style={{ padding: 12, borderBottom: '1px solid #e5e7eb' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit,minmax(220px,1fr))', gap: 12 }}>
+                    <div>
+                      <div style={{ fontSize: 13, color: '#334155', marginBottom: 6 }}>Sand Lump</div>
+                      {!isEditing ? (
+                        <div>{String(val('sandLump', ''))}</div>
+                      ) : (
+                        <input value={t4EditForm.sandLump ?? ''} onChange={(e) => setT4EditForm(p => ({ ...p, sandLump: e.target.value }))} style={inputStyle} />
+                      )}
+                    </div>
+                    <div>
+                      <div style={{ fontSize: 13, color: '#334155', marginBottom: 6 }}>New Sand Wt</div>
+                      {!isEditing ? (
+                        <div>{String(val('newSandWt', ''))}</div>
+                      ) : (
+                        <input value={t4EditForm.newSandWt ?? ''} onChange={(e) => setT4EditForm(p => ({ ...p, newSandWt: e.target.value }))} style={inputStyle} />
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Bottom: Friability by Shift */}
+                <div style={{ overflowX: 'auto' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse' }}>
+                    <thead>
+                      <tr>
+                        <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>Shift</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>I</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>II</th>
+                        <th style={{ padding: '8px 10px', textAlign: 'left', background: '#f1f5f9', borderBottom: '1px solid #e5e7eb' }}>III</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr>
+                        <td style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7', whiteSpace: 'nowrap' }}>Prepared Sand Friability (8.0 - 13.0 %)</td>
+                        {['shiftI','shiftII','shiftIII'].map(sk => (
+                          <td key={sk} style={{ padding: '8px 10px', borderBottom: '1px solid #eef2f7' }}>
+                            {!isEditing ? (
+                              String(getAt(rec, `sandFriability.${sk}`) || '')
+                            ) : (
+                              <input
+                                value={t4EditForm.sandFriability?.[sk] ?? ''}
+                                onChange={(e) => setT4EditForm(p => ({ ...p, sandFriability: { ...(p.sandFriability || {}), [sk]: e.target.value } }))}
+                                style={inputStyle}
+                              />
+                            )}
+                          </td>
+                        ))}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
+    );
+  };
 
   const getTable5Data = () => {
     const src = (() => { const s = getRecordsForModalBySingleDate(); return s.length ? s : displayRecords; })();
@@ -910,15 +1719,19 @@ const SandTestingRecordReport = () => {
       obj.time = tp.time ?? '';
       obj.mixNo = tp.mixno ?? '';
       obj.permeability = tp.permeability ?? '';
-      if (tp.gcsFdyA != null && tp.gcsFdyA !== '') {
-        obj.gcsCheckpoint = 'FDY-A';
-        obj.gcsValue = tp.gcsFdyA;
-      } else if (tp.gcsFdyB != null && tp.gcsFdyB !== '') {
-        obj.gcsCheckpoint = 'FDY-B';
-        obj.gcsValue = tp.gcsFdyB;
-      } else {
-        obj.gcsCheckpoint = '';
-        obj.gcsValue = '';
+      {
+        const a = typeof tp.gcsFdyA === 'number' ? tp.gcsFdyA : 0;
+        const b = typeof tp.gcsFdyB === 'number' ? tp.gcsFdyB : 0;
+        if (a > 0) {
+          obj.gcsCheckpoint = 'FDY-A';
+          obj.gcsValue = a;
+        } else if (b > 0) {
+          obj.gcsCheckpoint = 'FDY-B';
+          obj.gcsValue = b;
+        } else {
+          obj.gcsCheckpoint = '';
+          obj.gcsValue = '';
+        }
       }
       obj.wts = tp.wts ?? '';
       obj.moisture = tp.moisture ?? '';
@@ -938,8 +1751,14 @@ const SandTestingRecordReport = () => {
         else obj.bentoniteCheckpoint = '';
       }
       // Prefer Kgs for display
-      obj.bentoniteWithPremix = tp.bentoniteWithPremix?.Kgs ?? tp.bentoniteWithPremix?.Percent ?? '';
-      obj.bentoniteOnly = tp.bentonite?.Kgs ?? tp.bentonite?.Percent ?? '';
+      {
+        const v1 = tp.bentoniteWithPremix?.Kgs ?? tp.bentoniteWithPremix?.Percent ?? '';
+        obj.bentoniteWithPremix = (v1 === 0 || v1 === '0') ? '' : v1;
+      }
+      {
+        const v2 = tp.bentonite?.Kgs ?? tp.bentonite?.Percent ?? '';
+        obj.bentoniteOnly = (v2 === 0 || v2 === '0') ? '' : v2;
+      }
       // Derive premix/coal dust checkpoint from Kgs
       {
         const kPremix2 = tp.premix?.Kgs ?? 0;
@@ -971,76 +1790,82 @@ const SandTestingRecordReport = () => {
         <table className="sand-testing-table" style={{ borderCollapse: 'collapse', width: '100%' }}>
           <thead>
             <tr>
+              <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #ddd', whiteSpace: 'nowrap', background: '#f1f5f8', fontSize: '0.75rem' }}>Date</th>
               {TABLE5_ROWS.map(row => (
-                <th key={row} style={{ textAlign: 'left', padding: '10px 12px', borderBottom: '1px solid #ddd', whiteSpace: 'nowrap', background: '#f1f5f8' }}>{row}</th>
+                <th key={row} style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #ddd', whiteSpace: 'nowrap', background: '#f1f5f8', fontSize: '0.75rem' }}>{row}</th>
               ))}
-              <th style={{ textAlign: 'left', padding: '10px 12px', borderBottom: '1px solid #ddd', whiteSpace: 'nowrap', background: '#f1f5f8' }}>Actions</th>
+              <th style={{ textAlign: 'left', padding: '8px 10px', borderBottom: '1px solid #ddd', whiteSpace: 'nowrap', background: '#f1f5f8', fontSize: '0.75rem' }}>Actions</th>
             </tr>
           </thead>
           <tbody>
-            {data.length > 0 ? data.map((row, idx) => (
-              <tr key={idx}>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.sno || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.time || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.mixNo || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.permeability || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.gcsCheckpoint || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.gcsValue || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.wts || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.moisture || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.compactability || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.compressability || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.waterLitrePerKgMix || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.sandTempBC || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.sandTempWU || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.sandTempSSU || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.newSandKgsPerMould || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.bentoniteCheckpoint || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.bentoniteWithPremix || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.bentoniteOnly || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.premixCoalDustCheckpoint || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.premixKgsMix || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.coalDustKgsMix || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.lcScmCompactabilityCheckpoint || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.lcScmCompactabilityValue || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.mouldStrengthShearCheckpoint || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.mouldStrengthShearValue || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.preparedSandLumpsPerKg || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.itemName || ''}</td>
-                <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.remarks || ''}</td>
-                <td style={{ padding: '8px 10px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      title="Edit"
-                      onClick={() => openEditTpModal(row.__rec)}
-                      style={{ border: '1px solid #3b82f6', color: '#1d4ed8', background: '#fff', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}
-                    >
-                      <PencilLine size={16} />
-                    </button>
-                    <button
-                      title="Delete"
-                      onClick={() => handleDeleteRecord(row.__rec, 'table5')}
-                      style={{ border: '1px solid #ef4444', color: '#dc2626', background: '#fff', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}
-                    >
-                      <Trash2 size={16} />
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            )) : (
-              <tr>
-                <td colSpan={TABLE5_ROWS.length + 1} style={{ padding: 20, textAlign: 'center' }}>
-                  No records found.
-                </td>
-              </tr>
-            )}
+            {(() => {
+              if (data.length === 0) {
+                return (
+                  <tr>
+                    <td colSpan={TABLE5_ROWS.length + 2} style={{ padding: 20, textAlign: 'left' }}>No records found.</td>
+                  </tr>
+                );
+              }
+              const groups = data.reduce((acc, row) => {
+                const k = formatDateDMY(row.__rec?.date) || '';
+                (acc[k] ||= []).push(row);
+                return acc;
+              }, {});
+              return Object.entries(groups).flatMap(([dateKey, recs]) => (
+                recs.map((row, idx) => (
+                  <tr key={`${dateKey}-t5-${idx}`}>
+                    {idx === 0 ? (
+                      <td rowSpan={recs.length} style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{dateKey}</td>
+                    ) : null}
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.sno || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.time || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.mixNo || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.permeability || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.gcsCheckpoint || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.gcsValue || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.wts || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.moisture || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.compactability || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.compressability || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.waterLitrePerKgMix || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.sandTempBC || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.sandTempWU || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.sandTempSSU || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.newSandKgsPerMould || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.bentoniteCheckpoint || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.bentoniteWithPremix || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.bentoniteOnly || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.premixCoalDustCheckpoint || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.premixKgsMix || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.coalDustKgsMix || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.lcScmCompactabilityCheckpoint || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.lcScmCompactabilityValue || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.mouldStrengthShearCheckpoint || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.mouldStrengthShearValue || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.preparedSandLumpsPerKg || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.itemName || ''}</td>
+                    <td style={{ padding: '10px 12px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>{row.remarks || ''}</td>
+                    <td style={{ padding: '8px 10px', borderBottom: '1px solid #eee', whiteSpace: 'nowrap' }}>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button title="Edit" onClick={() => openEditTpModal(row.__rec)} style={{ border: '1px solid #3b82f6', color: '#1d4ed8', background: '#fff', borderRadius: 8, padding: '6px 10px', cursor: 'pointer' }}>
+                          <PencilLine size={16} />
+                        </button>
+                        <button title="Delete" onClick={() => handleDeleteRecord(row.__rec, 'table5')} disabled={!!deleting[(row.__rec?._id || row.__rec?.id)]} style={{ border: '1px solid #ef4444', color: '#dc2626', background: '#fff', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', opacity: deleting[(row.__rec?._id || row.__rec?.id)] ? 0.6 : 1 }}>
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              ));
+            })()}
           </tbody>
         </table>
       </div>
     );
   };
   return (
-    <div className="page-wrapper">
+    <>
       {toast.show && (
         <div
           role="status"
@@ -1186,798 +2011,39 @@ const SandTestingRecordReport = () => {
         </div>
         <div className="sand-testing-filter-container">
           <div className="sand-testing-filter-group">
-            <label>Start Date</label>
+            <label>Date</label>
             <CustomDatePicker
-              value={fromDate}
-              onChange={(e) => setFromDate(e.target.value)}
-              name="fromDate"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              name="selectedDate"
               placeholder="e.g: DD/MM/YY"
             />
           </div>
-          <div className="sand-testing-filter-group">
-            <label>End Date</label>
-            <CustomDatePicker
-              value={toDate}
-              onChange={(e) => setToDate(e.target.value)}
-              name="toDate"
-              placeholder="e.g: DD/MM/YY"
-            />
-          </div>
-          <div className="sand-testing-filter-group">
-            <label style={{ visibility: 'hidden' }}>Filter</label>
-            <div className="sand-testing-filter-btn-container">
-              <button
-                className="sand-testing-filter-btn"
-                onClick={handleFilter}
-                disabled={!fromDate && !toDate}
-              >
-                <FilterIcon size={16} />
-                Filter
-              </button>
-            </div>
-          </div>
         </div>
-        <div style={{ marginTop: 12, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-          {TABS.map(tab => (
-            <button
-              key={tab}
-              onClick={() => {
-                // Table1-4 should open card (modal) view only.
-                if (tab === 'Table 1') return openTable1Modal();
-                if (tab === 'Table 2') return openTable2Modal();
-                if (tab === 'Table 3') return openTable3Modal();
-                if (tab === 'Table 4') return openTable4Modal();
-                // only "All Data" and "Sand Properties & Test Parameters" switch inline view
-                setActiveTab(tab);
-              }}
-               className={`report-tab-btn ${activeTab === tab ? 'active' : ''}`}
-               style={{
-                 padding: '8px 14px',
-                 borderRadius: 6,
-                 border: activeTab === tab ? '1px solid #f28a4c' : '1px solid #d0d7dc',
-                 background: activeTab === tab ? '#fff7f0' : '#fff',
-                 fontSize: '0.85rem'
-               }}
-             >
-               {tab}
-             </button>
-           ))}
+
+        {/* Row 1: Table 1 and Table 2 side-by-side */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(480px, 1fr))', gap: 16, marginTop: 16 }}>
+          <div>{renderTable1Inline()}</div>
+          <div>{renderTable2Inline()}</div>
         </div>
-        
-        {/* Inline views: only All Data and Sand Properties (& Test Parameters) show by tab.
-            Table1-4 are opened via card modals above. */}
-        {activeTab === 'All Data' && renderAllData()}
-        {activeTab === 'Sand Properties & Test Parameters' && renderTable5()}
 
-        {/* Table 1 Edit Modal */}
-        {t1EditModalOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1500, padding: 20 }}
-            onClick={closeT1EditModal}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{ width: 'min(900px, 94%)', maxHeight: '92vh', overflow: 'auto', background: '#fff', borderRadius: 14, boxShadow: '0 18px 60px rgba(0,0,0,0.28)', padding: 20 }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ margin: 0, fontSize: 20 }}>Edit Table 1 — Shift Data</h3>
-                <button onClick={closeT1EditModal} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 14 }}>Close</button>
-              </div>
-
-              {['shiftI','shiftII','shiftIII'].map((sh) => (
-                <div key={sh} style={{ border: '1px solid #f3f7fb', borderRadius: 10, padding: 14, marginBottom: 12 }}>
-                  <div style={{ fontWeight: 800, marginBottom: 10 }}>{sh === 'shiftI' ? 'Shift I' : sh === 'shiftII' ? 'Shift II' : 'Shift III'}</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 12 }}>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, color: '#334155', marginBottom: 4 }}>R. Sand (Kgs/Mix)</label>
-                      <input value={t1EditForm[sh].rSand} onChange={(e)=>setT1EditForm(p=>({...p,[sh]:{...p[sh], rSand:e.target.value}}))} className="sand-table5-input" />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, color: '#334155', marginBottom: 4 }}>N. Sand (Kgs/Mix)</label>
-                      <input value={t1EditForm[sh].nSand} onChange={(e)=>setT1EditForm(p=>({...p,[sh]:{...p[sh], nSand:e.target.value}}))} className="sand-table5-input" />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, color: '#334155', marginBottom: 4 }}>Mixing Mode</label>
-                      <input value={t1EditForm[sh].mixingMode} onChange={(e)=>setT1EditForm(p=>({...p,[sh]:{...p[sh], mixingMode:e.target.value}}))} className="sand-table5-input" />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, color: '#334155', marginBottom: 4 }}>Bentonite (Kgs/Mix)</label>
-                      <input value={t1EditForm[sh].bentonite} onChange={(e)=>setT1EditForm(p=>({...p,[sh]:{...p[sh], bentonite:e.target.value}}))} className="sand-table5-input" />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, color: '#334155', marginBottom: 4 }}>Coal Dust / Premix (Kgs/Mix)</label>
-                      <input value={t1EditForm[sh].coalDustPremix} onChange={(e)=>setT1EditForm(p=>({...p,[sh]:{...p[sh], coalDustPremix:e.target.value}}))} className="sand-table5-input" />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, color: '#334155', marginBottom: 4 }}>Batch No (Bentonite)</label>
-                      <input value={t1EditForm[sh].batchNoBentonite} onChange={(e)=>setT1EditForm(p=>({...p,[sh]:{...p[sh], batchNoBentonite:e.target.value}}))} className="sand-table5-input" />
-                    </div>
-                    <div>
-                      <label style={{ display: 'block', fontSize: 13, color: '#334155', marginBottom: 4 }}>Batch No (Coal Dust/Premix)</label>
-                      <input value={t1EditForm[sh].batchNoCoalDustPremix} onChange={(e)=>setT1EditForm(p=>({...p,[sh]:{...p[sh], batchNoCoalDustPremix:e.target.value}}))} className="sand-table5-input" />
-                    </div>
-                  </div>
-                </div>
-              ))}
-
-              <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 10 }}>
-                <button onClick={closeT1EditModal} style={{ padding: '8px 12px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer', fontSize: 14 }}>Cancel</button>
-                <button onClick={submitT1Edit} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#0ea5e9', color: '#fff', cursor: 'pointer', fontSize: 14 }}>Update Entry</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {t2EditModalOpen && (
-          <div role="dialog" aria-modal="true" style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1500, padding: 20 }} onClick={closeT2EditModal}>
-            <div onClick={(e)=>e.stopPropagation()} style={{ width: 'min(900px, 94%)', maxHeight: '92vh', overflow: 'auto', background: '#fff', borderRadius: 14, boxShadow: '0 18px 60px rgba(0,0,0,0.28)', padding: 20 }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ margin: 0, fontSize: 20 }}>Edit Table 2 — Clay Parameters</h3>
-                <button onClick={closeT2EditModal} style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 14 }}>Close</button>
-              </div>
-              {['shiftI','shiftII','shiftIII'].map(sh => (
-                <div key={sh} style={{ border: '1px solid #f3f7fb', borderRadius: 10, padding: 14, marginBottom: 12 }}>
-                  <div style={{ fontWeight: 800, marginBottom: 10 }}>{sh === 'shiftI' ? 'Shift I' : sh === 'shiftII' ? 'Shift II' : 'Shift III'}</div>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px,1fr))', gap: 12 }}>
-                    {[
-                      ['Total Clay (11.0 - 14.5%)','totalClay'],
-                      ['Active Clay (8.5 - 11.0%)','activeClay'],
-                      ['Dead Clay (2.0 - 4.0%)','deadClay'],
-                      ['V.C.M (2.0 - 3.2%)','vcm'],
-                      ['L.O.I (4.5 - 6.0%)','loi'],
-                      ['AFS No. (min 48)','afsNo'],
-                      ['Fines (10% Max)','fines']
-                    ].map(([label,key]) => (
-                      <div key={key}>
-                        <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>{label}</label>
-                        <input value={t2EditForm[sh][key]} onChange={(e)=>setT2EditForm(p=>({...p,[sh]:{...p[sh],[key]:e.target.value}}))} className="sand-table5-input" />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-              <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}>
-                <button onClick={closeT2EditModal} style={{ padding:'8px 12px', borderRadius:8, border:'1px solid #d1d5db', background:'#fff', cursor:'pointer', fontSize:14 }}>Cancel</button>
-                <button onClick={submitT2Edit} style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'#0ea5e9', color:'#fff', cursor:'pointer', fontSize:14 }}>Update Entry</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {t3EditModalOpen && (
-          <div role="dialog" aria-modal="true" style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1500, padding:20 }} onClick={closeT3EditModal}>
-            <div onClick={(e)=>e.stopPropagation()} style={{ width:'min(900px, 94%)', maxHeight:'92vh', overflow:'auto', background:'#fff', borderRadius:14, boxShadow:'0 18px 60px rgba(0,0,0,0.28)', padding:20 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-                <h3 style={{ margin:0, fontSize:20 }}>Edit Table 3 — Mix Data</h3>
-                <button onClick={closeT3EditModal} style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'#ef4444', color:'#fff', cursor:'pointer', fontSize:14 }}>Close</button>
-              </div>
-              {['ShiftI','ShiftII','ShiftIII','total'].map(sh => (
-                <div key={sh} style={{ border:'1px solid #f3f7fb', borderRadius:10, padding:14, marginBottom:12 }}>
-                  <div style={{ fontWeight:800, marginBottom:10 }}>{sh === 'total' ? 'Total' : sh.replace('Shift','Shift ')}</div>
-                  <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px,1fr))', gap:12 }}>
-                    {sh !== 'total' ? (
-                      <>
-                        <div>
-                          <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Mix No Start</label>
-                          <input value={t3EditForm[sh].mixnoStart} onChange={(e)=>setT3EditForm(p=>({...p,[sh]:{...p[sh], mixnoStart:e.target.value}}))} className="sand-table5-input" />
-                        </div>
-                        <div>
-                          <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Mix No End</label>
-                          <input value={t3EditForm[sh].mixnoEnd} onChange={(e)=>setT3EditForm(p=>({...p,[sh]:{...p[sh], mixnoEnd:e.target.value}}))} className="sand-table5-input" />
-                        </div>
-                        <div>
-                          <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Mix No Total</label>
-                          <input value={t3EditForm[sh].mixnoTotal} onChange={(e)=>setT3EditForm(p=>({...p,[sh]:{...p[sh], mixnoTotal:e.target.value}}))} className="sand-table5-input" />
-                        </div>
-                        <div>
-                          <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>No. Of Mix Rejected</label>
-                          <input value={t3EditForm[sh].numberOfMixRejected} onChange={(e)=>setT3EditForm(p=>({...p,[sh]:{...p[sh], numberOfMixRejected:e.target.value}}))} className="sand-table5-input" />
-                        </div>
-                        <div>
-                          <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Return Sand Hopper Level</label>
-                          <input value={t3EditForm[sh].returnSandHopperLevel} onChange={(e)=>setT3EditForm(p=>({...p,[sh]:{...p[sh], returnSandHopperLevel:e.target.value}}))} className="sand-table5-input" />
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <div>
-                          <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Mix No Start</label>
-                          <input value={t3EditForm.total.mixnoStart} onChange={(e)=>setT3EditForm(p=>({...p,total:{...p.total, mixnoStart:e.target.value}}))} className="sand-table5-input" />
-                        </div>
-                        <div>
-                          <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Mix No End</label>
-                          <input value={t3EditForm.total.mixnoEnd} onChange={(e)=>setT3EditForm(p=>({...p,total:{...p.total, mixnoEnd:e.target.value}}))} className="sand-table5-input" />
-                        </div>
-                        <div>
-                          <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Mix No Total</label>
-                          <input value={t3EditForm.total.mixnoTotal} onChange={(e)=>setT3EditForm(p=>({...p,total:{...p.total, mixnoTotal:e.target.value}}))} className="sand-table5-input" />
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              ))}
-              <div style={{ display:'flex', justifyContent:'flex-end', gap:10 }}>
-                <button onClick={closeT3EditModal} style={{ padding:'8px 12px', borderRadius:8, border:'1px solid #d1d5db', background:'#fff', cursor:'pointer', fontSize:14 }}>Cancel</button>
-                <button onClick={submitT3Edit} style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'#0ea5e9', color:'#fff', cursor:'pointer', fontSize:14 }}>Update Entry</button>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {t4EditModalOpen && (
-          <div role="dialog" aria-modal="true" style={{ position:'fixed', inset:0, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center', zIndex:1500, padding:20 }} onClick={closeT4EditModal}>
-            <div onClick={(e)=>e.stopPropagation()} style={{ width:'min(900px, 94%)', maxHeight:'92vh', overflow:'auto', background:'#fff', borderRadius:14, boxShadow:'0 18px 60px rgba(0,0,0,0.28)', padding:20 }}>
-              <div style={{ display:'flex', justifyContent:'space-between', alignItems:'center', marginBottom:12 }}>
-                <h3 style={{ margin:0, fontSize:20 }}>Edit Table 4 — Sand Properties</h3>
-                <button onClick={closeT4EditModal} style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'#ef4444', color:'#fff', cursor:'pointer', fontSize:14 }}>Close</button>
-              </div>
-              <div style={{ display:'grid', gridTemplateColumns:'repeat(auto-fit, minmax(220px,1fr))', gap:12 }}>
-                <div>
-                  <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Sand Lump</label>
-                  <input value={t4EditForm.sandLump} onChange={(e)=>setT4EditForm(p=>({...p, sandLump:e.target.value}))} className="sand-table5-input" />
-                </div>
-                <div>
-                  <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>New Sand Wt</label>
-                  <input value={t4EditForm.newSandWt} onChange={(e)=>setT4EditForm(p=>({...p, newSandWt:e.target.value}))} className="sand-table5-input" />
-                </div>
-                <div>
-                  <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Prepared Sand Friability — Shift I</label>
-                  <input value={t4EditForm.sandFriability.shiftI} onChange={(e)=>setT4EditForm(p=>({...p, sandFriability:{...p.sandFriability, shiftI:e.target.value}}))} className="sand-table5-input" />
-                </div>
-                <div>
-                  <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Prepared Sand Friability — Shift II</label>
-                  <input value={t4EditForm.sandFriability.shiftII} onChange={(e)=>setT4EditForm(p=>({...p, sandFriability:{...p.sandFriability, shiftII:e.target.value}}))} className="sand-table5-input" />
-                </div>
-                <div>
-                  <label style={{ display:'block', fontSize:13, color:'#334155', marginBottom:4 }}>Prepared Sand Friability — Shift III</label>
-                  <input value={t4EditForm.sandFriability.shiftIII} onChange={(e)=>setT4EditForm(p=>({...p, sandFriability:{...p.sandFriability, shiftIII:e.target.value}}))} className="sand-table5-input" />
-                </div>
-              </div>
-              <div style={{ display:'flex', justifyContent:'flex-end', gap:10, marginTop:12 }}>
-                <button onClick={closeT4EditModal} style={{ padding:'8px 12px', borderRadius:8, border:'1px solid #d1d5db', background:'#fff', cursor:'pointer', fontSize:14 }}>Cancel</button>
-                <button onClick={submitT4Edit} style={{ padding:'8px 12px', borderRadius:8, border:'none', background:'#0ea5e9', color:'#fff', cursor:'pointer', fontSize:14 }}>Update Entry</button>
-              </div>
-            </div>
-          </div>
-        )}
-        
-        {/* Table1 Card-style Modal */}
-        {table1ModalOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1400,
-              padding: 20
-            }}
-            onClick={closeTable1Modal}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: 'min(1000px, 94%)',
-                maxHeight: '92vh',
-                overflow: 'hidden',
-                background: '#fff',
-                borderRadius: 14,
-                boxShadow: '0 18px 60px rgba(0,0,0,0.28)',
-                padding: 20
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ margin: 0, fontSize: 20 }}>Table 1 — Shift Data (Card view)</h3>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    onClick={closeTable1Modal}
-                    style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 14 }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-
-              {/* square cards: use aspect-ratio and a scrollable middle pane */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 440px))', gap: 20, justifyContent: 'center' }}>
-                {(() => {
-                  const modalRecords = getRecordsForModalBySingleDate();
-                  if (!modalRecords.length) {
-                    return (
-                      <div style={{ gridColumn: '1/-1', padding: 24, textAlign: 'center', color: '#6b7280', fontSize: 16 }}>
-                        Select a single date (From Date or End Date) to view entries.
-                      </div>
-                    );
-                  }
-                  return modalRecords.map((rec, i) => {
-                    const s1 = rec.sandShifts?.shiftI || rec.sandShifts?.ShiftI || {};
-                    const s2 = rec.sandShifts?.shiftII || rec.sandShifts?.ShiftII || {};
-                    const s3 = rec.sandShifts?.shiftIII || rec.sandShifts?.ShiftIII || {};
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          border: '1px solid #e6eef5',
-                          borderRadius: 12,
-                          background: '#fff',
-                          boxShadow: '0 10px 30px rgba(10,20,30,0.08)',
-                          width: '100%',
-                          maxWidth: 440,
-                          aspectRatio: '1 / 1',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        <div style={{ padding: 18, borderBottom: '1px solid #f3f7fb' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontWeight: 800, fontSize: 18 }}>{formatDateDMY(rec.date) || 'No date'}</div>
-                            <div style={{ fontSize: 12, color: '#6b7280' }}>Record #{i + 1}</div>
-                          </div>
-                        </div>
-
-                        <div style={{ padding: '12px 18px', flex: 1, overflowY: 'auto' }}>
-                          <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 10, marginBottom: 8, alignItems: 'center' }}>
-                            <div style={{ fontSize: 16, color: '#374151', fontWeight: 700 }}>Parameter</div>
-                            <div style={{ display: 'flex', gap: 14, justifyContent: 'flex-end', minWidth: 260 }}>
-                              <div style={{ fontSize: 15, fontWeight: 800, textAlign: 'right', width: 90 }}>Shift I</div>
-                              <div style={{ fontSize: 15, fontWeight: 800, textAlign: 'right', width: 90 }}>Shift II</div>
-                              <div style={{ fontSize: 15, fontWeight: 800, textAlign: 'right', width: 90 }}>Shift III</div>
-                            </div>
-                          </div>
-
-                          {[
-                            { label: 'R. Sand (Kgs/Mix)', key: 'rSand' },
-                            { label: 'N. Sand (Kgs/Mix)', key: 'nSand' },
-                            { label: 'Mixing Mode', key: 'mixingMode' },
-                            { label: 'Bentonite (Kgs/Mix)', key: 'bentonite' },
-                            { label: 'Batch NO', key: 'batchNo' }
-                          ].map(p => (
-                            <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderTop: '1px solid #f3f7fb' }}>
-                              <div style={{ fontSize: 15, color: '#111827', width: '48%' }}>{p.label}</div>
-                              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', width: '52%' }}>
-                                {p.key !== 'batchNo' ? (
-                                  <>
-                                    <div style={{ width: 90, textAlign: 'right', color: '#0f172a', fontSize: 16 }}>{s1[p.key] ?? '-'}</div>
-                                    <div style={{ width: 90, textAlign: 'right', color: '#0f172a', fontSize: 16 }}>{s2[p.key] ?? '-'}</div>
-                                    <div style={{ width: 90, textAlign: 'right', color: '#0f172a', fontSize: 16 }}>{s3[p.key] ?? '-'}</div>
-                                  </>
-                                ) : (
-                                  <>
-                                    <div style={{ width: 90, textAlign: 'right', color: '#0f172a', fontSize: 16 }}>{s1?.batchNo?.bentonite || '-'}</div>
-                                    <div style={{ width: 90, textAlign: 'right', color: '#0f172a', fontSize: 16 }}>{s2?.batchNo?.coalDustPremix || '-'}</div>
-                                    <div style={{ width: 90, textAlign: 'right', color: '#0f172a', fontSize: 16 }}>{s3?.batchNo?.coalDustPremix || '-'}</div>
-                                  </>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div style={{ padding: 14, borderTop: '1px solid #f3f7fb', display: 'flex', justifyContent: 'center', gap: 10 }}>
-                          <button
-                            onClick={() => openT1EditModal(rec)}
-                            style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #3b82f6', background: '#fff', color: '#1d4ed8', cursor: 'pointer', fontSize: 14 }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRecord(rec, 'table1')}
-                            style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #ef4444', background: '#fff', color: '#dc2626', cursor: 'pointer', fontSize: 14 }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Table2 Card-style Modal */}
-        {table2ModalOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1400,
-              padding: 20
-            }}
-            onClick={closeTable2Modal}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: 'min(1000px, 94%)',
-                maxHeight: '92vh',
-                overflow: 'hidden',
-                background: '#fff',
-                borderRadius: 14,
-                boxShadow: '0 18px 60px rgba(0,0,0,0.28)',
-                padding: 20
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ margin: 0, fontSize: 20 }}>Table 2 — Clay Parameters (Card view)</h3>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    onClick={closeTable2Modal}
-                    style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 14 }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 440px))', gap: 20, justifyContent: 'center' }}>
-                {(() => {
-                  const modalRecords = getRecordsForModalBySingleDate();
-                  if (!modalRecords.length) {
-                    return (
-                      <div style={{ gridColumn: '1/-1', padding: 24, textAlign: 'center', color: '#6b7280', fontSize: 16 }}>
-                        Select a single date (From Date or End Date) to view entries.
-                      </div>
-                    );
-                  }
-                  return modalRecords.map((rec, i) => {
-                    const s1 = rec.clayShifts?.shiftI || {};
-                    const s2 = rec.clayShifts?.shiftII || rec.clayShifts?.ShiftII || {};
-                    const s3 = rec.clayShifts?.shiftIII || rec.clayShifts?.ShiftIII || {};
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          border: '1px solid #e6eef5',
-                          borderRadius: 12,
-                          background: '#fff',
-                          boxShadow: '0 10px 30px rgba(10,20,30,0.08)',
-                          width: '100%',
-                          maxWidth: 440,
-                          aspectRatio: '1 / 1',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          overflow: 'hidden'
-                        }}
-                      >
-                        <div style={{ padding: 18, borderBottom: '1px solid #f3f7fb' }}>
-                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                            <div style={{ fontWeight: 800, fontSize: 18 }}>{formatDateDMY(rec.date) || 'No date'}</div>
-                            <div style={{ fontSize: 12, color: '#6b7280' }}>Record #{i + 1}</div>
-                          </div>
-                        </div>
-
-                        <div style={{ padding: '12px 18px', flex: 1, overflowY: 'auto' }}>
-                          <div style={{ fontSize: 16, color: '#374151', fontWeight: 700, marginBottom: 8 }}>Parameters</div>
-                          {[
-                            { label: 'Total Clay (11.0 - 14.5%)', key: 'totalClay' },
-                            { label: 'Active Clay (8.5 - 11.0%)', key: 'activeClay' },
-                            { label: 'Dead Clay (2.0 - 4.0%)', key: 'deadClay' },
-                            { label: 'V.C.M (2.0 - 3.2%)', key: 'vcm' },
-                            { label: 'L.O.I (4.5 - 6.0%)', key: 'loi' },
-                            { label: 'AFS No. (min 48)', key: 'afsNo' },
-                            { label: 'Fines (10% Max)', key: 'fines' }
-                          ].map(p => (
-                            <div key={p.key} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '8px 0', borderTop: '1px solid #f3f7fb' }}>
-                              <div style={{ fontSize: 15, color: '#111827' }}>{p.label}</div>
-                              <div style={{ display: 'flex', gap: 12, justifyContent: 'flex-end', minWidth: 120 }}>
-                                <div style={{ width: 90, textAlign: 'right', color: '#0f172a', fontSize: 16 }}>{s1[p.key] ?? '-'}</div>
-                                <div style={{ width: 90, textAlign: 'right', color: '#0f172a', fontSize: 16 }}>{s2[p.key] ?? '-'}</div>
-                                <div style={{ width: 90, textAlign: 'right', color: '#0f172a', fontSize: 16 }}>{s3[p.key] ?? '-'}</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-
-                        <div style={{ padding: 14, borderTop: '1px solid #f3f7fb', display: 'flex', justifyContent: 'center', gap: 10 }}>
-                          <button
-                            onClick={() => openT2EditModal(rec)}
-                            style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #3b82f6', background: '#fff', color: '#1d4ed8', cursor: 'pointer', fontSize: 14 }}
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => handleDeleteRecord(rec, 'table2')}
-                            style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #ef4444', background: '#fff', color: '#dc2626', cursor: 'pointer', fontSize: 14 }}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      </div>
-                    );
-                  });
-                })()}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Table3 Card-style Modal */}
-        {table3ModalOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1400,
-              padding: 20
-            }}
-            onClick={closeTable3Modal}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: 'min(1000px, 94%)',
-                maxHeight: '92vh',
-                overflow: 'hidden',
-                background: '#fff',
-                borderRadius: 14,
-                boxShadow: '0 18px 60px rgba(0,0,0,0.28)',
-                padding: 20
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ margin: 0, fontSize: 20 }}>Table 3 — Mix Data (Card view)</h3>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    onClick={closeTable3Modal}
-                    style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 14 }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 440px))', gap: 20, justifyContent: 'center' }}>
-                {(() => {
-                  const modalRecords = getRecordsForModalBySingleDate();
-                  if (!modalRecords.length) {
-                    return (
-                      <div style={{ gridColumn: '1/-1', padding: 24, textAlign: 'center', color: '#6b7280', fontSize: 16 }}>
-                        Select a single date (From Date or To Date) to view entries.
-                      </div>
-                    );
-                  }
-                  return modalRecords.map((rec, i) => {
-                    const s1 = rec.mixshifts?.ShiftI || {};
-                    const s2 = rec.mixshifts?.ShiftII || {};
-                    const s3 = rec.mixshifts?.ShiftIII || {};
-                    const total = rec.mixshifts?.total || {};
-                    return (
-                      <div
-                        key={i}
-                        style={{
-                          border: '1px solid #e6eef5',
-                          borderRadius: 12,
-                          background: '#fff',
-                          boxShadow: '0 10px 30px rgba(10,20,30,0.08)',
-                          width: '100%',
-                          maxWidth: 440,
-                          aspectRatio: '1 / 1',
-                          display: 'flex',
-                          flexDirection: 'column',
-                          overflow: 'hidden'
-                        }}
-                      >
-                      <div style={{ padding: 18, borderBottom: '1px solid #f3f7fb' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <div style={{ fontWeight: 800, fontSize: 18 }}>{formatDateDMY(rec.date) || 'No date'}</div>
-                          <div style={{ fontSize: 12, color: '#6b7280' }}>Record #{i + 1}</div>
-                        </div>
-                      </div>
-
-                      <div style={{ padding: '12px 18px', flex: 1, overflowY: 'auto' }}>
-                        {(() => {
-                          const sum = (vals) => {
-                            const n = vals.map(v => Number(v)).filter(v => !Number.isNaN(v));
-                            if (!n.length) return undefined;
-                            return n.reduce((a,b)=>a+b,0);
-                          };
-                          const computedTotal = {
-                            mixno: { start: undefined, end: undefined, total: sum([s1?.mixno?.total, s2?.mixno?.total, s3?.mixno?.total]) },
-                            numberOfMixRejected: sum([s1?.numberOfMixRejected, s2?.numberOfMixRejected, s3?.numberOfMixRejected]),
-                            returnSandHopperLevel: sum([s1?.returnSandHopperLevel, s2?.returnSandHopperLevel, s3?.returnSandHopperLevel])
-                          };
-                          return ['shiftI', 'shiftII', 'shiftIII', 'total'].map(shift => {
-                            const shiftData = shift === 'shiftI' ? s1 : shift === 'shiftII' ? s2 : shift === 'shiftIII' ? s3 : computedTotal;
-                            const shiftLabel = shift === 'shiftI' ? 'Shift I' : shift === 'shiftII' ? 'Shift II' : shift === 'shiftIII' ? 'Shift III' : 'Total';
-                            return (
-                              <div key={shift} style={{ marginBottom: 12, paddingBottom: 12, borderBottom: '1px solid #f3f7fb' }}>
-                                <div style={{ fontSize: 15, color: '#6b7280', fontWeight: 800, marginBottom: 8 }}>{shiftLabel}</div>
-                                {(shift === 'total'
-                                  ? [
-                                      { label: 'Mix No End', get: s => s?.mixno?.end },
-                                      { label: 'Mix No Total', get: s => s?.mixno?.total },
-                                      { label: 'No. Of Mix Rejected', get: s => s?.numberOfMixRejected },
-                                    ]
-                                  : [
-                                      { label: 'Mix No Start', get: s => s?.mixno?.start },
-                                      { label: 'Mix No End', get: s => s?.mixno?.end },
-                                      { label: 'Mix No Total', get: s => s?.mixno?.total },
-                                      { label: 'No. Of Mix Rejected', get: s => s?.numberOfMixRejected },
-                                      { label: 'Return Sand Hopper Level', get: s => s?.returnSandHopperLevel }
-                                    ]
-                                 ).map(p => (
-                                  <div key={p.label} style={{ display: 'flex', justifyContent: 'space-between', fontSize: 16, padding: '6px 0' }}>
-                                    <span style={{ color: '#374151' }}>{p.label}:</span>
-                                    <span style={{ color: '#0f172a', fontWeight: 800, textAlign: 'right' }}>{p.get(shiftData) ?? '-'}</span>
-                                  </div>
-                                ))}
-                              </div>
-                            );
-                          });
-                        })()}
-                      </div>
-
-                      <div style={{ padding: 14, borderTop: '1px solid #f3f7fb', display: 'flex', justifyContent: 'center', gap: 10 }}>
-                        <button
-                          onClick={() => openT3EditModal(rec)}
-                          style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #3b82f6', background: '#fff', color: '#1d4ed8', cursor: 'pointer', fontSize: 14 }}
-                        >
-                          Edit
-                        </button>
-                        <button
-                          onClick={() => handleDeleteRecord(rec, 'table3')}
-                          style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #ef4444', background: '#fff', color: '#dc2626', cursor: 'pointer', fontSize: 14 }}
-                        >
-                          Delete
-                        </button>
-                      </div>
-                     </div>
-                   );
-                  });
-                })()}
-               </div>
-            </div>
-          </div>
-        )}
-
-        {/* Table4 Card-style Modal */}
-        {table4ModalOpen && (
-          <div
-            role="dialog"
-            aria-modal="true"
-            style={{
-              position: 'fixed',
-              inset: 0,
-              background: 'rgba(0,0,0,0.5)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              zIndex: 1400,
-              padding: 20
-            }}
-            onClick={closeTable4Modal}
-          >
-            <div
-              onClick={(e) => e.stopPropagation()}
-              style={{
-                width: 'min(1000px, 94%)',
-                maxHeight: '92vh',
-                overflow: 'hidden',
-                background: '#fff',
-                borderRadius: 14,
-                boxShadow: '0 18px 60px rgba(0,0,0,0.28)',
-                padding: 20
-              }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-                <h3 style={{ margin: 0, fontSize: 20 }}>Table 4 — Sand Properties (Card view)</h3>
-                <div style={{ display: 'flex', gap: 10 }}>
-                  <button
-                    onClick={closeTable4Modal}
-                    style={{ padding: '8px 12px', borderRadius: 8, border: 'none', background: '#ef4444', color: '#fff', cursor: 'pointer', fontSize: 14 }}
-                  >
-                    Close
-                  </button>
-                </div>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(360px, 440px))', gap: 20, justifyContent: 'center' }}>
-               {(() => {
-  const modalRecords = getRecordsForModalBySingleDate();
-  if (!modalRecords.length) {
-    return (
-      <div style={{ gridColumn: '1/-1', padding: 24, textAlign: 'center', color: '#6b7280', fontSize: 16 }}>
-        Select a single date (From Date or End Date) to view entries.
-      </div>
-    );
-  }
-
-  return modalRecords.map((rec, i) => (
-    <div
-      key={i}
-      style={{
-        border: '1px solid #e6eef5',
-        borderRadius: 12,
-        background: '#fff',
-        boxShadow: '0 10px 30px rgba(10,20,30,0.08)',
-        width: '100%',
-        maxWidth: 440,
-        aspectRatio: '1 / 1',
-        display: 'flex',
-        flexDirection: 'column',
-        overflow: 'hidden',
-      }}
-    >
-      <div style={{ padding: 18, borderBottom: '1px solid #f3f7fb' }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <div style={{ fontWeight: 800, fontSize: 18 }}>{formatDateDMY(rec.date) || 'No date'}</div>
-          <div style={{ fontSize: 12, color: '#6b7280' }}>Record #{i + 1}</div>
+        {/* Row 2: Table 3 */}
+        <div style={{ marginTop: 24 }}>
+          {renderTable3Inline()}
         </div>
-      </div>
 
-      <div style={{ padding: '12px 18px', flex: 1, overflowY: 'auto' }}>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 12, marginBottom: 12 }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ color: '#374151' }}>Sand Lump</div>
-            <div style={{ fontWeight: 800, color: '#0f172a' }}>{rec.sandLump ?? '-'}</div>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12 }}>
-            <div style={{ color: '#374151' }}>New Sand Wt</div>
-            <div style={{ fontWeight: 800, color: '#0f172a' }}>{rec.newSandWt ?? '-'}</div>
-          </div>
+        {/* Row 3: Table 4 */}
+        <div style={{ marginTop: 24 }}>
+          {renderTable4Inline()}
         </div>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12 }}>
-          <div>
-            <div style={{ color: '#6b7280', fontSize: 13, marginBottom: 4 }}>Prepared Sand Friability — Shift I</div>
-            <div style={{ fontWeight: 800, color: '#0f172a' }}>{rec.sandFriability?.shiftI ?? '-'}</div>
-          </div>
-          <div>
-            <div style={{ color: '#6b7280', fontSize: 13, marginBottom: 4 }}>Prepared Sand Friability — Shift II</div>
-            <div style={{ fontWeight: 800, color: '#0f172a' }}>{rec.sandFriability?.shiftII ?? '-'}</div>
-          </div>
-          <div>
-            <div style={{ color: '#6b7280', fontSize: 13, marginBottom: 4 }}>Prepared Sand Friability — Shift III</div>
-            <div style={{ fontWeight: 800, color: '#0f172a' }}>{rec.sandFriability?.shiftIII ?? '-'}</div>
-          </div>
+
+        {/* Bottom: Sand Properties & Test Parameters */}
+        <div style={{ marginTop: 24 }}>
+          {renderTable5()}
         </div>
-      </div>
 
-      <div style={{ padding: 14, borderTop: '1px solid #f3f7fb', display: 'flex', justifyContent: 'center', gap: 10 }}>
-        <button
-          onClick={() => openT4EditModal(rec)}
-          style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #3b82f6', background: '#fff', color: '#1d4ed8', cursor: 'pointer', fontSize: 14 }}
-        >
-          Edit
-        </button>
-        <button
-          onClick={() => handleDeleteRecord(rec, 'table4')}
-          style={{ padding: '10px 14px', borderRadius: 8, border: '1px solid #ef4444', background: '#fff', color: '#dc2626', cursor: 'pointer', fontSize: 14 }}
-        >
-          Delete
-        </button>
       </div>
-    </div>
-  ));
-})()}
-
-               </div>
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+      </>
   );
 };
 

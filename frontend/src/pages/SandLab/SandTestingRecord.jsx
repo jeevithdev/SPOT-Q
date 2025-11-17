@@ -160,6 +160,7 @@ const SandTestingRecord = () => {
     table4: false,
     table5: false
   });
+  const [savingAll, setSavingAll] = useState(false);
 
   // Field locks for each table
   const [tableLocks, setTableLocks] = useState({
@@ -205,7 +206,7 @@ const SandTestingRecord = () => {
     }
   };
 
-  const handleTableSubmit = async (tableNum) => {
+  const handleTableSubmit = async (tableNum, silent = false) => {
     if (!primaryData.date) {
       alert('Please enter a date first.');
       return;
@@ -419,19 +420,39 @@ const SandTestingRecord = () => {
       });
       
       if (response.success) {
-        alert(`Table ${tableNum} saved successfully!`);
+        if (!silent) alert(`Table ${tableNum} saved successfully!`);
         // Refresh locks after save
         if (primaryData.date) {
           await checkExistingData(primaryData.date);
         }
       } else {
-        alert('Error: ' + response.message);
+        if (!silent) alert('Error: ' + response.message);
       }
     } catch (error) {
       console.error(`Error saving table ${tableNum}:`, error);
-      alert(`Failed to save table ${tableNum}: ${error.message || 'Please try again.'}`);
+      if (!silent) alert(`Failed to save table ${tableNum}: ${error.message || 'Please try again.'}`);
     } finally {
       setLoadingStates(prev => ({ ...prev, [`table${tableNum}`]: false }));
+    }
+  };
+
+  const handleSaveAll = async () => {
+    if (!primaryData.date) {
+      alert('Please enter a date first.');
+      return;
+    }
+    setSavingAll(true);
+    try {
+      for (let t = 1; t <= 5; t++) {
+        await handleTableSubmit(t, true);
+      }
+      alert('All tables saved successfully!');
+      navigate('/sand-lab/sand-testing-record/report');
+    } catch (e) {
+      console.error('Save all error', e);
+      alert('Some sections may not have saved. Please review and try again.');
+    } finally {
+      setSavingAll(false);
     }
   };
 
@@ -796,7 +817,7 @@ const SandTestingRecord = () => {
   );
 
   return (
-    <div className="page-wrapper">
+    <>
       {/* Header */}
       <div className="sand-header">
         <div className="sand-header-text">
@@ -1116,15 +1137,6 @@ const SandTestingRecord = () => {
         >
           <RotateCcw size={16} />
           Reset
-        </button>
-        <button
-          className="sand-submit-btn"
-          onClick={() => handleTableSubmit(1)}
-          disabled={loadingStates.table1}
-          title="Save Table 1"
-        >
-          {loadingStates.table1 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
-          {loadingStates.table1 ? 'Saving...' : 'Save Table 1'}
         </button>
       </div>
 
@@ -1489,15 +1501,6 @@ const SandTestingRecord = () => {
           <RotateCcw size={16} />
           Reset
         </button>
-        <button
-          className="sand-submit-btn"
-          onClick={() => handleTableSubmit(2)}
-          disabled={loadingStates.table2}
-          title="Save Table 2"
-        >
-          {loadingStates.table2 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
-          {loadingStates.table2 ? 'Saving...' : 'Save Table 2'}
-        </button>
       </div>
 
       {/* Table 3 */}
@@ -1780,15 +1783,6 @@ const SandTestingRecord = () => {
           <RotateCcw size={16} />
           Reset
         </button>
-        <button
-          className="sand-submit-btn"
-          onClick={() => handleTableSubmit(3)}
-          disabled={loadingStates.table3}
-          title="Save Table 3"
-        >
-          {loadingStates.table3 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
-          {loadingStates.table3 ? 'Saving...' : 'Save Table 3'}
-        </button>
       </div>
 
       {/* Table 4 */}
@@ -1906,15 +1900,6 @@ const SandTestingRecord = () => {
           <RotateCcw size={16} />
           Reset
         </button>
-        <button
-          className="sand-submit-btn"
-          onClick={() => handleTableSubmit(4)}
-          disabled={loadingStates.table4}
-          title="Save Table 4"
-        >
-          {loadingStates.table4 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
-          {loadingStates.table4 ? 'Saving...' : 'Save Table 4'}
-        </button>
       </div>
 
       {/* Table 5 */}
@@ -1968,43 +1953,30 @@ const SandTestingRecord = () => {
           </div>
           <div className="sand-table5-form-group">
             <label>G.C.S (Gm/cm²)</label>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="gcs-checkpoint"
-                  value="fdyA"
-                  checked={table5.gcsCheckpoint === 'fdyA'}
-                  onChange={(e) => handleTableChange(5, 'gcsCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>FDY-A (Min 1800)</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="gcs-checkpoint"
-                  value="fdyB"
-                  checked={table5.gcsCheckpoint === 'fdyB'}
-                  onChange={(e) => handleTableChange(5, 'gcsCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>FDY-B (Min 1900)</span>
-              </label>
+            <div className="sand-input-combo">
+              <select
+                name="gcs-checkpoint"
+                value={table5.gcsCheckpoint || ''}
+                onChange={(e) => handleTableChange(5, 'gcsCheckpoint', e.target.value)}
+                className="sand-table5-input"
+              >
+                <option value="" disabled>Select checkpoint</option>
+                <option value="fdyA">FDY-A (Min 1800)</option>
+                <option value="fdyB">FDY-B (Min 1900)</option>
+              </select>
+              <input 
+                type="number" 
+                name="gcsValue" 
+                value={table5.gcsValue || ''} 
+                onChange={(e) => handleTableChange(5, 'gcsValue', e.target.value)} 
+                placeholder={table5.gcsCheckpoint === 'fdyA' ? 'FDY-A value' : table5.gcsCheckpoint === 'fdyB' ? 'FDY-B value' : 'Enter value'}
+                step="0.01"
+                className="sand-table5-input"
+              />
             </div>
-            <input 
-              type="number" 
-              name="gcsValue" 
-              value={table5.gcsValue || ''} 
-              onChange={(e) => handleTableChange(5, 'gcsValue', e.target.value)} 
-              placeholder={table5.gcsCheckpoint === 'fdyA' ? 'FDY-A value' : table5.gcsCheckpoint === 'fdyB' ? 'FDY-B value' : 'Enter value'}
-              step="0.01"
-              className="sand-table5-input"
-            />
           </div>
-          <div className="sand-table5-form-group sand-table5-align-input">
+          <div className="sand-table5-form-group">
             <label>W.T.S (N/cm² Min 0.15)</label>
-            <div style={{ marginBottom: '0.5rem', height: '1.5rem' }}></div>
             <input 
               type="number" 
               name="wts" 
@@ -2015,9 +1987,8 @@ const SandTestingRecord = () => {
               className="sand-table5-input"
             />
           </div>
-          <div className="sand-table5-form-group sand-table5-align-input">
+          <div className="sand-table5-form-group">
             <label>Moisture% (3.0-4.0%)</label>
-            <div style={{ marginBottom: '0.5rem', height: '1.5rem' }}></div>
             <input 
               type="number" 
               name="moisture" 
@@ -2028,9 +1999,8 @@ const SandTestingRecord = () => {
               className="sand-table5-input"
             />
           </div>
-          <div className="sand-table5-form-group sand-table5-align-input">
+          <div className="sand-table5-form-group">
             <label>Compactability% (At DMM 33-40%)</label>
-            <div style={{ marginBottom: '0.5rem', height: '1.5rem' }}></div>
             <input 
               type="number" 
               name="compactability" 
@@ -2067,43 +2037,34 @@ const SandTestingRecord = () => {
           </div>
           <div className="sand-table5-form-group">
             <label>Sand Temp C (°C)</label>
-            <div className="sand-table5-temp-container">
-              <div className="sand-table5-temp-item">
-                <label>BC</label>
-                <input 
-                  type="number" 
-                  name="sandTempBC" 
-                  value={table5.sandTempBC || ''} 
-                  onChange={(e) => handleTableChange(5, 'sandTempBC', e.target.value)} 
-                  placeholder="BC"
-                  step="0.01"
-                  className="sand-table5-input"
-                />
-              </div>
-              <div className="sand-table5-temp-item">
-                <label>WU</label>
-                <input 
-                  type="number" 
-                  name="sandTempWU" 
-                  value={table5.sandTempWU || ''} 
-                  onChange={(e) => handleTableChange(5, 'sandTempWU', e.target.value)} 
-                  placeholder="WU"
-                  step="0.01"
-                  className="sand-table5-input"
-                />
-              </div>
-              <div className="sand-table5-temp-item">
-                <label>SSU Max 45C</label>
-                <input 
-                  type="number" 
-                  name="sandTempSSU" 
-                  value={table5.sandTempSSU || ''} 
-                  onChange={(e) => handleTableChange(5, 'sandTempSSU', e.target.value)} 
-                  placeholder="SSU"
-                  step="0.01"
-                  className="sand-table5-input"
-                />
-              </div>
+            <div className="sand-input-combo-3">
+              <input 
+                type="number" 
+                name="sandTempBC" 
+                value={table5.sandTempBC || ''} 
+                onChange={(e) => handleTableChange(5, 'sandTempBC', e.target.value)} 
+                placeholder="BC"
+                step="0.01"
+                className="sand-table5-input"
+              />
+              <input 
+                type="number" 
+                name="sandTempWU" 
+                value={table5.sandTempWU || ''} 
+                onChange={(e) => handleTableChange(5, 'sandTempWU', e.target.value)} 
+                placeholder="WU"
+                step="0.01"
+                className="sand-table5-input"
+              />
+              <input 
+                type="number" 
+                name="sandTempSSU" 
+                value={table5.sandTempSSU || ''} 
+                onChange={(e) => handleTableChange(5, 'sandTempSSU', e.target.value)} 
+                placeholder="SSU"
+                step="0.01"
+                className="sand-table5-input"
+              />
             </div>
           </div>
           <div className="sand-table5-form-group">
@@ -2120,181 +2081,117 @@ const SandTestingRecord = () => {
           </div>
           <div className="sand-table5-form-group">
             <label>Bentonite</label>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="bentonite-checkpoint"
-                  value="withPremix"
-                  checked={table5.bentoniteCheckpoint === 'withPremix'}
-                  onChange={(e) => handleTableChange(5, 'bentoniteCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>With premix (0.60-1.20%)</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="bentonite-checkpoint"
-                  value="only"
-                  checked={table5.bentoniteCheckpoint === 'only'}
-                  onChange={(e) => handleTableChange(5, 'bentoniteCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>Only (0.80-2.20%)</span>
-              </label>
-            </div>
-            <div className="sand-table5-flex-container">
-              <div className="sand-table5-flex-item">
-                <label>Kgs</label>
-                <input 
-                  type="number" 
-                  name="bentoniteWithPremix" 
-                  value={table5.bentoniteWithPremix || ''} 
-                  onChange={(e) => handleTableChange(5, 'bentoniteWithPremix', e.target.value)} 
-                  placeholder="Kgs"
-                  step="0.01"
-                  className="sand-table5-input"
-                />
-              </div>
-              <div className="sand-table5-flex-item">
-                <label>%</label>
-                <input 
-                  type="number" 
-                  name="bentoniteOnly" 
-                  value={table5.bentoniteOnly || ''} 
-                  onChange={(e) => handleTableChange(5, 'bentoniteOnly', e.target.value)} 
-                  placeholder="%"
-                  step="0.01"
-                  className="sand-table5-input"
-                />
-              </div>
+            <div className="sand-input-combo-3">
+              <select
+                name="bentonite-checkpoint"
+                value={table5.bentoniteCheckpoint || ''}
+                onChange={(e) => handleTableChange(5, 'bentoniteCheckpoint', e.target.value)}
+                className="sand-table5-input"
+              >
+                <option value="" disabled>Select type</option>
+                <option value="withPremix">With premix (0.60-1.20%)</option>
+                <option value="only">Only (0.80-2.20%)</option>
+              </select>
+              <input 
+                type="number" 
+                name="bentoniteWithPremix" 
+                value={table5.bentoniteWithPremix || ''} 
+                onChange={(e) => handleTableChange(5, 'bentoniteWithPremix', e.target.value)} 
+                placeholder="Kgs"
+                step="0.01"
+                className="sand-table5-input"
+              />
+              <input 
+                type="number" 
+                name="bentoniteOnly" 
+                value={table5.bentoniteOnly || ''} 
+                onChange={(e) => handleTableChange(5, 'bentoniteOnly', e.target.value)} 
+                placeholder="%"
+                step="0.01"
+                className="sand-table5-input"
+              />
             </div>
           </div>
           <div className="sand-table5-form-group">
             <label>Premix / Coal Dust</label>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="premix-coaldust-checkpoint"
-                  value="premix"
-                  checked={table5.premixCoalDustCheckpoint === 'premix'}
-                  onChange={(e) => handleTableChange(5, 'premixCoalDustCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>Premix (0.60-1.20%)</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="premix-coaldust-checkpoint"
-                  value="coalDust"
-                  checked={table5.premixCoalDustCheckpoint === 'coalDust'}
-                  onChange={(e) => handleTableChange(5, 'premixCoalDustCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>Coal dust (0.20-0.70%)</span>
-              </label>
-            </div>
-            <div className="sand-table5-flex-container">
-              <div className="sand-table5-flex-item">
-                <label>Kgs</label>
-                <input 
-                  type="number" 
-                  name="premixKgsMix" 
-                  value={table5.premixKgsMix || ''} 
-                  onChange={(e) => handleTableChange(5, 'premixKgsMix', e.target.value)} 
-                  placeholder="Kgs"
-                  step="0.01"
-                  className="sand-table5-input"
-                />
-              </div>
-              <div className="sand-table5-flex-item">
-                <label>%</label>
-                <input 
-                  type="number" 
-                  name="coalDustKgsMix" 
-                  value={table5.coalDustKgsMix || ''} 
-                  onChange={(e) => handleTableChange(5, 'coalDustKgsMix', e.target.value)} 
-                  placeholder="%"
-                  step="0.01"
-                  className="sand-table5-input"
-                />
-              </div>
+            <div className="sand-input-combo-3">
+              <select
+                name="premix-coaldust-checkpoint"
+                value={table5.premixCoalDustCheckpoint || ''}
+                onChange={(e) => handleTableChange(5, 'premixCoalDustCheckpoint', e.target.value)}
+                className="sand-table5-input"
+              >
+                <option value="" disabled>Select material</option>
+                <option value="premix">Premix (0.60-1.20%)</option>
+                <option value="coalDust">Coal Dust (0.20-0.70%)</option>
+              </select>
+              <input 
+                type="number" 
+                name="premixKgsMix" 
+                value={table5.premixKgsMix || ''} 
+                onChange={(e) => handleTableChange(5, 'premixKgsMix', e.target.value)} 
+                placeholder="Kgs"
+                step="0.01"
+                className="sand-table5-input"
+              />
+              <input 
+                type="number" 
+                name="coalDustKgsMix" 
+                value={table5.coalDustKgsMix || ''} 
+                onChange={(e) => handleTableChange(5, 'coalDustKgsMix', e.target.value)} 
+                placeholder="%"
+                step="0.01"
+                className="sand-table5-input"
+              />
             </div>
           </div>
           <div className="sand-table5-form-group">
             <label>LC SCM / Compactability Setting</label>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="lcscm-compactability-checkpoint"
-                  value="lcScm"
-                  checked={table5.lcScmCompactabilityCheckpoint === 'lcScm'}
-                  onChange={(e) => handleTableChange(5, 'lcScmCompactabilityCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>LC SCM (42 ± 3)</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="lcscm-compactability-checkpoint"
-                  value="compactabilitySetting"
-                  checked={table5.lcScmCompactabilityCheckpoint === 'compactabilitySetting'}
-                  onChange={(e) => handleTableChange(5, 'lcScmCompactabilityCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>Compactability At1 (40±3)</span>
-              </label>
+            <div className="sand-input-combo">
+              <select
+                name="lcscm-compactability-checkpoint"
+                value={table5.lcScmCompactabilityCheckpoint || ''}
+                onChange={(e) => handleTableChange(5, 'lcScmCompactabilityCheckpoint', e.target.value)}
+                className="sand-table5-input"
+              >
+                <option value="" disabled>Select option</option>
+                <option value="lcScm">LC SCM (42 ± 3)</option>
+                <option value="compactabilitySetting">Compactability At1 (40±3)</option>
+              </select>
+              <input 
+                type="number" 
+                name="lcScmCompactabilityValue" 
+                value={table5.lcScmCompactabilityValue || ''} 
+                onChange={(e) => handleTableChange(5, 'lcScmCompactabilityValue', e.target.value)} 
+                placeholder={table5.lcScmCompactabilityCheckpoint === 'lcScm' ? 'LC SCM value' : table5.lcScmCompactabilityCheckpoint === 'compactabilitySetting' ? 'Compactability value' : 'Enter value'}
+                step="0.01"
+                className="sand-table5-input"
+              />
             </div>
-            <input 
-              type="number" 
-              name="lcScmCompactabilityValue" 
-              value={table5.lcScmCompactabilityValue || ''} 
-              onChange={(e) => handleTableChange(5, 'lcScmCompactabilityValue', e.target.value)} 
-              placeholder={table5.lcScmCompactabilityCheckpoint === 'lcScm' ? 'LC SCM value' : table5.lcScmCompactabilityCheckpoint === 'compactabilitySetting' ? 'Compactability value' : 'Enter value'}
-              step="0.01"
-              className="sand-table5-input"
-            />
           </div>
           <div className="sand-table5-form-group">
             <label>Mould Strength / Shear Strength</label>
-            <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', marginBottom: '0.5rem', flexWrap: 'wrap', fontSize: '0.8125rem' }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="mouldstrength-shear-checkpoint"
-                  value="mouldStrength"
-                  checked={table5.mouldStrengthShearCheckpoint === 'mouldStrength'}
-                  onChange={(e) => handleTableChange(5, 'mouldStrengthShearCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>Mould strength (23±3)</span>
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', cursor: 'pointer' }}>
-                <input
-                  type="radio"
-                  name="mouldstrength-shear-checkpoint"
-                  value="shearStrength"
-                  checked={table5.mouldStrengthShearCheckpoint === 'shearStrength'}
-                  onChange={(e) => handleTableChange(5, 'mouldStrengthShearCheckpoint', e.target.value)}
-                  style={{ cursor: 'pointer' }}
-                />
-                <span>Shear Strength (5.0±1%)</span>
-              </label>
+            <div className="sand-input-combo">
+              <select
+                name="mouldstrength-shear-checkpoint"
+                value={table5.mouldStrengthShearCheckpoint || ''}
+                onChange={(e) => handleTableChange(5, 'mouldStrengthShearCheckpoint', e.target.value)}
+                className="sand-table5-input"
+              >
+                <option value="" disabled>Select option</option>
+                <option value="mouldStrength">Mould strength (23±3)</option>
+                <option value="shearStrength">Shear Strength (5.0±1%)</option>
+              </select>
+              <input 
+                type="number" 
+                name="mouldStrengthShearValue" 
+                value={table5.mouldStrengthShearValue || ''} 
+                onChange={(e) => handleTableChange(5, 'mouldStrengthShearValue', e.target.value)} 
+                placeholder={table5.mouldStrengthShearCheckpoint === 'mouldStrength' ? 'Mould strength value' : table5.mouldStrengthShearCheckpoint === 'shearStrength' ? 'Shear strength value' : 'Enter value'}
+                step="0.01"
+                className="sand-table5-input"
+              />
             </div>
-            <input 
-              type="number" 
-              name="mouldStrengthShearValue" 
-              value={table5.mouldStrengthShearValue || ''} 
-              onChange={(e) => handleTableChange(5, 'mouldStrengthShearValue', e.target.value)} 
-              placeholder={table5.mouldStrengthShearCheckpoint === 'mouldStrength' ? 'Mould strength value' : table5.mouldStrengthShearCheckpoint === 'shearStrength' ? 'Shear strength value' : 'Enter value'}
-              step="0.01"
-              className="sand-table5-input"
-            />
           </div>
           <div className="sand-table5-form-group">
             <label>Prepared Sand Lumps/kg</label>
@@ -2349,16 +2246,17 @@ const SandTestingRecord = () => {
           </button>
           <button
             className="sand-submit-btn"
-            onClick={() => handleTableSubmit(5)}
-            disabled={loadingStates.table5}
-            title="Save Table 5"
+            onClick={handleSaveAll}
+            disabled={savingAll}
+            title="Save All Tables"
           >
-            {loadingStates.table5 ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
-            {loadingStates.table5 ? 'Saving...' : 'Save Table 5'}
+            {savingAll ? <Loader2 size={18} className="spinner" /> : <Save size={18} />}
+            {savingAll ? 'Saving...' : 'Save All'}
           </button>
         </div>
       </div>
-    </div>
+
+    </>
   );
 };
 

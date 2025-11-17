@@ -110,17 +110,17 @@
 
 /* Primary Data Container */
 .sand-primary-container {
-  background: white;
-  border: 2px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 1.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-  transition: box-shadow 0.3s ease;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 1rem;
+  box-shadow: none;
+  transition: none;
 }
 
 .sand-primary-container:hover {
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  box-shadow: none;
 }
 
 /* Primary Data Title with Blue Highlight */
@@ -257,26 +257,23 @@
 
 /* Table Container Wrapper */
 .sand-table-container-wrapper {
-  display: flex;
-  gap: 1.5rem;
-  align-items: flex-start;
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  gap: 1rem;
+  align-items: start;
   margin-bottom: 0;
-  flex-wrap: wrap;
 }
 
 .sand-table-container-wrapper .sand-shift-table {
-  flex: 1;
-  min-width: 400px;
+  width: 100%;
 }
 
 /* Boxed Table Style */
 .sand-table-boxed {
-  border: 2px solid #cbd5e1;
+  border: 1px solid #e2e8f0;
   border-radius: 8px;
-  background-color: #f8fafc;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  width: auto;
-  max-width: 300px;
+  background-color: #ffffff;
+  width: 100%;
 }
 
 .sand-table-boxed tbody tr {
@@ -288,7 +285,7 @@
 }
 
 .sand-table-boxed td {
-  padding: 0.5rem;
+  padding: 0.75rem;
 }
 
 .sand-table-boxed td:first-child {
@@ -332,14 +329,15 @@
   border-collapse: collapse;
   margin-bottom: 0;
   border: 1px solid #e2e8f0;
+  background-color: #ffffff;
 }
 
 .sand-shift-table thead {
-  background-color: #f8fafc;
+  background-color: #ffffff;
 }
 
 .sand-shift-table th {
-  padding: 0.75rem;
+  padding: 0.75rem 0.75rem;
   text-align: left;
   font-weight: 600;
   color: #334155;
@@ -407,6 +405,7 @@
 
 .sand-table-input[type="number"] {
   -moz-appearance: textfield;
+  appearance: textfield;
 }
 
 .sand-table-input[type="number"]::-webkit-outer-spin-button,
@@ -722,21 +721,30 @@
 /* Table 5 Form Grid Layout - similar to DmmSettingParameters */
 .sand-table5-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 1rem;
+  align-items: stretch;
   margin-bottom: 1.5rem;
+}
+
+@media (min-width: 1024px) {
+  .sand-table5-form-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
 }
 
 .sand-table5-form-group {
   display: flex;
   flex-direction: column;
+  min-height: 110px;
+  gap: 0.375rem;
 }
 
 .sand-table5-form-group label {
   font-size: 0.875rem;
   font-weight: 600;
   color: #334155;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.375rem;
   display: block;
 }
 
@@ -751,6 +759,7 @@
   background-color: #ffffff;
   transition: all 0.3s ease;
   box-sizing: border-box;
+  height: 42px;
 }
 
 .sand-table5-input:focus {
@@ -779,6 +788,48 @@
   min-height: 80px;
   height: auto;
   font-family: inherit;
+}
+
+/* Inline combos for select + input alignment */
+.sand-input-combo {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem;
+}
+
+.sand-input-combo-3 {
+  display: grid;
+  grid-template-columns: 1fr 0.6fr 0.6fr;
+  gap: 0.4rem;
+  max-inline-size: 100%;
+}
+
+/* Keep combo children on one row (avoid accidental wrapping) */
+.sand-input-combo > *,
+.sand-input-combo-3 > * {
+  min-width: 0;
+}
+
+/* Avoid select text being hidden under the native arrow */
+select.sand-table5-input {
+  padding-right: 2rem;
+}
+
+@media (max-width: 768px) {
+  .sand-input-combo,
+  .sand-input-combo-3 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Inline control group for radio/checkbox rows under a label */
+.sand-inline-controls {
+  display: flex;
+  gap: 0.75rem;
+  align-items: center;
+  margin-bottom: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.8125rem;
 }
 
 /* Full width form groups for complex fields */
