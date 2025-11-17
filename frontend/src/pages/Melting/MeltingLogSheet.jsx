@@ -767,173 +767,155 @@ const MeltingLogSheet = () => {
       {/* Table 1 */}
       <div>
         <h3 className="section-header">Table 1</h3>
-        
+
         <div className="melting-log-form-grid melting-log-table5-grid">
           <div className="melting-log-form-group">
             <label>Heat No</label>
-          <input
-                type="text"
-                value={table1.heatNo || ''}
-                onChange={(e) => handleTableChange(1, 'heatNo', e.target.value)}
-                placeholder="Enter heat no"
+            <input
+              type="text"
+              value={table1.heatNo || ''}
+              onChange={(e) => handleTableChange(1, 'heatNo', e.target.value)}
+              placeholder="Enter heat no"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Grade</label>
-          <input
-                type="text"
-                value={table1.grade || ''}
-                onChange={(e) => handleTableChange(1, 'grade', e.target.value)}
-                placeholder="Enter grade"
+            <input
+              type="text"
+              value={table1.grade || ''}
+              onChange={(e) => handleTableChange(1, 'grade', e.target.value)}
+              placeholder="Enter grade"
             />
           </div>
 
-          <div className="melting-log-form-group" />
-          <div className="melting-log-form-group" />
-          <div className="melting-log-form-group" />
-        </div>
-
-        <div className="melting-log-row-two">
-          <div className="melting-log-sub-section">
-            <h4 className="melting-log-sub-section-title">Charging (in Kgs)</h4>
-            <div className="melting-log-form-grid">
-              <div className="melting-log-form-group">
-                <label>Charging Time</label>
+          <div className="melting-log-form-group">
+            <label>Charging Time</label>
             <input
-                  type="time"
-                  value={table1.chargingTime || ''}
-                  onChange={(e) => handleTableChange(1, 'chargingTime', e.target.value)}
-                />
-              </div>
-  
-              <div className="melting-log-form-group">
-                <label>If Bath</label>
-            <input
-                  type="text"
-                  value={table1.ifBath || ''}
-                  onChange={(e) => handleTableChange(1, 'ifBath', e.target.value)}
-                  placeholder="Enter if bath"
-                />
-              </div>
-            </div>
+              type="time"
+              value={table1.chargingTime || ''}
+              onChange={(e) => handleTableChange(1, 'chargingTime', e.target.value)}
+            />
           </div>
-  
-          <div className="melting-log-sub-section">
-            <h4 className="melting-log-sub-section-title">Liquid Metal</h4>
-            <div className="melting-log-form-grid">
-              <div className="melting-log-form-group">
-                <label>Press Pour (kgs)</label>
-            <input
-                  type="number"
-                  value={table1.liquidMetalPressPour || ''}
-                  onChange={(e) => handleTableChange(1, 'liquidMetalPressPour', e.target.value)}
-                  placeholder="Enter value"
-                  step="0.01"
-                />
-              </div>
-  
-              <div className="melting-log-form-group">
-                <label>Holder (kgs)</label>
-            <input
-                  type="number"
-                  value={table1.liquidMetalHolder || ''}
-                  onChange={(e) => handleTableChange(1, 'liquidMetalHolder', e.target.value)}
-                  placeholder="Enter value"
-                  step="0.01"
-                />
-              </div>
-            </div>
-          </div>
-        </div>
 
-        <div className="melting-log-form-grid">
+          <div className="melting-log-form-group">
+            <label>If Bath</label>
+            <input
+              type="text"
+              value={table1.ifBath || ''}
+              onChange={(e) => handleTableChange(1, 'ifBath', e.target.value)}
+              placeholder="Enter if bath"
+            />
+          </div>
+
+          <div className="melting-log-form-group">
+            <label>Liquid Metal - Press Pour (kgs)</label>
+            <input
+              type="number"
+              value={table1.liquidMetalPressPour || ''}
+              onChange={(e) => handleTableChange(1, 'liquidMetalPressPour', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
+            />
+          </div>
+
+          <div className="melting-log-form-group">
+            <label>Liquid Metal - Holder (kgs)</label>
+            <input
+              type="number"
+              value={table1.liquidMetalHolder || ''}
+              onChange={(e) => handleTableChange(1, 'liquidMetalHolder', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
+            />
+          </div>
+
           <div className="melting-log-form-group">
             <label>SG-MS Steel (400 - 2500 kgs)</label>
-          <input
-                type="number"
-                value={table1.sgMsSteel || ''}
-                onChange={(e) => handleTableChange(1, 'sgMsSteel', e.target.value)}
-                placeholder="Enter value"
-                min="400"
-                max="2500"
-                step="0.01"
+            <input
+              type="number"
+              value={table1.sgMsSteel || ''}
+              onChange={(e) => handleTableChange(1, 'sgMsSteel', e.target.value)}
+              placeholder="Enter value"
+              min="400"
+              max="2500"
+              step="0.01"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Grey MS Steel (400 - 2500 kgs)</label>
-          <input
-                type="number"
-                value={table1.greyMsSteel || ''}
-                onChange={(e) => handleTableChange(1, 'greyMsSteel', e.target.value)}
-                placeholder="Enter value"
-                min="400"
-                max="2500"
-                step="0.01"
+            <input
+              type="number"
+              value={table1.greyMsSteel || ''}
+              onChange={(e) => handleTableChange(1, 'greyMsSteel', e.target.value)}
+              placeholder="Enter value"
+              min="400"
+              max="2500"
+              step="0.01"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Returns SG (500 - 2500 kgs)</label>
-          <input
-                type="number"
-                value={table1.returnsSg || ''}
-                onChange={(e) => handleTableChange(1, 'returnsSg', e.target.value)}
-                placeholder="Enter value"
-                min="500"
-                max="2500"
-                step="0.01"
+            <input
+              type="number"
+              value={table1.returnsSg || ''}
+              onChange={(e) => handleTableChange(1, 'returnsSg', e.target.value)}
+              placeholder="Enter value"
+              min="500"
+              max="2500"
+              step="0.01"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>GL (900 - 2250 kgs)</label>
-          <input
-                type="number"
-                value={table1.gl || ''}
-                onChange={(e) => handleTableChange(1, 'gl', e.target.value)}
-                placeholder="Enter value"
-                min="900"
-                max="2250"
-                step="0.01"
+            <input
+              type="number"
+              value={table1.gl || ''}
+              onChange={(e) => handleTableChange(1, 'gl', e.target.value)}
+              placeholder="Enter value"
+              min="900"
+              max="2250"
+              step="0.01"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Pig Iron (0 - 350 kgs)</label>
-          <input
-                type="number"
-                value={table1.pigIron || ''}
-                onChange={(e) => handleTableChange(1, 'pigIron', e.target.value)}
-                placeholder="Enter value"
-                min="0"
-                max="350"
-                step="0.01"
+            <input
+              type="number"
+              value={table1.pigIron || ''}
+              onChange={(e) => handleTableChange(1, 'pigIron', e.target.value)}
+              placeholder="Enter value"
+              min="0"
+              max="350"
+              step="0.01"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Borings (0 - 1900 kgs)</label>
-          <input
-                type="number"
-                value={table1.borings || ''}
-                onChange={(e) => handleTableChange(1, 'borings', e.target.value)}
-                placeholder="Enter value"
-                min="0"
-                max="1900"
-                step="0.01"
+            <input
+              type="number"
+              value={table1.borings || ''}
+              onChange={(e) => handleTableChange(1, 'borings', e.target.value)}
+              placeholder="Enter value"
+              min="0"
+              max="1900"
+              step="0.01"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Final Bath (kgs)</label>
-          <input
-                type="number"
-                value={table1.finalBath || ''}
-                onChange={(e) => handleTableChange(1, 'finalBath', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
+            <input
+              type="number"
+              value={table1.finalBath || ''}
+              onChange={(e) => handleTableChange(1, 'finalBath', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
             />
           </div>
         </div>
@@ -944,183 +926,139 @@ const MeltingLogSheet = () => {
       {/* Table 2 */}
       <div>
         <h3 className="section-header">Table 2</h3>
-        
+
         <div className="melting-log-form-grid melting-log-table5-grid">
           <div className="melting-log-form-group">
             <label>CharCoal (kgs)</label>
-          <input
-                type="number"
-                value={table2.charCoal || ''}
-                onChange={(e) => handleTableChange(2, 'charCoal', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
+            <input
+              type="number"
+              value={table2.charCoal || ''}
+              onChange={(e) => handleTableChange(2, 'charCoal', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
             />
           </div>
 
-          <div className="melting-log-form-group" />
-          <div className="melting-log-form-group" />
-          <div className="melting-log-form-group" />
-          <div className="melting-log-form-group" />
-        </div>
-
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">CPC</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>CPC - Fur (kgs)</label>
-          <input
-                type="number"
-                value={table2.cpcFur || ''}
-                onChange={(e) => handleTableChange(2, 'cpcFur', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>CPC - LC (kgs)</label>
-          <input
-                type="number"
-                value={table2.cpcLc || ''}
-                onChange={(e) => handleTableChange(2, 'cpcLc', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
+          <div className="melting-log-form-group">
+            <label>CPC - Fur (kgs)</label>
+            <input
+              type="number"
+              value={table2.cpcFur || ''}
+              onChange={(e) => handleTableChange(2, 'cpcFur', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
+            />
           </div>
-        </div>
 
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Silicon Carbide (0.03 to 0.09)</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>Silicon Carbide - Fur (kgs)</label>
-          <input
-                type="number"
-                value={table2.siliconCarbideFur || ''}
-                onChange={(e) => handleTableChange(2, 'siliconCarbideFur', e.target.value)}
-                placeholder="Enter value (0.03 to 0.09)"
-                min="0.03"
-                max="0.09"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
+          <div className="melting-log-form-group">
+            <label>CPC - LC (kgs)</label>
+            <input
+              type="number"
+              value={table2.cpcLc || ''}
+              onChange={(e) => handleTableChange(2, 'cpcLc', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
+            />
           </div>
-        </div>
 
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Ferrosilicon</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>Ferrosilicon - Fur (kgs)</label>
-          <input
-                type="number"
-                value={table2.ferrosiliconFur || ''}
-                onChange={(e) => handleTableChange(2, 'ferrosiliconFur', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Ferrosilicon - LC (kgs)</label>
-          <input
-                type="number"
-                value={table2.ferrosiliconLc || ''}
-                onChange={(e) => handleTableChange(2, 'ferrosiliconLc', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
+          <div className="melting-log-form-group">
+            <label>Silicon Carbide - Fur (kgs)</label>
+            <input
+              type="number"
+              value={table2.siliconCarbideFur || ''}
+              onChange={(e) => handleTableChange(2, 'siliconCarbideFur', e.target.value)}
+              placeholder="Enter value (0.03 to 0.09)"
+              min="0.03"
+              max="0.09"
+              step="0.01"
+            />
           </div>
-        </div>
 
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">FerroManganese</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>FerroManganese - Fur (kgs)</label>
-          <input
-                type="number"
-                value={table2.ferroManganeseFur || ''}
-                onChange={(e) => handleTableChange(2, 'ferroManganeseFur', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>FerroManganese - LC (kgs)</label>
-          <input
-                type="number"
-                value={table2.ferroManganeseLc || ''}
-                onChange={(e) => handleTableChange(2, 'ferroManganeseLc', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
+          <div className="melting-log-form-group">
+            <label>Ferrosilicon - Fur (kgs)</label>
+            <input
+              type="number"
+              value={table2.ferrosiliconFur || ''}
+              onChange={(e) => handleTableChange(2, 'ferrosiliconFur', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
+            />
           </div>
-        </div>
 
-        <div className="melting-log-form-grid melting-log-table5-grid">
+          <div className="melting-log-form-group">
+            <label>Ferrosilicon - LC (kgs)</label>
+            <input
+              type="number"
+              value={table2.ferrosiliconLc || ''}
+              onChange={(e) => handleTableChange(2, 'ferrosiliconLc', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
+            />
+          </div>
+
+          <div className="melting-log-form-group">
+            <label>FerroManganese - Fur (kgs)</label>
+            <input
+              type="number"
+              value={table2.ferroManganeseFur || ''}
+              onChange={(e) => handleTableChange(2, 'ferroManganeseFur', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
+            />
+          </div>
+
+          <div className="melting-log-form-group">
+            <label>FerroManganese - LC (kgs)</label>
+            <input
+              type="number"
+              value={table2.ferroManganeseLc || ''}
+              onChange={(e) => handleTableChange(2, 'ferroManganeseLc', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
+            />
+          </div>
+
           <div className="melting-log-form-group">
             <label>Cu (kgs)</label>
-          <input
-                type="number"
-                value={table2.cu || ''}
-                onChange={(e) => handleTableChange(2, 'cu', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
+            <input
+              type="number"
+              value={table2.cu || ''}
+              onChange={(e) => handleTableChange(2, 'cu', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Cr (kgs)</label>
-          <input
-                type="number"
-                value={table2.cr || ''}
-                onChange={(e) => handleTableChange(2, 'cr', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
+            <input
+              type="number"
+              value={table2.cr || ''}
+              onChange={(e) => handleTableChange(2, 'cr', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Pure Mg (kgs)</label>
-          <input
-                type="number"
-                value={table2.pureMg || ''}
-                onChange={(e) => handleTableChange(2, 'pureMg', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
+            <input
+              type="number"
+              value={table2.pureMg || ''}
+              onChange={(e) => handleTableChange(2, 'pureMg', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Iron Pyrite (kgs)</label>
-          <input
-                type="number"
-                value={table2.ironPyrite || ''}
-                onChange={(e) => handleTableChange(2, 'ironPyrite', e.target.value)}
-                placeholder="Enter value"
-                step="0.01"
+            <input
+              type="number"
+              value={table2.ironPyrite || ''}
+              onChange={(e) => handleTableChange(2, 'ironPyrite', e.target.value)}
+              placeholder="Enter value"
+              step="0.01"
             />
           </div>
         </div>
@@ -1131,114 +1069,88 @@ const MeltingLogSheet = () => {
       {/* Table 3 */}
       <div>
         <h3 className="section-header">Table 3</h3>
-        
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Lab Coin</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>Lab Coin Time</label>
-          <input
-                type="time"
-                value={table3.labCoinTime || ''}
-                onChange={(e) => handleTableChange(3, 'labCoinTime', e.target.value)}
-              />
-            </div>
 
-            <div className="melting-log-form-group">
-              <label>Lab Coin Temp (°C)</label>
-          <input
-                type="number"
-                value={table3.labCoinTempC || ''}
-                onChange={(e) => handleTableChange(3, 'labCoinTempC', e.target.value)}
-                placeholder="Enter temperature in °C"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
+        <div className="melting-log-form-grid melting-log-table5-grid">
+          <div className="melting-log-form-group">
+            <label>Lab Coin - Time</label>
+            <input
+              type="time"
+              value={table3.labCoinTime || ''}
+              onChange={(e) => handleTableChange(3, 'labCoinTime', e.target.value)}
+            />
           </div>
-        </div>
 
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Deslaging Time</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>Deslaging Time From</label>
-          <input
-                type="time"
-                value={table3.deslagingTimeFrom || ''}
-                onChange={(e) => handleTableChange(3, 'deslagingTimeFrom', e.target.value)}
-              />
-            </div>
+          <div className="melting-log-form-group">
+            <label>Lab Coin - Temp (°C)</label>
+            <input
+              type="number"
+              value={table3.labCoinTempC || ''}
+              onChange={(e) => handleTableChange(3, 'labCoinTempC', e.target.value)}
+              placeholder="Enter temperature in °C"
+              step="0.01"
+            />
+          </div>
 
-            <div className="melting-log-form-group">
-              <label>Deslaging Time To</label>
-          <input
-                type="time"
-                value={table3.deslagingTimeTo || ''}
-                onChange={(e) => handleTableChange(3, 'deslagingTimeTo', e.target.value)}
-              />
-            </div>
+          <div className="melting-log-form-group">
+            <label>Deslaging Time - From</label>
+            <input
+              type="time"
+              value={table3.deslagingTimeFrom || ''}
+              onChange={(e) => handleTableChange(3, 'deslagingTimeFrom', e.target.value)}
+            />
+          </div>
 
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
+          <div className="melting-log-form-group">
+            <label>Deslaging Time -To</label>
+            <input
+              type="time"
+              value={table3.deslagingTimeTo || ''}
+              onChange={(e) => handleTableChange(3, 'deslagingTimeTo', e.target.value)}
+            />
+          </div>
+
+          <div className="melting-log-form-group">
+            <label>Metal Ready Time</label>
+            <input
+              type="time"
+              value={table3.metalReadyTime || ''}
+              onChange={(e) => handleTableChange(3, 'metalReadyTime', e.target.value)}
+            />
           </div>
         </div>
 
         <div className="melting-log-form-grid melting-log-table5-grid">
           <div className="melting-log-form-group">
-            <label>Metal Ready Time</label>
-          <input
-                type="time"
-                value={table3.metalReadyTime || ''}
-                onChange={(e) => handleTableChange(3, 'metalReadyTime', e.target.value)}
+            <label>Waiting for Tapping- From</label>
+            <input
+              type="time"
+              value={table3.waitingForTappingFrom || ''}
+              onChange={(e) => handleTableChange(3, 'waitingForTappingFrom', e.target.value)}
+            />
+          </div>
+
+          <div className="melting-log-form-group">
+            <label>Waiting for Tapping -To</label>
+            <input
+              type="time"
+              value={table3.waitingForTappingTo || ''}
+              onChange={(e) => handleTableChange(3, 'waitingForTappingTo', e.target.value)}
             />
           </div>
 
           <div className="melting-log-form-group" />
           <div className="melting-log-form-group" />
           <div className="melting-log-form-group" />
-          <div className="melting-log-form-group" />
-        </div>
-
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Waiting for Tapping</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>Waiting for Tapping From</label>
-          <input
-                type="time"
-                value={table3.waitingForTappingFrom || ''}
-                onChange={(e) => handleTableChange(3, 'waitingForTappingFrom', e.target.value)}
-              />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Waiting for Tapping To</label>
-          <input
-                type="time"
-                value={table3.waitingForTappingTo || ''}
-                onChange={(e) => handleTableChange(3, 'waitingForTappingTo', e.target.value)}
-              />
-            </div>
-
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-          </div>
         </div>
 
         <div className="melting-log-form-grid">
-          <div className="melting-log-form-group">
+          <div className="melting-log-form-group" style={{ maxWidth: '40%' }}>
             <label>Reason</label>
-          <input
-                type="text"
-                value={table3.reason || ''}
-                onChange={(e) => handleTableChange(3, 'reason', e.target.value)}
-                placeholder="Enter reason"
+            <input
+              type="text"
+              value={table3.reason || ''}
+              onChange={(e) => handleTableChange(3, 'reason', e.target.value)}
+              placeholder="Enter reason"
             />
           </div>
         </div>
@@ -1261,7 +1173,7 @@ const MeltingLogSheet = () => {
         </div>
 
         <div className="melting-log-form-group">
-          <label>Temp C SG (1460 - 1550 °C)</label>
+          <label>Temp C - SG (1460 - 1550 °C)</label>
           <input
                 type="number"
                 value={table4.tempCSg || ''}
@@ -1274,7 +1186,7 @@ const MeltingLogSheet = () => {
         </div>
 
         <div className="melting-log-form-group">
-          <label>Temp C Grey (1440 - 1550 °C)</label>
+          <label>Temp C - Grey (1440 - 1550 °C)</label>
           <input
                 type="number"
                 value={table4.tempCGrey || ''}
@@ -1346,171 +1258,80 @@ const MeltingLogSheet = () => {
       {/* Table 5 - Electrical Readings */}
       <div>
         <h3 className="section-header">Table 5</h3>
-        
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Furnace 1</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>Furnace 1 - Kw</label>
-              <input
-                type="number"
-                value={table5.furnace1Kw || ''}
-                onChange={(e) => handleTableChange(5, 'furnace1Kw', e.target.value)}
-                placeholder="Enter Kw"
-                step="0.01"
-              />
-            </div>
 
-            <div className="melting-log-form-group">
-              <label>Furnace 1 - A</label>
-              <input
-                type="number"
-                value={table5.furnace1A || ''}
-                onChange={(e) => handleTableChange(5, 'furnace1A', e.target.value)}
-                placeholder="Enter A"
-                step="0.01"
-              />
-            </div>
+        {/* Furnace 1,2,3 combined section */}
+        <h4 className="melting-log-sub-section-title">Furnace 1,2,3</h4>
+        <div className="melting-log-form-grid melting-log-table5-grid">
+          <div className="melting-log-form-group">
+            <label>Kw</label>
+            <input
+              type="number"
+              value={table5.furnace1Kw || ''}
+              onChange={(e) => handleTableChange(5, 'furnace1Kw', e.target.value)}
+              placeholder="Enter Kw"
+              step="0.01"
+            />
+          </div>
 
-            <div className="melting-log-form-group">
-              <label>Furnace 1 - V</label>
-              <input
-                type="number"
-                value={table5.furnace1V || ''}
-                onChange={(e) => handleTableChange(5, 'furnace1V', e.target.value)}
-                placeholder="Enter V"
-                step="0.01"
-              />
-            </div>
+          <div className="melting-log-form-group">
+            <label>A</label>
+            <input
+              type="number"
+              value={table5.furnace1A || ''}
+              onChange={(e) => handleTableChange(5, 'furnace1A', e.target.value)}
+              placeholder="Enter A"
+              step="0.01"
+            />
+          </div>
 
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
+          <div className="melting-log-form-group">
+            <label>V</label>
+            <input
+              type="number"
+              value={table5.furnace1V || ''}
+              onChange={(e) => handleTableChange(5, 'furnace1V', e.target.value)}
+              placeholder="Enter V"
+              step="0.01"
+            />
           </div>
         </div>
 
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Furnace 2</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>Furnace 2 - Kw</label>
-              <input
-                type="number"
-                value={table5.furnace2Kw || ''}
-                onChange={(e) => handleTableChange(5, 'furnace2Kw', e.target.value)}
-                placeholder="Enter Kw"
-                step="0.01"
-              />
-            </div>
+        {/* Furnace 4 section */}
+        <h4 className="melting-log-sub-section-title">Furnace 4</h4>
+        <div className="melting-log-form-grid melting-log-table5-grid">
+          <div className="melting-log-form-group">
+            <label>Hz</label>
+            <input
+              type="number"
+              value={table5.furnace4Hz || ''}
+              onChange={(e) => handleTableChange(5, 'furnace4Hz', e.target.value)}
+              placeholder="Enter Hz"
+              step="0.01"
+            />
+          </div>
 
-            <div className="melting-log-form-group">
-              <label>Furnace 2 - A</label>
-              <input
-                type="number"
-                value={table5.furnace2A || ''}
-                onChange={(e) => handleTableChange(5, 'furnace2A', e.target.value)}
-                placeholder="Enter A"
-                step="0.01"
-              />
-            </div>
+          <div className="melting-log-form-group">
+            <label>GLD</label>
+            <input
+              type="number"
+              value={table5.furnace4Gld || ''}
+              onChange={(e) => handleTableChange(5, 'furnace4Gld', e.target.value)}
+              placeholder="Enter GLD"
+              step="0.01"
+            />
+          </div>
 
-            <div className="melting-log-form-group">
-              <label>Furnace 2 - V</label>
-              <input
-                type="number"
-                value={table5.furnace2V || ''}
-                onChange={(e) => handleTableChange(5, 'furnace2V', e.target.value)}
-                placeholder="Enter V"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
+          <div className="melting-log-form-group">
+            <label>Kw/Hr</label>
+            <input
+              type="number"
+              value={table5.furnace4KwHr || ''}
+              onChange={(e) => handleTableChange(5, 'furnace4KwHr', e.target.value)}
+              placeholder="Enter Kw/Hr"
+              step="0.01"
+            />
           </div>
         </div>
-
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Furnace 3</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>Furnace 3 - Kw</label>
-              <input
-                type="number"
-                value={table5.furnace3Kw || ''}
-                onChange={(e) => handleTableChange(5, 'furnace3Kw', e.target.value)}
-                placeholder="Enter Kw"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Furnace 3 - A</label>
-              <input
-                type="number"
-                value={table5.furnace3A || ''}
-                onChange={(e) => handleTableChange(5, 'furnace3A', e.target.value)}
-                placeholder="Enter A"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Furnace 3 - V</label>
-              <input
-                type="number"
-                value={table5.furnace3V || ''}
-                onChange={(e) => handleTableChange(5, 'furnace3V', e.target.value)}
-                placeholder="Enter V"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-          </div>
-        </div>
-
-        <div className="melting-log-sub-section">
-          <h4 className="melting-log-sub-section-title">Furnace 4</h4>
-          <div className="melting-log-form-grid melting-log-table5-grid">
-            <div className="melting-log-form-group">
-              <label>Furnace 4 - Hz</label>
-          <input
-                type="number"
-                value={table5.furnace4Hz || ''}
-                onChange={(e) => handleTableChange(5, 'furnace4Hz', e.target.value)}
-                placeholder="Enter Hz"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Furnace 4 - GLD</label>
-          <input
-                type="number"
-                value={table5.furnace4Gld || ''}
-                onChange={(e) => handleTableChange(5, 'furnace4Gld', e.target.value)}
-                placeholder="Enter GLD"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group">
-              <label>Furnace 4 - Kw/Hr</label>
-          <input
-                type="number"
-                value={table5.furnace4KwHr || ''}
-                onChange={(e) => handleTableChange(5, 'furnace4KwHr', e.target.value)}
-                placeholder="Enter Kw/Hr"
-                step="0.01"
-              />
-            </div>
-
-            <div className="melting-log-form-group" />
-            <div className="melting-log-form-group" />
-          </div>
-        </div>
-
       </div>
 
       {/* All Tables Submit and Reset Buttons */}

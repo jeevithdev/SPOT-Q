@@ -269,3 +269,11 @@
 .chr-primary-table tbody td:last-child {
   background: white;
 }
+
+/* Actions cell layout */
+.chr-actions {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
