@@ -1,7 +1,7 @@
 import React, { useState, useRef } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
-import api from '../utils/api';
-import '../styles/PageStyles/QcProductionDetails.css';
+import api from '../../utils/api';
+import '../../styles/PageStyles/QcProduction/QcProductionDetails.css';
 
 const QcProductionDetails = () => {
   // Helper: today's date in YYYY-MM-DD
@@ -163,8 +163,8 @@ const QcProductionDetails = () => {
   };
 
   return (
-    <div className="page-wrapper">
-      <div className="qc-production-header">
+    <>
+      <div className="qcproduction-header">
         <div className="qcproduction-header-text">
           <h2>
             <Save size={28} style={{ color: '#5B9AA9' }} />
@@ -432,7 +432,7 @@ const QcProductionDetails = () => {
           {submitLoading ? 'Saving...' : 'Submit All'}
         </button>
       </div>
-    </div>
+    </>
   );
 };
 

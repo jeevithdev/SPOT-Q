@@ -1,5 +1,6 @@
 // Centralized API utility for making authenticated requests
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/v1';
+// Default base is `/api` so endpoints that include `/v1/...` resolve to `/api/v1/...`.
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 /**
  * Make an authenticated API call
@@ -19,7 +20,7 @@ export const apiCall = async (endpoint, options = {}) => {
   const config = { ...options, headers };
 
   try {
-    // ✅ Ensure single slash between base and endpoint
+    //Ensure single slash between base and endpoint
     const response = await fetch(`${API_URL.replace(/\/$/, '')}${endpoint}`, config);
 
     const data = await response.json();

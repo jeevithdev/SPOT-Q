@@ -1,15 +1,20 @@
 import React, { useState } from 'react';
 import { BookOpenCheck } from 'lucide-react';
-import { DatePicker, FilterButton } from '../../Components/Buttons';
+import { DatePicker, FilterButton, ClearButton } from '../../Components/Buttons';
 import '../../styles/PageStyles/Sandlab/FoundarySandTestingNoteReport.css';
 
 const FoundrySandTestingReport = () => {
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
 
   const handleFilter = () => {
     // TODO: Implement filter logic
     console.log('Filtering from:', fromDate, 'to:', toDate);
+  };
+
+  const handleClearFilter = () => {
+    setFromDate(null);
+    setToDate(null);
   };
 
   return (
@@ -43,6 +48,9 @@ const FoundrySandTestingReport = () => {
         <FilterButton onClick={handleFilter} disabled={!fromDate}>
           Filter
         </FilterButton>
+        <ClearButton onClick={handleClearFilter} disabled={!fromDate && !toDate}>
+          Clear
+        </ClearButton>
       </div>
     </div>
   );

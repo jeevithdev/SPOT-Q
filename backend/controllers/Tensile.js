@@ -90,3 +90,38 @@ exports.deleteEntry = async (req, res) => {
         });
     }
 };
+
+// Initialize today's entry if it doesn't exist (called on server startup)
+exports.initializeTodayEntry = async () => {
+    try {
+        const { getCurrentDate } = require('../utils/dateUtils');
+        const todayStr = getCurrentDate();
+
+        // Check if entry exists for today
+        const existingEntry = await Tensile.findOne({
+            date: todayStr
+        });
+
+        if (!existingEntry) {
+            // Create empty entry for today
+            const newEntry = new Tensile({
+                dateOfInspection: todayStr,
+                item: '',
+                heatCode: '',
+                dia: '',
+                lo: '',
+                li: '',
+                breakingLoad: '',
+                yieldLoad: '',
+                uts: '',
+                ys: '',
+                elongation: '',
+                testedBy: ''
+            });
+            // Bypass validation for initial empty entry creation
+            await newEntry.save({ validateBeforeSave: false });
+        }
+    } catch (error) {
+        console.error(' Error initializing Tensile entry:', error.message);
+    }
+};

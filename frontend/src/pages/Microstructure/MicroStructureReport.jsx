@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, PencilLine, BookOpenCheck } from 'lucide-react';
-import { DatePicker, EditActionButton, DeleteActionButton, FilterButton } from '../Components/Buttons';
-import Loader from '../Components/Loader';
-import api from '../utils/api';
-import '../styles/PageStyles/ImpactReport.css';
-import '../styles/PageStyles/MicroStructureReport.css';
+import { DatePicker, EditActionButton, DeleteActionButton, FilterButton, ClearButton } from '../../Components/Buttons';
+import Loader from '../../Components/Loader';
+import api from '../../utils/api';
+import '../../styles/PageStyles/Microstructure/MicroStructureReport.css';
 
 const MicroStructureReport = () => {
   const [startDate, setStartDate] = useState(null);
@@ -111,7 +110,7 @@ const MicroStructureReport = () => {
       itemDate.setHours(0, 0, 0, 0);
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
-      
+
       // If end date is provided, filter by date range
       if (endDate) {
         const end = new Date(endDate);
@@ -126,8 +125,14 @@ const MicroStructureReport = () => {
     setFilteredItems(filtered);
   };
 
+  const handleClearFilter = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setFilteredItems(items);
+  };
+
   return (
-    <div className="page-wrapper">
+    <>
       <div className="impact-report-header">
         <div className="impact-report-header-text">
           <h2>
@@ -157,6 +162,9 @@ const MicroStructureReport = () => {
         <FilterButton onClick={handleFilter} disabled={!startDate}>
           Filter
         </FilterButton>
+        <ClearButton onClick={handleClearFilter} disabled={!startDate && !endDate}>
+          Clear
+        </ClearButton>
       </div>
 
       {loading ? (
@@ -405,7 +413,7 @@ const MicroStructureReport = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

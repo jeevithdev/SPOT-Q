@@ -1,15 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpenCheck } from 'lucide-react';
-import { DatePicker, FilterButton } from '../Components/Buttons';
-import CustomDatePicker from '../Components/CustomDatePicker';
-import api from '../utils/api';
-import '../styles/PageStyles/MicroTensileReport.css';
-import '../styles/PageStyles/MicroTensile.css';
-import '../styles/PageStyles/Melting/CupolaHolderLogSheetReport.css';
+import { DatePicker, FilterButton, ClearButton } from '../../Components/Buttons';
+import CustomDatePicker from '../../Components/CustomDatePicker';
+import api from '../../utils/api';
+import '../../styles/PageStyles/MicroTensile/MicroTensileReport.css';
+import '../../styles/PageStyles/MicroTensile/MicroTensile.css';
 
 const MicroTensileReport = () => {
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [entries, setEntries] = useState([]);
@@ -142,33 +141,41 @@ const MicroTensileReport = () => {
     }
   };
 
+  const loadRecent = async () => {
+    try {
+      const today = new Date();
+      const end = today.toISOString().split('T')[0];
+      const past = new Date(today);
+      past.setDate(past.getDate() - 60);
+      const start = past.toISOString().split('T')[0];
+      const res = await api.get(`/v1/micro-tensile-tests?startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`);
+      if (res?.success && Array.isArray(res.data)) {
+        const sorted = [...res.data].sort((a, b) => {
+          const da = new Date(a.dateOfInspection || a.createdAt || 0).getTime();
+          const db = new Date(b.dateOfInspection || b.createdAt || 0).getTime();
+          return db - da;
+        });
+        setEntries(sorted.slice(0, 5));
+      } else {
+        setEntries([]);
+      }
+    } catch (e) {
+      setEntries([]);
+    }
+  };
+
+  const handleClearFilter = () => {
+    setFromDate(null);
+    setToDate(null);
+    setError('');
+    loadRecent();
+  };
+
   useEffect(() => {
     setEntries([]);
   }, [fromDate, toDate]);
 
   useEffect(() => {
-    const loadRecent = async () => {
-      try {
-        const today = new Date();
-        const end = today.toISOString().split('T')[0];
-        const past = new Date(today);
-        past.setDate(past.getDate() - 60);
-        const start = past.toISOString().split('T')[0];
-        const res = await api.get(`/v1/micro-tensile-tests?startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`);
-        if (res?.success && Array.isArray(res.data)) {
-          const sorted = [...res.data].sort((a, b) => {
-            const da = new Date(a.dateOfInspection || a.createdAt || 0).getTime();
-            const db = new Date(b.dateOfInspection || b.createdAt || 0).getTime();
-            return db - da;
-          });
-          setEntries(sorted.slice(0, 5));
-        } else {
-          setEntries([]);
-        }
-      } catch (e) {
-        setEntries([]);
-      }
-    };
     loadRecent();
   }, []);
 
@@ -189,66 +196,105 @@ const MicroTensileReport = () => {
     };
 
     const columns = [
-      { key: 'dateOfInspection', label: 'Date of Inspection', get: (r) => formatDate(r.dateOfInspection) },
-      { key: 'disa', label: 'DISA', get: (r) => Array.isArray(r.disa) ? r.disa.join(', ') : (r.disa || '-') },
-      { key: 'item', label: 'Item', get: (r) => r.item || '-' },
-      { key: 'dateCode', label: 'Date Code', get: (r) => r.dateCode || '-' },
-      { key: 'heatCode', label: 'Heat Code', get: (r) => r.heatCode || '-' },
+      { key: 'dateOfInspection', label: 'Date of Inspection', get: (r) => formatDate(r.dateOfInspection), style: { minWidth: '130px' } },
+      { key: 'disa', label: 'DISA', get: (r) => Array.isArray(r.disa) ? r.disa.join(', ') : (r.disa || '-'), style: { minWidth: '140px' } },
+      { key: 'item', label: 'Item', get: (r) => r.item || '-', style: { minWidth: '150px' } },
+      { key: 'dateCode', label: 'Date Code', get: (r) => r.dateCode || '-', style: { minWidth: '110px' } },
+      { key: 'heatCode', label: 'Heat Code', get: (r) => r.heatCode || '-', style: { minWidth: '110px' } },
     ];
 
     if (show.table1) {
       columns.push(
-        { key: 'barDia', label: 'Bar Dia (mm)', get: (r) => r.barDia ?? '-' },
-        { key: 'gaugeLength', label: 'Gauge Length (mm)', get: (r) => r.gaugeLength ?? '-' },
-        { key: 'maxLoad', label: 'Max Load (Kgs/KN)', get: (r) => r.maxLoad ?? '-' },
-        { key: 'yieldLoad', label: 'Yield Load (Kgs/KN)', get: (r) => r.yieldLoad ?? '-' },
-        { key: 'tensileStrength', label: 'Tensile Strength (Kg/mm² or MPa)', get: (r) => r.tensileStrength ?? '-' },
-        { key: 'yieldStrength', label: 'Yield Strength (Kg/mm² or MPa)', get: (r) => r.yieldStrength ?? '-' },
-        { key: 'elongation', label: 'Elongation', get: (r) => r.elongation ?? '-' },
-        { key: 'testedBy', label: 'Tested By', get: (r) => r.testedBy ?? '-' },
+        { key: 'barDia', label: 'Bar Dia (mm)', get: (r) => r.barDia ?? '-', style: { minWidth: '120px', textAlign: 'right' } },
+        { key: 'gaugeLength', label: 'Gauge Length (mm)', get: (r) => r.gaugeLength ?? '-', style: { minWidth: '150px', textAlign: 'right' } },
+        { key: 'maxLoad', label: 'Max Load (Kgs/KN)', get: (r) => r.maxLoad ?? '-', style: { minWidth: '170px', textAlign: 'right' } },
+        { key: 'yieldLoad', label: 'Yield Load (Kgs/KN)', get: (r) => r.yieldLoad ?? '-', style: { minWidth: '170px', textAlign: 'right' } },
+        { key: 'tensileStrength', label: 'Tensile Strength (Kg/mm² or MPa)', get: (r) => r.tensileStrength ?? '-', style: { minWidth: '240px', textAlign: 'right' } },
+        { key: 'yieldStrength', label: 'Yield Strength (Kg/mm² or MPa)', get: (r) => r.yieldStrength ?? '-', style: { minWidth: '240px', textAlign: 'right' } },
+        { key: 'elongation', label: 'Elongation', get: (r) => r.elongation ?? '-', style: { minWidth: '110px', textAlign: 'right' } },
+        { key: 'testedBy', label: 'Tested By', get: (r) => r.testedBy ?? '-', style: { minWidth: '130px' } },
       );
     }
 
     if (show.remarks) {
-      columns.push({ key: 'remarks', label: 'Remarks', get: (r) => renderRemarkCell(r.remarks) });
+      columns.push({ key: 'remarks', label: 'Remarks', get: (r) => renderRemarkCell(r.remarks), style: { minWidth: '120px', maxWidth: '200px' } });
     }
 
     return (
-      <div className="chr-primary-table-wrap">
-        <div className="chr-section-title">Primary Data</div>
-        <div className="chr-table-scroll">
-          <table className="chr-primary-table">
-            <thead>
+      <div className="chr-table-scroll">
+        <table className="chr-primary-table">
+          <thead>
+            <tr>
+              {columns.map((c) => (
+                <th key={c.key} style={c.style}>{c.label}</th>
+              ))}
+              <th>Actions</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {list.length === 0 ? (
               <tr>
-                {columns.map((c) => (
-                  <th key={c.key}>{c.label}</th>
-                ))}
-                <th>Actions</th>
+                <td
+                  colSpan={columns.length + 1}
+                  style={{
+                    textAlign: 'center',
+                    padding: '14px',
+                    color: '#64748b',
+                    fontStyle: 'italic'
+                  }}
+                >
+                  No records found for the selected date range.
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {list.map((row) => (
-                <tr key={`primary-${row._id || `${row.item}-${row.dateCode}-${row.heatCode}`}` }>
+            ) : (
+              list.map((row) => (
+                <tr key={`primary-${row._id || `${row.item}-${row.dateCode}-${row.heatCode}`}`}>
                   {columns.map((c) => (
-                    <td key={`${(row._id || 'row')}-${c.key}`}>{c.get(row)}</td>
+                    <td key={`${(row._id || 'row')}-${c.key}`} style={c.style}>{c.get(row)}</td>
                   ))}
+
                   <td>
                     <div style={{ display: 'flex', gap: '8px' }}>
-                      <button onClick={() => requestEdit(row)} style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}>Edit</button>
-                      <button onClick={() => requestDelete(row)} style={{ padding: '4px 8px', borderRadius: 4, border: '1px solid #fecaca', background: '#fee2e2', color: '#b91c1c', cursor: 'pointer' }}>Delete</button>
+                      <button
+                        onClick={() => requestEdit(row)}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: 4,
+                          border: '1px solid #cbd5e1',
+                          background: '#f8fafc',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Edit
+                      </button>
+
+                      <button
+                        onClick={() => requestDelete(row)}
+                        style={{
+                          padding: '4px 8px',
+                          borderRadius: 4,
+                          border: '1px solid #fecaca',
+                          background: '#fee2e2',
+                          color: '#b91c1c',
+                          cursor: 'pointer'
+                        }}
+                      >
+                        Delete
+                      </button>
                     </div>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     );
   };
 
   return (
-    <div className="page-wrapper">
+    <>
       <div className="microtensile-report-header">
         <div className="microtensile-report-header-text">
           <h2>
@@ -278,6 +324,9 @@ const MicroTensileReport = () => {
         <FilterButton onClick={handleFilter} disabled={!fromDate || loading}>
           {loading ? 'Loading...' : 'Filter'}
         </FilterButton>
+        <ClearButton onClick={handleClearFilter} disabled={!fromDate && !toDate}>
+          Clear
+        </ClearButton>
       </div>
 
       <div className="chr-checklist-container">
@@ -299,12 +348,6 @@ const MicroTensileReport = () => {
       {error && (
         <div className="chr-error">{error}</div>
       )}
-
-      <div className="chr-results">
-        {entries.length === 0 && !loading && (
-          <div className="chr-empty">No records found for the selected date range.</div>
-        )}
-      </div>
 
       {confirm.open && (
         <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
@@ -444,7 +487,7 @@ const MicroTensileReport = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

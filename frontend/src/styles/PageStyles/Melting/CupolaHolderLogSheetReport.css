@@ -238,8 +238,34 @@
   text-align: left;
   border-bottom: 1px solid #e5e7eb;
   font-size: 0.875rem;
+  white-space: nowrap;
 }
 
 .chr-primary-table tbody tr:hover {
   background: #f9fafb;
+}
+
+.chr-primary-table tbody tr:hover td:last-child {
+  background: #f9fafb;
+}
+
+/* Specific column widths for better alignment */
+.chr-primary-table th,
+.chr-primary-table td {
+  min-width: 100px;
+}
+
+/* Actions column - always last */
+.chr-primary-table th:last-child,
+.chr-primary-table td:last-child {
+  min-width: 140px;
+  text-align: center;
+}
+
+.chr-primary-table th:last-child {
+  background: #f8fafc;
+}
+
+.chr-primary-table tbody td:last-child {
+  background: white;
 }

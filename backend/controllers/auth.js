@@ -9,9 +9,8 @@ const DEPARTMENTS = [
     'Tensile', 'QC - production', 'Micro Structure', 'Impact', 'Admin'
 ];
 
-// ===================================
 // 1. PUBLIC AUTHENTICATION ROUTES
-// ===================================
+
 
 exports.login = async (req, res) => {
     try {
@@ -62,7 +61,7 @@ exports.login = async (req, res) => {
             user: user.toJSON()
         }); 
     } catch (error) {
-        console.error('❌ Login error:', error);
+        console.error('Login error:', error);
         res.status(500).json({ success: false, message: 'Server error during login.', error: error.message });
     }
 };
@@ -81,10 +80,10 @@ exports.verify = async (req, res) => {
 exports.changePassword = async (req, res) => {
     try {
         const userId = req.user._id;
-        const { currentPassword, newPassword } = req.body;
+        const { newPassword } = req.body;
 
-        if (!currentPassword || !newPassword) {
-            return res.status(400).json({ success: false, message: 'Current password and new password are required.' });
+        if (!newPassword) {
+            return res.status(400).json({ success: false, message: 'New password is required.' });
         }
 
         if (newPassword.length < 6) {
@@ -93,13 +92,11 @@ exports.changePassword = async (req, res) => {
 
         const user = await User.findById(userId);
 
-        const isMatch = await user.comparePassword(currentPassword);
-        
-        if (!isMatch) {
-            return res.status(401).json({ success: false, message: 'Incorrect current password.' });
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
         }
 
-        user.password = newPassword; 
+        user.password = newPassword;
         await user.save();
 
         res.status(200).json({
@@ -108,7 +105,7 @@ exports.changePassword = async (req, res) => {
         });
 
     } catch (error) {
-        console.error('❌ Change password error:', error);
+        console.error('Change password error:', error);
         res.status(500).json({ success: false, message: 'Server error during password change.' });
     }
 };
@@ -155,7 +152,7 @@ exports.createEmployee = async (req, res) => {
             data: user.toJSON() 
         });
     } catch (error) {
-        console.error('❌ Create employee error:', error);
+        console.error(' Create employee error:', error);
         res.status(500).json({ success: false, message: 'Server error during employee creation.', error: error.message });
     }
 };
@@ -260,5 +257,57 @@ exports.getDepartments = async (req, res) => {
         });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Server error while fetching departments.' });
+    }
+};
+
+// Get login history for the current user's department (last 5 logins)
+exports.getDepartmentLoginHistory = async (req, res) => {
+    try {
+        const department = req.user.department;
+
+        const loginHistory = await LoginActivity.find({ department })
+            .sort({ loginAt: -1 })
+            .limit(5)
+            .select('employeeId loginAt ip userAgent');
+
+        res.status(200).json({
+            success: true,
+            data: loginHistory
+        });
+    } catch (error) {
+        console.error('Error fetching department login history:', error);
+        res.status(500).json({ success: false, message: 'Server error while fetching login history.' });
+    }
+};
+
+// Admin-only: Reset user password without requiring old password
+exports.adminResetPassword = async (req, res) => {
+    try {
+        const { userId, newPassword } = req.body;
+
+        if (!userId || !newPassword) {
+            return res.status(400).json({ success: false, message: 'User ID and new password are required.' });
+        }
+
+        if (newPassword.length < 6) {
+            return res.status(400).json({ success: false, message: 'Password must be at least 6 characters.' });
+        }
+
+        const user = await User.findById(userId);
+
+        if (!user) {
+            return res.status(404).json({ success: false, message: 'User not found.' });
+        }
+
+        user.password = newPassword;
+        await user.save();
+
+        res.status(200).json({
+            success: true,
+            message: 'Password reset successfully.'
+        });
+    } catch (error) {
+        console.error('Admin reset password error:', error);
+        res.status(500).json({ success: false, message: 'Server error during password reset.' });
     }
 };

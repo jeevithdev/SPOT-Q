@@ -1,35 +1,109 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Save, RefreshCw, FileText, Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { DatePicker } from '../Components/Buttons';
-import api from '../utils/api';
-import '../styles/PageStyles/Impact.css';
+import api from '../../utils/api';
+import '../../styles/PageStyles/Impact/Impact.css';
 
 const Impact = () => {
+  // Helper: display DD/MM/YYYY
+  const formatDisplayDate = (iso) => {
+    if (!iso || typeof iso !== 'string' || !iso.includes('-')) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
   const [formData, setFormData] = useState({
-    dateOfInspection: '',
+    date: '',
     partName: '',
     dateCode: '',
-    specification: '',
+    specification: {
+      val: '',
+      constraint: ''
+    },
     observedValue: '',
     remarks: ''
   });
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  
+  const [dateLoading, setDateLoading] = useState(true);
+
   // Refs for navigation
   const submitButtonRef = useRef(null);
   const firstInputRef = useRef(null);
 
+  // Fetch current date from backend on mount
+  useEffect(() => {
+    const fetchCurrentDate = async () => {
+      try {
+        setDateLoading(true);
+        const data = await api.get('/impact-tests/current-date');
+
+        if (data.success && data.date) {
+          setFormData(prev => ({
+            ...prev,
+            date: data.date
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching current date:', error);
+        // Fallback to local date if backend fails
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        setFormData(prev => ({
+          ...prev,
+          date: `${y}-${m}-${d}`
+        }));
+      } finally {
+        setDateLoading(false);
+      }
+    };
+
+    fetchCurrentDate();
+  }, []);
+
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-    
+    // Prevent programmatic/user changes to date
+    if (name === 'date') return;
+
+    // Handle nested specification fields
+    if (name === 'specificationVal' || name === 'specificationConstraint') {
+      const field = name === 'specificationVal' ? 'val' : 'constraint';
+      setFormData(prev => ({
+        ...prev,
+        specification: {
+          ...prev.specification,
+          [field]: value
+        }
+      }));
+
+      // Clear validation error
+      if (validationErrors[name]) {
+        setValidationErrors(prev => {
+          const newErrors = { ...prev };
+          delete newErrors[name];
+          return newErrors;
+        });
+      }
+      return;
+    }
+
+    // Auto-capitalize dateCode
+    if (name === 'dateCode') {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value.toUpperCase()
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        [name]: value
+      }));
+    }
+
     // Clear validation error when user starts typing
     if (validationErrors[name]) {
       setValidationErrors(prev => {
@@ -80,35 +154,47 @@ const Impact = () => {
   };
 
   const handleSubmit = async () => {
-    const required = ['dateOfInspection', 'partName', 'dateCode', 
-                     'specification', 'observedValue'];
-    const missing = required.filter(field => !formData[field]);
-    
-    // Set validation errors for missing fields
     const errors = {};
-    missing.forEach(field => {
-      errors[field] = true;
-    });
+
+    // Check required fields
+    if (!formData.partName) errors.partName = true;
+    if (!formData.dateCode) errors.dateCode = true;
+    if (!formData.specification.val) errors.specificationVal = true;
+    if (!formData.observedValue) errors.observedValue = true;
+
     setValidationErrors(errors);
 
-    if (missing.length > 0) {
+    if (Object.keys(errors).length > 0) {
       return;
     }
-    
+
     // Clear validation errors if all fields are valid
     setValidationErrors({});
 
     try {
       setSubmitLoading(true);
-      const data = await api.post('/v1/impact-tests', formData);
-      
+      const data = await api.post('/impact-tests', formData);
+
       if (data.success) {
         alert('Impact test entry created successfully!');
+
+        // Re-fetch current date from backend to ensure consistency
+        const dateData = await api.get('/impact-tests/current-date');
+        const currentDate = dateData.success && dateData.date ? dateData.date : formData.date;
+
         setFormData({
-          dateOfInspection: '', partName: '', dateCode: '', 
-          specification: '', observedValue: '', remarks: ''
+          date: currentDate,
+          partName: '',
+          dateCode: '',
+          specification: {
+            val: '',
+            constraint: ''
+          },
+          observedValue: '',
+          remarks: ''
         });
         setValidationErrors({});
+
         // Focus first input after successful submission
         setTimeout(() => {
           if (firstInputRef.current && firstInputRef.current.focus) {
@@ -127,16 +213,44 @@ const Impact = () => {
   };
 
 
-  const handleReset = () => {
-    setFormData({
-      dateOfInspection: '', partName: '', dateCode: '', 
-      specification: '', observedValue: '', remarks: ''
-    });
-    setValidationErrors({});
+  const handleReset = async () => {
+    try {
+      // Re-fetch current date from backend to ensure consistency
+      const dateData = await api.get('/impact-tests/current-date');
+      const currentDate = dateData.success && dateData.date ? dateData.date : formData.date;
+
+      setFormData({
+        date: currentDate,
+        partName: '',
+        dateCode: '',
+        specification: {
+          val: '',
+          constraint: ''
+        },
+        observedValue: '',
+        remarks: ''
+      });
+      setValidationErrors({});
+    } catch (error) {
+      console.error('Error resetting form:', error);
+      // On error, just reset fields but keep current date
+      setFormData({
+        date: formData.date,
+        partName: '',
+        dateCode: '',
+        specification: {
+          val: '',
+          constraint: ''
+        },
+        observedValue: '',
+        remarks: ''
+      });
+      setValidationErrors({});
+    }
   };
 
   return (
-    <div className="page-wrapper">
+    <>
       <div className="impact-header">
         <div className="impact-header-text">
           <h2>
@@ -144,24 +258,16 @@ const Impact = () => {
             Impact Test - Entry Form
           </h2>
         </div>
+        <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c' }}>
+          {dateLoading ? 'Loading date...' : `DATE : ${formatDisplayDate(formData.date)}`}
+        </div>
       </div>
 
       <form className="impact-form-grid">
             <div className="impact-form-group">
-              <label>Date of Inspection *</label>
-              <DatePicker
-                ref={firstInputRef}
-                name="dateOfInspection"
-                value={formData.dateOfInspection}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                className={validationErrors.dateOfInspection ? 'invalid-input' : ''}
-              />
-            </div>
-
-            <div className="impact-form-group">
               <label>Part Name *</label>
               <input
+                ref={firstInputRef}
                 type="text"
                 name="partName"
                 value={formData.partName}
@@ -180,35 +286,46 @@ const Impact = () => {
                 value={formData.dateCode}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g: DC-2024-101"
+                placeholder="e.g: 6F25"
                 className={validationErrors.dateCode ? 'invalid-input' : ''}
               />
             </div>
 
             <div className="impact-form-group">
-              <label>Specification *</label>
+              <label>Specification Value *</label>
               <input
-                type="text"
-                name="specification"
-                value={formData.specification}
+                type="number"
+                name="specificationVal"
+                value={formData.specification.val}
                 onChange={handleChange}
                 onKeyDown={handleKeyDown}
-                placeholder="e.g: 60 J/cm2 (min)"
-                className={validationErrors.specification ? 'invalid-input' : ''}
+                step="0.1"
+                placeholder="e.g: J/cm²"
+                className={validationErrors.specificationVal ? 'invalid-input' : ''}
+              />
+            </div>
+
+            <div className="impact-form-group">
+              <label>Specification Constraint</label>
+              <input
+                type="text"
+                name="specificationConstraint"
+                value={formData.specification.constraint}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                placeholder="e.g: 30° unnotch"
               />
             </div>
 
             <div className="impact-form-group">
               <label>Observed Value *</label>
               <input
-                type="number"
+                type="text"
                 name="observedValue"
                 value={formData.observedValue}
                 onChange={handleChange}
-                onBlur={handleBlur}
                 onKeyDown={handleKeyDown}
-                step="0.1"
-                placeholder="e.g: 92,96"
+                placeholder="e.g: 12 or 34,45"
                 className={validationErrors.observedValue ? 'invalid-input' : ''}
               />
             </div>
@@ -254,7 +371,7 @@ const Impact = () => {
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>
-    </div>
+    </>
   );
 };
 

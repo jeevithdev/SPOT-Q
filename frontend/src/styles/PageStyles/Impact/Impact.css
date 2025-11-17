@@ -97,8 +97,8 @@
 
 .impact-form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 1rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 1.5rem;
 }
 
 .impact-form-group {
@@ -108,20 +108,20 @@
 
 .impact-form-group label {
   display: block;
-  font-size: 0.875rem;
+  font-size: 1rem;
   font-weight: 600;
   color: #334155;
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.625rem;
 }
 
 .impact-form-group input,
 .impact-form-group select,
 .impact-form-group textarea {
   width: 100%;
-  padding: 0.625rem 0.875rem;
+  padding: 0.875rem 1rem;
   border: 2px solid #cbd5e1;
   border-radius: 8px;
-  font-size: 0.875rem;
+  font-size: 1rem;
   transition: all 0.3s ease;
   background: white;
 }

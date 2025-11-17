@@ -766,16 +766,16 @@ const Sidebar = () => {
       <div className="sidebar-footer">
         <div className="footer-content">
           {/* Pin Toggle Button */}
-          <button 
+          <button
             className={`pin-toggle-btn ${isPinned ? 'pinned' : ''}`}
             onClick={handlePinToggle}
             title={isPinned ? 'Unpin sidebar' : 'Pin sidebar'}
           >
             <RiExpandRightFill />
           </button>
-          
-          <div 
-            className="menu-item" 
+
+          <div
+            className={`menu-item ${location.pathname === '/user-profile' ? 'active' : ''}`}
             onClick={() => navigate('/user-profile')}
             style={{ cursor: 'pointer' }}
           >
@@ -783,8 +783,8 @@ const Sidebar = () => {
             {!isExpanded && <span className="menu-tooltip">User Profile</span>}
             {isExpanded && <span className="menu-text">User Profile</span>}
           </div>
-          <div 
-            className="menu-item logout-item" 
+          <div
+            className="menu-item logout-item"
             onClick={handleLogout}
           >
             <span className="menu-icon"><LogOut /></span>

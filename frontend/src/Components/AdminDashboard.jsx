@@ -6,7 +6,7 @@ import { handleLogout, AdminLogoutButton, SettingsButton, DeleteButton, EyeButto
 import { IoMdPersonAdd } from "react-icons/io";
 import { HiUsers } from "react-icons/hi";
 import { MdRefresh } from "react-icons/md";
-import '../styles/PageStyles/AdminDashboard.css';
+import '../styles/ComponentStyles/AdminDashboard.css';
 
 const AdminDashboard = () => {
   const { user, isAdmin } = useContext(AuthContext);

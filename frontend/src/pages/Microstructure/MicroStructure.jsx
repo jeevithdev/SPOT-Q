@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
-import { DatePicker } from '../Components/Buttons';
-import api from '../utils/api';
-import '../styles/PageStyles/MicroStructure.css';
+import { DatePicker } from '../../Components/Buttons';
+import api from '../../utils/api';
+import '../../styles/PageStyles/Microstructure/MicroStructure.css';
 
 const MicroStructure = () => {
   const [formData, setFormData] = useState({
@@ -190,7 +190,7 @@ const MicroStructure = () => {
   };
 
   return (
-    <div className="page-wrapper">
+    <>
       <div className="microstructure-header">
         <div className="microstructure-header-text">
           <h2>
@@ -409,7 +409,7 @@ const MicroStructure = () => {
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>
-    </div>
+    </>
   );
 };
 

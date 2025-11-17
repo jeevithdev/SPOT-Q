@@ -18,6 +18,7 @@ const { checkDepartmentAccess } = require('./middleware/rolecheck');
 
 // Import Routes
 const authRoutes = require('./routes/auth');
+const systemRoutes = require('./routes/system');
 const tensileRoutes = require('./routes/Tensile');
 const impactRoutes = require('./routes/Impact');
 const microTensileRoutes = require('./routes/MicroTensile');
@@ -33,12 +34,38 @@ const foundrySandTestingNoteRoutes = require('./routes/SandLab-FoundrySandTestin
 
 // MongoDB Connection
 mongoose.connect(process.env.MONGODB_URI)
-  .then(() => console.log('MongoDB Connected'))
+  .then(async () => {
+    console.log('MongoDB Connected');
+
+    // Initialize today's empty entries for all modules
+    try {
+      const { initializeTodayEntry: initImpact } = require('./controllers/Impact');
+      const { initializeTodayEntry: initTensile } = require('./controllers/Tensile');
+      const { initializeTodayEntry: initMicroTensile } = require('./controllers/MicroTensile');
+      const { initializeTodayEntry: initMicroStructure } = require('./controllers/MicroStructure');
+      const { initializeTodayEntry: initQcProduction } = require('./controllers/QcProduction');
+      const { initializeTodayEntry: initProcess } = require('./controllers/Process');
+      const { initializeTodayEntry: initDismaticProduct } = require('./controllers/Moulding-DismaticProductReportDISA');
+
+      await Promise.all([
+        initImpact(),
+        initTensile(),
+        initMicroTensile(),
+        initMicroStructure(),
+        initQcProduction(),
+        initProcess(),
+        initDismaticProduct()
+      ]);
+    } catch (error) {
+      console.error('Error initializing daily entries:', error.message);
+    }
+  })
   .catch(err => console.error('MongoDB Connection Error:', err));
 
 // Mount Routes
 // Public routes (no authentication required)
 app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/system', systemRoutes);
 
 // Protected routes with department-based access control
 // QC Testing Routes

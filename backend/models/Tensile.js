@@ -13,10 +13,11 @@ const TensileSchema = new mongoose.Schema({
         trim: true 
     },
 
-    date: { 
+    datecode: { 
         type: String, 
         required: true, 
-        trim: true
+        trim: true,
+        match: /^[0-9][A-Z][0-9]{2}$/  // Example: '3A21'
     },
 
     heatCode: { 

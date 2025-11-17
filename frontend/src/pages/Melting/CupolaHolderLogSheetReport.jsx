@@ -1,13 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpenCheck } from 'lucide-react';
-import { DatePicker, FilterButton } from '../../Components/Buttons';
+import { DatePicker, FilterButton, ClearButton } from '../../Components/Buttons';
 import api from '../../utils/api';
 import '../../styles/PageStyles/Melting/CupolaHolderLogSheetReport.css';
-import '../../styles/PageStyles/MicroTensile.css';
 
 const CupolaHolderLogSheetReport = () => {
-  const [fromDate, setFromDate] = useState('');
-  const [toDate, setToDate] = useState('');
+  const [fromDate, setFromDate] = useState(null);
+  const [toDate, setToDate] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [entries, setEntries] = useState([]);
@@ -40,33 +39,41 @@ const CupolaHolderLogSheetReport = () => {
     }
   };
 
+  const loadRecent = async () => {
+    try {
+      const today = new Date();
+      const end = today.toISOString().split('T')[0];
+      const past = new Date(today);
+      past.setDate(past.getDate() - 60);
+      const start = past.toISOString().split('T')[0];
+      const res = await api.get(`/v1/cupola-holder-logs?startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`);
+      if (res?.success && Array.isArray(res.data)) {
+        const sorted = [...res.data].sort((a, b) => {
+          const da = new Date(a.date || a.createdAt || 0).getTime();
+          const db = new Date(b.date || b.createdAt || 0).getTime();
+          return db - da;
+        });
+        setEntries(sorted.slice(0, 5));
+      } else {
+        setEntries([]);
+      }
+    } catch (e) {
+      setEntries([]);
+    }
+  };
+
+  const handleClearFilter = () => {
+    setFromDate(null);
+    setToDate(null);
+    setError('');
+    loadRecent();
+  };
+
   useEffect(() => {
     setEntries([]);
   }, [fromDate, toDate]);
 
   useEffect(() => {
-    const loadRecent = async () => {
-      try {
-        const today = new Date();
-        const end = today.toISOString().split('T')[0];
-        const past = new Date(today);
-        past.setDate(past.getDate() - 60);
-        const start = past.toISOString().split('T')[0];
-        const res = await api.get(`/v1/cupola-holder-logs?startDate=${encodeURIComponent(start)}&endDate=${encodeURIComponent(end)}`);
-        if (res?.success && Array.isArray(res.data)) {
-          const sorted = [...res.data].sort((a, b) => {
-            const da = new Date(a.date || a.createdAt || 0).getTime();
-            const db = new Date(b.date || b.createdAt || 0).getTime();
-            return db - da;
-          });
-          setEntries(sorted.slice(0, 5));
-        } else {
-          setEntries([]);
-        }
-      } catch (e) {
-        setEntries([]);
-      }
-    };
     loadRecent();
   }, []);
 
@@ -318,6 +325,9 @@ const CupolaHolderLogSheetReport = () => {
         <FilterButton onClick={handleFilter} disabled={!fromDate || loading}>
           {loading ? 'Loading...' : 'Filter'}
         </FilterButton>
+        <ClearButton onClick={handleClearFilter} disabled={!fromDate && !toDate}>
+          Clear
+        </ClearButton>
       </div>
 
       <div className="chr-checklist-container">

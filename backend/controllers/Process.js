@@ -170,3 +170,29 @@ exports.deleteEntry = async (req, res) => {
         });
     }
 };
+
+// Initialize today's entry if it doesn't exist (called on server startup)
+exports.initializeTodayEntry = async () => {
+    try {
+        const { getCurrentDate } = require('../utils/dateUtils');
+        const todayStr = getCurrentDate();
+        const Process = require('../models/Process');
+
+        // Check if entry exists for today
+        const existingEntry = await Process.findOne({
+            date: todayStr
+        });
+
+        if (!existingEntry) {
+            // Create empty entry for today
+            await Process.create({
+                date: todayStr,
+                processName: '',
+                details: '',
+                remarks: ''
+            });
+        }
+    } catch (error) {
+        console.error(' Error initializing Process entry:', error.message);
+    }
+};

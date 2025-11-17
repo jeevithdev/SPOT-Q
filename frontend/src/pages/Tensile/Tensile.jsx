@@ -1,10 +1,11 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
-import api from '../utils/api';
-import '../styles/PageStyles/Tensile.css';
+import api from '../../utils/api';
+import { getCurrentDate, formatDateDisplay } from '../../utils/dateUtils';
+import '../../styles/PageStyles/Tensile/Tensile.css';
 
 const Tensile = () => {
-  // Helper function to get today's date in YYYY-MM-DD format
+  // Helper function to get today's date in YYYY-MM-DD format (fallback)
   const getTodayDate = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -13,15 +14,8 @@ const Tensile = () => {
     return `${year}-${month}-${day}`;
   };
 
-  // Helper to display date as DD/MM/YYYY
-  const formatDisplayDate = (iso) => {
-    if (!iso || typeof iso !== 'string' || !iso.includes('-')) return '';
-    const [y, m, d] = iso.split('-');
-    return `${d}/${m}/${y}`;
-  };
-
   const [formData, setFormData] = useState({
-    dateOfInspection: getTodayDate(), // Set today's date as default
+    dateOfInspection: getTodayDate(), // Temporary, will be updated with server date
     item: '',
     dateCode: '',
     heatCode: '',
@@ -39,10 +33,18 @@ const Tensile = () => {
 
   const [submitLoading, setSubmitLoading] = useState(false);
   const [validationErrors, setValidationErrors] = useState({});
-  
+
   const firstFieldRef = useRef(null);
   const submitButtonRef = useRef(null);
 
+  // Fetch server date on component mount
+  useEffect(() => {
+    const fetchServerDate = async () => {
+      const serverDate = await getCurrentDate();
+      setFormData(prev => ({ ...prev, dateOfInspection: serverDate }));
+    };
+    fetchServerDate();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -154,24 +156,25 @@ const Tensile = () => {
       
       if (data.success) {
         alert('Tensile test entry created successfully!');
+        const serverDate = await getCurrentDate();
         setFormData({
-          dateOfInspection: getTodayDate(), // Reset to today's date
-          item: '', 
-          dateCode: '', 
-          heatCode: '', 
-          dia: '', 
-          lo: '', 
+          dateOfInspection: serverDate, // Reset to server date
+          item: '',
+          dateCode: '',
+          heatCode: '',
+          dia: '',
+          lo: '',
           li: '',
-          breakingLoad: '', 
-          yieldLoad: '', 
-          uts: '', 
-          ys: '', 
-          elongation: '', 
-          remarks: '', 
+          breakingLoad: '',
+          yieldLoad: '',
+          uts: '',
+          ys: '',
+          elongation: '',
+          remarks: '',
           testedBy: ''
         });
         setValidationErrors({});
-        
+
         // Focus first editable field for next entry
         setTimeout(() => {
           firstFieldRef.current?.focus();
@@ -185,9 +188,10 @@ const Tensile = () => {
     }
   };
 
-  const handleReset = () => {
+  const handleReset = async () => {
+    const serverDate = await getCurrentDate();
     setFormData({
-      dateOfInspection: getTodayDate(), // Reset to today's date
+      dateOfInspection: serverDate, // Reset to server date
       item: '', 
       dateCode: '', 
       heatCode: '', 
@@ -210,7 +214,7 @@ const Tensile = () => {
   };
 
   return (
-    <div className="page-wrapper">
+    <>
       <div className="tensile-header">
         <div className="tensile-header-text">
           <h2>
@@ -430,7 +434,7 @@ const Tensile = () => {
           {submitLoading ? 'Saving...' : 'Submit All'}
         </button>
       </div>
-    </div>
+    </>
   );
 };
 

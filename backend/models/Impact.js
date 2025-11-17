@@ -1,40 +1,55 @@
 const mongoose = require('mongoose');
 
-const ImpactSchema = new mongoose.Schema({
-
-    dateOfInspection: {
-        type: Date, 
-        required: true 
-    },
-
-    partName: { 
+// Sub-schema for individual test entries
+const ImpactEntrySchema = new mongoose.Schema({
+    partName: {
         type: String,
-        required: true, 
-        trim: true 
+        required: true,
+        trim: true
     },
-
-    dateCode: { 
-        type: String, 
-        required: true, 
-        trim: true 
+    dateCode: {
+        type: String,
+        required: true,
+        trim: true,
+        match: /^[0-9][A-Z][0-9]{2}$/  // Example: '3A21'
     },
+    specification: {
+        val:{
+            type: Number,
+            required: true
+        },
 
-    specification: { 
-        type: String, 
-        required: true, 
-        trim: true 
+        constraint: {
+            type: String
+        }
     },
+    observedValue: {
+        type: String,
+        required: true,
+        trim: true,
+        match: /^[0-9]+(\s*,\s*[0-9]+)?$/
+},
+    remarks: {
+        type: String,
+        trim: true,
+        default: ''
+    }
+}, {
+    timestamps: true,
+    _id: true  // Each entry gets its own _id for editing/deleting
+});
 
-    observedValue: { 
-        type: Number, 
-        required: true, 
-        trim: true 
+// Main schema - one document per date
+const ImpactSchema = new mongoose.Schema({
+    date: {
+        type: Date,
+        required: true,
+        unique: true,  // Only one document per date
+        index: true
     },
-
-    remarks: { 
-        type: String, 
-        trim: true, 
-        default: '' 
+    entries: {
+        type: [ImpactEntrySchema],
+        default: []  // Array of test entries for this date
     }
 }, {
     timestamps: true,

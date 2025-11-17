@@ -1,6 +1,6 @@
 import React, { forwardRef } from 'react';
 import styled from 'styled-components';
-import { Settings, Edit2, Trash2, Filter } from 'lucide-react';
+import { Settings, Edit2, Trash2, Filter, X } from 'lucide-react';
 import CustomDatePicker from './CustomDatePicker';
 import '../styles/ComponentStyles/Buttons.css';
 
@@ -125,6 +125,15 @@ export const FilterButton = ({ onClick, disabled = false, children }) => (
     <button onClick={onClick} type="button" disabled={disabled} title="Filter">
       <Filter size={18} />
       {children || 'Filter'}
+    </button>
+  </FilterButtonWrapper>
+);
+
+export const ClearButton = ({ onClick, disabled = false, children }) => (
+  <FilterButtonWrapper>
+    <button onClick={onClick} type="button" disabled={disabled} title="Clear Filter" className="clear-btn">
+      <X size={18} />
+      {children || 'Clear'}
     </button>
   </FilterButtonWrapper>
 );

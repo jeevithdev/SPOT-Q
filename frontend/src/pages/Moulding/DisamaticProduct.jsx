@@ -4,16 +4,17 @@ import { Save, FileText, Plus, Minus, X, Loader2, Edit2, RotateCcw, RefreshCw } 
 import CustomDatePicker from "../../Components/CustomDatePicker";
 import Loader from "../../Components/Loader";
 import api from "../../utils/api";
+import { getCurrentDate } from "../../utils/dateUtils";
 import "../../styles/PageStyles/Moulding/DisamaticProduct.css";
 
-// Get today's date in YYYY-MM-DD format
+// Get today's date in YYYY-MM-DD format (client-side fallback)
 const getTodaysDate = () => {
   const today = new Date();
   return today.toISOString().split('T')[0];
 };
 
 const initialFormData = {
-  date: getTodaysDate(), // Set today's date by default
+  date: getTodaysDate(), // Temporary default, will be updated with server date
   shift: "",
   incharge: "",
   ppOperator: "",
@@ -86,10 +87,19 @@ const DisamaticProduct = () => {
     durationTime: ''
   });
   
+  // Fetch server date on component mount
+  useEffect(() => {
+    const fetchServerDate = async () => {
+      const serverDate = await getCurrentDate();
+      setFormData(prev => ({ ...prev, date: serverDate }));
+    };
+    fetchServerDate();
+  }, []);
+
   // Auto-update date if user keeps page open past midnight
   useEffect(() => {
-    const interval = setInterval(() => {
-      const today = getTodaysDate();
+    const interval = setInterval(async () => {
+      const today = await getCurrentDate(); // Use server date
       if (formData.date !== today) {
         // Update date silently; keep other data. Do not unlock primary.
         setFormData(prev => ({ ...prev, date: today }));
@@ -161,8 +171,8 @@ const DisamaticProduct = () => {
   };
   
   // Reset form (new entry) utility
-  const resetForm = () => {
-    const today = getTodaysDate();
+  const resetForm = async () => {
+    const today = await getCurrentDate(); // Use server date
     setFormData({ ...initialFormData, date: today });
     setIsPrimaryLocked(false);
     setBasicFieldLocked({ shift: false, incharge: false, ppOperator: false });
@@ -176,126 +186,22 @@ const DisamaticProduct = () => {
   const handleMemberKeyDown = (e, index) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-    // Include current input value immediately (keydown fires before potential state sync edge cases)
-    const updatedMembers = [...formData.members];
-    updatedMembers[index] = e.target.value;
-    const shiftValid = formData.shift && formData.shift.trim() !== '';
-    const inchargeValid = formData.incharge && formData.incharge.trim() !== '';
-    const ppOperatorValid = formData.ppOperator && formData.ppOperator.trim() !== '';
-    const membersValid = updatedMembers.some(m => m && m.trim() !== '');
-    const isLast = index === updatedMembers.length - 1;
-    if (shiftValid && inchargeValid && ppOperatorValid && membersValid && isLast) {
-      // Persist updated members then lock & jump
-      setFormData(prev => ({ ...prev, members: updatedMembers }));
-      handlePrimaryLockAndJump(updatedMembers); // pass override
+
+    // Move to next member field if exists, otherwise move to production table
+    const nextId = `member-field-${index + 1}`;
+    const nextEl = document.getElementById(nextId);
+    if (nextEl) {
+      nextEl.focus();
     } else {
-      // Navigate or show validation focus
-      if (!shiftValid) {
-        document.getElementById('shift-field')?.focus();
-        return;
-      }
-      if (!inchargeValid) {
-        document.getElementById('incharge-field')?.focus();
-        return;
-      }
-      if (!ppOperatorValid) {
-        document.getElementById('ppoperator-field')?.focus();
-        return;
-      }
-      if (!membersValid) {
-        document.getElementById('member-field-0')?.focus();
-        return;
-      }
-      // Move to next member field if exists
-      const nextId = `member-field-${index + 1}`;
-      const nextEl = document.getElementById(nextId);
-      if (nextEl) nextEl.focus();
-    }
-  };
-  
-  // Lock primary section and jump to production table
-  const handlePrimaryLockAndJump = async (overrideMembers) => {
-    if (!formData.date) {
-      alert('Date is required');
-      return;
-    }
-
-    // Validate all fields
-    const shiftValid = validateField('shift', formData.shift);
-    const inchargeValid = validateField('incharge', formData.incharge);
-    const ppOperatorValid = validateField('ppOperator', formData.ppOperator);
-    const membersToUse = overrideMembers || formData.members;
-    const membersValid = validateField('members', membersToUse);
-    
-    if (!shiftValid || !inchargeValid || !ppOperatorValid || !membersValid) {
-      alert('Please fill all required fields: Shift, Incharge, PP Operator, and at least one Member');
-      return;
-    }
-
-  const allMembers = membersToUse.filter(m => m.trim() !== '');
-
-    try {
-      setLoadingStates(prev => ({ ...prev, basicInfo: true }));
-      
-      const payload = {
-        date: formData.date,
-        section: 'basicInfo'
-      };
-      
-      if (isNewRecord) {
-        payload.shift = formData.shift && formData.shift.trim() !== '' ? formData.shift.trim() : '';
-        if (formData.incharge && formData.incharge.trim() !== '') {
-          payload.incharge = formData.incharge.trim();
-        }
-        if (formData.ppOperator && formData.ppOperator.trim() !== '') {
-          payload.ppOperator = formData.ppOperator.trim();
-        }
-        if (allMembers.length > 0) {
-          payload.members = allMembers;
-        }
-      } else {
-        if (!basicFieldLocked.shift) {
-          payload.shift = formData.shift.trim();
-        }
-        if (!basicFieldLocked.incharge) {
-          payload.incharge = formData.incharge.trim();
-        }
-        if (!basicFieldLocked.ppOperator) {
-          payload.ppOperator = formData.ppOperator.trim();
-        }
-        if (allMembers.length > 0) {
-          payload.members = allMembers;
-        }
-      }
-
-      const data = await api.post('/dismatic-reports', payload);
-      
-      if (data.success) {
-        setPrimaryId(data.data?._id || null);
-        if (formData.shift) {
-          await checkAndLockByDateAndShift(formData.date, formData.shift);
-        }
-        await checkExistingPrimaryData(formData.date);
-        
-        // Lock the primary section
-        setIsPrimaryLocked(true);
-        
-        // Jump to first production table input
+      // Last member field - move to production table if primary is locked
+      if (isPrimaryLocked) {
         setTimeout(() => {
           focusFirstTableInput('production');
         }, 50);
-      } else {
-        alert('Failed to save: ' + (data.message || 'Unknown error'));
       }
-    } catch (error) {
-      console.error('Error saving basic info:', error);
-      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
-      alert('Failed to save basic information: ' + errorMessage);
-    } finally {
-      setLoadingStates(prev => ({ ...prev, basicInfo: false }));
     }
   };
-  
+
   const handleChange = (field, value) => {
     // Ignore date change attempts (date locked to today)
     if (field === 'date') return;
@@ -1296,6 +1202,18 @@ const DisamaticProduct = () => {
       alert('Please select a valid date before saving all');
       return;
     }
+
+    // Check if at least one primary field has data
+    const hasShift = formData.shift && formData.shift.trim() !== '';
+    const hasIncharge = formData.incharge && formData.incharge.trim() !== '';
+    const hasPpOperator = formData.ppOperator && formData.ppOperator.trim() !== '';
+    const hasMembers = formData.members.some(m => m && m.trim() !== '');
+
+    if (!hasShift && !hasIncharge && !hasPpOperator && !hasMembers) {
+      alert('Please fill at least one primary field (Shift, Incharge, PP Operator, or Members)');
+      return;
+    }
+
     setAllSubmitting(true);
     try {
       // Build single consolidated payload with section='all'
@@ -1320,18 +1238,18 @@ const DisamaticProduct = () => {
       if (!res.success) throw new Error(res.message || 'Save failed');
 
       alert('All data saved successfully for ' + targetDate + '! Ready for next entry.');
-      
+
       // Lock primary locally and refresh locks from backend
       setIsPrimaryLocked(true);
       await checkExistingPrimaryData(targetDate, false);
-      
+
       // Reset only non-primary sections for next entry (keep primary locked and intact)
       resetProductionTable();
       resetNextShiftPlanTable();
       resetDelaysTable();
       resetMouldHardnessTable();
       resetPatternTempTable();
-      
+
       // Clear event section fields
       setFormData(prev => ({
         ...prev,
@@ -1339,19 +1257,19 @@ const DisamaticProduct = () => {
         maintenance: '',
         supervisorName: ''
       }));
-      
+
       // Reset event section locks
       setEventSectionLocked({
         significantEvent: false,
         maintenance: false,
         supervisorName: false
       });
-      
+
       // Focus back to production table for next entry
       setTimeout(() => {
         focusFirstTableInput('production');
       }, 100);
-      
+
       // Don't navigate to report - stay on entry page for next data set
     } catch (err) {
       console.error('Error saving all:', err);
@@ -1399,7 +1317,7 @@ const DisamaticProduct = () => {
             </div>
             <div className="primary-fields-row">
               <div className="disamatic-form-group">
-                <label>Shift <span style={{ color: '#ef4444' }}>*</span></label>
+                <label>Shift</label>
                 <select
                   id="shift-field"
                   value={formData.shift}
@@ -1408,24 +1326,24 @@ const DisamaticProduct = () => {
                   onClick={() => handleLockedFieldClick('shift')}
                   onFocus={() => handleLockedFieldClick('shift')}
                   onMouseDown={(e) => {
-                    if (basicFieldLocked.shift || checkingData || isPrimaryLocked) {
+                    if (basicFieldLocked.shift || checkingData) {
                       e.preventDefault();
                       e.stopPropagation();
                     }
                   }}
-                  disabled={basicFieldLocked.shift || checkingData || isPrimaryLocked}
-                  readOnly={basicFieldLocked.shift || isPrimaryLocked}
+                  disabled={basicFieldLocked.shift || checkingData}
+                  readOnly={basicFieldLocked.shift}
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    border: `2px solid ${validationErrors.shift ? '#ef4444' : (formData.shift && !validationErrors.shift ? '#22c55e' : '#cbd5e1')}`,
+                    border: `2px solid ${formData.shift ? '#22c55e' : '#cbd5e1'}`,
                     borderRadius: '8px',
                     fontSize: '0.875rem',
-                    backgroundColor: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-                    color: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? '#64748b' : '#1e293b',
-                    cursor: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? 'not-allowed' : 'pointer',
-                    opacity: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? 0.8 : 1,
-                    pointerEvents: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? 'none' : 'auto'
+                    backgroundColor: (basicFieldLocked.shift || checkingData) ? '#f1f5f9' : '#ffffff',
+                    color: (basicFieldLocked.shift || checkingData) ? '#64748b' : '#1e293b',
+                    cursor: (basicFieldLocked.shift || checkingData) ? 'not-allowed' : 'pointer',
+                    opacity: (basicFieldLocked.shift || checkingData) ? 0.8 : 1,
+                    pointerEvents: (basicFieldLocked.shift || checkingData) ? 'none' : 'auto'
                   }}
                 >
                   <option value="">Select Shift</option>
@@ -1435,52 +1353,56 @@ const DisamaticProduct = () => {
                 </select>
               </div>
               <div className="disamatic-form-group">
-                <label>Incharge <span style={{ color: '#ef4444' }}>*</span></label>
-                <input 
+                <label>Incharge</label>
+                <input
                   id="incharge-field"
-                  type="text" 
-                  value={formData.incharge} 
+                  type="text"
+                  value={formData.incharge}
                   onChange={e => handleChange("incharge", e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('ppoperator-field')?.focus(); } }}
                   onClick={() => handleLockedFieldClick('incharge')}
                   onFocus={() => handleLockedFieldClick('incharge')}
                   placeholder="Enter incharge name"
-                  disabled={basicFieldLocked.incharge || isPrimaryLocked}
-                  readOnly={basicFieldLocked.incharge || isPrimaryLocked}
-                  style={{ 
-                    cursor: (basicFieldLocked.incharge || isPrimaryLocked) ? 'not-allowed' : 'text',
-                    backgroundColor: (basicFieldLocked.incharge || isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-                    border: `2px solid ${validationErrors.incharge ? '#ef4444' : (formData.incharge && !validationErrors.incharge ? '#22c55e' : '#cbd5e1')}`,
+                  disabled={basicFieldLocked.incharge}
+                  readOnly={basicFieldLocked.incharge}
+                  style={{
+                    cursor: basicFieldLocked.incharge ? 'not-allowed' : 'text',
+                    backgroundColor: basicFieldLocked.incharge ? '#f1f5f9' : '#ffffff',
+                    border: `2px solid ${formData.incharge ? '#22c55e' : '#cbd5e1'}`,
                   }}
                 />
               </div>
               <div className="disamatic-form-group">
-                <label>PP Operator <span style={{ color: '#ef4444' }}>*</span></label>
-                <input 
+                <label>PP Operator</label>
+                <input
                   id="ppoperator-field"
-                  type="text" 
-                  value={formData.ppOperator} 
+                  type="text"
+                  value={formData.ppOperator}
                   onChange={e => handleChange("ppOperator", e.target.value)}
                   onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('member-field-0')?.focus(); } }}
                   onClick={() => handleLockedFieldClick('ppOperator')}
                   onFocus={() => handleLockedFieldClick('ppOperator')}
                   placeholder="Enter PP Operator name"
-                  disabled={basicFieldLocked.ppOperator || isPrimaryLocked}
-                  readOnly={basicFieldLocked.ppOperator || isPrimaryLocked}
-                  style={{ 
-                    cursor: (basicFieldLocked.ppOperator || isPrimaryLocked) ? 'not-allowed' : 'text',
-                    backgroundColor: (basicFieldLocked.ppOperator || isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-                    border: `2px solid ${validationErrors.ppOperator ? '#ef4444' : (formData.ppOperator && !validationErrors.ppOperator ? '#22c55e' : '#cbd5e1')}`,
+                  disabled={basicFieldLocked.ppOperator}
+                  readOnly={basicFieldLocked.ppOperator}
+                  style={{
+                    cursor: basicFieldLocked.ppOperator ? 'not-allowed' : 'text',
+                    backgroundColor: basicFieldLocked.ppOperator ? '#f1f5f9' : '#ffffff',
+                    border: `2px solid ${formData.ppOperator ? '#22c55e' : '#cbd5e1'}`,
                   }}
                 />
               </div>
-              <div className="disamatic-form-group">
-                <label>Members Present <span style={{ color: '#ef4444' }}>*</span></label>
+            </div>
+
+            {/* Members Present Row */}
+            <div className="primary-fields-row" style={{ marginTop: '1rem' }}>
+              <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
+                <label>Members Present</label>
             <div className="disamatic-members-container">
               {formData.members.map((member, index) => {
                 const isNewMemberField = isNewMember(index);
                 const isEditable = !basicInfoLocked || isNewMemberField;
-                const isDisabled = isPrimaryLocked || (!isEditable && (basicInfoLocked || isLocked));
+                const isDisabled = !isEditable && (basicInfoLocked || isLocked);
                 return (
                   <div key={index} className="disamatic-member-input-wrapper">
                     <input
@@ -1503,13 +1425,13 @@ const DisamaticProduct = () => {
                       className="disamatic-member-input"
                       disabled={isDisabled}
                       readOnly={isDisabled}
-                      style={{ 
+                      style={{
                         cursor: isDisabled ? 'not-allowed' : 'text',
                         backgroundColor: isDisabled ? '#f1f5f9' : '#ffffff',
-                        border: `2px solid ${validationErrors.members && !member ? '#ef4444' : (member ? '#22c55e' : '#cbd5e1')}`,
+                        border: `2px solid ${member ? '#22c55e' : '#cbd5e1'}`,
                       }}
                     />
-                    {formData.members.length > 1 && isEditable && !isPrimaryLocked && (
+                    {formData.members.length > 1 && isEditable && (
                       <button
                         type="button"
                         onClick={() => removeMemberField(index)}
@@ -1522,39 +1444,18 @@ const DisamaticProduct = () => {
                   </div>
                 );
               })}
-              {/* Allow adding members only when not locked */}
-              {!isPrimaryLocked && (
-                <button
-                  type="button"
-                  onClick={addMemberField}
-                  className="disamatic-add-member-btn"
-                  title="Add another member"
-                >
-                  <Plus size={16} />
-                  Add Member
-                </button>
-              )}
+              {/* Allow adding members always */}
+              <button
+                type="button"
+                onClick={addMemberField}
+                className="disamatic-add-member-btn"
+                title="Add another member"
+              >
+                <Plus size={16} />
+                Add Member
+              </button>
             </div>
               </div>
-            </div>
-            {/* Only show Reset button - no Save button */}
-            <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', gap: '0.5rem' }}>
-              {isPrimaryLocked && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (window.confirm('Are you sure you want to unlock and reset primary data? This will clear Date, Shift, Incharge, PP Operator, and Members.')) {
-                      resetForm();
-                    }
-                  }}
-                  className="disamatic-reset-btn"
-                  title="Unlock and reset primary data"
-                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', marginTop: '1.75rem' }}
-                >
-                  <RefreshCw size={14} />
-                  Reset Primary
-                </button>
-              )}
             </div>
           </div>
 

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, PencilLine, BookOpenCheck } from 'lucide-react';
-import { DatePicker, EditActionButton, DeleteActionButton, FilterButton } from '../Components/Buttons';
-import Loader from '../Components/Loader';
-import api from '../utils/api';
-import '../styles/PageStyles/TensileReport.css';
+import { DatePicker, EditActionButton, DeleteActionButton, FilterButton, ClearButton } from '../../Components/Buttons';
+import Loader from '../../Components/Loader';
+import api from '../../utils/api';
+import '../../styles/PageStyles/Tensile/TensileReport.css';
 
 const TensileReport = () => {
   const [startDate, setStartDate] = useState(null);
@@ -152,8 +152,14 @@ const TensileReport = () => {
     setFilteredItems(filtered);
   };
 
+  const handleClearFilter = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setFilteredItems(items);
+  };
+
   return (
-    <div className="page-wrapper">
+    <>
       <div className="tensile-report-header">
         <div className="tensile-report-header-text">
           <h2>
@@ -183,6 +189,9 @@ const TensileReport = () => {
         <FilterButton onClick={handleFilter} disabled={!startDate}>
           Filter
         </FilterButton>
+        <ClearButton onClick={handleClearFilter} disabled={!startDate && !endDate}>
+          Clear
+        </ClearButton>
       </div>
 
       {loading ? (
@@ -474,7 +483,7 @@ const TensileReport = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

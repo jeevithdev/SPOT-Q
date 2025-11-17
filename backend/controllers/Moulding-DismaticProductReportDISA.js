@@ -50,6 +50,103 @@ const createDismaticReport = async (req, res) => {
             if (report) {
                 // Update specific section only - preserve all other sections
                 switch (section) {
+                                        case 'all':
+                                            // Basic fields
+                                            if (data.shift !== undefined) report.shift = String(data.shift || '').trim();
+                                            if (data.incharge !== undefined) report.incharge = String(data.incharge || '').trim();
+                                            if (data.ppOperator !== undefined) report.ppOperator = String(data.ppOperator || '').trim();
+                                            if (data.members !== undefined) {
+                                                if (Array.isArray(data.members)) {
+                                                    const filteredMembers = data.members.filter(m => m && String(m).trim() !== '');
+                                                    report.memberspresent = filteredMembers.length > 0 ? filteredMembers.map(m => String(m).trim()).join(', ') : '';
+                                                } else {
+                                                    report.memberspresent = String(data.members || '').trim();
+                                                }
+                                            }
+
+                                            // Production details
+                                            if (data.productionTable && Array.isArray(data.productionTable)) {
+                                                const existingProductionCount = report.productionDetails ? report.productionDetails.length : 0;
+                                                const newProductionEntries = data.productionTable
+                                                    .filter(row => row && (row.counterNo || row.componentName || row.produced || row.poured || row.cycleTime || row.mouldsPerHour || row.remarks))
+                                                    .map((row, index) => ({
+                                                        sNo: existingProductionCount + index + 1,
+                                                        counterNo: String(row.counterNo || '').trim(),
+                                                        componentName: String(row.componentName || '').trim(),
+                                                        produced: (row.produced && String(row.produced).trim() !== '') ? parseFloat(row.produced) : 0,
+                                                        poured: (row.poured && String(row.poured).trim() !== '') ? parseFloat(row.poured) : 0,
+                                                        cycleTime: String(row.cycleTime || '').trim(),
+                                                        mouldsPerHour: (row.mouldsPerHour && String(row.mouldsPerHour).trim() !== '') ? parseFloat(row.mouldsPerHour) : 0,
+                                                        remarks: String(row.remarks || '').trim()
+                                                    }));
+                                                report.productionDetails = [...(report.productionDetails || []), ...newProductionEntries];
+                                            }
+
+                                            // Next shift plan
+                                            if (data.nextShiftPlanTable && Array.isArray(data.nextShiftPlanTable)) {
+                                                const existingNextShiftPlanCount = report.nextShiftPlan ? report.nextShiftPlan.length : 0;
+                                                const newNextShiftPlanEntries = data.nextShiftPlanTable
+                                                    .filter(row => row && (row.componentName || row.plannedMoulds || row.remarks))
+                                                    .map((row, index) => ({
+                                                        sNo: existingNextShiftPlanCount + index + 1,
+                                                        componentName: String(row.componentName || '').trim(),
+                                                        plannedMoulds: (row.plannedMoulds && String(row.plannedMoulds).trim() !== '') ? parseFloat(row.plannedMoulds) : 0,
+                                                        remarks: String(row.remarks || '').trim()
+                                                    }));
+                                                report.nextShiftPlan = [...(report.nextShiftPlan || []), ...newNextShiftPlanEntries];
+                                            }
+
+                                            // Delays
+                                            if (data.delaysTable && Array.isArray(data.delaysTable)) {
+                                                const existingDelaysCount = report.delays ? report.delays.length : 0;
+                                                const newDelaysEntries = data.delaysTable
+                                                    .filter(row => row && (row.delays || row.durationMinutes || row.durationTime))
+                                                    .map((row, index) => ({
+                                                        sNo: existingDelaysCount + index + 1,
+                                                        delays: String(row.delays || '').trim(),
+                                                        durationMinutes: (row.durationMinutes && String(row.durationMinutes).trim() !== '') ? parseFloat(row.durationMinutes) : 0,
+                                                        durationTime: String(row.durationTime || '').trim()
+                                                    }));
+                                                report.delays = [...(report.delays || []), ...newDelaysEntries];
+                                            }
+
+                                            // Mould hardness
+                                            if (data.mouldHardnessTable && Array.isArray(data.mouldHardnessTable)) {
+                                                const existingMouldHardnessCount = report.mouldHardness ? report.mouldHardness.length : 0;
+                                                const newMouldHardnessEntries = data.mouldHardnessTable
+                                                    .filter(row => row && (row.componentName || row.mpPP || row.mpSP || row.bsPP || row.bsSP || row.remarks))
+                                                    .map((row, index) => ({
+                                                        sNo: existingMouldHardnessCount + index + 1,
+                                                        componentName: String(row.componentName || '').trim(),
+                                                        mpPP: (row.mpPP && String(row.mpPP).trim() !== '') ? parseFloat(row.mpPP) : 0,
+                                                        mpSP: (row.mpSP && String(row.mpSP).trim() !== '') ? parseFloat(row.mpSP) : 0,
+                                                        bsPP: (row.bsPP && String(row.bsPP).trim() !== '') ? parseFloat(row.bsPP) : 0,
+                                                        bsSP: (row.bsSP && String(row.bsSP).trim() !== '') ? parseFloat(row.bsSP) : 0,
+                                                        remarks: String(row.remarks || '').trim()
+                                                    }));
+                                                report.mouldHardness = [...(report.mouldHardness || []), ...newMouldHardnessEntries];
+                                            }
+
+                                            // Pattern temperature
+                                            if (data.patternTempTable && Array.isArray(data.patternTempTable)) {
+                                                const existingPatternTempCount = report.patternTemperature ? report.patternTemperature.length : 0;
+                                                const newPatternTempEntries = data.patternTempTable
+                                                    .filter(row => row && (row.item || row.pp || row.sp))
+                                                    .map((row, index) => ({
+                                                        sNo: existingPatternTempCount + index + 1,
+                                                        item: String(row.item || '').trim(),
+                                                        pp: (row.pp && String(row.pp).trim() !== '') ? parseFloat(row.pp) : 0,
+                                                        sp: (row.sp && String(row.sp).trim() !== '') ? parseFloat(row.sp) : 0
+                                                    }));
+                                                report.patternTemperature = [...(report.patternTemperature || []), ...newPatternTempEntries];
+                                            }
+
+                                            // Event fields
+                                            if (data.significantEvent !== undefined && String(data.significantEvent || '').trim() !== '') report.significantEvent = String(data.significantEvent).trim();
+                                            if (data.maintenance !== undefined && String(data.maintenance || '').trim() !== '') report.maintenance = String(data.maintenance).trim();
+                                            if (data.supervisorName !== undefined && String(data.supervisorName || '').trim() !== '') report.supervisorName = String(data.supervisorName).trim();
+
+                                            break;
                     case 'basicInfo':
                         if (data.shift !== undefined) report.shift = String(data.shift || '').trim();
                         if (data.incharge !== undefined) report.incharge = String(data.incharge || '').trim();
@@ -194,15 +291,15 @@ const createDismaticReport = async (req, res) => {
                     shift: (data.shift !== undefined && String(data.shift).trim() !== '') 
                         ? String(data.shift).trim() 
                         : (shift && String(shift).trim() !== '' ? String(shift).trim() : 'Not Set'),
-                    incharge: section === 'basicInfo' ? String(data.incharge || '').trim() : '',
-                    ppOperator: section === 'basicInfo' ? String(data.ppOperator || '').trim() : '',
-                    memberspresent: section === 'basicInfo' && data.members 
+                    incharge: (section === 'basicInfo' || section === 'all') ? String(data.incharge || '').trim() : '',
+                    ppOperator: (section === 'basicInfo' || section === 'all') ? String(data.ppOperator || '').trim() : '',
+                    memberspresent: (section === 'basicInfo' || section === 'all') && data.members 
                         ? (Array.isArray(data.members) 
                             ? data.members.filter(m => m && String(m).trim() !== '').map(m => String(m).trim()).join(', ') 
                             : String(data.members || '').trim()) 
                         : '',
                     production: '',
-                    productionDetails: section === 'production' && data.productionTable && Array.isArray(data.productionTable)
+                    productionDetails: (section === 'production' || section === 'all') && data.productionTable && Array.isArray(data.productionTable)
                         ? data.productionTable
                             .filter(row => row && (row.counterNo || row.componentName || row.produced || row.poured || row.cycleTime || row.mouldsPerHour || row.remarks))
                             .map((row, index) => ({
@@ -216,7 +313,7 @@ const createDismaticReport = async (req, res) => {
                                 remarks: String(row.remarks || '').trim()
                             })) 
                         : [],
-                    nextShiftPlan: section === 'nextShiftPlan' && data.nextShiftPlanTable && Array.isArray(data.nextShiftPlanTable)
+                    nextShiftPlan: (section === 'nextShiftPlan' || section === 'all') && data.nextShiftPlanTable && Array.isArray(data.nextShiftPlanTable)
                         ? data.nextShiftPlanTable
                             .filter(row => row && (row.componentName || row.plannedMoulds || row.remarks))
                             .map((row, index) => ({
@@ -226,7 +323,7 @@ const createDismaticReport = async (req, res) => {
                                 remarks: String(row.remarks || '').trim()
                             })) 
                         : [],
-                    delays: section === 'delays' && data.delaysTable && Array.isArray(data.delaysTable)
+                    delays: (section === 'delays' || section === 'all') && data.delaysTable && Array.isArray(data.delaysTable)
                         ? data.delaysTable
                             .filter(row => row && (row.delays || row.durationMinutes || row.durationTime))
                             .map((row, index) => ({
@@ -236,7 +333,7 @@ const createDismaticReport = async (req, res) => {
                                 durationTime: String(row.durationTime || '').trim()
                             })) 
                         : [],
-                    mouldHardness: section === 'mouldHardness' && data.mouldHardnessTable && Array.isArray(data.mouldHardnessTable)
+                    mouldHardness: (section === 'mouldHardness' || section === 'all') && data.mouldHardnessTable && Array.isArray(data.mouldHardnessTable)
                         ? data.mouldHardnessTable
                             .filter(row => row && (row.componentName || row.mpPP || row.mpSP || row.bsPP || row.bsSP || row.remarks))
                             .map((row, index) => ({
@@ -249,7 +346,7 @@ const createDismaticReport = async (req, res) => {
                                 remarks: String(row.remarks || '').trim()
                             })) 
                         : [],
-                    patternTemperature: section === 'patternTemp' && data.patternTempTable && Array.isArray(data.patternTempTable)
+                    patternTemperature: (section === 'patternTemp' || section === 'all') && data.patternTempTable && Array.isArray(data.patternTempTable)
                         ? data.patternTempTable
                             .filter(row => row && (row.item || row.pp || row.sp))
                             .map((row, index) => ({
@@ -263,17 +360,17 @@ const createDismaticReport = async (req, res) => {
                 
                 // Only add event section fields if they have actual content (not empty strings)
                 // This prevents MongoDB from saving empty strings which would trigger field locks
-                if (section === 'eventSection' || section === 'significantEvent') {
+                if (section === 'eventSection' || section === 'significantEvent' || section === 'all') {
                     if (data.significantEvent !== undefined && String(data.significantEvent || '').trim() !== '') {
                         newReportData.significantEvent = String(data.significantEvent).trim();
                     }
                 }
-                if (section === 'eventSection' || section === 'maintenance') {
+                if (section === 'eventSection' || section === 'maintenance' || section === 'all') {
                     if (data.maintenance !== undefined && String(data.maintenance || '').trim() !== '') {
                         newReportData.maintenance = String(data.maintenance).trim();
                     }
                 }
-                if (section === 'eventSection' || section === 'supervisorName') {
+                if (section === 'eventSection' || section === 'supervisorName' || section === 'all') {
                     if (data.supervisorName !== undefined && String(data.supervisorName || '').trim() !== '') {
                         newReportData.supervisorName = String(data.supervisorName).trim();
                     }
@@ -537,6 +634,54 @@ const deleteDismaticReport = async (req, res) => {
     }
 };
 
+// Initialize today's entry if it doesn't exist (called on server startup)
+const initializeTodayEntry = async () => {
+    try {
+        const { getCurrentDate } = require('../utils/dateUtils');
+        const todayStr = getCurrentDate();
+
+        // Parse date string to Date object
+        const dateParts = todayStr.split('-');
+        const searchDate = new Date(parseInt(dateParts[0]), parseInt(dateParts[1]) - 1, parseInt(dateParts[2]));
+        searchDate.setHours(0, 0, 0, 0);
+        const nextDay = new Date(searchDate);
+        nextDay.setDate(nextDay.getDate() + 1);
+
+        // Check if entry exists for today
+        const existingEntry = await DismaticProductReportDISA.findOne({
+            date: {
+                $gte: searchDate,
+                $lt: nextDay
+            }
+        });
+
+        if (!existingEntry) {
+            // Create empty entry for today with minimal required fields
+            // Note: shift is required in schema but we set it to empty string for now
+            const newEntry = new DismaticProductReportDISA({
+                date: searchDate,
+                shift: '', // Required field - empty initially
+                incharge: '',
+                ppOperator: '',
+                memberspresent: '',
+                productionDetails: [],
+                nextShiftPlan: [],
+                delays: [],
+                mouldHardness: [],
+                patternTemperature: [],
+                significantEvent: '',
+                maintenance: '',
+                supervisorName: ''
+            });
+
+            // Bypass validation for initial empty entry creation
+            await newEntry.save({ validateBeforeSave: false });
+        }
+    } catch (error) {
+        console.error('❌ Error initializing Dismatic Product entry:', error.message);
+    }
+};
+
 module.exports = {
     createDismaticReport,
     getAllDismaticReports,
@@ -544,5 +689,6 @@ module.exports = {
     getDismaticReportsByDateRange,
     getDismaticReportByDate,
     updateDismaticReport,
-    deleteDismaticReport
+    deleteDismaticReport,
+    initializeTodayEntry
 };

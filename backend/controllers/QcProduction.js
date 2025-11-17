@@ -90,3 +90,45 @@ exports.deleteEntry = async (req, res) => {
         });
     }
 };
+
+// Initialize today's entry if it doesn't exist (called on server startup)
+exports.initializeTodayEntry = async () => {
+    try {
+        const { getCurrentDate } = require('../utils/dateUtils');
+        const todayStr = getCurrentDate();
+        const QcProduction = require('../models/QcProduction');
+
+        // Check if entry exists for today
+        const existingEntry = await QcProduction.findOne({
+            date: todayStr
+        });
+
+        if (!existingEntry) {
+            // Create empty entry for today
+            const newEntry = new QcProduction({
+                date: todayStr,
+                partName: '',
+                noOfMoulds: '',
+                cPercent: '',
+                siPercent: '',
+                mnPercent: '',
+                pPercent: '',
+                sPercent: '',
+                mgPercent: '',
+                cuPercent: '',
+                crPercent: '',
+                nodularity: '',
+                graphiteType: '',
+                pearliteFerrite: '',
+                hardnessBHN: '',
+                ts: '',
+                ys: '',
+                el: ''
+            });
+            // Bypass validation for initial empty entry creation
+            await newEntry.save({ validateBeforeSave: false });
+        }
+    } catch (error) {
+        console.error('❌ Error initializing QcProduction entry:', error.message);
+    }
+};

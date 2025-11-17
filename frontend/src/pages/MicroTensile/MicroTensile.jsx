@@ -1,8 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
-import CustomDatePicker from '../Components/CustomDatePicker';
-import api from '../utils/api';
-import '../styles/PageStyles/MicroTensile.css';
+import CustomDatePicker from '../../Components/CustomDatePicker';
+import api from '../../utils/api';
+import '../../styles/PageStyles/MicroTensile/MicroTensile.css';
 
 const MicroTensile = () => {
   const inputRefs = useRef({});
@@ -161,7 +161,8 @@ const MicroTensile = () => {
   };
 
   return (
-    <div className="page-wrapper">
+    <>
+
       <div className="microtensile-header">
         <div className="microtensile-header-text">
           <h2>
@@ -390,7 +391,7 @@ const MicroTensile = () => {
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>
-    </div>
+    </>
   );
 };
 

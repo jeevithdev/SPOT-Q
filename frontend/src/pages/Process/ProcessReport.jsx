@@ -1,10 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpenCheck } from 'lucide-react';
-import { DatePicker, FilterButton } from '../Components/Buttons';
-import Loader from '../Components/Loader';
-import api from '../utils/api';
-import '../styles/PageStyles/ProcessReport.css';
-import '../styles/PageStyles/ImpactReport.css';
+import { DatePicker, FilterButton, ClearButton } from '../../Components/Buttons';
+import Loader from '../../Components/Loader';
+import api from '../../utils/api';
+import '../../styles/PageStyles/Process/ProcessReport.css';
 
 const ProcessReport = () => {
   const [startDate, setStartDate] = useState(null);
@@ -45,7 +44,7 @@ const ProcessReport = () => {
       itemDate.setHours(0, 0, 0, 0);
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
-      
+
       // If end date is provided, filter by date range
       if (endDate) {
         const end = new Date(endDate);
@@ -60,9 +59,15 @@ const ProcessReport = () => {
     setFilteredItems(filtered);
   };
 
+  const handleClearFilter = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setFilteredItems(items);
+  };
+
   return (
-    <div className="page-wrapper">
-      <div className="process-report-container">
+    <>
+      <div className="process-report-header">
         <div className="process-report-header-text">
           <h2>
             <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
@@ -91,6 +96,9 @@ const ProcessReport = () => {
         <FilterButton onClick={handleFilter} disabled={!startDate}>
           Filter
         </FilterButton>
+        <ClearButton onClick={handleClearFilter} disabled={!startDate && !endDate}>
+          Clear
+        </ClearButton>
       </div>
 
       {loading ? (
@@ -135,7 +143,7 @@ const ProcessReport = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 

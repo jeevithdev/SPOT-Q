@@ -53,3 +53,20 @@
 /* If a page provides its own class (e.g. .impact-submit-btn) those rules will apply
 	 together with the base .btn class above. This keeps page-specific hover/box-shadow
 	 behavior unchanged while providing consistent base spacing and disabled handling. */
+
+/* Clear Button Styling */
+.clear-btn {
+	background-color: #ef4444 !important;
+	color: white !important;
+}
+
+.clear-btn:hover:not(:disabled) {
+	background-color: #dc2626 !important;
+	transform: translateY(-1px);
+}
+
+.clear-btn:disabled {
+	background-color: #fca5a5 !important;
+	cursor: not-allowed;
+	opacity: 0.6;
+}

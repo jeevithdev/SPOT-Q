@@ -28,6 +28,9 @@ const CustomDatePicker = forwardRef(({ value, onChange, max, style, name, onKeyD
     if (value) {
       setSelectedDate(value);
       setViewDate(new Date(value));
+    } else {
+      setSelectedDate('');
+      setViewDate(new Date());
     }
   }, [value]);
 

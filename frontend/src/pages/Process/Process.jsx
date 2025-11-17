@@ -1,10 +1,16 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { Save, Loader2, RefreshCw, FileText } from 'lucide-react';
-import { DatePicker } from '../Components/Buttons';
-import api from '../utils/api';
-import '../styles/PageStyles/Process.css';
+import api from '../../utils/api';
+import '../../styles/PageStyles/Process/Process.css';
 
 export default function ProcessControl() {
+  // Helper: display DD/MM/YYYY
+  const formatDisplayDate = (iso) => {
+    if (!iso || typeof iso !== 'string' || !iso.includes('-')) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}/${m}/${y}`;
+  };
+
   const [formData, setFormData] = useState({
     date: '', disa: '', partName: '', datecode: '', heatcode: '', quantityOfMoulds: '', metalCompositionC: '', metalCompositionSi: '',
     metalCompositionMn: '', metalCompositionP: '', metalCompositionS: '', metalCompositionMgFL: '',
@@ -19,8 +25,41 @@ export default function ProcessControl() {
   const inputRefs = useRef({});
   const [submitLoading, setSubmitLoading] = useState(false);
   const [isPrimarySaved, setIsPrimarySaved] = useState(false);
-  
-  const fieldOrder = ['date', 'disa', 'partName', 'datecode', 'heatcode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
+  const [dateLoading, setDateLoading] = useState(true);
+
+  // Fetch current date from backend on mount
+  useEffect(() => {
+    const fetchCurrentDate = async () => {
+      try {
+        setDateLoading(true);
+        const data = await api.get('/system/current-date');
+
+        if (data.success && data.data?.date) {
+          setFormData(prev => ({
+            ...prev,
+            date: data.data.date
+          }));
+        }
+      } catch (error) {
+        console.error('Error fetching current date:', error);
+        // Fallback to local date if backend fails
+        const today = new Date();
+        const y = today.getFullYear();
+        const m = String(today.getMonth() + 1).padStart(2, '0');
+        const d = String(today.getDate()).padStart(2, '0');
+        setFormData(prev => ({
+          ...prev,
+          date: `${y}-${m}-${d}`
+        }));
+      } finally {
+        setDateLoading(false);
+      }
+    };
+
+    fetchCurrentDate();
+  }, []);
+
+  const fieldOrder = ['disa', 'partName', 'datecode', 'heatcode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
     'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCu',
     'metalCompositionCr', 'timeOfPouring', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNo', 'heatNo', 'conNo',
     'tappingTime', 'correctiveAdditionC', 'correctiveAdditionSi', 'correctiveAdditionMn', 'correctiveAdditionS',
@@ -50,21 +89,17 @@ export default function ProcessControl() {
     // If already locked, unlock it
     if (isPrimarySaved) {
       setIsPrimarySaved(false);
-      alert('Primary data unlocked. You can now modify date and DISA.');
+      alert('Primary data unlocked. You can now modify DISA.');
       return;
     }
 
     // Validate required fields
-    if (!formData.date) {
-      alert('Please fill in Date');
-      return;
-    }
     if (!formData.disa) {
       alert('Please fill in DISA');
       return;
     }
 
-    // Lock primary fields (date and disa) without saving to database
+    // Lock primary field (disa) without saving to database
     // The actual save will happen when user clicks "Submit Entry"
     setIsPrimarySaved(true);
     alert('Primary data locked. You can now fill other fields.');
@@ -72,10 +107,6 @@ export default function ProcessControl() {
 
   const handleSubmit = async () => {
     // Validate required fields
-    if (!formData.date) {
-      alert('Please fill in Date');
-      return;
-    }
     if (!formData.disa) {
       alert('Please fill in DISA');
       return;
@@ -89,19 +120,25 @@ export default function ProcessControl() {
 
     try {
       setSubmitLoading(true);
-      
+
       // Send all data (primary + other fields) combined to backend
       // Backend will find existing document by date+disa and update it, or create new one
       const data = await api.post('/v1/process-records', formData);
-      
+
       if (data.success) {
         alert('Process control entry saved successfully!');
-        
+
+        // Re-fetch current date from backend to ensure consistency
+        const dateData = await api.get('/system/current-date');
+        const currentDate = dateData.success && dateData.data?.date ? dateData.data.date : formData.date;
+
         // Reset all fields except primary data (date and disa)
-        const resetData = { ...formData };
+        const resetData = { date: currentDate };
         Object.keys(formData).forEach(key => {
           if (key !== 'date' && key !== 'disa') {
             resetData[key] = '';
+          } else if (key === 'disa') {
+            resetData[key] = formData.disa; // Keep disa
           }
         });
         setFormData(resetData);
@@ -126,24 +163,48 @@ export default function ProcessControl() {
     }
   };
 
-  const handleReset = () => {
-    // Reset all fields except primary data (date and disa)
-    const resetData = { ...formData };
-    Object.keys(formData).forEach(key => {
-      if (key !== 'date' && key !== 'disa') {
-        resetData[key] = '';
-      }
-    });
-    setFormData(resetData);
-    // Keep primary locked if it was locked
-    // Focus on Part Name for next entry
-    setTimeout(() => {
-      inputRefs.current.partName?.focus();
-    }, 100);
+  const handleReset = async () => {
+    try {
+      // Re-fetch current date from backend to ensure consistency
+      const dateData = await api.get('/system/current-date');
+      const currentDate = dateData.success && dateData.data?.date ? dateData.data.date : formData.date;
+
+      // Reset all fields except primary data (date and disa)
+      const resetData = { date: currentDate };
+      Object.keys(formData).forEach(key => {
+        if (key !== 'date' && key !== 'disa') {
+          resetData[key] = '';
+        } else if (key === 'disa') {
+          resetData[key] = formData.disa; // Keep disa
+        }
+      });
+      setFormData(resetData);
+      // Keep primary locked if it was locked
+      // Focus on Part Name for next entry
+      setTimeout(() => {
+        inputRefs.current.partName?.focus();
+      }, 100);
+    } catch (error) {
+      console.error('Error resetting form:', error);
+      // On error, just reset fields but keep current date
+      const resetData = { date: formData.date };
+      Object.keys(formData).forEach(key => {
+        if (key !== 'date' && key !== 'disa') {
+          resetData[key] = '';
+        } else if (key === 'disa') {
+          resetData[key] = formData.disa;
+        }
+      });
+      setFormData(resetData);
+      setTimeout(() => {
+        inputRefs.current.partName?.focus();
+      }, 100);
+    }
   };
 
   return (
-    <div className="page-wrapper">
+    <>
+
       <div className="process-header">
         <div className="process-header-text">
           <h2>
@@ -151,23 +212,15 @@ export default function ProcessControl() {
             Process Control - Entry Form
           </h2>
         </div>
+        <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c' }}>
+          {dateLoading ? 'Loading date...' : `DATE : ${formatDisplayDate(formData.date)}`}
+        </div>
       </div>
 
       <div className="process-form-grid">
             {/* Primary Data Section */}
             <div className="section-header primary-data-header">
               <h3>Primary Data</h3>
-            </div>
-            <div className="process-form-group">
-              <label>Date *</label>
-              <DatePicker 
-                ref={el => inputRefs.current.date = el} 
-                name="date" 
-                value={formData.date} 
-                onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'date')}
-                disabled={isPrimarySaved}
-              />
             </div>
 
             <div className="process-form-group">
@@ -204,7 +257,7 @@ export default function ProcessControl() {
                 className="process-lock-primary-btn"
                 type="button"
                 onClick={handlePrimarySubmit}
-                disabled={!isPrimarySaved && (!formData.date || !formData.disa)}
+                disabled={!isPrimarySaved && !formData.disa}
               >
                 {isPrimarySaved ? 'Unlock Primary' : 'Lock Primary'}
               </button>
@@ -428,6 +481,6 @@ export default function ProcessControl() {
           {submitLoading ? 'Saving...' : 'Submit Entry'}
         </button>
       </div>
-    </div>
+    </>
   );
 }

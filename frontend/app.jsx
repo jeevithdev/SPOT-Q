@@ -6,21 +6,21 @@ import Dashboard from './src/Components/Dashboard';
 import DepartmentRouteGuard from './src/Components/DepartmentRouteGuard';
 
 // Pages
-import MicroTensile from './src/pages/MicroTensile';
-import MicroTensileReport from './src/pages/MicroTensileReport';
-import MicroStructure from './src/pages/MicroStructure';
-import MicroStructureReport from './src/pages/MicroStructureReport';
-import QcProductionDetails from './src/pages/QcProductionDetails';
-import QcProductionDetailsReport from './src/pages/QcProductionDetailsReport';
-import Process from './src/pages/Process';
-import ProcessReport from './src/pages/ProcessReport';
+import MicroTensile from './src/pages/MicroTensile/MicroTensile';
+import MicroTensileReport from './src/pages/MicroTensile/MicroTensileReport';
+import MicroStructure from './src/pages/Microstructure/MicroStructure';
+import MicroStructureReport from './src/pages/Microstructure/MicroStructureReport';
+import QcProductionDetails from './src/pages/QcProduction/QcProductionDetails';
+import QcProductionDetailsReport from './src/pages/QcProduction/QcProductionDetailsReport';
+import Process from './src/pages/Process/Process';
+import ProcessReport from './src/pages/Process/ProcessReport';
 import MeltingLogSheet from './src/pages/Melting/MeltingLogSheet';
 import MeltingLogSheetReport from './src/pages/Melting/MeltingLogSheetReport';
 import CupolaHolderLogSheet from './src/pages/Melting/CupolaHolderLogSheet';
 import CupolaHolderLogSheetReport from './src/pages/Melting/CupolaHolderLogSheetReport';
 import Login from './src/pages/Login';
-import Tensile from './src/pages/Tensile';
-import TensileReport from './src/pages/TensileReport';
+import Tensile from './src/pages/Tensile/Tensile';
+import TensileReport from './src/pages/Tensile/TensileReport';
 import SandTestingRecord from './src/pages/SandLab/SandTestingRecord';
 import SandTestingRecordReport from './src/pages/SandLab/SandTestingRecordReport';
 import FoundarySandTestingNote from './src/pages/SandLab/FoundarySandTestingNote';
@@ -30,9 +30,9 @@ import DisamaticProductReport from './src/pages/Moulding/DisamaticProductReport'
 import DmmSettingParameters from './src/pages/Moulding/DmmSettingParameters';
 import DmmSettingParametersReport from './src/pages/Moulding/DmmSettingParametersReport';
 import AdminDashboard from './src/Components/AdminDashboard';
-import Impact from './src/pages/Impact';
-import ImpactReport from './src/pages/ImpactReport';
-import UserProfile from './src/pages/UserProfile';
+import Impact from './src/pages/Impact/Impact';
+import ImpactReport from './src/pages/Impact/ImpactReport';
+import UserProfile from './src/Components/UserProfile';
 
 /**
  * Component to redirect users to their department's default page

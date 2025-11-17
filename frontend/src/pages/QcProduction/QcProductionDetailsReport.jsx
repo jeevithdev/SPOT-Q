@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { X, PencilLine, BookOpenCheck } from 'lucide-react';
-import { DatePicker, EditActionButton, DeleteActionButton, FilterButton } from '../Components/Buttons';
-import Loader from '../Components/Loader';
-import api from '../utils/api';
-import '../styles/PageStyles/ImpactReport.css';
+import { DatePicker, EditActionButton, DeleteActionButton, FilterButton, ClearButton } from '../../Components/Buttons';
+import Loader from '../../Components/Loader';
+import api from '../../utils/api';
+import '../../styles/PageStyles/QcProduction/QcProductionDetailsReport.css';
 
 const QcProductionDetailsReport = () => {
   const [startDate, setStartDate] = useState(null);
@@ -121,7 +121,7 @@ const QcProductionDetailsReport = () => {
       itemDate.setHours(0, 0, 0, 0);
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
-      
+
       // If end date is provided, filter by date range
       if (endDate) {
         const end = new Date(endDate);
@@ -136,8 +136,14 @@ const QcProductionDetailsReport = () => {
     setFilteredItems(filtered);
   };
 
+  const handleClearFilter = () => {
+    setStartDate(null);
+    setEndDate(null);
+    setFilteredItems(items);
+  };
+
   return (
-    <div className="page-wrapper">
+    <>
       <div className="impact-report-header">
         <div className="impact-report-header-text">
           <h2>
@@ -167,6 +173,9 @@ const QcProductionDetailsReport = () => {
         <FilterButton onClick={handleFilter} disabled={!startDate}>
           Filter
         </FilterButton>
+        <ClearButton onClick={handleClearFilter} disabled={!startDate && !endDate}>
+          Clear
+        </ClearButton>
       </div>
 
       {loading ? (
@@ -485,7 +494,7 @@ const QcProductionDetailsReport = () => {
           </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
 
