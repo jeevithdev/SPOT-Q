@@ -1,9 +1,10 @@
+
 import React, { useState, useEffect } from 'react';
 import { X, PencilLine, BookOpenCheck } from 'lucide-react';
 import { DatePicker, EditActionButton, DeleteActionButton, FilterButton, ClearButton } from '../../Components/Buttons';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
-import '../../styles/PageStyles/Microstructure/MicroStructureReport.css';
+import "../../styles/PageStyles/MicroStructure/MicroStructureReport.css";
 
 const MicroStructureReport = () => {
   const [startDate, setStartDate] = useState(null);
@@ -18,6 +19,10 @@ const MicroStructureReport = () => {
   const [editFormData, setEditFormData] = useState({});
   const [editLoading, setEditLoading] = useState(false);
 
+  // Remarks preview modal
+  const [showRemarksModal, setShowRemarksModal] = useState(false);
+  const [remarksText, setRemarksText] = useState('');
+
   useEffect(() => {
     fetchItems();
   }, []);
@@ -25,14 +30,14 @@ const MicroStructureReport = () => {
   const fetchItems = async () => {
     try {
       setLoading(true);
-      const data = await api.get('/v1/microstructures');
+      const data = await api.get('/v1/micro-structure');
       
       if (data.success) {
         setItems(data.data || []);
         setFilteredItems(data.data || []);
       }
     } catch (error) {
-      console.error('Error fetching microstructures:', error);
+      console.error('Error fetching micro structure tests:', error);
     } finally {
       setLoading(false);
     }
@@ -51,16 +56,16 @@ const MicroStructureReport = () => {
     setEditFormData({
       dateOfInspection: item.dateOfInspection ? new Date(item.dateOfInspection).toISOString().split('T')[0] : '',
       disa: item.disa || '',
-      partName: item.partName|| '',
+      partName: item.partName || '',
       dateCode: item.dateCode || '',
       heatCode: item.heatCode || '',
       nodularity: item.nodularity || '',
       graphiteType: item.graphiteType || '',
       countNos: item.countNos || '',
       size: item.size || '',
-      ferritePercentage: item.ferritePercentage || '',
-      pearlitePercentage: item.pearlitePercentage || '',
-      carbidePercentage: item.carbidePercentage || '',
+      ferrite: item.ferrite || item.ferritePercentage || '',
+      pearlite: item.pearlite || item.pearlitePercentage || '',
+      carbide: item.carbide || item.carbidePercentage || '',
       remarks: item.remarks || ''
     });
     setShowEditModal(true);
@@ -69,14 +74,14 @@ const MicroStructureReport = () => {
   const handleUpdate = async () => {
     try {
       setEditLoading(true);
-      const data = await api.put(`/v1/microstructures/${editingItem._id}`, editFormData);
+      const data = await api.put(`/v1/micro-structure/${editingItem._id}`, editFormData);
       
       if (data.success) {
         setShowEditModal(false);
         fetchItems();
       }
     } catch (error) {
-      console.error('Error updating microstructure:', error);
+      console.error('Error updating micro structure test:', error);
       alert('Failed to update entry: ' + (error.message || 'Unknown error'));
     } finally {
       setEditLoading(false);
@@ -86,13 +91,13 @@ const MicroStructureReport = () => {
   const handleDelete = async (id) => {
     if (window.confirm('Are you sure you want to delete this entry?')) {
       try {
-        const data = await api.delete(`/v1/microstructures/${id}`);
+        const data = await api.delete(`/v1/micro-structure/${id}`);
         
         if (data.success) {
           fetchItems();
         }
       } catch (error) {
-        console.error('Error deleting microstructure:', error);
+        console.error('Error deleting micro structure test:', error);
         alert('Failed to delete entry: ' + (error.message || 'Unknown error'));
       }
     }
@@ -105,8 +110,11 @@ const MicroStructureReport = () => {
     }
 
     const filtered = items.filter(item => {
-      if (!item.dateOfInspection) return false;
-      const itemDate = new Date(item.dateOfInspection);
+      // Use dateOfInspection if present, otherwise fall back to insDate from entry page
+      const rawDate = item.dateOfInspection || item.insDate;
+      if (!rawDate) return false;
+
+      const itemDate = new Date(rawDate);
       itemDate.setHours(0, 0, 0, 0);
       const start = new Date(startDate);
       start.setHours(0, 0, 0, 0);
@@ -130,6 +138,133 @@ const MicroStructureReport = () => {
     setEndDate(null);
     setFilteredItems(items);
   };
+  
+  // Safely get a displayable field value from item or its nested microStructure
+  const getFieldValue = (item, key) => {
+    if (!item) return '-';
+
+    // For these fields, prefer to build a "from-to" range from any available From/To values
+    const rangeFields = ['countNos', 'size', 'ferrite', 'pearlite', 'carbide'];
+
+    const buildRange = (baseKey) => {
+      const fromKey = `${baseKey}From`;
+      const toKey = `${baseKey}To`;
+
+      const ms = item.microStructure || {};
+
+      const fromVal =
+        item[fromKey] !== undefined && item[fromKey] !== null && item[fromKey] !== ''
+          ? item[fromKey]
+          : ms[fromKey];
+      const toVal =
+        item[toKey] !== undefined && item[toKey] !== null && item[toKey] !== ''
+          ? item[toKey]
+          : ms[toKey];
+
+      if (
+        fromVal !== undefined && fromVal !== null && fromVal !== '' &&
+        toVal !== undefined && toVal !== null && toVal !== ''
+      ) {
+        return `${fromVal}-${toVal}`;
+      }
+      return null;
+    };
+
+    // Helper: if this is a range field and we only have a single value, show it as value-value
+    const asRangeIfNeeded = (val) => {
+      if (val === undefined || val === null || val === '') return null;
+      if (!rangeFields.includes(key)) return val;
+      const str = String(val).trim();
+      if (!str) return null;
+      if (str.includes('-')) return str; // already a range
+      return `${str}-${str}`;
+    };
+
+    if (rangeFields.includes(key)) {
+      const range = buildRange(key);
+      if (range) return range;
+    }
+
+    const direct = item[key];
+    const directRange = asRangeIfNeeded(direct);
+    if (directRange !== null && directRange !== undefined) {
+      return directRange;
+    }
+
+    // Look into nested microStructure object if present
+    if (item.microStructure && item.microStructure[key] !== undefined && item.microStructure[key] !== null && item.microStructure[key] !== '') {
+      const nestedRange = asRangeIfNeeded(item.microStructure[key]);
+      if (nestedRange !== null && nestedRange !== undefined) return nestedRange;
+    }
+
+    // Common alternate keys mapping
+    const altMap = {
+      countNos: ['noduleCount', 'count'],
+      ferrite: ['ferritePercent', 'ferritePercentage'],
+      pearlite: ['pearlitePercent', 'pearlitePercentage'],
+      carbide: ['carbidePercent', 'carbidePercentage'],
+    };
+
+    const alternates = altMap[key] || [];
+    for (const altKey of alternates) {
+      if (item[altKey] !== undefined && item[altKey] !== null && item[altKey] !== '') {
+        const altRange = asRangeIfNeeded(item[altKey]);
+        if (altRange !== null && altRange !== undefined) return altRange;
+      }
+      if (item.microStructure && item.microStructure[altKey] !== undefined && item.microStructure[altKey] !== null && item.microStructure[altKey] !== '') {
+        const altNestedRange = asRangeIfNeeded(item.microStructure[altKey]);
+        if (altNestedRange !== null && altNestedRange !== undefined) return altNestedRange;
+      }
+    }
+
+    return '-';
+  };
+
+  // Parse combined nodularity/graphiteType text when stored together
+  const getNodularityParts = (item) => {
+    if (!item) return null;
+
+    const combined =
+      item.nodularityGraphiteType ||
+      item.microStructure?.nodularityGraphiteType ||
+      '';
+
+    if (!combined || typeof combined !== 'string') return null;
+
+    const parts = combined.trim().split(/\s+/);
+    if (parts.length === 0) return null;
+
+    const nodularity = parts[0];
+    const graphiteType = parts.slice(1).join(' ');
+
+    return { nodularity, graphiteType };
+  };
+  // Group items by date (using dateOfInspection or insDate)
+  const groupedItems = filteredItems.reduce((groups, item) => {
+    const rawDate = item.dateOfInspection || item.insDate;
+
+    let displayDate = '-';
+    if (rawDate) {
+      const d = new Date(rawDate);
+      if (!Number.isNaN(d.getTime())) {
+        // Format as DD/MM/YYYY for display
+        const day = String(d.getDate()).padStart(2, '0');
+        const month = String(d.getMonth() + 1).padStart(2, '0');
+        const year = d.getFullYear();
+        displayDate = `${day}/${month}/${year}`;
+      } else {
+        displayDate = String(rawDate);
+      }
+    }
+
+    if (!groups[displayDate]) {
+      groups[displayDate] = { date: displayDate, items: [] };
+    }
+    groups[displayDate].items.push(item);
+    return groups;
+  }, {});
+
+  const groupedItemsArray = Object.values(groupedItems);
 
   return (
     <>
@@ -137,7 +272,7 @@ const MicroStructureReport = () => {
         <div className="impact-report-header-text">
           <h2>
             <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
-            Micro Structure - Report Card
+            Micro Structure - Report
           </h2>
         </div>
       </div>
@@ -173,8 +308,8 @@ const MicroStructureReport = () => {
         </div>
       ) : (
         <div className="impact-details-card">
-          <div className="microstructure-table-container">
-            <table className="microstructure-table">
+          <div className="impact-table-container">
+            <table className="impact-table">
               <thead>
                 <tr>
                   <th>Date Of Inspection</th>
@@ -182,7 +317,16 @@ const MicroStructureReport = () => {
                   <th>Part Name</th>
                   <th>Date Code</th>
                   <th>Heat Code</th>
-                  <th>Nodularity</th>
+                  <th
+                     style={{
+                       minWidth: '100px',
+                       maxWidth: '110px',
+                       whiteSpace: 'normal',
+                       textAlign: 'center',
+                        }}
+                     >
+                     NODULARITY
+                 </th>
                   <th>Graphite Type</th>
                   <th>Count Nos</th>
                   <th>Size</th>
@@ -194,37 +338,188 @@ const MicroStructureReport = () => {
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.length === 0 ? (
+                {groupedItemsArray.length === 0 ? (
                   <tr>
                     <td colSpan="14" className="impact-no-records">
                       No records found
                     </td>
                   </tr>
                 ) : (
-                  filteredItems.map((item, index) => (
-                    <tr key={item._id || index}>
-                      <td>{item.dateOfInspection ? new Date(item.dateOfInspection).toLocaleDateString() : '-'}</td>
-                      <td>{item.disa || '-'}</td>
-                      <td>{item.partName || '-'}</td>
-                      <td>{item.dateCode || '-'}</td>
-                      <td>{item.heatCode || '-'}</td>
-                      <td>{item.nodularity || '-'}</td>
-                      <td>{item.graphiteType || '-'}</td>
-                      <td>{item.countNos || '-'}</td>
-                      <td>{item.size || '-'}</td>
-                      <td>{item.ferritePercentage !== undefined && item.ferritePercentage !== null ? item.ferritePercentage : '-'}</td>
-                      <td>{item.pearlitePercentage !== undefined && item.pearlitePercentage !== null ? item.pearlitePercentage : '-'}</td>
-                      <td>{item.carbidePercentage !== undefined && item.carbidePercentage !== null ? item.carbidePercentage : '-'}</td>
-                      <td>{item.remarks || '-'}</td>
-                      <td style={{ minWidth: '100px' }}>
-                        <EditActionButton onClick={() => handleEdit(item)} />
-                        <DeleteActionButton onClick={() => handleDelete(item._id)} />
-                      </td>
-                    </tr>
+                  groupedItemsArray.map((group, groupIndex) => (
+                    <React.Fragment key={group.date || groupIndex}>
+                      {group.items.map((item, index) => {
+                      const partNameValue = getFieldValue(item, 'partName');
+                      const dateCodeValue = getFieldValue(item, 'dateCode');
+                      const heatCodeValue = getFieldValue(item, 'heatCode');
+
+                      // For each date group, only show Part Name once per unique value, with rowSpan
+                      const firstIndexForPart = group.items.findIndex(
+                        (gItem) => getFieldValue(gItem, 'partName') === partNameValue
+                      );
+                      const occurrencesForPart = group.items.filter(
+                        (gItem) => getFieldValue(gItem, 'partName') === partNameValue
+                      ).length;
+
+                      const showPartNameCell =
+                        partNameValue !== '-' && partNameValue !== '' && firstIndexForPart === index;
+
+                      // Similarly, merge Date Code per unique value within the date group
+                      const firstIndexForDateCode = group.items.findIndex(
+                        (gItem) => getFieldValue(gItem, 'dateCode') === dateCodeValue
+                      );
+                      const occurrencesForDateCode = group.items.filter(
+                        (gItem) => getFieldValue(gItem, 'dateCode') === dateCodeValue
+                      ).length;
+
+                      const showDateCodeCell =
+                        dateCodeValue !== '-' && dateCodeValue !== '' && firstIndexForDateCode === index;
+
+                      // And merge Heat Code per unique value within the date group
+                      const firstIndexForHeatCode = group.items.findIndex(
+                        (gItem) => getFieldValue(gItem, 'heatCode') === heatCodeValue
+                      );
+                      const occurrencesForHeatCode = group.items.filter(
+                        (gItem) => getFieldValue(gItem, 'heatCode') === heatCodeValue
+                      ).length;
+
+                      const showHeatCodeCell =
+                        heatCodeValue !== '-' && heatCodeValue !== '' && firstIndexForHeatCode === index;
+
+                      return (
+                        <tr key={item._id || `${group.date || 'nodate'}-${index}`}>
+                          {index === 0 && (
+                            <td rowSpan={group.items.length} style={{ textAlign: 'center' }}>
+                              {group.date}
+                            </td>
+                          )}
+                          <td style={{ textAlign: 'center' }}>{getFieldValue(item, 'disa')}</td>
+                          {showPartNameCell ? (
+                            <td
+                              rowSpan={occurrencesForPart}
+                              style={{ textAlign: 'center' }}
+                            >
+                              {partNameValue}
+                            </td>
+                          ) : null}
+
+                          {showDateCodeCell ? (
+                            <td
+                              rowSpan={occurrencesForDateCode}
+                              style={{ textAlign: 'center' }}
+                            >
+                              {dateCodeValue}
+                            </td>
+                          ) : null}
+
+                          {showHeatCodeCell ? (
+                            <td
+                              rowSpan={occurrencesForHeatCode}
+                              style={{ textAlign: 'center' }}
+                            >
+                              {heatCodeValue}
+                            </td>
+                          ) : null}
+                          <td>
+                            {(() => {
+                              const direct = getFieldValue(item, 'nodularity');
+                              if (direct !== '-') return direct;
+                              const parsed = getNodularityParts(item);
+                              return parsed?.nodularity || '-';
+                            })()}
+                          </td>
+                          <td>
+                            {(() => {
+                              const direct = getFieldValue(item, 'graphiteType');
+                              if (direct !== '-') return direct;
+                              const parsed = getNodularityParts(item);
+                              return parsed?.graphiteType || '-';
+                            })()}
+                          </td>
+                          <td style={{ textAlign: 'center' }}>{getFieldValue(item, 'countNos')}</td>
+                          <td style={{ textAlign: 'center' }}>{getFieldValue(item, 'size')}</td>
+                          <td style={{ textAlign: 'center' }}>{getFieldValue(item, 'ferrite')}</td>
+                          <td style={{ textAlign: 'center' }}>{getFieldValue(item, 'pearlite')}</td>
+                          <td style={{ textAlign: 'center' }}>{getFieldValue(item, 'carbide')}</td>
+                          <td style={{ textAlign: 'center' }}>
+                            {(() => {
+                              const value = typeof item.remarks === 'string' ? item.remarks : '';
+                              const display = value || getFieldValue(item, 'remarks');
+
+                              if (!display || display === '-') return '-';
+                              const short = display.length > 6 ? display.slice(0, 5) + '..' : display;
+                              return (
+                                <span
+                                  onClick={() => { setRemarksText(display); setShowRemarksModal(true); }}
+                                  title={display}
+                                  style={{
+                                    cursor: 'pointer',
+                                    color: '#0ea5e9',
+                                    textDecoration: 'underline dotted',
+                                    fontSize: '12px',   // smaller size
+                                  }}
+                                >
+                                  {short}
+                                </span>
+                              );
+                            })()}
+                          </td>
+                          <td style={{ minWidth: '100px' }}>
+                            <EditActionButton onClick={() => handleEdit(item)} />
+                            <DeleteActionButton onClick={() => handleDelete(item._id)} />
+                          </td>
+                        </tr>
+                      );
+                    })}
+
+                      {groupIndex < groupedItemsArray.length - 1 && (
+                        <tr>
+                          {/* span across all table columns to draw a full-width line */}
+                          <td
+                            colSpan="14"
+                            style={{
+                              borderTop: '2px solid #cbd5e1', // light grey line
+                              padding: 0,
+                            }}
+                          />
+                        </tr>
+                      )}
+                    </React.Fragment>
                   ))
                 )}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {showRemarksModal && (
+        <div
+          onClick={() => setShowRemarksModal(false)}
+          style={{
+            position: 'fixed',
+            inset: 0,
+            background: 'rgba(0,0,0,0.45)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            zIndex: 80
+          }}
+        >
+          <div
+            onClick={(e) => e.stopPropagation()}
+            style={{
+              background: 'white',
+              borderRadius: 10,
+              padding: 16,
+              width: 'min(520px, 95vw)',
+              maxWidth: '95vw',
+              maxHeight: '80vh',
+              overflowY: 'auto',
+              boxShadow: '0 10px 30px rgba(0,0,0,0.2)'
+            }}
+          >
+            <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Remarks</div>
+            <div style={{ color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{remarksText}</div>
           </div>
         </div>
       )}
@@ -241,8 +536,8 @@ const MicroStructureReport = () => {
             </div>
             
             <div className="modal-body">
-              <div className="impact-form-grid">
-                <div className="impact-form-group">
+              <div className="microstructure-form-grid">
+                <div className="microstructure-form-group">
                   <label>Date of Inspection *</label>
                   <DatePicker
                     name="dateOfInspection"
@@ -251,8 +546,8 @@ const MicroStructureReport = () => {
                   />
                 </div>
 
-                <div className="impact-form-group">
-                  <label>Disa *</label>
+                <div className="microstructure-form-group">
+                  <label>Disa</label>
                   <input
                     type="text"
                     name="disa"
@@ -262,41 +557,41 @@ const MicroStructureReport = () => {
                   />
                 </div>
 
-                <div className="impact-form-group">
-                  <label>Part Name *</label>
+                <div className="microstructure-form-group">
+                  <label>Part Name</label>
                   <input
                     type="text"
                     name="partName"
                     value={editFormData.partName}
                     onChange={handleEditChange}
-                    placeholder="e.g: Gear shaft"
+                    placeholder="e.g: Cylinder Head"
                   />
                 </div>
 
-                <div className="impact-form-group">
-                  <label>Date Code *</label>
+                <div className="microstructure-form-group">
+                  <label>Date Code</label>
                   <input
                     type="text"
                     name="dateCode"
                     value={editFormData.dateCode}
                     onChange={handleEditChange}
-                    placeholder="e.g: HC-2024-001"
+                    placeholder="e.g: 2024-DC-001"
                   />
                 </div>
 
-                <div className="impact-form-group">
-                  <label>Heat Code *</label>
+                <div className="microstructure-form-group">
+                  <label>Heat Code</label>
                   <input
                     type="text"
                     name="heatCode"
                     value={editFormData.heatCode}
                     onChange={handleEditChange}
-                    placeholder="e.g: HT-12345"
+                    placeholder="e.g: HC-2024-001"
                   />
                 </div>
 
-                <div className="impact-form-group">
-                  <label>Nodularity *</label>
+                <div className="microstructure-form-group">
+                  <label>Nodularity</label>
                   <input
                     type="text"
                     name="nodularity"
@@ -306,8 +601,8 @@ const MicroStructureReport = () => {
                   />
                 </div>
 
-                <div className="impact-form-group">
-                  <label>Graphite Type *</label>
+                <div className="microstructure-form-group">
+                  <label>Graphite Type</label>
                   <input
                     type="text"
                     name="graphiteType"
@@ -317,78 +612,69 @@ const MicroStructureReport = () => {
                   />
                 </div>
 
-                <div className="impact-form-group">
-                  <label>Count Nos *</label>
+                <div className="microstructure-form-group">
+                  <label>Count Nos</label>
                   <input
                     type="text"
                     name="countNos"
                     value={editFormData.countNos}
                     onChange={handleEditChange}
-                    placeholder="e.g: 150"
+                    placeholder="e.g: 150-200"
                   />
                 </div>
 
-                <div className="impact-form-group">
-                  <label>Size *</label>
+                <div className="microstructure-form-group">
+                  <label>Size</label>
                   <input
                     type="text"
                     name="size"
                     value={editFormData.size}
                     onChange={handleEditChange}
-                    placeholder="e.g: 25mm"
+                    placeholder="e.g: 5-7"
                   />
                 </div>
 
-                <div className="impact-form-group">
-                  <label>Ferrite % *</label>
-                  <input
-                    type="number"
-                    name="ferritePercentage"
-                    value={editFormData.ferritePercentage}
-                    onChange={handleEditChange}
-                    step="0.01"
-                    placeholder="e.g: 75.5"
-                  />
-                </div>
-
-                <div className="impact-form-group">
-                  <label>Pearlite % *</label>
-                  <input
-                    type="number"
-                    name="pearlitePercentage"
-                    value={editFormData.pearlitePercentage}
-                    onChange={handleEditChange}
-                    step="0.01"
-                    placeholder="e.g: 20.5"
-                  />
-                </div>
-
-                <div className="impact-form-group">
-                  <label>Carbide % *</label>
-                  <input
-                    type="number"
-                    name="carbidePercentage"
-                    value={editFormData.carbidePercentage}
-                    onChange={handleEditChange}
-                    step="0.01"
-                    placeholder="e.g: 4.0"
-                  />
-                </div>
-
-                <div className="impact-form-group full-width">
-                  <label>Remarks</label>
+                <div className="microstructure-form-group">
+                  <label>Ferrite %</label>
                   <input
                     type="text"
+                    name="ferrite"
+                    value={editFormData.ferrite}
+                    onChange={handleEditChange}
+                    placeholder="e.g: 60"
+                  />
+                </div>
+
+                <div className="microstructure-form-group">
+                  <label>Pearlite %</label>
+                  <input
+                    type="text"
+                    name="pearlite"
+                    value={editFormData.pearlite}
+                    onChange={handleEditChange}
+                    placeholder="e.g: 35"
+                  />
+                </div>
+
+                <div className="microstructure-form-group">
+                  <label>Carbide %</label>
+                  <input
+                    type="text"
+                    name="carbide"
+                    value={editFormData.carbide}
+                    onChange={handleEditChange}
+                    placeholder="e.g: 5"
+                  />
+                </div>
+
+                <div className="microstructure-form-group full-width">
+                  <label>Remarks</label>
+                  <textarea
                     name="remarks"
                     value={editFormData.remarks}
                     onChange={handleEditChange}
-                    placeholder="Enter any additional remarks..."
-                    maxLength={80}
-                    style={{
-                      width: '100%',
-                      maxWidth: '500px',
-                      resize: 'none'
-                    }}
+                    rows="3"
+                    placeholder="Any additional notes"
                   />
                 </div>
               </div>
@@ -418,3 +704,4 @@ const MicroStructureReport = () => {
 };
 
 export default MicroStructureReport;
+
