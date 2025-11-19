@@ -35,6 +35,9 @@ const DmmSettingParametersReport = () => {
   const [editFormData, setEditFormData] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [remarksModal, setRemarksModal] = useState({ show: false, content: '', title: 'Remarks' });
+  // Row-level edit state
+  const [rowEdit, setRowEdit] = useState(null); // { reportId, shiftKey, rowIndex }
+  const [rowEditData, setRowEditData] = useState(null);
 
   // Section checkboxes removed – always show all columns
 
@@ -51,7 +54,7 @@ const DmmSettingParametersReport = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const resp = await api.get('/dmm-settings');
+      const resp = await api.get('/v1/dmm-settings');
       if (resp.success) {
         const all = resp.data || [];
         setReports(all);
@@ -105,12 +108,14 @@ const DmmSettingParametersReport = () => {
         if (selectedShift !== 'All' && selectedShift !== shiftKey.replace('shift','Shift ')) return;
         const arr = report.parameters[shiftKey];
         if (Array.isArray(arr) && arr.length > 0) {
-          arr.forEach(param => {
+          arr.forEach((param, rowIndex) => {
             rows.push({
               _id: report._id,
               date: report.date,
               machine: report.machine,
               shift: shiftKey.replace('shift','Shift '),
+              shiftKey,
+              rowIndex,
               operatorName: report.shifts?.[shiftKey]?.operatorName || '-',
               checkedBy: report.shifts?.[shiftKey]?.checkedBy || '-',
               ...param
@@ -125,7 +130,7 @@ const DmmSettingParametersReport = () => {
   const deleteWholeReport = async (id) => {
     if (!window.confirm('Delete entire machine report (all shift rows)?')) return;
     try {
-      const res = await api.delete(`/dmm-settings/${id}`);
+      const res = await api.delete(`/v1/dmm-settings/${id}`);
       if (res.success) fetchReports();
     } catch (err) {
       console.error('Delete failed', err);
@@ -176,42 +181,104 @@ const DmmSettingParametersReport = () => {
     });
   };
 
+  // ===== Row-level edit/delete =====
+  const handleEditRow = (row) => {
+    const report = resolveReportByRow(row);
+    if (!report) {
+      alert('Report not found for this row');
+      return;
+    }
+    setRowEdit({ reportId: report._id, shiftKey: row.shiftKey, rowIndex: row.rowIndex });
+    setRowEditData({ ...row });
+  };
+
+  const handleRowEditChange = (field, value) => {
+    setRowEditData(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSaveRowEdit = async () => {
+    if (!rowEdit || !rowEditData) return;
+    try {
+      setUpdating(true);
+      const report = reports.find(r => r._id === rowEdit.reportId);
+      if (!report) throw new Error('Report not found');
+      const updatedArray = [...(report.parameters?.[rowEdit.shiftKey] || [])];
+      if (!updatedArray[rowEdit.rowIndex]) throw new Error('Row not found');
+
+      // Build updated row payload with correct database field names
+      const updatedRow = {};
+      const copyFrom = rowEditData;
+      const assign = (k, v) => { if (v !== undefined) updatedRow[k] = v; };
+      
+      assign('customer', copyFrom.customer);
+      assign('itemDescription', copyFrom.itemDescription);
+      assign('time', copyFrom.time);
+      assign('ppThickness', copyFrom.ppThickness === '' ? 0 : parseFloat(copyFrom.ppThickness));
+      assign('ppHeight', copyFrom.ppHeight === '' ? 0 : parseFloat(copyFrom.ppHeight));
+      assign('spThickness', copyFrom.spThickness === '' ? 0 : parseFloat(copyFrom.spThickness));
+      assign('spHeight', copyFrom.spHeight === '' ? 0 : parseFloat(copyFrom.spHeight));
+      
+      // Core mask fields - use database schema field names
+      assign('coreMaskThickness', copyFrom.coreMaskThickness === '' ? 0 : parseFloat(copyFrom.coreMaskThickness));
+      assign('coreMaskHeightOutside', copyFrom.coreMaskHeightOutside === '' ? 0 : parseFloat(copyFrom.coreMaskHeightOutside));
+      assign('coreMaskHeightInside', copyFrom.coreMaskHeightInside === '' ? 0 : parseFloat(copyFrom.coreMaskHeightInside));
+      
+      assign('sandShotPressureBar', copyFrom.sandShotPressureBar === '' ? 0 : parseFloat(copyFrom.sandShotPressureBar));
+      assign('correctionShotTime', copyFrom.correctionShotTime === '' ? 0 : parseFloat(copyFrom.correctionShotTime));
+      assign('squeezePressure', copyFrom.squeezePressure === '' ? 0 : parseFloat(copyFrom.squeezePressure));
+      assign('ppStrippingAcceleration', copyFrom.ppStrippingAcceleration === '' ? 0 : parseFloat(copyFrom.ppStrippingAcceleration));
+      assign('ppStrippingDistance', copyFrom.ppStrippingDistance === '' ? 0 : parseFloat(copyFrom.ppStrippingDistance));
+      assign('spStrippingAcceleration', copyFrom.spStrippingAcceleration === '' ? 0 : parseFloat(copyFrom.spStrippingAcceleration));
+      assign('spStrippingDistance', copyFrom.spStrippingDistance === '' ? 0 : parseFloat(copyFrom.spStrippingDistance));
+      assign('mouldThicknessPlus10', copyFrom.mouldThicknessPlus10 === '' ? 0 : parseFloat(copyFrom.mouldThicknessPlus10));
+      assign('closeUpForceMouldCloseUpPressure', copyFrom.closeUpForceMouldCloseUpPressure);
+      assign('remarks', copyFrom.remarks);
+
+      updatedArray[rowEdit.rowIndex] = updatedRow;
+      const payload = { parameters: { [rowEdit.shiftKey]: updatedArray } };
+      const res = await api.put(`/v1/dmm-settings/${rowEdit.reportId}`, payload);
+      if (res.success) {
+        alert('Row updated successfully');
+        setRowEdit(null); setRowEditData(null);
+        await fetchReports();
+      } else {
+        alert(res.message || 'Update failed');
+      }
+    } catch (err) {
+      console.error('Row update failed', err);
+      alert('Failed to update row: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+    } finally { setUpdating(false); }
+  };
+
+  const handleDeleteRow = async (row) => {
+    if (!window.confirm('Delete this parameter row?')) return;
+    try {
+      setUpdating(true);
+      const report = resolveReportByRow(row);
+      if (!report) throw new Error('Report not found');
+      const shiftKey = row.shiftKey;
+      const array = [...(report.parameters?.[shiftKey] || [])];
+      if (!array[row.rowIndex]) throw new Error('Row not found');
+      array.splice(row.rowIndex, 1);
+      const res = await api.put(`/v1/dmm-settings/${report._id}`, { parameters: { [shiftKey]: array } });
+      if (res.success) {
+        alert('Row deleted successfully');
+        await fetchReports();
+      } else {
+        alert(res.message || 'Delete failed');
+      }
+    } catch (err) {
+      console.error('Row delete failed', err);
+      alert('Failed to delete row: ' + (err.response?.data?.message || err.message || 'Unknown error'));
+    } finally { setUpdating(false); }
+  };
+
   const handleUpdateReport = async () => {
     if (!editFormData) return;
 
-    // Normalize payload to backend schema expectations
-    const normalized = JSON.parse(JSON.stringify(editFormData));
-    // Normalize parameter field names per shift
-    ['shift1','shift2','shift3'].forEach(shiftKey => {
-      if (Array.isArray(normalized.parameters?.[shiftKey])) {
-        normalized.parameters[shiftKey] = normalized.parameters[shiftKey].map((p, idx) => {
-          const out = { ...p };
-          // ppHeight/ppheight consistency
-          if (out.ppHeight == null && out.ppheight != null) out.ppHeight = out.ppheight;
-          if (shiftKey === 'shift1' && out.ppHeight != null) out.ppheight = out.ppHeight;
-          // Core Mask: backend stores combined fields
-          if (out.CoreMaskThickness == null) {
-            out.CoreMaskThickness = out.spCoreMaskThickness ?? out.ppCoreMaskThickness ?? 0;
-          }
-          if (out.CoreMaskHeight == null) {
-            out.CoreMaskHeight = out.spCoreMaskHeight ?? out.ppCoreMaskHeight ?? 0;
-          }
-          // Sand shot pressure key normalization
-          if (out.sandShotPressurebar == null && out.sandShotPressureBar != null) {
-            out.sandShotPressurebar = out.sandShotPressureBar;
-          }
-          // Mould thickness normalization
-          if (out.mouldThickness == null && out.mouldThicknessPlus10 != null) {
-            out.mouldThickness = out.mouldThicknessPlus10;
-          }
-          return out;
-        });
-      }
-    });
-
     try {
       setUpdating(true);
-      const res = await api.put(`/dmm-settings/${editingReport}`, normalized);
+      const res = await api.put(`/v1/dmm-settings/${editingReport}`, editFormData);
       if (res.success) {
         alert('Report updated successfully!');
         setEditingReport(null);
@@ -301,7 +368,7 @@ const DmmSettingParametersReport = () => {
               <option value="Shift 3">Shift 3</option>
             </select>
           </div>
-          <FilterButton onClick={handleFilter}>Apply Filter</FilterButton>
+          {/* Auto-applied filters; removed manual Apply button for consistency */}
         </div>
       </div>
 
@@ -313,106 +380,117 @@ const DmmSettingParametersReport = () => {
             <table className="impact-table">
               <thead>
                 <tr>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Date</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Machine</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Shift</th>
-                                    <th style={{ padding: '12px 16px', textAlign: 'center' }}>Operator Name</th>
-                                    <th style={{ padding: '12px 16px', textAlign: 'center' }}>Checked By</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>S.No</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Customer</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Item Description</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Time</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Thickness (mm)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Height (mm)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Thickness (mm)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Height (mm)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Core Mask Thickness (mm)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Core Mask Height (mm)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Sand Shot Pressure (Bar)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Correction Shot Time (s)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Squeeze Pressure (Kg/cm²)</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Stripping Acceleration</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>PP Stripping Distance</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Stripping Acceleration</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>SP Stripping Distance</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Mould Thickness ±10mm</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Close Up Force / Mould Close Up Pressure</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Remarks</th>
-                  <th style={{ padding: '12px 16px', textAlign: 'center' }}>Actions</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Date</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Machine</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Shift</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Operator Name</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Checked By</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Customer</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Item Description</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Time</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>PP Thickness (mm)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>PP Height (mm)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>SP Thickness (mm)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>SP Height (mm)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Core Mask Thickness (mm)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Core Mask Height Outside (mm)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Core Mask Height Inside (mm)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Sand Shot Pressure (Bar)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Correction Shot Time (s)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Squeeze Pressure (Kg/cm²)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>PP Stripping Accel.</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>PP Stripping Dist.</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>SP Stripping Accel.</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>SP Stripping Dist.</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Mould Thickness ±10mm</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Close-Up Force/Pressure</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Remarks</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
                 {flattenedRows.length === 0 ? (
-                  <tr><td colSpan="28" className="impact-no-records">No parameter rows found</td></tr>
+                  <tr><td colSpan="26" className="impact-no-records">No parameter rows found</td></tr>
                 ) : (
                   flattenedRows.map((row, idx) => (
-                    <tr key={row._id + '-' + idx}>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.date ? new Date(row.date).toLocaleDateString() : '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.machine || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.shift}</td>
-                                            <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.operatorName}</td>
-                                            <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.checkedBy}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.sNo || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.customer || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.itemDescription || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.time || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppThickness || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppHeight || row.ppheight || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spThickness || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spHeight || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.CoreMaskThickness ?? row.spCoreMaskThickness ?? row.ppCoreMaskThickness ?? '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.CoreMaskHeight ?? row.spCoreMaskHeight ?? row.ppCoreMaskHeight ?? '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.sandShotPressurebar || row.sandShotPressureBar || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.correctionShotTime || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.squeezePressure || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppStrippingAcceleration || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.ppStrippingDistance || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spStrippingAcceleration || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.spStrippingDistance || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.mouldThickness || row.mouldThicknessPlus10 || '-'}</td>
-                      <td style={{ padding: '10px 16px', textAlign: 'center' }}>{row.closeUpForceMouldCloseUpPressure || row.closeUpForcePressure || '-'}</td>
+                    <tr key={row._id + '-' + idx} style={{ transition: 'background-color 0.2s ease' }}>
+                      <td style={{ padding: '12px 18px', textAlign: 'center', fontWeight: 500 }}>{row.date ? new Date(row.date).toLocaleDateString() : '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center', fontWeight: 500 }}>{row.machine || '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center', fontWeight: 500 }}>{row.shift}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.operatorName}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.checkedBy}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.customer || '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.itemDescription || '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.time || '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.ppThickness ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.ppHeight ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.spThickness ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.spHeight ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.coreMaskThickness ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.coreMaskHeightOutside ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.coreMaskHeightInside ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.sandShotPressureBar ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.correctionShotTime ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.squeezePressure ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.ppStrippingAcceleration ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.ppStrippingDistance ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.spStrippingAcceleration ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.spStrippingDistance ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.mouldThicknessPlus10 ?? '-'}</td>
+                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.closeUpForceMouldCloseUpPressure || '-'}</td>
                       <td style={{ 
                         cursor: row.remarks ? 'pointer' : 'default',
-                        maxWidth: '150px',
+                        maxWidth: '200px',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                         whiteSpace: 'nowrap',
-                        padding: '10px 16px',
-                        textAlign: 'center'
+                        padding: '12px 18px',
+                        textAlign: 'center',
+                        color: row.remarks ? '#5B9AA9' : '#94a3b8',
+                        textDecoration: row.remarks ? 'underline' : 'none'
                       }}
-                        onClick={() => row.remarks && showRemarksPopup(row.remarks)}>
+                        onClick={() => row.remarks && showRemarksPopup(row.remarks)}
+                        title={row.remarks || 'No remarks'}>
                         {row.remarks || '-'}
                       </td>
-                      <td style={{ minWidth: '120px', padding: '10px 16px', textAlign: 'center' }}>
+                      <td style={{ minWidth: '120px', padding: '12px 18px', textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'center' }}>
                           <button 
-                            onClick={() => {
-                              const fullReport = resolveReportByRow(row);
-                              if (fullReport) handleEditClick(fullReport);
-                              else alert('Unable to open editor: report not found for this row');
-                            }}
+                            onClick={() => handleEditRow(row)}
                             style={{
                               padding: '0.5rem',
                               background: '#5B9AA9',
                               color: 'white',
                               border: 'none',
-                              borderRadius: '4px',
+                              borderRadius: '6px',
                               cursor: 'pointer',
                               display: 'flex',
                               alignItems: 'center',
-                              justifyContent: 'center'
+                              justifyContent: 'center',
+                              transition: 'all 0.2s ease'
                             }}
+                            title="Edit Row"
                           >
                             <Edit size={16} />
                           </button>
-                          <DeleteActionButton onClick={() => {
-                            const fullReport = resolveReportByRow(row);
-                            if (!fullReport?._id) {
-                              alert('Failed to delete: Report not found for this row');
-                              return;
-                            }
-                            deleteWholeReport(fullReport._id);
-                          }} />
+                          <button 
+                            onClick={() => handleDeleteRow(row)}
+                            style={{
+                              padding: '0.5rem',
+                              background: '#ef4444',
+                              color: 'white',
+                              border: 'none',
+                              borderRadius: '6px',
+                              cursor: 'pointer',
+                              display: 'flex',
+                              alignItems: 'center',
+                              justifyContent: 'center',
+                              transition: 'all 0.2s ease'
+                            }}
+                            title="Delete Row"
+                          >
+                            <Trash2 size={16} />
+                          </button>
                         </div>
                       </td>
                     </tr>
@@ -550,12 +628,7 @@ const DmmSettingParametersReport = () => {
                   <h3 className="edit-section-title">Shift {shiftIdx + 1} Parameters</h3>
                   {shiftParams.map((param, rowIdx) => (
                     <div key={rowIdx} className="edit-table-row">
-                                            <h4 style={{ margin: '0.5rem 0', fontSize: '0.95rem', color: '#64748b' }}>Entry #{param.sNo || rowIdx + 1}</h4>
-                                              <div className="disamatic-form-group">
-                                                <label>S.No</label>
-                                                <input type="number" value={param.sNo || rowIdx + 1}
-                                                  onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'sNo', e.target.value)} />
-                                              </div>
+                      <h4 style={{ margin: '0.5rem 0', fontSize: '0.95rem', color: '#64748b' }}>Entry #{rowIdx + 1}</h4>
                       <div className="disamatic-form-grid">
                         <div className="disamatic-form-group">
                           <label>Customer</label>
@@ -594,18 +667,23 @@ const DmmSettingParametersReport = () => {
                         </div>
                         <div className="disamatic-form-group">
                           <label>Core Mask Thickness</label>
-                          <input type="number" value={param.CoreMaskThickness ?? param.spCoreMaskThickness ?? param.ppCoreMaskThickness ?? ''}
-                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'CoreMaskThickness', e.target.value)} />
+                          <input type="number" value={param.coreMaskThickness ?? ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'coreMaskThickness', e.target.value)} />
                         </div>
                         <div className="disamatic-form-group">
-                          <label>Core Mask Height</label>
-                          <input type="number" value={param.CoreMaskHeight ?? param.spCoreMaskHeight ?? param.ppCoreMaskHeight ?? ''}
-                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'CoreMaskHeight', e.target.value)} />
+                          <label>Core Mask Height Outside</label>
+                          <input type="number" value={param.coreMaskHeightOutside ?? ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'coreMaskHeightOutside', e.target.value)} />
+                        </div>
+                        <div className="disamatic-form-group">
+                          <label>Core Mask Height Inside</label>
+                          <input type="number" value={param.coreMaskHeightInside ?? ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'coreMaskHeightInside', e.target.value)} />
                         </div>
                         <div className="disamatic-form-group">
                           <label>Sand Shot Pressure (Bar)</label>
-                          <input type="number" value={param.sandShotPressurebar || param.sandShotPressureBar || ''}
-                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'sandShotPressurebar', e.target.value)} />
+                          <input type="number" value={param.sandShotPressureBar ?? ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'sandShotPressureBar', e.target.value)} />
                         </div>
                         <div className="disamatic-form-group">
                           <label>Correction Shot Time</label>
@@ -639,18 +717,31 @@ const DmmSettingParametersReport = () => {
                         </div>
                         <div className="disamatic-form-group">
                           <label>Mould Thickness ±10mm</label>
-                          <input type="number" value={param.mouldThickness || param.mouldThicknessPlus10 || ''}
-                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'mouldThickness', e.target.value)} />
+                          <input type="number" value={param.mouldThicknessPlus10 ?? ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'mouldThicknessPlus10', e.target.value)} />
                         </div>
                         <div className="disamatic-form-group">
-                          <label>Close Up Force/Pressure</label>
-                          <input type="text" value={param.closeUpForceMouldCloseUpPressure || param.closeUpForcePressure || ''}
+                          <label>Close-Up Force/Pressure</label>
+                          <input type="text" value={param.closeUpForceMouldCloseUpPressure || ''}
                             onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'closeUpForceMouldCloseUpPressure', e.target.value)} />
                         </div>
                         <div className="disamatic-form-group full-width">
                           <label>Remarks</label>
-                          <input type="text" value={param.remarks || ''}
-                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'remarks', e.target.value)} />
+                          <textarea 
+                            value={param.remarks || ''}
+                            onChange={(e) => handleParameterChange(shiftKey, rowIdx, 'remarks', e.target.value)}
+                            rows={3}
+                            style={{
+                              width: '100%',
+                              padding: '0.625rem 0.875rem',
+                              border: '1px solid #cbd5e1',
+                              borderRadius: '6px',
+                              fontSize: '0.875rem',
+                              fontFamily: 'Poppins, sans-serif',
+                              resize: 'vertical',
+                              minHeight: '80px'
+                            }}
+                          />
                         </div>
                       </div>
                     </div>
@@ -669,6 +760,122 @@ const DmmSettingParametersReport = () => {
                 {updating ? 'Updating...' : 'Update Report'}
               </button>
             </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Row Edit Modal */}
+      {rowEdit && rowEditData && (
+        <div className="modal-overlay" onClick={() => { setRowEdit(null); setRowEditData(null); }}>
+          <div className="modal-container" onClick={(e) => e.stopPropagation()} style={{ maxWidth: '800px', maxHeight: '85vh', overflowY: 'auto' }}>
+            <div className="modal-header">
+              <h2>Edit Parameter Row - {rowEdit.shiftKey.replace('shift','Shift ')}</h2>
+              <button className="modal-close-btn" onClick={() => { setRowEdit(null); setRowEditData(null); }}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="modal-body">
+              <div className="disamatic-form-grid">
+                <div className="disamatic-form-group">
+                  <label>Customer</label>
+                  <input type="text" value={rowEditData.customer || ''} onChange={(e) => handleRowEditChange('customer', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Item Description</label>
+                  <input type="text" value={rowEditData.itemDescription || ''} onChange={(e) => handleRowEditChange('itemDescription', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Time</label>
+                  <input type="text" value={rowEditData.time || ''} onChange={(e) => handleRowEditChange('time', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>PP Thickness</label>
+                  <input type="number" value={rowEditData.ppThickness ?? ''} onChange={(e) => handleRowEditChange('ppThickness', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>PP Height</label>
+                  <input type="number" value={rowEditData.ppHeight ?? rowEditData.ppheight ?? ''} onChange={(e) => handleRowEditChange('ppHeight', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>SP Thickness</label>
+                  <input type="number" value={rowEditData.spThickness ?? ''} onChange={(e) => handleRowEditChange('spThickness', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>SP Height</label>
+                  <input type="number" value={rowEditData.spHeight ?? ''} onChange={(e) => handleRowEditChange('spHeight', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Core Mask Thickness</label>
+                  <input type="number" value={rowEditData.coreMaskThickness ?? ''} onChange={(e) => handleRowEditChange('coreMaskThickness', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Core Mask Height Outside</label>
+                  <input type="number" value={rowEditData.coreMaskHeightOutside ?? ''} onChange={(e) => handleRowEditChange('coreMaskHeightOutside', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Core Mask Height Inside</label>
+                  <input type="number" value={rowEditData.coreMaskHeightInside ?? ''} onChange={(e) => handleRowEditChange('coreMaskHeightInside', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Sand Shot Pressure (Bar)</label>
+                  <input type="number" value={rowEditData.sandShotPressureBar ?? ''} onChange={(e) => handleRowEditChange('sandShotPressureBar', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Correction Shot Time</label>
+                  <input type="number" value={rowEditData.correctionShotTime ?? ''} onChange={(e) => handleRowEditChange('correctionShotTime', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Squeeze Pressure</label>
+                  <input type="number" value={rowEditData.squeezePressure ?? ''} onChange={(e) => handleRowEditChange('squeezePressure', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>PP Stripping Acceleration</label>
+                  <input type="number" value={rowEditData.ppStrippingAcceleration ?? ''} onChange={(e) => handleRowEditChange('ppStrippingAcceleration', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>PP Stripping Distance</label>
+                  <input type="number" value={rowEditData.ppStrippingDistance ?? ''} onChange={(e) => handleRowEditChange('ppStrippingDistance', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>SP Stripping Acceleration</label>
+                  <input type="number" value={rowEditData.spStrippingAcceleration ?? ''} onChange={(e) => handleRowEditChange('spStrippingAcceleration', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>SP Stripping Distance</label>
+                  <input type="number" value={rowEditData.spStrippingDistance ?? ''} onChange={(e) => handleRowEditChange('spStrippingDistance', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Mould Thickness ±10mm</label>
+                  <input type="number" value={rowEditData.mouldThicknessPlus10 ?? ''} onChange={(e) => handleRowEditChange('mouldThicknessPlus10', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group">
+                  <label>Close-Up Force/Pressure</label>
+                  <input type="text" value={rowEditData.closeUpForceMouldCloseUpPressure ?? ''} onChange={(e) => handleRowEditChange('closeUpForceMouldCloseUpPressure', e.target.value)} />
+                </div>
+                <div className="disamatic-form-group full-width">
+                  <label>Remarks</label>
+                  <textarea 
+                    value={rowEditData.remarks ?? ''} 
+                    onChange={(e) => handleRowEditChange('remarks', e.target.value)}
+                    rows={3}
+                    style={{
+                      width: '100%',
+                      padding: '0.625rem 0.875rem',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      fontSize: '0.875rem',
+                      fontFamily: 'Poppins, sans-serif',
+                      resize: 'vertical',
+                      minHeight: '80px'
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+            <div className="modal-footer">
+              <button className="modal-cancel-btn" onClick={() => { setRowEdit(null); setRowEditData(null); }} disabled={updating}>Cancel</button>
+              <button className="modal-submit-btn" onClick={handleSaveRowEdit} disabled={updating}>{updating ? 'Saving...' : 'Save Row'}</button>
             </div>
           </div>
         </div>

@@ -259,9 +259,17 @@
 /* Ensure labels align to bottom so inputs line up across the grid */
 .dmm-shift-form-grid .dmm-form-group label,
 .dmm-form-grid .dmm-form-group label {
-  min-height: 2.5rem;
+  min-height: 3rem;
   display: flex;
   align-items: flex-end;
+}
+
+/* Info icon in labels */
+.dmm-info {
+  display: inline-flex;
+  align-items: center;
+  color: #64748b;
+  cursor: help;
 }
 
 /* Make inputs consistent height for neat alignment */

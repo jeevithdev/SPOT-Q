@@ -4,17 +4,16 @@ import { Save, FileText, Plus, Minus, X, Loader2, Edit2, RotateCcw, RefreshCw } 
 import CustomDatePicker from "../../Components/CustomDatePicker";
 import Loader from "../../Components/Loader";
 import api from "../../utils/api";
-import { getCurrentDate } from "../../utils/dateUtils";
 import "../../styles/PageStyles/Moulding/DisamaticProduct.css";
 
-// Get today's date in YYYY-MM-DD format (client-side fallback)
+// Get today's date in YYYY-MM-DD format
 const getTodaysDate = () => {
   const today = new Date();
   return today.toISOString().split('T')[0];
 };
 
 const initialFormData = {
-  date: getTodaysDate(), // Temporary default, will be updated with server date
+  date: getTodaysDate(), // Set today's date by default
   shift: "",
   incharge: "",
   ppOperator: "",
@@ -87,19 +86,17 @@ const DisamaticProduct = () => {
     durationTime: ''
   });
   
-  // Fetch server date on component mount
+  // On component mount, check for existing data for today's date
   useEffect(() => {
-    const fetchServerDate = async () => {
-      const serverDate = await getCurrentDate();
-      setFormData(prev => ({ ...prev, date: serverDate }));
-    };
-    fetchServerDate();
+    const today = getTodaysDate();
+    // Check if data exists for today and load it
+    checkExistingPrimaryData(today, false);
   }, []);
 
   // Auto-update date if user keeps page open past midnight
   useEffect(() => {
-    const interval = setInterval(async () => {
-      const today = await getCurrentDate(); // Use server date
+    const interval = setInterval(() => {
+      const today = getTodaysDate();
       if (formData.date !== today) {
         // Update date silently; keep other data. Do not unlock primary.
         setFormData(prev => ({ ...prev, date: today }));
@@ -130,6 +127,12 @@ const DisamaticProduct = () => {
   // Auto-calculate totals for Delays table
   useEffect(() => {
     const durationTotal = formData.delaysTable.reduce((sum, row) => {
+      // Handle comma-separated values
+      if (row.durationMinutes && typeof row.durationMinutes === 'string') {
+        const values = row.durationMinutes.split(',').map(v => parseFloat(v.trim())).filter(v => !isNaN(v));
+        const rowSum = values.reduce((acc, val) => acc + val, 0);
+        return sum + rowSum;
+      }
       const val = parseFloat(row.durationMinutes) || 0;
       return sum + val;
     }, 0);
@@ -171,8 +174,8 @@ const DisamaticProduct = () => {
   };
   
   // Reset form (new entry) utility
-  const resetForm = async () => {
-    const today = await getCurrentDate(); // Use server date
+  const resetForm = () => {
+    const today = getTodaysDate();
     setFormData({ ...initialFormData, date: today });
     setIsPrimaryLocked(false);
     setBasicFieldLocked({ shift: false, incharge: false, ppOperator: false });
@@ -186,22 +189,136 @@ const DisamaticProduct = () => {
   const handleMemberKeyDown = (e, index) => {
     if (e.key !== 'Enter') return;
     e.preventDefault();
-
-    // Move to next member field if exists, otherwise move to production table
-    const nextId = `member-field-${index + 1}`;
-    const nextEl = document.getElementById(nextId);
-    if (nextEl) {
-      nextEl.focus();
+    // Include current input value immediately (keydown fires before potential state sync edge cases)
+    const updatedMembers = [...formData.members];
+    updatedMembers[index] = e.target.value;
+    const shiftValid = formData.shift && formData.shift.trim() !== '';
+    const inchargeValid = formData.incharge && formData.incharge.trim() !== '';
+    const ppOperatorValid = formData.ppOperator && formData.ppOperator.trim() !== '';
+    const membersValid = updatedMembers.some(m => m && m.trim() !== '');
+    const isLast = index === updatedMembers.length - 1;
+    if (shiftValid && inchargeValid && ppOperatorValid && membersValid && isLast) {
+      // Persist updated members then lock & jump
+      setFormData(prev => ({ ...prev, members: updatedMembers }));
+      handlePrimaryLockAndJump(updatedMembers); // pass override
     } else {
-      // Last member field - move to production table if primary is locked
-      if (isPrimaryLocked) {
+      // Navigate or show validation focus
+      if (!shiftValid) {
+        document.getElementById('shift-field')?.focus();
+        return;
+      }
+      if (!inchargeValid) {
+        document.getElementById('incharge-field')?.focus();
+        return;
+      }
+      if (!ppOperatorValid) {
+        document.getElementById('ppoperator-field')?.focus();
+        return;
+      }
+      if (!membersValid) {
+        document.getElementById('member-field-0')?.focus();
+        return;
+      }
+      // Move to next member field if exists
+      const nextId = `member-field-${index + 1}`;
+      const nextEl = document.getElementById(nextId);
+      if (nextEl) nextEl.focus();
+    }
+  };
+  
+  // Lock primary section and jump to production table
+  const handlePrimaryLockAndJump = async (overrideMembers) => {
+    if (!formData.date) {
+      alert('Date is required');
+      return;
+    }
+
+    // Validate all fields
+    const shiftValid = validateField('shift', formData.shift);
+    const inchargeValid = validateField('incharge', formData.incharge);
+    const ppOperatorValid = validateField('ppOperator', formData.ppOperator);
+    const membersToUse = overrideMembers || formData.members;
+    const membersValid = validateField('members', membersToUse);
+    
+    if (!shiftValid || !inchargeValid || !ppOperatorValid || !membersValid) {
+      alert('Please fill all required fields: Shift, Incharge, PP Operator, and at least one Member');
+      return;
+    }
+
+  const allMembers = membersToUse.filter(m => m.trim() !== '');
+
+    try {
+      setLoadingStates(prev => ({ ...prev, basicInfo: true }));
+      
+      // Build payload for basicInfo WITHOUT event info.
+      // Event info must only be saved & locked with the first full Submit All per user requirement.
+      const payload = {
+        date: formData.date,
+        section: 'basicInfo'
+      };
+      
+      if (isNewRecord) {
+        // Always include shift, incharge, ppOperator in payload for new records
+        payload.shift = formData.shift && formData.shift.trim() !== '' ? formData.shift.trim() : '';
+        payload.incharge = formData.incharge && formData.incharge.trim() !== '' ? formData.incharge.trim() : '';
+        payload.ppOperator = formData.ppOperator && formData.ppOperator.trim() !== '' ? formData.ppOperator.trim() : '';
+        if (allMembers.length > 0) {
+          payload.members = allMembers;
+        }
+      } else {
+        // For existing records, only send unlocked fields
+        if (!basicFieldLocked.shift) {
+          payload.shift = formData.shift.trim();
+        }
+        if (!basicFieldLocked.incharge) {
+          payload.incharge = formData.incharge.trim();
+        }
+        if (!basicFieldLocked.ppOperator) {
+          payload.ppOperator = formData.ppOperator.trim();
+        }
+        if (allMembers.length > 0) {
+          payload.members = allMembers;
+        }
+      }
+
+      const data = await api.post('/v1/dismatic-reports', payload);
+      
+      if (data.success) {
+        setPrimaryId(data.data?._id || null);
+        if (formData.shift) {
+          await checkAndLockByDateAndShift(formData.date, formData.shift);
+        }
+        
+        // Clear other sections for fresh entry after primary lock (but keep event info as it's now saved)
+        resetProductionTable();
+        resetNextShiftPlanTable();
+        resetDelaysTable();
+        resetMouldHardnessTable();
+        resetPatternTempTable();
+        
+        // Do NOT lock event section here. Event info remains editable until first Submit All.
+        
+        await checkExistingPrimaryData(formData.date);
+        
+        // Lock the primary section
+        setIsPrimaryLocked(true);
+        
+        // Jump to first production table input
         setTimeout(() => {
           focusFirstTableInput('production');
         }, 50);
+      } else {
+        alert('Failed to save: ' + (data.message || 'Unknown error'));
       }
+    } catch (error) {
+      console.error('Error saving basic info:', error);
+      const errorMessage = error.response?.data?.message || error.message || 'Unknown error occurred';
+      alert('Failed to save basic information: ' + errorMessage);
+    } finally {
+      setLoadingStates(prev => ({ ...prev, basicInfo: false }));
     }
   };
-
+  
   const handleChange = (field, value) => {
     // Ignore date change attempts (date locked to today)
     if (field === 'date') return;
@@ -278,7 +395,7 @@ const DisamaticProduct = () => {
     }
     if (isNumeric) {
       const num = parseFloat(value);
-      if (isNaN(num)) return '#ef4444'; // Red for invalid
+      if (isNaN(num) || num < 0) return '#ef4444'; // Red for invalid
       return '#22c55e'; // Green for valid
     }
     return String(value).trim() !== '' ? '#22c55e' : '#cbd5e1'; // Green if filled, grey if empty
@@ -356,10 +473,21 @@ const DisamaticProduct = () => {
     }
   };
 
-  // Handle Enter key navigation for table inputs
+  // Handle Enter key navigation for table inputs with validation
   const handleTableKeyDown = (e, tableName, rowIndex, fieldIndex, totalFields) => {
     if (e.key === 'Enter') {
       e.preventDefault();
+      
+      // Validate current field has data
+      const currentValue = e.target.value;
+      if (!currentValue || currentValue.trim() === '') {
+        // Don't move if field is empty - show visual feedback
+        e.target.style.borderColor = '#ef4444';
+        setTimeout(() => {
+          e.target.style.borderColor = '';
+        }, 1000);
+        return;
+      }
       
       // Get all inputs in the current table row
       const currentRow = e.target.closest('tr');
@@ -387,7 +515,16 @@ const DisamaticProduct = () => {
           }
         }
         
-        // If no next row or next row is total row, move to next section
+        // If next row is total row and current table is production, focus total counter first
+        if (tableName === 'production') {
+          const totalCounter = document.getElementById('production-total-counter');
+          if (totalCounter) {
+            totalCounter.focus();
+            return;
+          }
+        }
+
+        // If no next row or next row is total row (other tables), move to next section
         const nextSection = {
           'production': 'nextShiftPlan',
           'nextShiftPlan': 'delays',
@@ -515,10 +652,73 @@ const DisamaticProduct = () => {
            (formData.supervisorName?.trim() !== '');
   };
 
+  // Validate all entered data - check if any field with data has invalid values
+  const validateAllEnteredData = () => {
+    const errors = [];
+    
+    // Production table validation - only validate rows that have any data
+    formData.productionTable.forEach((row, index) => {
+      const hasAnyData = row.counterNo || row.componentName || row.produced || row.poured || 
+                         row.cycleTime || row.mouldsPerHour || row.remarks;
+      if (hasAnyData) {
+        // If row has any data, validate numeric fields are proper numbers
+        if (row.produced !== '' && (isNaN(parseFloat(row.produced)) || parseFloat(row.produced) < 0)) {
+          errors.push(`Production Row ${index + 1}: Invalid 'Produced' value`);
+        }
+        if (row.poured !== '' && (isNaN(parseFloat(row.poured)) || parseFloat(row.poured) < 0)) {
+          errors.push(`Production Row ${index + 1}: Invalid 'Poured' value`);
+        }
+        if (row.mouldsPerHour !== '' && (isNaN(parseFloat(row.mouldsPerHour)) || parseFloat(row.mouldsPerHour) < 0)) {
+          errors.push(`Production Row ${index + 1}: Invalid 'Moulds Per Hour' value`);
+        }
+      }
+    });
+    
+    // Next Shift Plan validation
+    formData.nextShiftPlanTable.forEach((row, index) => {
+      const hasAnyData = row.componentName || row.plannedMoulds || row.remarks;
+      // No numeric validation needed for plannedMoulds - can be text or numbers
+    });
+    
+    // Delays validation
+    formData.delaysTable.forEach((row, index) => {
+      const hasAnyData = row.delays || row.durationMinutes || row.durationTime;
+      if (hasAnyData) {
+        if (row.durationMinutes !== '' && (isNaN(parseFloat(row.durationMinutes)) || parseFloat(row.durationMinutes) < 0)) {
+          errors.push(`Delays Row ${index + 1}: Invalid 'Duration Minutes' value`);
+        }
+      }
+    });
+    
+    // Mould Hardness validation: allow comma-separated values (no numeric-only enforcement)
+    formData.mouldHardnessTable.forEach((row) => {
+      const hasAnyData = row.componentName || row.mpPP || row.mpSP || row.bsPP || row.bsSP || row.remarks;
+      if (hasAnyData) {
+        // No numeric validation; accept free text or comma-separated numbers
+      }
+    });
+    
+    // Pattern Temperature validation
+    formData.patternTempTable.forEach((row, index) => {
+      const hasAnyData = row.item || row.pp || row.sp;
+      if (hasAnyData) {
+        if (row.pp !== '' && (isNaN(parseFloat(row.pp)) || parseFloat(row.pp) < 0)) {
+          errors.push(`Pattern Temperature Row ${index + 1}: Invalid 'PP' value`);
+        }
+        if (row.sp !== '' && (isNaN(parseFloat(row.sp)) || parseFloat(row.sp) < 0)) {
+          errors.push(`Pattern Temperature Row ${index + 1}: Invalid 'SP' value`);
+        }
+      }
+    });
+    
+    return errors;
+  };
+
   // ===== END VALIDATION HELPERS =====
 
   const resetProductionTable = () => {
     setFormData(prev => ({ ...prev, productionTable: [{ counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }] }));
+    setProductionTotal({ counterNo: '', componentName: '', produced: 0, poured: 0, cycleTime: '', mouldsPerHour: 0, remarks: '' });
   };
 
   const resetNextShiftPlanTable = () => {
@@ -527,6 +727,7 @@ const DisamaticProduct = () => {
 
   const resetDelaysTable = () => {
     setFormData(prev => ({ ...prev, delaysTable: [{ delays: "", durationMinutes: "", durationTime: "" }] }));
+    setDelaysTotal({ delays: '', durationMinutes: 0, durationTime: '' });
   };
 
   const resetMouldHardnessTable = () => {
@@ -559,7 +760,7 @@ const DisamaticProduct = () => {
     try {
       setCheckingData(true);
       // Get report by date (primary identifier) - date is unique
-      const response = await api.get(`/dismatic-reports/date?date=${encodeURIComponent(date)}`);
+      const response = await api.get(`/v1/dismatic-reports/date?date=${encodeURIComponent(date)}`);
       
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
@@ -618,12 +819,9 @@ const DisamaticProduct = () => {
             return updated;
           });
           
-          // If not in fresh mode, load full data; otherwise keep entry clean
-          if (!skipLoadFull) {
-            setTimeout(() => {
-              checkExistingData();
-            }, 100);
-          }
+          // Don't auto-load other sections data - keep them clean for new entry
+          // User can view existing data from Reports page
+          // This prevents showing previous shift data when starting new entry
         } else {
           // No primary data exists - unlock all fields
           setBasicInfoLocked(false);
@@ -689,7 +887,7 @@ const DisamaticProduct = () => {
     try {
       setCheckingData(true);
       // Get report by date (primary identifier) - date is unique
-      const response = await api.get(`/dismatic-reports/date?date=${encodeURIComponent(formData.date)}`);
+      const response = await api.get(`/v1/dismatic-reports/date?date=${encodeURIComponent(formData.date)}`);
       
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
@@ -713,7 +911,7 @@ const DisamaticProduct = () => {
         }
 
         // Check if individual event section fields have data (lock each field separately)
-        // Only lock if field exists, is not null, not empty string, and has actual content after trimming
+        // Only lock if field exists, is not null, empty string, and has actual content after trimming
         // Empty strings (MongoDB defaults) should NOT trigger locks - only real data
         const significantEventValue = report.significantEvent;
         const maintenanceValue = report.maintenance;
@@ -865,22 +1063,6 @@ const DisamaticProduct = () => {
     }
   };
 
-  // On mount: always present a fresh entry form for today (keep primary locked if exists)
-  useEffect(() => {
-    if (formData.date) {
-      // Only lock/load primary; skip full data load
-      checkExistingPrimaryData(formData.date, true);
-      // Reset non-primary sections for fresh entry while keeping primary locked
-      resetProductionTable();
-      resetNextShiftPlanTable();
-      resetDelaysTable();
-      resetMouldHardnessTable();
-      resetPatternTempTable();
-      setFormData(prev => ({ ...prev, significantEvent: '', maintenance: '', supervisorName: '' }));
-      setEventSectionLocked({ significantEvent: false, maintenance: false, supervisorName: false });
-    }
-  }, []);
-
   // Handle click on locked input fields to show popup
   const handleLockedFieldClick = (fieldName) => {
     // Primary per-field lock popup
@@ -911,7 +1093,7 @@ const DisamaticProduct = () => {
     if (!date || !shift) return;
     
     try {
-      const response = await api.get(`/dismatic-reports/date?date=${encodeURIComponent(date)}`);
+      const response = await api.get(`/v1/dismatic-reports/date?date=${encodeURIComponent(date)}`);
       if (response.success && response.data && response.data.length > 0) {
         const report = response.data[0];
         if (report.shift && String(report.shift).trim() === String(shift).trim()) {
@@ -940,10 +1122,16 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, production: true }));
-      const data = await api.post('/dismatic-reports', {
+      const data = await api.post('/v1/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         productionTable: formData.productionTable,
+        productionTotals: {
+          counterNo: productionTotal.counterNo || '',
+          produced: Number(productionTotal.produced) || 0,
+          poured: Number(productionTotal.poured) || 0,
+          remarks: productionTotal.remarks || ''
+        },
         section: 'production'
       });
       
@@ -979,7 +1167,7 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, nextShiftPlan: true }));
-      const data = await api.post('/dismatic-reports', {
+      const data = await api.post('/v1/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         nextShiftPlanTable: formData.nextShiftPlanTable,
@@ -1018,10 +1206,13 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, delays: true }));
-      const data = await api.post('/dismatic-reports', {
+      const data = await api.post('/v1/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         delaysTable: formData.delaysTable,
+        delaysTotals: {
+          durationMinutes: Number(delaysTotal.durationMinutes) || 0
+        },
         section: 'delays'
       });
       
@@ -1057,7 +1248,7 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, mouldHardness: true }));
-      const data = await api.post('/dismatic-reports', {
+      const data = await api.post('/v1/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         mouldHardnessTable: formData.mouldHardnessTable,
@@ -1096,7 +1287,7 @@ const DisamaticProduct = () => {
 
     try {
       setLoadingStates(prev => ({ ...prev, patternTemp: true }));
-      const data = await api.post('/dismatic-reports', {
+      const data = await api.post('/v1/dismatic-reports', {
         date: formData.date,
         shift: formData.shift || '', // Include shift if available
         patternTempTable: formData.patternTempTable,
@@ -1161,7 +1352,7 @@ const DisamaticProduct = () => {
         payload.supervisorName = formData.supervisorName;
       }
       
-      const data = await api.post('/dismatic-reports', payload);
+      const data = await api.post('/v1/dismatic-reports', payload);
       
       if (data.success) {
         // Lock only the fields that were actually saved (have non-empty values)
@@ -1203,14 +1394,32 @@ const DisamaticProduct = () => {
       return;
     }
 
-    // Check if at least one primary field has data
-    const hasShift = formData.shift && formData.shift.trim() !== '';
-    const hasIncharge = formData.incharge && formData.incharge.trim() !== '';
-    const hasPpOperator = formData.ppOperator && formData.ppOperator.trim() !== '';
-    const hasMembers = formData.members.some(m => m && m.trim() !== '');
+    // Validate primary section first
+    const shiftValid = validateField('shift', formData.shift);
+    const inchargeValid = validateField('incharge', formData.incharge);
+    const ppOperatorValid = validateField('ppOperator', formData.ppOperator);
+    const membersValid = validateField('members', formData.members);
+    
+    if (!shiftValid || !inchargeValid || !ppOperatorValid || !membersValid) {
+      alert('Please fill all required primary fields: Shift, Incharge, PP Operator, and at least one Member');
+      // Scroll to top to show primary section
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+      return;
+    }
 
-    if (!hasShift && !hasIncharge && !hasPpOperator && !hasMembers) {
-      alert('Please fill at least one primary field (Shift, Incharge, PP Operator, or Members)');
+    // Validate all entered data for invalid values
+    const validationErrors = validateAllEnteredData();
+    if (validationErrors.length > 0) {
+      alert('Please fix the following validation errors:\n\n' + validationErrors.join('\n'));
+      return;
+    }
+
+    // Check if at least one section has data (besides primary)
+    const hasAnyData = hasProductionData() || hasNextShiftPlanData() || hasDelaysData() || 
+                       hasMouldHardnessData() || hasPatternTempData() || hasEventSectionData();
+    
+    if (!hasAnyData) {
+      alert('Please enter data in at least one section before saving.');
       return;
     }
 
@@ -1224,8 +1433,17 @@ const DisamaticProduct = () => {
         ppOperator: formData.ppOperator || '',
         members: formData.members.filter(m => m && m.trim() !== ''),
         productionTable: hasProductionData() ? formData.productionTable : [],
+        productionTotals: hasProductionData() ? {
+          counterNo: productionTotal.counterNo || '',
+          produced: Number(productionTotal.produced) || 0,
+          poured: Number(productionTotal.poured) || 0,
+          remarks: productionTotal.remarks || ''
+        } : undefined,
         nextShiftPlanTable: hasNextShiftPlanData() ? formData.nextShiftPlanTable : [],
         delaysTable: hasDelaysData() ? formData.delaysTable : [],
+        delaysTotals: hasDelaysData() ? {
+          durationMinutes: Number(delaysTotal.durationMinutes) || 0
+        } : undefined,
         mouldHardnessTable: hasMouldHardnessData() ? formData.mouldHardnessTable : [],
         patternTempTable: hasPatternTempData() ? formData.patternTempTable : [],
         significantEvent: formData.significantEvent && formData.significantEvent.trim() !== '' ? formData.significantEvent.trim() : undefined,
@@ -1234,43 +1452,32 @@ const DisamaticProduct = () => {
         section: 'all'
       };
 
-      const res = await api.post('/dismatic-reports', consolidated);
+      const res = await api.post('/v1/dismatic-reports', consolidated);
       if (!res.success) throw new Error(res.message || 'Save failed');
 
-      alert('All data saved successfully for ' + targetDate + '! Ready for next entry.');
+      alert('All data saved successfully! Primary & Event info now locked for further entries today.');
 
-      // Lock primary locally and refresh locks from backend
+      // After first full submission: lock event section fields that have values and KEEP primary + event info.
       setIsPrimaryLocked(true);
-      await checkExistingPrimaryData(targetDate, false);
+      setBasicInfoLocked(true);
+      setBasicFieldLocked(prev => ({ ...prev, shift: true, incharge: true, ppOperator: true }));
+      setEventSectionLocked({
+        significantEvent: !!(formData.significantEvent && formData.significantEvent.trim()),
+        maintenance: !!(formData.maintenance && formData.maintenance.trim()),
+        supervisorName: !!(formData.supervisorName && formData.supervisorName.trim())
+      });
 
-      // Reset only non-primary sections for next entry (keep primary locked and intact)
+      // Clear ONLY the sectional tables for next session entry (same date & shift)
       resetProductionTable();
       resetNextShiftPlanTable();
       resetDelaysTable();
       resetMouldHardnessTable();
       resetPatternTempTable();
 
-      // Clear event section fields
-      setFormData(prev => ({
-        ...prev,
-        significantEvent: '',
-        maintenance: '',
-        supervisorName: ''
-      }));
-
-      // Reset event section locks
-      setEventSectionLocked({
-        significantEvent: false,
-        maintenance: false,
-        supervisorName: false
-      });
-
-      // Focus back to production table for next entry
+      // Keep event info & primary fields; focus first production input for next session
       setTimeout(() => {
         focusFirstTableInput('production');
       }, 100);
-
-      // Don't navigate to report - stay on entry page for next data set
     } catch (err) {
       console.error('Error saving all:', err);
       alert('Save All failed: ' + (err.response?.data?.message || err.message || 'Unknown error'));
@@ -1317,33 +1524,43 @@ const DisamaticProduct = () => {
             </div>
             <div className="primary-fields-row">
               <div className="disamatic-form-group">
-                <label>Shift</label>
+                <label>Shift <span style={{ color: '#ef4444' }}>*</span></label>
                 <select
                   id="shift-field"
                   value={formData.shift}
                   onChange={e => handleChange("shift", e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('incharge-field')?.focus(); } }}
+                  onKeyDown={(e) => { 
+                    if (e.key === 'Enter') { 
+                      e.preventDefault(); 
+                      if (formData.shift && formData.shift.trim() !== '') {
+                        document.getElementById('incharge-field')?.focus(); 
+                      } else {
+                        e.target.style.borderColor = '#ef4444';
+                        setTimeout(() => { e.target.style.borderColor = ''; }, 1000);
+                      }
+                    } 
+                  }}
                   onClick={() => handleLockedFieldClick('shift')}
                   onFocus={() => handleLockedFieldClick('shift')}
                   onMouseDown={(e) => {
-                    if (basicFieldLocked.shift || checkingData) {
+                    if (basicFieldLocked.shift || checkingData || isPrimaryLocked) {
                       e.preventDefault();
                       e.stopPropagation();
                     }
                   }}
-                  disabled={basicFieldLocked.shift || checkingData}
-                  readOnly={basicFieldLocked.shift}
+                  disabled={basicFieldLocked.shift || checkingData || isPrimaryLocked}
+                  readOnly={basicFieldLocked.shift || isPrimaryLocked}
                   style={{
                     width: '100%',
                     padding: '0.625rem 0.875rem',
-                    border: `2px solid ${formData.shift ? '#22c55e' : '#cbd5e1'}`,
+                    border: `2px solid ${validationErrors.shift ? '#ef4444' : (formData.shift && !validationErrors.shift ? '#22c55e' : '#cbd5e1')}`,
                     borderRadius: '8px',
                     fontSize: '0.875rem',
-                    backgroundColor: (basicFieldLocked.shift || checkingData) ? '#f1f5f9' : '#ffffff',
-                    color: (basicFieldLocked.shift || checkingData) ? '#64748b' : '#1e293b',
-                    cursor: (basicFieldLocked.shift || checkingData) ? 'not-allowed' : 'pointer',
-                    opacity: (basicFieldLocked.shift || checkingData) ? 0.8 : 1,
-                    pointerEvents: (basicFieldLocked.shift || checkingData) ? 'none' : 'auto'
+                    backgroundColor: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+                    color: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? '#64748b' : '#1e293b',
+                    cursor: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? 'not-allowed' : 'pointer',
+                    opacity: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? 0.8 : 1,
+                    pointerEvents: (basicFieldLocked.shift || checkingData || isPrimaryLocked) ? 'none' : 'auto'
                   }}
                 >
                   <option value="">Select Shift</option>
@@ -1353,56 +1570,72 @@ const DisamaticProduct = () => {
                 </select>
               </div>
               <div className="disamatic-form-group">
-                <label>Incharge</label>
-                <input
+                <label>Incharge <span style={{ color: '#ef4444' }}>*</span></label>
+                <input 
                   id="incharge-field"
-                  type="text"
-                  value={formData.incharge}
+                  type="text" 
+                  value={formData.incharge} 
                   onChange={e => handleChange("incharge", e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('ppoperator-field')?.focus(); } }}
+                  onKeyDown={(e) => { 
+                    if (e.key === 'Enter') { 
+                      e.preventDefault(); 
+                      if (formData.incharge && formData.incharge.trim() !== '') {
+                        document.getElementById('ppoperator-field')?.focus(); 
+                      } else {
+                        e.target.style.borderColor = '#ef4444';
+                        setTimeout(() => { e.target.style.borderColor = ''; }, 1000);
+                      }
+                    } 
+                  }}
                   onClick={() => handleLockedFieldClick('incharge')}
                   onFocus={() => handleLockedFieldClick('incharge')}
                   placeholder="Enter incharge name"
-                  disabled={basicFieldLocked.incharge}
-                  readOnly={basicFieldLocked.incharge}
-                  style={{
-                    cursor: basicFieldLocked.incharge ? 'not-allowed' : 'text',
-                    backgroundColor: basicFieldLocked.incharge ? '#f1f5f9' : '#ffffff',
-                    border: `2px solid ${formData.incharge ? '#22c55e' : '#cbd5e1'}`,
+                  disabled={basicFieldLocked.incharge || isPrimaryLocked}
+                  readOnly={basicFieldLocked.incharge || isPrimaryLocked}
+                  style={{ 
+                    cursor: (basicFieldLocked.incharge || isPrimaryLocked) ? 'not-allowed' : 'text',
+                    backgroundColor: (basicFieldLocked.incharge || isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+                    border: `2px solid ${validationErrors.incharge ? '#ef4444' : (formData.incharge && !validationErrors.incharge ? '#22c55e' : '#cbd5e1')}`,
                   }}
                 />
               </div>
               <div className="disamatic-form-group">
-                <label>PP Operator</label>
-                <input
+                <label>PP Operator <span style={{ color: '#ef4444' }}>*</span></label>
+                <input 
                   id="ppoperator-field"
-                  type="text"
-                  value={formData.ppOperator}
+                  type="text" 
+                  value={formData.ppOperator} 
                   onChange={e => handleChange("ppOperator", e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); document.getElementById('member-field-0')?.focus(); } }}
+                  onKeyDown={(e) => { 
+                    if (e.key === 'Enter') { 
+                      e.preventDefault(); 
+                      if (formData.ppOperator && formData.ppOperator.trim() !== '') {
+                        document.getElementById('member-field-0')?.focus(); 
+                      } else {
+                        e.target.style.borderColor = '#ef4444';
+                        setTimeout(() => { e.target.style.borderColor = ''; }, 1000);
+                      }
+                    } 
+                  }}
                   onClick={() => handleLockedFieldClick('ppOperator')}
                   onFocus={() => handleLockedFieldClick('ppOperator')}
                   placeholder="Enter PP Operator name"
-                  disabled={basicFieldLocked.ppOperator}
-                  readOnly={basicFieldLocked.ppOperator}
-                  style={{
-                    cursor: basicFieldLocked.ppOperator ? 'not-allowed' : 'text',
-                    backgroundColor: basicFieldLocked.ppOperator ? '#f1f5f9' : '#ffffff',
-                    border: `2px solid ${formData.ppOperator ? '#22c55e' : '#cbd5e1'}`,
+                  disabled={basicFieldLocked.ppOperator || isPrimaryLocked}
+                  readOnly={basicFieldLocked.ppOperator || isPrimaryLocked}
+                  style={{ 
+                    cursor: (basicFieldLocked.ppOperator || isPrimaryLocked) ? 'not-allowed' : 'text',
+                    backgroundColor: (basicFieldLocked.ppOperator || isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
+                    border: `2px solid ${validationErrors.ppOperator ? '#ef4444' : (formData.ppOperator && !validationErrors.ppOperator ? '#22c55e' : '#cbd5e1')}`,
                   }}
                 />
               </div>
-            </div>
-
-            {/* Members Present Row */}
-            <div className="primary-fields-row" style={{ marginTop: '1rem' }}>
-              <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
-                <label>Members Present</label>
+              <div className="disamatic-form-group">
+                <label>Members Present <span style={{ color: '#ef4444' }}>*</span></label>
             <div className="disamatic-members-container">
               {formData.members.map((member, index) => {
                 const isNewMemberField = isNewMember(index);
                 const isEditable = !basicInfoLocked || isNewMemberField;
-                const isDisabled = !isEditable && (basicInfoLocked || isLocked);
+                const isDisabled = isPrimaryLocked || (!isEditable && (basicInfoLocked || isLocked));
                 return (
                   <div key={index} className="disamatic-member-input-wrapper">
                     <input
@@ -1425,13 +1658,13 @@ const DisamaticProduct = () => {
                       className="disamatic-member-input"
                       disabled={isDisabled}
                       readOnly={isDisabled}
-                      style={{
+                      style={{ 
                         cursor: isDisabled ? 'not-allowed' : 'text',
                         backgroundColor: isDisabled ? '#f1f5f9' : '#ffffff',
-                        border: `2px solid ${member ? '#22c55e' : '#cbd5e1'}`,
+                        border: `2px solid ${validationErrors.members && !member ? '#ef4444' : (member ? '#22c55e' : '#cbd5e1')}`,
                       }}
                     />
-                    {formData.members.length > 1 && isEditable && (
+                    {formData.members.length > 1 && isEditable && !isPrimaryLocked && (
                       <button
                         type="button"
                         onClick={() => removeMemberField(index)}
@@ -1444,19 +1677,44 @@ const DisamaticProduct = () => {
                   </div>
                 );
               })}
-              {/* Allow adding members always */}
-              <button
-                type="button"
-                onClick={addMemberField}
-                className="disamatic-add-member-btn"
-                title="Add another member"
-              >
-                <Plus size={16} />
-                Add Member
-              </button>
+              {/* Allow adding members only when not locked */}
+              {!isPrimaryLocked && (
+                <button
+                  type="button"
+                  onClick={addMemberField}
+                  className="disamatic-add-member-btn"
+                  title="Add another member"
+                >
+                  <Plus size={16} />
+                  Add Member
+                </button>
+              )}
             </div>
               </div>
             </div>
+            {/* Reset button - only show when primary is locked */}
+            {isPrimaryLocked && (
+              <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'flex-start', gap: '0.5rem' }}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (window.confirm('This will clear ALL fields including Primary section. Continue?')) {
+                      resetForm();
+                      window.scrollTo({ top: 0, behavior: 'smooth' });
+                      setTimeout(() => {
+                        document.getElementById('shift-field')?.focus();
+                      }, 100);
+                    }
+                  }}
+                  className="disamatic-reset-btn"
+                  title="Reset the entire form"
+                  style={{ fontSize: '0.8rem', padding: '0.4rem 0.8rem', marginTop: '1.75rem' }}
+                >
+                  <RefreshCw size={14} />
+                  RESET
+                </button>
+              </div>
+            )}
           </div>
 
       {/* Divider line to separate primary data from other inputs */}
@@ -1464,8 +1722,56 @@ const DisamaticProduct = () => {
 
       {/* Production Table */}
           <div className="disamatic-section">
-            <h3 className="disamatic-section-title">Production Table</h3>
-        <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', overflowX: 'auto' }}>
+            <div className="disamatic-section-header">
+              <h3 className="disamatic-section-title">Production Table</h3>
+              <div className="disamatic-section-actions">
+                <button
+                  type="button"
+                  onClick={addProductionRow}
+                  disabled={!isPrimaryLocked}
+                  style={{
+                    width: '40px',
+                    height: '40px',
+                    background: isPrimaryLocked ? '#22c55e' : '#cbd5e1',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '8px',
+                    cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    fontWeight: 600
+                  }}
+                  title="Add row"
+                >
+                  <Plus size={18} />
+                </button>
+                {formData.productionTable.length > 1 && (
+                  <button
+                    type="button"
+                    onClick={() => deleteProductionRow(formData.productionTable.length - 1)}
+                    disabled={!isPrimaryLocked}
+                    style={{
+                      width: '40px',
+                      height: '40px',
+                      background: isPrimaryLocked ? '#ef4444' : '#cbd5e1',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: '8px',
+                      cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontWeight: 600
+                    }}
+                    title="Delete last row"
+                  >
+                    <Minus size={18} />
+                  </button>
+                )}
+              </div>
+            </div>
+        <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '1px solid #e2e8f0', borderRadius: '8px', overflowX: 'auto' }}>
           <table className="disamatic-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
             <thead>
               <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
@@ -1647,6 +1953,8 @@ const DisamaticProduct = () => {
                     type="text"
                     value={productionTotal.counterNo}
                     onChange={e => handleProductionTotalChange('counterNo', e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); const totalRemarks = document.getElementById('production-total-remarks'); if (totalRemarks) totalRemarks.focus(); } }}
+                    id="production-total-counter"
                     placeholder="Total Counter"
                     disabled={!isPrimaryLocked}
                     style={{ 
@@ -1668,7 +1976,8 @@ const DisamaticProduct = () => {
                     value={productionTotal.componentName}
                     onChange={e => handleProductionTotalChange('componentName', e.target.value)}
                     placeholder="-"
-                    disabled={!isPrimaryLocked}
+                    disabled={true}
+                    readOnly
                     style={{ 
                       width: '100%', 
                       padding: '0.5rem', 
@@ -1677,8 +1986,8 @@ const DisamaticProduct = () => {
                       fontSize: '0.875rem', 
                       textAlign: 'center',
                       fontWeight: 600,
-                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      backgroundColor: '#f1f5f9',
+                      cursor: 'not-allowed'
                     }}
                   />
                 </td>
@@ -1694,7 +2003,8 @@ const DisamaticProduct = () => {
                     value={productionTotal.cycleTime}
                     onChange={e => handleProductionTotalChange('cycleTime', e.target.value)}
                     placeholder="-"
-                    disabled={!isPrimaryLocked}
+                    disabled={true}
+                    readOnly
                     style={{ 
                       width: '100%', 
                       padding: '0.5rem', 
@@ -1703,8 +2013,8 @@ const DisamaticProduct = () => {
                       fontSize: '0.875rem', 
                       textAlign: 'center',
                       fontWeight: 600,
-                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      backgroundColor: '#f1f5f9',
+                      cursor: 'not-allowed'
                     }}
                   />
                 </td>
@@ -1714,7 +2024,8 @@ const DisamaticProduct = () => {
                     value={productionTotal.mouldsPerHour}
                     onChange={e => handleProductionTotalChange('mouldsPerHour', e.target.value)}
                     placeholder="-"
-                    disabled={!isPrimaryLocked}
+                    disabled={true}
+                    readOnly
                     style={{ 
                       width: '100%', 
                       padding: '0.5rem', 
@@ -1723,8 +2034,8 @@ const DisamaticProduct = () => {
                       fontSize: '0.875rem', 
                       textAlign: 'center',
                       fontWeight: 600,
-                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      backgroundColor: '#f1f5f9',
+                      cursor: 'not-allowed'
                     }}
                   />
                 </td>
@@ -1733,6 +2044,8 @@ const DisamaticProduct = () => {
                     type="text"
                     value={productionTotal.remarks}
                     onChange={e => handleProductionTotalChange('remarks', e.target.value)}
+                    onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); focusFirstTableInput('nextShiftPlan'); } }}
+                    id="production-total-remarks"
                     placeholder="Total Remarks"
                     maxLength={60}
                     disabled={!isPrimaryLocked}
@@ -1753,60 +2066,42 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
                 </div>
-                <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <button
-                    type="button"
-                    onClick={addProductionRow}
-                    disabled={!isPrimaryLocked}
-                    style={{
-                      width: '42px',
-                      height: '42px',
-                      background: isPrimaryLocked ? '#22c55e' : '#cbd5e1',
-                      color: 'white',
-                      border: 'none',
-                      borderRadius: '8px',
-                      cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      fontSize: '1rem',
-                      fontWeight: 600
-                    }}
-                    title="Add row"
-                  >
-                    <Plus size={20} />
-                  </button>
-                  {formData.productionTable.length > 1 && (
-                    <button
-                      type="button"
-                      onClick={() => deleteProductionRow(formData.productionTable.length - 1)}
-                      disabled={!isPrimaryLocked}
-                      style={{
-                        width: '42px',
-                        height: '42px',
-                        background: isPrimaryLocked ? '#ef4444' : '#cbd5e1',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '8px',
-                        cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        fontSize: '1rem',
-                        fontWeight: 600
-                      }}
-                      title="Delete last row"
-                    >
-                      <Minus size={20} />
-                    </button>
-                  )}
-                </div>
           </div>
 
           {/* Next Shift Plan Section */}
           <div className="disamatic-section">
-        <h3 className="disamatic-section-title">Next Shift Plan Table</h3>
-        <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', overflowX: 'auto' }}>
+        <div className="disamatic-section-header">
+          <h3 className="disamatic-section-title">Next Shift Plan Table</h3>
+          <div className="disamatic-section-actions">
+            <button
+              type="button"
+              onClick={addNextShiftPlanRow}
+              disabled={!isPrimaryLocked}
+              style={{
+                width: '40px', height: '40px', background: isPrimaryLocked ? '#22c55e' : '#cbd5e1', color: 'white',
+                border: 'none', borderRadius: '8px', cursor: isPrimaryLocked ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center'
+              }}
+              title="Add row"
+            >
+              <Plus size={18} />
+            </button>
+            {formData.nextShiftPlanTable.length > 1 && (
+              <button
+                type="button"
+                onClick={() => deleteNextShiftPlanRow(formData.nextShiftPlanTable.length - 1)}
+                disabled={!isPrimaryLocked}
+                style={{
+                  width: '40px', height: '40px', background: isPrimaryLocked ? '#ef4444' : '#cbd5e1', color: 'white',
+                  border: 'none', borderRadius: '8px', cursor: isPrimaryLocked ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}
+                title="Delete last row"
+              >
+                <Minus size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '1px solid #e2e8f0', borderRadius: '8px', overflowX: 'auto' }}>
           <table className="disamatic-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
             <thead>
               <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
@@ -1845,17 +2140,16 @@ const DisamaticProduct = () => {
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.plannedMoulds}
                       onChange={e => handleNextShiftPlanChange(index, 'plannedMoulds', e.target.value)}
                       onKeyDown={(e) => handleTableKeyDown(e, 'nextShiftPlan', index, 1, 3)}
-                      placeholder="0"
-                      step="0.1"
+                      placeholder="Enter planned moulds"
                       disabled={!isPrimaryLocked}
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: `1.5px solid ${getBorderColor(row.plannedMoulds, true)}`, 
+                        border: `1.5px solid ${getBorderColor(row.plannedMoulds)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
@@ -1892,56 +2186,37 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
         </div>
-        <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={addNextShiftPlanRow}
-            disabled={!isPrimaryLocked}
-            style={{
-              width: '42px',
-              height: '42px',
-              background: isPrimaryLocked ? '#22c55e' : '#cbd5e1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="Add row"
-          >
-            <Plus size={20} />
-          </button>
-          {formData.nextShiftPlanTable.length > 1 && (
-            <button
-              type="button"
-              onClick={() => deleteNextShiftPlanRow(formData.nextShiftPlanTable.length - 1)}
-              disabled={!isPrimaryLocked}
-              style={{
-                width: '42px',
-                height: '42px',
-                background: isPrimaryLocked ? '#ef4444' : '#cbd5e1',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Delete last row"
-            >
-              <Minus size={20} />
-            </button>
-          )}
-        </div>
+        
       </div>
 
       {/* Delays Table */}
       <div className="disamatic-section">
-        <h3 className="disamatic-section-title">Delays Table</h3>
-        <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', overflowX: 'auto' }}>
+        <div className="disamatic-section-header">
+          <h3 className="disamatic-section-title">Delays Table</h3>
+          <div className="disamatic-section-actions">
+            <button
+              type="button"
+              onClick={addDelaysRow}
+              disabled={!isPrimaryLocked}
+              style={{ width: '40px', height: '40px', background: isPrimaryLocked ? '#22c55e' : '#cbd5e1', color: 'white', border: 'none', borderRadius: '8px', cursor: isPrimaryLocked ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Add row"
+            >
+              <Plus size={18} />
+            </button>
+            {formData.delaysTable.length > 1 && (
+              <button
+                type="button"
+                onClick={() => deleteDelaysRow(formData.delaysTable.length - 1)}
+                disabled={!isPrimaryLocked}
+                style={{ width: '40px', height: '40px', background: isPrimaryLocked ? '#ef4444' : '#cbd5e1', color: 'white', border: 'none', borderRadius: '8px', cursor: isPrimaryLocked ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Delete last row"
+              >
+                <Minus size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '1px solid #e2e8f0', borderRadius: '8px', overflowX: 'auto' }}>
           <table className="disamatic-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
             <thead>
               <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
@@ -1980,17 +2255,16 @@ const DisamaticProduct = () => {
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.durationMinutes}
                       onChange={e => handleDelaysTableChange(index, 'durationMinutes', e.target.value)}
                       onKeyDown={(e) => handleTableKeyDown(e, 'delays', index, 1, 3)}
-                      placeholder="0"
-                      step="0.1"
+                      placeholder="e.g., 10,20,30"
                       disabled={!isPrimaryLocked}
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: `1.5px solid ${getBorderColor(row.durationMinutes, true)}`, 
+                        border: `1.5px solid ${getBorderColor(row.durationMinutes)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
@@ -2032,7 +2306,8 @@ const DisamaticProduct = () => {
                     value={delaysTotal.delays}
                     onChange={e => handleDelaysTotalChange('delays', e.target.value)}
                     placeholder="Total Delays"
-                    disabled={!isPrimaryLocked}
+                    disabled={true}
+                    readOnly
                     style={{ 
                       width: '100%', 
                       padding: '0.5rem', 
@@ -2041,8 +2316,8 @@ const DisamaticProduct = () => {
                       fontSize: '0.875rem', 
                       textAlign: 'center',
                       fontWeight: 600,
-                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      backgroundColor: '#f1f5f9',
+                      cursor: 'not-allowed'
                     }}
                   />
                 </td>
@@ -2055,7 +2330,8 @@ const DisamaticProduct = () => {
                     value={delaysTotal.durationTime}
                     onChange={e => handleDelaysTotalChange('durationTime', e.target.value)}
                     placeholder="Total Time"
-                    disabled={!isPrimaryLocked}
+                    disabled={true}
+                    readOnly
                     style={{ 
                       width: '100%', 
                       padding: '0.5rem', 
@@ -2064,8 +2340,8 @@ const DisamaticProduct = () => {
                       fontSize: '0.875rem', 
                       textAlign: 'center',
                       fontWeight: 600,
-                      backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                      cursor: !isPrimaryLocked ? 'not-allowed' : 'text'
+                      backgroundColor: '#f1f5f9',
+                      cursor: 'not-allowed'
                     }}
                   />
                 </td>
@@ -2073,63 +2349,44 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
         </div>
-        <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={addDelaysRow}
-            disabled={!isPrimaryLocked}
-            style={{
-              width: '42px',
-              height: '42px',
-              background: isPrimaryLocked ? '#22c55e' : '#cbd5e1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="Add row"
-          >
-            <Plus size={20} />
-          </button>
-          {formData.delaysTable.length > 1 && (
-            <button
-              type="button"
-              onClick={() => deleteDelaysRow(formData.delaysTable.length - 1)}
-              disabled={!isPrimaryLocked}
-              style={{
-                width: '42px',
-                height: '42px',
-                background: isPrimaryLocked ? '#ef4444' : '#cbd5e1',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Delete last row"
-            >
-              <Minus size={20} />
-            </button>
-          )}
-        </div>
+        
       </div>
 
       {/* Production (Mould Hardness) Table */}
       <div className="disamatic-section">
-        <h3 className="disamatic-section-title">Mould Hardness Table</h3>
-        <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', overflowX: 'auto' }}>
+        <div className="disamatic-section-header">
+          <h3 className="disamatic-section-title">Mould Hardness Table</h3>
+          <div className="disamatic-section-actions">
+            <button
+              type="button"
+              onClick={addMouldHardnessRow}
+              disabled={!isPrimaryLocked}
+              style={{ width: '40px', height: '40px', background: isPrimaryLocked ? '#22c55e' : '#cbd5e1', color: 'white', border: 'none', borderRadius: '8px', cursor: isPrimaryLocked ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Add row"
+            >
+              <Plus size={18} />
+            </button>
+            {formData.mouldHardnessTable.length > 1 && (
+              <button
+                type="button"
+                onClick={() => deleteMouldHardnessRow(formData.mouldHardnessTable.length - 1)}
+                disabled={!isPrimaryLocked}
+                style={{ width: '40px', height: '40px', background: isPrimaryLocked ? '#ef4444' : '#cbd5e1', color: 'white', border: 'none', borderRadius: '8px', cursor: isPrimaryLocked ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Delete last row"
+              >
+                <Minus size={18} />
+              </button>
+            )}
+          </div>
+        </div>
+        <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '1px solid #e2e8f0', borderRadius: '8px', overflowX: 'auto' }}>
           <table className="disamatic-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
             <thead>
               <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
                 <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'nowrap', width: '80px' }} rowSpan="2">S.No</th>
                 <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'nowrap' }} rowSpan="2">Component Name</th>
-                <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'nowrap' }} colSpan="2">Mould Penetrant tester ( N/cmsquare )</th>
-                <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'nowrap' }} colSpan="2">B - Scale</th>
+                <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1', whiteSpace: 'nowrap' }} colSpan="2">Mould Penetrant tester ( N/cmsquare )</th>
+                <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '2px solid #cbd5e1', whiteSpace: 'nowrap' }} colSpan="2">B - Scale</th>
                 <th style={{ padding: '1rem 1.25rem', textAlign: 'center', fontWeight: 600, fontSize: '0.8125rem', textTransform: 'uppercase', letterSpacing: '0.025em', border: '1px solid #cbd5e1', borderBottom: '1px solid #cbd5e1', whiteSpace: 'nowrap' }} rowSpan="2">Remarks</th>
               </tr>
               <tr style={{ background: '#f8fafc', color: '#1e293b' }}>
@@ -2168,17 +2425,16 @@ const DisamaticProduct = () => {
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.mpPP}
                       onChange={e => handleMouldHardnessTableChange(index, 'mpPP', e.target.value)}
                       onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 1, 6)}
-                      placeholder="0"
-                      step="0.1"
+                      placeholder="e.g., 85, 86"
                       disabled={!isPrimaryLocked}
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: `1.5px solid ${getBorderColor(row.mpPP, true)}`, 
+                        border: `1.5px solid ${getBorderColor(row.mpPP)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
@@ -2190,39 +2446,36 @@ const DisamaticProduct = () => {
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.mpSP}
                       onChange={e => handleMouldHardnessTableChange(index, 'mpSP', e.target.value)}
                       onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 2, 6)}
-                      placeholder="0"
-                      step="0.1"
+                      placeholder="e.g., 85, 86"
                       disabled={!isPrimaryLocked}
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: `1.5px solid ${getBorderColor(row.mpSP, true)}`, 
+                        border: `1.5px solid ${getBorderColor(row.mpSP)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
                         backgroundColor: !isPrimaryLocked ? '#f1f5f9' : '#ffffff',
-                        cursor: !isPrimaryLocked ? 'not-allowed' : 'text',
                         transition: 'border-color 0.2s ease'
                       }}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.bsPP}
                       onChange={e => handleMouldHardnessTableChange(index, 'bsPP', e.target.value)}
                       onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 3, 6)}
-                      placeholder="0"
-                      step="0.1"
+                      placeholder="e.g., 85, 86"
                       disabled={!isPrimaryLocked}
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: `1.5px solid ${getBorderColor(row.bsPP, true)}`, 
+                        border: `1.5px solid ${getBorderColor(row.bsPP)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
@@ -2234,17 +2487,16 @@ const DisamaticProduct = () => {
                   </td>
                   <td style={{ padding: '0.75rem', textAlign: 'center', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.bsSP}
                       onChange={e => handleMouldHardnessTableChange(index, 'bsSP', e.target.value)}
                       onKeyDown={(e) => handleTableKeyDown(e, 'mouldHardness', index, 4, 6)}
-                      placeholder="0"
-                      step="0.1"
+                      placeholder="e.g., 85, 86"
                       disabled={!isPrimaryLocked}
                       style={{ 
                         width: '100%', 
                         padding: '0.5rem', 
-                        border: `1.5px solid ${getBorderColor(row.bsSP, true)}`, 
+                        border: `1.5px solid ${getBorderColor(row.bsSP)}`, 
                         borderRadius: '4px', 
                         fontSize: '0.875rem', 
                         textAlign: 'center',
@@ -2281,55 +2533,36 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
         </div>
-        <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={addMouldHardnessRow}
-            disabled={!isPrimaryLocked}
-            style={{
-              width: '42px',
-              height: '42px',
-              background: isPrimaryLocked ? '#22c55e' : '#cbd5e1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="Add row"
-          >
-            <Plus size={20} />
-          </button>
-          {formData.mouldHardnessTable.length > 1 && (
-            <button
-              type="button"
-              onClick={() => deleteMouldHardnessRow(formData.mouldHardnessTable.length - 1)}
-              disabled={!isPrimaryLocked}
-              style={{
-                width: '42px',
-                height: '42px',
-                background: isPrimaryLocked ? '#ef4444' : '#cbd5e1',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Delete last row"
-            >
-              <Minus size={20} />
-            </button>
-          )}
-        </div>
+        
       </div>
 
       {/* Pattern Temp Table */}
       <div className="disamatic-section">
-        <h3 className="disamatic-section-title">Pattern Temperature Table</h3>
+        <div className="disamatic-section-header">
+          <h3 className="disamatic-section-title">Pattern Temperature Table</h3>
+          <div className="disamatic-section-actions">
+            <button
+              type="button"
+              onClick={addPatternTempRow}
+              disabled={!isPrimaryLocked}
+              style={{ width: '40px', height: '40px', background: isPrimaryLocked ? '#22c55e' : '#cbd5e1', color: 'white', border: 'none', borderRadius: '8px', cursor: isPrimaryLocked ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+              title="Add row"
+            >
+              <Plus size={18} />
+            </button>
+            {formData.patternTempTable.length > 1 && (
+              <button
+                type="button"
+                onClick={() => deletePatternTempRow(formData.patternTempTable.length - 1)}
+                disabled={!isPrimaryLocked}
+                style={{ width: '40px', height: '40px', background: isPrimaryLocked ? '#ef4444' : '#cbd5e1', color: 'white', border: 'none', borderRadius: '8px', cursor: isPrimaryLocked ? 'pointer' : 'not-allowed', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
+                title="Delete last row"
+              >
+                <Minus size={18} />
+              </button>
+            )}
+          </div>
+        </div>
         <div className="disamatic-table-wrapper" style={{ gridColumn: '1 / -1', border: '2px solid #cbd5e1', borderRadius: '8px', boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)', overflowX: 'auto' }}>
           <table className="disamatic-table" style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.875rem', background: 'white' }}>
             <thead>
@@ -2416,50 +2649,7 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
         </div>
-        <div style={{ marginTop: '0.5rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <button
-            type="button"
-            onClick={addPatternTempRow}
-            disabled={!isPrimaryLocked}
-            style={{
-              width: '42px',
-              height: '42px',
-              background: isPrimaryLocked ? '#22c55e' : '#cbd5e1',
-              color: 'white',
-              border: 'none',
-              borderRadius: '8px',
-              cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center'
-            }}
-            title="Add row"
-          >
-            <Plus size={20} />
-          </button>
-          {formData.patternTempTable.length > 1 && (
-            <button
-              type="button"
-              onClick={() => deletePatternTempRow(formData.patternTempTable.length - 1)}
-              disabled={!isPrimaryLocked}
-              style={{
-                width: '42px',
-                height: '42px',
-                background: isPrimaryLocked ? '#ef4444' : '#cbd5e1',
-                color: 'white',
-                border: 'none',
-                borderRadius: '8px',
-                cursor: isPrimaryLocked ? 'pointer' : 'not-allowed',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center'
-              }}
-              title="Delete last row"
-            >
-              <Minus size={20} />
-            </button>
-          )}
-        </div>
+        
       </div>
 
       {/* Event Information Section */}

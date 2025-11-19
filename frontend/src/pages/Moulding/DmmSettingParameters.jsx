@@ -1,7 +1,7 @@
 
 import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Save, RefreshCw, FileText, Loader2, RotateCcw } from "lucide-react";
+import { Save, RefreshCw, FileText, Loader2, RotateCcw, Info } from "lucide-react";
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import Loader from '../../Components/Loader';
 import api from '../../utils/api';
@@ -71,9 +71,37 @@ const DmmSettingParameters = () => {
     shift3: 0
   });
   
+  // Validation states for real-time feedback
+  const [validationErrors, setValidationErrors] = useState({
+    machine: false,
+    shift: false,
+    operatorName: false,
+    operatedBy: false
+  });
+  
   // Refs for submit button and first input
   const shiftSubmitRef = useRef(null);
   const shiftFirstInputRef = useRef(null);
+  
+  // Helper function to get border color based on validation
+  const getBorderColor = (value, isNumeric = false, fieldName = '') => {
+    // Check validation error state first
+    if (fieldName && validationErrors[fieldName]) {
+      return '#ef4444'; // Red for validation error
+    }
+    
+    if (value === '' || value === null || value === undefined) {
+      return '#cbd5e1'; // Default grey
+    }
+    
+    if (isNumeric) {
+      const num = parseFloat(value);
+      if (isNaN(num) || num < 0) return '#ef4444'; // Red for invalid
+      return '#22c55e'; // Green for valid
+    }
+    
+    return String(value).trim() !== '' ? '#22c55e' : '#cbd5e1'; // Green if filled, grey if empty
+  };
 
   // Auto-update date if user keeps page open past midnight
   useEffect(() => {
@@ -85,6 +113,31 @@ const DmmSettingParameters = () => {
     }, 60 * 1000); // check every minute
     return () => clearInterval(interval);
   }, [primaryData.date]);
+  
+  // Validate field in real-time
+  const validateField = (field, value) => {
+    let isValid = false;
+    
+    switch(field) {
+      case 'machine':
+        isValid = value && String(value).trim() !== '';
+        break;
+      case 'shift':
+        isValid = value && String(value).trim() !== '';
+        break;
+      case 'operatorName':
+        isValid = value && String(value).trim() !== '';
+        break;
+      case 'operatedBy':
+        isValid = value && String(value).trim() !== '';
+        break;
+      default:
+        isValid = true;
+    }
+    
+    setValidationErrors(prev => ({ ...prev, [field]: !isValid }));
+    return isValid;
+  };
 
   // Handle Enter key navigation for form fields
   const handleEnterKeyNavigation = (e, nextFieldId) => {
@@ -107,6 +160,11 @@ const DmmSettingParameters = () => {
       ...prev,
       [field]: value
     }));
+    
+    // Validate on change for real-time feedback
+    if (['machine', 'shift', 'operatorName', 'operatedBy'].includes(field)) {
+      validateField(field, value);
+    }
   };
 
   // Check if primary data exists for date, machine, and shift combination
@@ -124,13 +182,14 @@ const DmmSettingParameters = () => {
 
     try {
       setCheckingData(true);
-      const response = await api.get(`/dmm-settings/primary?date=${encodeURIComponent(date)}&machine=${encodeURIComponent(machine)}`);
+      const response = await api.get(`/v1/dmm-settings/primary?date=${encodeURIComponent(date)}&machine=${encodeURIComponent(machine)}`);
       
       if (response.success && response.data && response.data.length > 0) {
         const record = response.data[0];
         
         // Check what data exists
         const hasMachine = record.machine !== undefined && record.machine !== null && String(record.machine).trim() !== '';
+        const hasShift = !!shift;
         const shiftKey = `shift${shift}`;
         const shiftData = record.shifts?.[shiftKey];
         
@@ -185,9 +244,24 @@ const DmmSettingParameters = () => {
   const handlePrimarySubmit = async (e) => {
     if (e) e.preventDefault();
     
-    // Validate required fields (now require operator fields too)
-    if (!primaryData.date || !primaryData.machine || !primaryData.shift || !primaryData.operatorName || !primaryData.operatedBy) {
-      alert('Please fill in Date, Machine, Shift, Operator Name and Operated By before submitting Primary.');
+    // Validate all required fields
+    const machineValid = validateField('machine', primaryData.machine);
+    const shiftValid = validateField('shift', primaryData.shift);
+    const operatorNameValid = validateField('operatorName', primaryData.operatorName);
+    const operatedByValid = validateField('operatedBy', primaryData.operatedBy);
+    
+    if (!primaryData.date || !machineValid || !shiftValid || !operatorNameValid || !operatedByValid) {
+      alert('Please fill in all required fields: Machine, Shift, Operator Name and Operated By.');
+      // Focus first invalid field
+      if (!machineValid) {
+        document.getElementById('machine-field')?.focus();
+      } else if (!shiftValid) {
+        document.getElementById('shift-field')?.focus();
+      } else if (!operatorNameValid) {
+        document.getElementById('operatorName-field')?.focus();
+      } else if (!operatedByValid) {
+        document.getElementById('operatedBy-field')?.focus();
+      }
       return;
     }
 
@@ -214,7 +288,7 @@ const DmmSettingParameters = () => {
         payload.shifts[shiftKey] = shiftPayload;
       }
 
-      const data = await api.post('/dmm-settings', payload);
+      const data = await api.post('/v1/dmm-settings', payload);
       
       if (data.success) {
         // Lock all 4 fields together after save
@@ -269,7 +343,7 @@ const DmmSettingParameters = () => {
     }
 
     try {
-      const response = await api.get(`/dmm-settings/primary?date=${encodeURIComponent(primaryData.date)}&machine=${encodeURIComponent(primaryData.machine)}`);
+      const response = await api.get(`/v1/dmm-settings/primary?date=${encodeURIComponent(primaryData.date)}&machine=${encodeURIComponent(primaryData.machine)}`);
       
       if (response.success && response.data && response.data.length > 0) {
         const record = response.data[0];
@@ -320,19 +394,8 @@ const DmmSettingParameters = () => {
     try {
       setLoadingStates(prev => ({ ...prev, shift: true }));
       
-      // Map unified core mask UI fields to backend expected fields
+      // Send row data directly - backend will map field names correctly
       const rowForSave = { ...currentRow };
-      rowForSave.spCoreMaskThickness = currentRow.coreMaskThickness || '';
-      rowForSave.spCoreMaskHeight = currentRow.coreMaskHeightOutside || '';
-      // Persist inside height by appending to remarks (non-breaking)
-      if (currentRow.coreMaskHeightInside) {
-        const tag = `InsideMaskHeight:${currentRow.coreMaskHeightInside}`;
-        rowForSave.remarks = rowForSave.remarks ? `${rowForSave.remarks} | ${tag}` : tag;
-      }
-      // Remove UI-only fields from object to avoid sending unused keys
-      delete rowForSave.coreMaskThickness;
-      delete rowForSave.coreMaskHeightOutside;
-      delete rowForSave.coreMaskHeightInside;
 
       const payload = {
         date: primaryData.date,
@@ -343,7 +406,7 @@ const DmmSettingParameters = () => {
         }
       };
 
-      const data = await api.post('/dmm-settings', payload);
+      const data = await api.post('/v1/dmm-settings', payload);
       if (data.success) {
         // Clear current row for next entry
         setCurrentRow({ ...initialRow });
@@ -372,7 +435,17 @@ const DmmSettingParameters = () => {
   const handleShiftKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      
+      // Validate current field has data before moving
+      const value = e.target.value;
+      const isNumeric = e.target.type === 'number';
+      const isEmpty = value === undefined || value === null || String(value).trim() === '';
+      const invalidNumeric = isNumeric && (isEmpty || isNaN(parseFloat(value)) || !isFinite(parseFloat(value)));
+      if (isEmpty || invalidNumeric) {
+        e.target.style.borderColor = '#ef4444';
+        setTimeout(() => { e.target.style.borderColor = ''; }, 1000);
+        return;
+      }
+
       // Get all inputs in the current shift section
       const shiftSection = e.target.closest('.dmm-section');
       if (!shiftSection) return;
@@ -391,6 +464,26 @@ const DmmSettingParameters = () => {
         }
       }
     }
+  };
+
+  // Validate entire shift parameter row before saving
+  const validateShiftRowBeforeSave = () => {
+    const shiftSection = document.querySelector('.dmm-section .dmm-shift-form-grid');
+    if (!shiftSection) return true;
+    const inputs = Array.from(shiftSection.querySelectorAll('input:not([type="button"]):not([disabled])'));
+    for (const input of inputs) {
+      const value = input.value;
+      const isNumeric = input.type === 'number';
+      const isEmpty = value === undefined || value === null || String(value).trim() === '';
+      const invalidNumeric = isNumeric && (isEmpty || isNaN(parseFloat(value)) || !isFinite(parseFloat(value)));
+      if (isEmpty || invalidNumeric) {
+        input.style.borderColor = '#ef4444';
+        setTimeout(() => { input.style.borderColor = ''; }, 1000);
+        input.focus();
+        return false;
+      }
+    }
+    return true;
   };
 
   // Handle Enter key on submit button
@@ -431,6 +524,12 @@ const DmmSettingParameters = () => {
       return;
     }
 
+    // Ensure all shift fields are filled and valid before saving
+    if (!validateShiftRowBeforeSave()) {
+      alert('Please fill all Shift Parameters correctly before saving.');
+      return;
+    }
+
     setAllSubmitting(true);
     try {
       const shiftKey = `shift${primaryData.shift}`;
@@ -447,21 +546,12 @@ const DmmSettingParameters = () => {
           }
         }
       };
-      const opRes = await api.post('/dmm-settings', opPayload);
+      const opRes = await api.post('/v1/dmm-settings', opPayload);
       if (!opRes.success) throw new Error(opRes.message || 'Failed to save operation');
 
-      // 2) Save parameters row (map UI fields to backend expectations)
+      // 2) Save parameters row (send all fields directly)
       if (hasShiftParameterData()) {
         const rowForSave = { ...currentRow };
-        rowForSave.spCoreMaskThickness = currentRow.coreMaskThickness || '';
-        rowForSave.spCoreMaskHeight = currentRow.coreMaskHeightOutside || '';
-        if (currentRow.coreMaskHeightInside) {
-          const tag = `InsideMaskHeight:${currentRow.coreMaskHeightInside}`;
-          rowForSave.remarks = rowForSave.remarks ? `${rowForSave.remarks} | ${tag}` : tag;
-        }
-        delete rowForSave.coreMaskThickness;
-        delete rowForSave.coreMaskHeightOutside;
-        delete rowForSave.coreMaskHeightInside;
 
         const paramsPayload = {
           date: primaryData.date,
@@ -471,7 +561,7 @@ const DmmSettingParameters = () => {
             [shiftKey]: rowForSave
           }
         };
-        const paramsRes = await api.post('/dmm-settings', paramsPayload);
+        const paramsRes = await api.post('/v1/dmm-settings', paramsPayload);
         if (!paramsRes.success) throw new Error(paramsRes.message || 'Failed to save parameters');
       }
 
@@ -505,8 +595,10 @@ const DmmSettingParameters = () => {
           placeholder="e.g., ABC Industries"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.customer)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -520,8 +612,10 @@ const DmmSettingParameters = () => {
           placeholder="e.g., Engine Block Casting"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.itemDescription)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -535,8 +629,10 @@ const DmmSettingParameters = () => {
           placeholder="e.g., 08:30 AM"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.time)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -551,8 +647,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.ppThickness, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -567,8 +665,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.ppHeight, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -583,8 +683,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.spThickness, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -599,8 +701,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.spHeight, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -615,8 +719,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.coreMaskThickness, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -631,8 +737,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.coreMaskHeightOutside, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -647,8 +755,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.coreMaskHeightInside, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -663,8 +773,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.sandShotPressureBar, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -679,8 +791,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.correctionShotTime, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -695,8 +809,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.squeezePressure, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -711,8 +827,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.ppStrippingAcceleration, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -727,8 +845,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.ppStrippingDistance, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -743,8 +863,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.spStrippingAcceleration, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -759,8 +881,10 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.spStrippingDistance, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -775,13 +899,20 @@ const DmmSettingParameters = () => {
           step="any"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.mouldThicknessPlus10, true)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
       <div className="dmm-form-group">
-        <label>Close Up Force / Mould Close Up Pressure</label>
+        <label>
+          <span>Close-Up Force / Pressure</span>
+          <span className="dmm-info" title="Close Up Force / Mould Close Up Pressure" style={{ marginLeft: '0.5rem' }}>
+            <Info size={14} />
+          </span>
+        </label>
         <input
           type="text"
           value={currentRow.closeUpForceMouldCloseUpPressure}
@@ -790,8 +921,10 @@ const DmmSettingParameters = () => {
           placeholder="e.g., 800 kN / 55 bar"
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.closeUpForceMouldCloseUpPressure)}`,
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -806,9 +939,11 @@ const DmmSettingParameters = () => {
           maxLength={60}
           disabled={!isPrimaryLocked}
           style={{
+            border: `2px solid ${getBorderColor(currentRow.remarks)}`,
             resize: 'none',
             backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text'
+            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
+            transition: 'border-color 0.2s ease'
           }}
         />
       </div>
@@ -860,6 +995,7 @@ const DmmSettingParameters = () => {
                 value={primaryData.machine}
                 onChange={(e) => handlePrimaryChange("machine", e.target.value)}
                 onBlur={() => {
+                  validateField('machine', primaryData.machine);
                   if (primaryData.date && primaryData.machine && primaryData.shift) {
                     checkExistingPrimaryData(primaryData.date, primaryData.machine, primaryData.shift);
                   }
@@ -867,9 +1003,12 @@ const DmmSettingParameters = () => {
                 onKeyDown={async (e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    const nextField = document.getElementById('shift-field');
-                    if (nextField) {
-                      nextField.focus();
+                    if (primaryData.machine && primaryData.machine.trim() !== '') {
+                      document.getElementById('shift-field')?.focus();
+                    } else {
+                      validateField('machine', primaryData.machine);
+                      e.target.style.borderColor = '#ef4444';
+                      setTimeout(() => { e.target.style.borderColor = ''; }, 1000);
                     }
                   }
                 }}
@@ -877,11 +1016,12 @@ const DmmSettingParameters = () => {
                 style={{
                   width: '100%',
                   padding: '0.625rem 0.875rem',
-                  border: '2px solid #cbd5e1',
+                  border: `2px solid ${getBorderColor(primaryData.machine, false, 'machine')}`,
                   borderRadius: '8px',
                   fontSize: '0.875rem',
                   backgroundColor: (primaryFieldLocked.machine || checkingData) ? '#f1f5f9' : '#ffffff',
-                  cursor: (primaryFieldLocked.machine || checkingData) ? 'not-allowed' : 'text'
+                  cursor: (primaryFieldLocked.machine || checkingData) ? 'not-allowed' : 'text',
+                  transition: 'border-color 0.2s ease'
                 }}
                 disabled={primaryFieldLocked.machine || checkingData}
                 readOnly={primaryFieldLocked.machine}
@@ -899,12 +1039,16 @@ const DmmSettingParameters = () => {
                     checkExistingPrimaryData(primaryData.date, primaryData.machine, e.target.value);
                   }
                 }}
+                onBlur={() => validateField('shift', primaryData.shift)}
                 onKeyDown={async (e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    const nextField = document.getElementById('operatorName-field');
-                    if (nextField) {
-                      nextField.focus();
+                    if (primaryData.shift && primaryData.shift.trim() !== '') {
+                      document.getElementById('operatorName-field')?.focus();
+                    } else {
+                      validateField('shift', primaryData.shift);
+                      e.target.style.borderColor = '#ef4444';
+                      setTimeout(() => { e.target.style.borderColor = ''; }, 1000);
                     }
                   }
                 }}
@@ -912,11 +1056,12 @@ const DmmSettingParameters = () => {
                 style={{
                   width: '100%',
                   padding: '0.625rem 0.875rem',
-                  border: '2px solid #cbd5e1',
+                  border: `2px solid ${getBorderColor(primaryData.shift, false, 'shift')}`,
                   borderRadius: '8px',
                   fontSize: '0.875rem',
                   backgroundColor: (primaryFieldLocked.shift || checkingData) ? '#f1f5f9' : '#ffffff',
-                  cursor: (primaryFieldLocked.shift || checkingData) ? 'not-allowed' : 'pointer'
+                  cursor: (primaryFieldLocked.shift || checkingData) ? 'not-allowed' : 'pointer',
+                  transition: 'border-color 0.2s ease'
                 }}
                 required
               >
@@ -933,26 +1078,31 @@ const DmmSettingParameters = () => {
                 type="text"
                 value={primaryData.operatorName}
                 onChange={(e) => handlePrimaryChange("operatorName", e.target.value)}
+                onBlur={() => validateField('operatorName', primaryData.operatorName)}
                 onKeyDown={async (e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    const nextField = document.getElementById('operatedBy-field');
-                    if (nextField) {
-                      nextField.focus();
+                    if (primaryData.operatorName && primaryData.operatorName.trim() !== '') {
+                      document.getElementById('operatedBy-field')?.focus();
+                    } else {
+                      validateField('operatorName', primaryData.operatorName);
+                      e.target.style.borderColor = '#ef4444';
+                      setTimeout(() => { e.target.style.borderColor = ''; }, 1000);
                     }
                   }
                 }}
-                disabled={false}
-                readOnly={false}
+                disabled={primaryFieldLocked.operatorName}
+                readOnly={primaryFieldLocked.operatorName}
                 placeholder="Enter operator name"
                 style={{
                   width: '100%',
                   padding: '0.625rem 0.875rem',
-                  border: '2px solid #cbd5e1',
+                  border: `2px solid ${getBorderColor(primaryData.operatorName, false, 'operatorName')}`,
                   borderRadius: '8px',
                   fontSize: '0.875rem',
                   backgroundColor: primaryFieldLocked.operatorName ? '#f1f5f9' : '#ffffff',
-                  cursor: primaryFieldLocked.operatorName ? 'not-allowed' : 'text'
+                  cursor: primaryFieldLocked.operatorName ? 'not-allowed' : 'text',
+                  transition: 'border-color 0.2s ease'
                 }}
                 required
               />
@@ -964,40 +1114,42 @@ const DmmSettingParameters = () => {
                 type="text"
                 value={primaryData.operatedBy}
                 onChange={(e) => handlePrimaryChange("operatedBy", e.target.value)}
+                onBlur={() => validateField('operatedBy', primaryData.operatedBy)}
                 onKeyDown={async (e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    // Attempt to submit primary (validation in handler will enforce required fields)
-                    if (primaryData.machine && primaryData.shift) {
+                    // Validate all fields before attempting submit
+                    const machineValid = validateField('machine', primaryData.machine);
+                    const shiftValid = validateField('shift', primaryData.shift);
+                    const operatorNameValid = validateField('operatorName', primaryData.operatorName);
+                    const operatedByValid = validateField('operatedBy', primaryData.operatedBy);
+                    
+                    if (machineValid && shiftValid && operatorNameValid && operatedByValid) {
                       await handlePrimarySubmit();
                     } else {
-                      // If machine/shift missing, move focus to first missing field
-                      if (!primaryData.machine) {
-                        const m = document.getElementById('machine-field'); if (m) m.focus();
-                      } else if (!primaryData.shift) {
-                        const s = document.getElementById('shift-field'); if (s) s.focus();
+                      // Focus first invalid field
+                      if (!machineValid) {
+                        document.getElementById('machine-field')?.focus();
+                      } else if (!shiftValid) {
+                        document.getElementById('shift-field')?.focus();
+                      } else if (!operatorNameValid) {
+                        document.getElementById('operatorName-field')?.focus();
                       }
                     }
-                    // Navigate to first shift parameter field after saving/attempt
-                    setTimeout(() => {
-                      const firstField = document.querySelector('.dmm-shift-input:not([disabled])');
-                      if (firstField) {
-                        firstField.focus();
-                      }
-                    }, 200);
                   }
                 }}
-                disabled={false}
-                readOnly={false}
+                disabled={primaryFieldLocked.operatedBy}
+                readOnly={primaryFieldLocked.operatedBy}
                 placeholder="Enter name"
                 style={{
                   width: '100%',
                   padding: '0.625rem 0.875rem',
-                  border: '2px solid #cbd5e1',
+                  border: `2px solid ${getBorderColor(primaryData.operatedBy, false, 'operatedBy')}`,
                   borderRadius: '8px',
                   fontSize: '0.875rem',
                   backgroundColor: primaryFieldLocked.operatedBy ? '#f1f5f9' : '#ffffff',
-                  cursor: primaryFieldLocked.operatedBy ? 'not-allowed' : 'text'
+                  cursor: primaryFieldLocked.operatedBy ? 'not-allowed' : 'text',
+                  transition: 'border-color 0.2s ease'
                 }}
                 required
               />
