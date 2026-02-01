@@ -54,7 +54,8 @@
 }
 
 .process-form-group input,
-.process-form-group select {
+.process-form-group select,
+.process-form-group textarea {
   width: 100%;
   padding: 0.625rem 0.875rem;
   border: 2px solid #cbd5e1;
@@ -62,38 +63,82 @@
   font-size: 0.875rem;
   transition: all 0.3s ease;
   background: white;
+  font-family: inherit;
+}
+
+.process-form-group select {
+  cursor: pointer;
+  color: #1e293b;
 }
 
 .process-form-group input:focus,
-.process-form-group select:focus {
+.process-form-group select:focus,
+.process-form-group textarea:focus {
   outline: none;
   border-color: #5B9AA9;
   box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
 }
 
+.process-form-group input:disabled,
+.process-form-group select:disabled,
+.process-form-group textarea:disabled {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
 /* Validation styles */
+.process-form-group input.valid-input,
+.process-form-group select.valid-input,
+.process-form-group textarea.valid-input {
+  border-color: #22c55e !important;
+  background-color: #f0fdf4 !important;
+}
+
+.process-form-group input.invalid-input,
+.process-form-group select.invalid-input,
+.process-form-group textarea.invalid-input {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+.process-form-group input.valid-input:focus,
+.process-form-group select.valid-input:focus,
+.process-form-group textarea.valid-input:focus {
+  outline: none;
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15) !important;
+}
+
+.process-form-group input.invalid-input:focus,
+.process-form-group select.invalid-input:focus,
+.process-form-group textarea.invalid-input:focus {
+  outline: none;
+  border-color: #dc2626 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
+}
+
+/* Standalone validation classes for compatibility */
 .valid-input {
   border-color: #22c55e !important;
   background-color: #f0fdf4 !important;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1) !important;
 }
 
 .invalid-input {
   border-color: #ef4444 !important;
   background-color: #fef2f2 !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
 }
 
 .valid-input:focus {
   outline: none;
   border-color: #16a34a !important;
-  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2) !important;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.15) !important;
 }
 
 .invalid-input:focus {
   outline: none;
   border-color: #dc2626 !important;
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.15) !important;
 }
 
 .process-submit-container {

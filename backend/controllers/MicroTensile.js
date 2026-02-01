@@ -74,36 +74,6 @@ exports.createEntry = async (req, res) => {
     }
 };
 
-exports.updateEntry = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const document = await MicroTensile.findOne({ 'entries._id': id });
-        if (!document) return res.status(404).json({ success: false, message: 'Entry not found.' });
-
-        const entry = document.entries.id(id);
-        Object.assign(entry, req.body); // Efficiently syncs all metallurgical fields
-        
-        await document.save();
-        res.status(200).json({ success: true, data: entry });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-exports.deleteEntry = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const document = await MicroTensile.findOne({ 'entries._id': id });
-        if (document) {
-            document.entries.pull(id);
-            await document.save();
-        }
-        res.status(200).json({ success: true, message: 'Entry deleted.' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
-
 /** 4. ADVANCED FILTERING (Reporting) **/
 
 exports.filterEntries = async (req, res) => {

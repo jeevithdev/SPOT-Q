@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { BookOpen, Lock } from 'lucide-react';
 import Table from '../../Components/Table';
-import { PlusButton, MinusButton, TimeInput, SubmitButton, ResetButton } from '../../Components/Buttons';
+import { PlusButton, MinusButton, SubmitButton, ResetButton } from '../../Components/Buttons';
 import '../../styles/PageStyles/Sandlab/SandTestingRecord.css';
 
 const SandTestingRecord = () => {
@@ -892,7 +892,7 @@ const SandTestingRecord = () => {
           
           // Load Table 1 data - mark existing entries as locked
           if (existingData.sandShifts) {
-            const newTable1aInputs = { ...table1aInputs };
+            const newTable1aInputs = {};
             
             // Map shift data to table cells
             const shifts = ['shiftI', 'shiftII', 'shiftIII'];
@@ -901,7 +901,9 @@ const SandTestingRecord = () => {
             shifts.forEach((shift, shiftIndex) => {
               fields.forEach((field, fieldIndex) => {
                 const key = `${fieldIndex}_${shiftIndex + 1}`;
-                const existingValues = existingData.sandShifts[shift]?.[field] || [];
+                let existingValues = existingData.sandShifts[shift]?.[field];
+                // Ensure existingValues is an array
+                existingValues = Array.isArray(existingValues) ? existingValues : [];
                 
                 if (existingValues.length > 0) {
                   // Existing values are locked
@@ -981,7 +983,7 @@ const SandTestingRecord = () => {
           
           // Load Table 3 data - mark existing entries as locked
           if (existingData.mixshifts) {
-            const newTable3Inputs = { ...table3Inputs };
+            const newTable3Inputs = {};
             
             const shifts = ['ShiftI', 'ShiftII', 'ShiftIII'];
             const fieldMappings = [
@@ -1002,7 +1004,8 @@ const SandTestingRecord = () => {
                   existingValues = existingValues?.[part];
                 }
                 
-                existingValues = existingValues || [];
+                // Ensure existingValues is an array
+                existingValues = Array.isArray(existingValues) ? existingValues : [];
                 
                 if (existingValues.length > 0) {
                   const lockedEntries = existingValues.map(val => ({ value: val, locked: true }));
@@ -1157,7 +1160,10 @@ const SandTestingRecord = () => {
 
   // Check existing data when date changes
   useEffect(() => {
-    checkExistingData(selectedDate);
+    if (selectedDate) {
+      checkExistingData(selectedDate);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
   // Handlers for Table 1
@@ -1166,25 +1172,25 @@ const SandTestingRecord = () => {
       // Transform table1aInputs to match backend structure - only submit unlocked (new) entries
       const sandShifts = {
         shiftI: {
-          rSand: table1aInputs['0_1'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          nSand: table1aInputs['1_1'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          mixingMode: table1aInputs['2_1'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          bentonite: table1aInputs['3_1'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          coalDustPremix: table1aInputs['4_1'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
+          rSand: (table1aInputs['0_1'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          nSand: (table1aInputs['1_1'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          mixingMode: (table1aInputs['2_1'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          bentonite: (table1aInputs['3_1'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          coalDustPremix: (table1aInputs['4_1'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
         },
         shiftII: {
-          rSand: table1aInputs['0_2'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          nSand: table1aInputs['1_2'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          mixingMode: table1aInputs['2_2'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          bentonite: table1aInputs['3_2'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          coalDustPremix: table1aInputs['4_2'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
+          rSand: (table1aInputs['0_2'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          nSand: (table1aInputs['1_2'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          mixingMode: (table1aInputs['2_2'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          bentonite: (table1aInputs['3_2'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          coalDustPremix: (table1aInputs['4_2'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
         },
         shiftIII: {
-          rSand: table1aInputs['0_3'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          nSand: table1aInputs['1_3'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          mixingMode: table1aInputs['2_3'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          bentonite: table1aInputs['3_3'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          coalDustPremix: table1aInputs['4_3'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
+          rSand: (table1aInputs['0_3'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          nSand: (table1aInputs['1_3'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          mixingMode: (table1aInputs['2_3'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          bentonite: (table1aInputs['3_3'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          coalDustPremix: (table1aInputs['4_3'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
         },
         batchNo: {
           bentonite: (!table1bInputs.bentoniteLocked && table1bInputs.bentonite && table1bInputs.bentonite.trim() !== '') ? table1bInputs.bentonite : '',
@@ -1322,30 +1328,30 @@ const SandTestingRecord = () => {
       const mixshifts = {
         ShiftI: {
           mixno: {
-            start: table3Inputs['0_0'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-            end: table3Inputs['0_1'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-            total: table3Inputs['0_2'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
+            start: (table3Inputs['0_0'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+            end: (table3Inputs['0_1'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+            total: (table3Inputs['0_2'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
           },
-          numberOfMixRejected: table3Inputs['0_3'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          returnSandHopperLevel: table3Inputs['0_4'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
+          numberOfMixRejected: (table3Inputs['0_3'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          returnSandHopperLevel: (table3Inputs['0_4'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
         },
         ShiftII: {
           mixno: {
-            start: table3Inputs['1_0'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-            end: table3Inputs['1_1'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-            total: table3Inputs['1_2'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
+            start: (table3Inputs['1_0'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+            end: (table3Inputs['1_1'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+            total: (table3Inputs['1_2'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
           },
-          numberOfMixRejected: table3Inputs['1_3'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          returnSandHopperLevel: table3Inputs['1_4'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
+          numberOfMixRejected: (table3Inputs['1_3'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          returnSandHopperLevel: (table3Inputs['1_4'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
         },
         ShiftIII: {
           mixno: {
-            start: table3Inputs['2_0'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-            end: table3Inputs['2_1'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-            total: table3Inputs['2_2'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
+            start: (table3Inputs['2_0'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+            end: (table3Inputs['2_1'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+            total: (table3Inputs['2_2'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
           },
-          numberOfMixRejected: table3Inputs['2_3'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
-          returnSandHopperLevel: table3Inputs['2_4'].filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
+          numberOfMixRejected: (table3Inputs['2_3'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value),
+          returnSandHopperLevel: (table3Inputs['2_4'] || []).filter(v => !v.locked && v.value.trim() !== '').map(v => v.value)
         }
       };
 

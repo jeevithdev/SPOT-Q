@@ -51,27 +51,6 @@ const meltingCtrl = require('./controllers/Melting-MeltingLogsheet');
 mongoose.connect(process.env.MONGODB_URI)
   .then(async () => {
     console.log('SPOT-Q Database Connected');
-
-    try {
-      console.log('Synchronizing Daily Department Records...');
-      // Ensures today's entry exists for all depts
-      await Promise.all([
-        impactCtrl.initializeTodayEntry(),
-        tensileCtrl.initializeTodayEntry(),
-        microTCtrl.initializeTodayEntry(),
-        microSCtrl.initializeTodayEntry(),
-        qcProdCtrl.initializeTodayEntry(),
-        processCtrl.initializeTodayEntry(),
-        disaCtrl.initializeTodayEntry(),
-        sandRecCtrl.initializeTodayEntry(),
-        sandNoteCtrl.initializeTodayEntry(),
-        dmmCtrl.initializeTodayEntry(),
-        meltingCtrl.initializeTodayEntry()
-      ]);
-      console.log('All Departments Initialized');
-    } catch (error) {
-      console.error('Critical: Initialization failed:', error.message);
-    }
   })
   .catch(err => console.error('MongoDB Connection Error:', err));
 
@@ -109,16 +88,6 @@ app.use('*', (req, res) => res.status(404).json({ success: false, message: 'API 
 // 8. Start
 const server = app.listen(PORT, async () => {
   console.log(`Server active on port ${PORT}`);
-  
-  // Initialize daily entry management for all departments
-  const { initializeDailyEntry, ensureTodayEntry } = require('./utils/dailyEntryManager');
-  const Process = require('./models/Process');
-  
-  // Setup cron job for Process department
-  initializeDailyEntry(Process, 'Process');
-  
-  // Create today's entry if it doesn't exist
-  await ensureTodayEntry(Process, 'Process');
 });
 
 // Graceful Error Management

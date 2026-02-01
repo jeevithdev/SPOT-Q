@@ -106,37 +106,6 @@ exports.createEntry = async (req, res) => {
     }
 };
 
-exports.updateEntry = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const document = await Tensile.findOne({ 'entries._id': id });
-        if (!document) return res.status(404).json({ success: false, message: 'Entry not found.' });
-
-        const entry = document.entries.id(id);
-        Object.assign(entry, req.body); // Syncs all provided fields efficiently
-
-        await document.save();
-        res.status(200).json({ success: true, data: entry });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-exports.deleteEntry = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const document = await Tensile.findOne({ 'entries._id': id });
-        if (!document) return res.status(404).json({ success: false, message: 'Entry not found.' });
-
-        document.entries.pull(id);
-        await document.save();
-
-        res.status(200).json({ success: true, message: 'Entry deleted successfully.' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: 'Error deleting entry.' });
-    }
-};
-
 exports.filterEntries = async (req, res) => {
     try {
         const { startDate, endDate } = req.query;

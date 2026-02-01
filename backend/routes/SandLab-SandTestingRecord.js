@@ -4,8 +4,6 @@ const {
     getAllEntries,
     getEntriesByDate,
     createTableEntry,
-    updateEntry,
-    deleteEntry,
     getStats
 } = require('../controllers/SandLab-SandTestingRecord');
 
@@ -15,8 +13,5 @@ router.post('/table/:tableNum', createTableEntry);
 router.post('/table-update', createTableEntry);
 router.route('/')
     .get(getAllEntries);
-router.route('/:id')
-    .put(updateEntry)
-    .delete(deleteEntry);
 
 module.exports = router;

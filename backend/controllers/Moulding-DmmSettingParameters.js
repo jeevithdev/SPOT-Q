@@ -85,13 +85,3 @@ exports.getDMMSettingsByCustomer = async (req, res) => {
         res.status(500).json({ success: false, message: error.message });
     }
 };
-
-// Standard CRUD for general updates/deletes
-exports.updateDMMSettings = async (req, res) => {
-    try {
-        const entry = await DMM.findByIdAndUpdate(req.params.id, req.body, { new: true });
-        res.status(200).json({ success: true, data: entry });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};

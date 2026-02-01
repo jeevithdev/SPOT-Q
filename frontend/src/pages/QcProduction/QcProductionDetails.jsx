@@ -1,18 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { Save, Loader2, FileText } from 'lucide-react';
 import { SubmitButton, ResetButton } from '../../Components/Buttons';
+import CustomDatePicker from '../../Components/CustomDatePicker';
 import '../../styles/PageStyles/QcProduction/QcProductionDetails.css';
 
 const QcProductionDetails = () => {
-  // Helper: today's date in YYYY-MM-DD
-  const getTodayDate = () => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    return `${y}-${m}-${d}`;
-  };
-
   // Helper: display DD/MM/YYYY
   const formatDisplayDate = (iso) => {
     if (!iso || typeof iso !== 'string' || !iso.includes('-')) return '';
@@ -21,7 +13,7 @@ const QcProductionDetails = () => {
   };
 
   const [formData, setFormData] = useState({
-    date: getTodayDate(),
+    date: '',
     partName: '',
     noOfMoulds: '',
     cPercent: '',
@@ -44,6 +36,7 @@ const QcProductionDetails = () => {
   const [submitLoading, setSubmitLoading] = useState(false);
 
   // VALIDATION STATES (null = neutral/default, true = green/valid, false = red/invalid)
+  const [dateValid, setDateValid] = useState(null);
   const [partNameValid, setPartNameValid] = useState(null);
   const [noOfMouldsValid, setNoOfMouldsValid] = useState(null);
   const [cPercentValid, setCPercentValid] = useState(null);
@@ -78,8 +71,15 @@ const QcProductionDetails = () => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    // Prevent programmatic/user changes to date
-    if (name === 'date') return;
+
+    // Validate Date
+    if (name === 'date') {
+      if (value.trim() === '') {
+        setDateValid(null);
+      } else {
+        setDateValid(value.trim().length > 0);
+      }
+    }
 
     // Validate Part Name
     if (name === 'partName') {
@@ -261,6 +261,10 @@ const QcProductionDetails = () => {
     // Check all required fields and set validation states
     let hasErrors = false;
 
+    if (!formData.date || formData.date.trim() === '') {
+      setDateValid(false);
+      hasErrors = true;
+    }
     if (!formData.partName || formData.partName.trim() === '') {
       setPartNameValid(false);
       hasErrors = true;
@@ -429,11 +433,12 @@ const QcProductionDetails = () => {
 
   const handleReset = () => {
     setFormData({
-      date: getTodayDate(), partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
+      date: '', partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
       pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
       nodularity: '', graphiteType: '', pearliteFerrite: '', hardnessBHN: '', ts: '', ys: '', el: ''
     });
     // Reset all validation states
+    setDateValid(null);
     setPartNameValid(null);
     setNoOfMouldsValid(null);
     setCPercentValid(null);
@@ -470,11 +475,31 @@ const QcProductionDetails = () => {
           </h2>
         </div>
         <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c' }}>
-          {`DATE : ${formatDisplayDate(formData.date)}`}
+          DATE : {formData.date ? formatDisplayDate(formData.date) : '-'}
         </div>
       </div>
 
       <form className="qcproduction-form-grid">
+
+            <div className="qcproduction-form-group">
+              <label>Date *</label>
+              <CustomDatePicker
+                ref={firstInputRef}
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                onKeyDown={handleKeyDown}
+                max={new Date().toISOString().split('T')[0]}
+                style={{
+                  border: dateValid === null ? '2px solid #cbd5e1' : dateValid ? '2px solid #10b981' : '2px solid #ef4444',
+                  width: '100%',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  backgroundColor: '#fff'
+                }}
+              />
+            </div>
 
             <div className="qcproduction-form-group">
               <label>Part Name *</label>

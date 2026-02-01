@@ -103,27 +103,3 @@ exports.createEntry = async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 };
-
-/** 4. STANDARD CRUD **/
-
-exports.updateEntry = async (req, res) => {
-    try {
-        const entry = await FoundrySandTestingNote.findByIdAndUpdate(
-            req.params.id, 
-            req.body, 
-            { new: true, runValidators: true }
-        );
-        res.status(200).json({ success: true, data: entry });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-exports.deleteEntry = async (req, res) => {
-    try {
-        await FoundrySandTestingNote.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true, message: 'Entry deleted.' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};

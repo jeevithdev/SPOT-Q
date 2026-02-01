@@ -3,6 +3,7 @@ import React, { useState, useRef, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Save, RefreshCw, FileText, Loader2, RotateCcw, Info } from "lucide-react";
 import CustomDatePicker from '../../Components/CustomDatePicker';
+import { CustomTimeInput, Time } from '../../Components/Buttons';
 import '../../styles/PageStyles/Moulding/DmmSettingParameters.css';
 
 const initialRow = {
@@ -35,6 +36,34 @@ const initialRow = {
 const getTodaysDate = () => {
   const today = new Date();
   return today.toISOString().split('T')[0];
+};
+
+// Helper function to create Time object from time string (e.g., "08:30 AM")
+const createTimeFromString = (timeStr) => {
+  if (!timeStr) return null;
+  try {
+    const match = timeStr.match(/(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+    if (!match) return null;
+    let hour = parseInt(match[1], 10);
+    const minute = parseInt(match[2], 10);
+    const period = match[3].toUpperCase();
+    if (period === 'PM' && hour !== 12) hour += 12;
+    if (period === 'AM' && hour === 12) hour = 0;
+    return new Time(hour, minute);
+  } catch {
+    return null;
+  }
+};
+
+// Helper function to convert Time object to string format (e.g., "08:30 AM")
+const formatTimeToString = (timeObj) => {
+  if (!timeObj) return '';
+  let hour = timeObj.hour;
+  const minute = timeObj.minute;
+  const period = hour >= 12 ? 'PM' : 'AM';
+  if (hour > 12) hour -= 12;
+  if (hour === 0) hour = 12;
+  return `${String(hour).padStart(2, '0')}:${String(minute).padStart(2, '0')} ${period}`;
 };
 
 const DmmSettingParameters = () => {
@@ -617,20 +646,16 @@ const DmmSettingParameters = () => {
           }}
         />
       </div>
-      <div className="dmm-form-group">
+      <div className="dmm-form-group time-input">
         <label>Time</label>
-        <input
-          type="text"
-          value={currentRow.time}
-          onChange={(e) => handleInputChange("time", e.target.value)}
-          onKeyDown={handleShiftKeyDown}
-          placeholder="e.g., 08:30 AM"
-          disabled={!isPrimaryLocked}
+        <CustomTimeInput
+          value={createTimeFromString(currentRow.time)}
+          onChange={(timeObj) => handleInputChange("time", formatTimeToString(timeObj))}
+          className={!isPrimaryLocked ? 'disabled' : ''}
           style={{
             border: `2px solid ${getBorderColor(currentRow.time)}`,
-            backgroundColor: (!isPrimaryLocked) ? '#f1f5f9' : '#ffffff',
-            cursor: (!isPrimaryLocked) ? 'not-allowed' : 'text',
-            transition: 'border-color 0.2s ease'
+            pointerEvents: (!isPrimaryLocked) ? 'none' : 'auto',
+            opacity: (!isPrimaryLocked) ? 0.6 : 1
           }}
         />
       </div>

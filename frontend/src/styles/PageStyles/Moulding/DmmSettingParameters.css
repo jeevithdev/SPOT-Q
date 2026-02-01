@@ -702,3 +702,28 @@
     margin-bottom: 1.5rem;
   }
 }
+
+/* Time Input Styles */
+.dmm-form-group.time-input .cus-time-input {
+  width: 100%;
+}
+
+.dmm-form-group.time-input .cus-time-input > div {
+  width: 100%;
+}
+
+.dmm-form-group.time-input .cus-time-input input {
+  width: 100%;
+  padding: 0.625rem 0.875rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-family: inherit;
+  color: #1e293b;
+  background-color: #ffffff;
+  transition: all 0.3s ease;
+}
+
+.dmm-form-group.time-input .cus-time-input.disabled input {
+  background-color: #f1f5f9;
+  cursor: not-allowed;
+}

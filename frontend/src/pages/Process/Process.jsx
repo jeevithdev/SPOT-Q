@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Loader2, FileText } from 'lucide-react';
-import { SubmitButton, ResetButton, LockPrimaryButton, DisaDropdown, TimeInput, TimeRangeInput } from '../../Components/Buttons';
+import { SubmitButton, ResetButton, LockPrimaryButton, DisaDropdown, CustomTimeInput, Time } from '../../Components/Buttons';
+import CustomDatePicker from '../../Components/CustomDatePicker';
 import '../../styles/PageStyles/Process/Process.css';
 
 export default function ProcessControl() {
@@ -9,16 +10,18 @@ export default function ProcessControl() {
     date: '', disa: '', partName: '', datecode: '', heatcode: '', quantityOfMoulds: '', metalCompositionC: '', metalCompositionSi: '',
     metalCompositionMn: '', metalCompositionP: '', metalCompositionS: '', metalCompositionMgFL: '',
     metalCompositionCr: '', metalCompositionCu: '', 
-    pouringStartHour: '', pouringStartMinute: '',
-    pouringEndHour: '', pouringEndMinute: '',
     pouringTemperature: '',
     ppCode: '', treatmentNo: '', fcNo: '', heatNo: '', conNo: '', 
-    tappingHour: '', tappingMinute: '',
     correctiveAdditionC: '',
     correctiveAdditionSi: '', correctiveAdditionMn: '', correctiveAdditionS: '', correctiveAdditionCr: '',
     correctiveAdditionCu: '', correctiveAdditionSn: '', tappingWt: '', mg: '', resMgConvertor: '',
     recOfMg: '', streamInoculant: '', pTime: '', remarks: ''
   });
+
+  // Time states using Time objects from HeroUI
+  const [pouringFromTime, setPouringFromTime] = useState(null);
+  const [pouringToTime, setPouringToTime] = useState(null);
+  const [tappingTime, setTappingTime] = useState(null);
 
 
   const inputRefs = useRef({});
@@ -68,8 +71,15 @@ export default function ProcessControl() {
   const [resMgConvertorValid, setResMgConvertorValid] = useState(null);
   const [recOfMgValid, setRecOfMgValid] = useState(null);
   const [pTimeValid, setPTimeValid] = useState(null);
+  const [dateValid, setDateValid] = useState(null);
 
-  // Set current date on mount
+  const getValidationClass = (isValid) => {
+    if (isValid === true) return 'valid-input';
+    if (isValid === false) return 'invalid-input';
+    return '';
+  };
+
+  // Set current date on mount as default
   useEffect(() => {
     const today = new Date();
     const y = today.getFullYear();
@@ -79,18 +89,47 @@ export default function ProcessControl() {
       ...prev,
       date: `${y}-${m}-${d}`
     }));
+    setDateValid(true);
   }, []);
 
-  const fieldOrder = ['disa', 'partName', 'datecode', 'heatcode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
+  // Validate pouring time when time values change
+  useEffect(() => {
+    if (pouringFromTime && pouringToTime) {
+      setPouringTimeValid(true);
+    } else if (!pouringFromTime && !pouringToTime) {
+      setPouringTimeValid(null);
+    } else {
+      setPouringTimeValid(false);
+    }
+  }, [pouringFromTime, pouringToTime]);
+
+  // Validate tapping time when time value changes
+  useEffect(() => {
+    if (tappingTime) {
+      setTappingTimeValid(true);
+    } else {
+      setTappingTimeValid(null);
+    }
+  }, [tappingTime]);
+
+  const fieldOrder = ['date', 'disa', 'partName', 'datecode', 'heatcode', 'quantityOfMoulds', 'metalCompositionC', 'metalCompositionSi',
     'metalCompositionMn', 'metalCompositionP', 'metalCompositionS', 'metalCompositionMgFL', 'metalCompositionCu',
-    'metalCompositionCr', 'pouringStartHour', 'pouringStartMinute', 'pouringEndHour', 'pouringEndMinute',
-    'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNo', 'heatNo', 'conNo',
-    'tappingHour', 'tappingMinute', 'correctiveAdditionC', 'correctiveAdditionSi', 'correctiveAdditionMn', 'correctiveAdditionS',
+    'metalCompositionCr', 'pouringTemperature', 'ppCode', 'treatmentNo', 'fcNo', 'heatNo', 'conNo',
+    'correctiveAdditionC', 'correctiveAdditionSi', 'correctiveAdditionMn', 'correctiveAdditionS',
     'correctiveAdditionCr', 'correctiveAdditionCu', 'correctiveAdditionSn', 'tappingWt', 'mg', 'resMgConvertor',
     'recOfMg', 'streamInoculant', 'pTime', 'remarks'];
 
   const handleChange = (e) => {
     const { name, value } = e.target;
+
+    // Validate Date
+    if (name === 'date') {
+      if (value.trim() === '') {
+        setDateValid(null);
+      } else {
+        setDateValid(value.trim().length > 0);
+      }
+    }
 
     // Validate DISA
     if (name === 'disa') {
@@ -199,23 +238,7 @@ export default function ProcessControl() {
       }
     }
 
-    // Validate Pouring Time (check when any time field changes)
-    if (name.includes('pouring')) {
-      const updatedData = {...formData, [name]: value};
-      const hasStartTime = updatedData.pouringStartHour && updatedData.pouringStartMinute;
-      const hasEndTime = updatedData.pouringEndHour && updatedData.pouringEndMinute;
-      
-      const allEmpty = !updatedData.pouringStartHour && !updatedData.pouringStartMinute && 
-                       !updatedData.pouringEndHour && !updatedData.pouringEndMinute;
-      
-      if (allEmpty) {
-        setPouringTimeValid(null);
-      } else if (hasStartTime && hasEndTime) {
-        setPouringTimeValid(true);
-      } else {
-        setPouringTimeValid(false);
-      }
-    }
+    // Pouring time validation is now handled by the time components
 
     // Validate Pouring Temperature
     if (name === 'pouringTemperature') {
@@ -274,21 +297,7 @@ export default function ProcessControl() {
       }
     }
 
-    // Validate Tapping Time (check when any tapping time field changes)
-    if (name === 'tappingHour' || name === 'tappingMinute') {
-      const updatedData = {...formData, [name]: value};
-      const hasTappingTime = updatedData.tappingHour && updatedData.tappingMinute;
-      
-      const allEmpty = !updatedData.tappingHour && !updatedData.tappingMinute;
-      
-      if (allEmpty) {
-        setTappingTimeValid(null);
-      } else if (hasTappingTime) {
-        setTappingTimeValid(true);
-      } else {
-        setTappingTimeValid(false);
-      }
-    }
+    // Tapping time validation is now handled by the time component
 
     // Corrective Addition validations (all are numbers)
     if (name === 'correctiveAdditionC') {
@@ -548,13 +557,13 @@ export default function ProcessControl() {
     }
     
     // Validate Time of Pouring (required)
-    if (!formData.pouringStartHour || !formData.pouringStartMinute || !formData.pouringEndHour || !formData.pouringEndMinute) {
+    if (!pouringFromTime || !pouringToTime) {
       setPouringTimeValid(false);
       hasErrors = true;
     }
     
     // Validate Tapping Time (optional but validate if empty)
-    if (!formData.tappingHour || !formData.tappingMinute) {
+    if (!tappingTime) {
       setTappingTimeValid(false);
       hasErrors = true;
     }
@@ -639,35 +648,32 @@ export default function ProcessControl() {
     try {
       setSubmitLoading(true);
 
-      // Combine time fields into format: "HH:MM - HH:MM"
+      // Format time from Time objects
       let timeOfPouring = '';
-      if (formData.pouringStartHour && formData.pouringStartMinute) {
-        const startHour = String(formData.pouringStartHour).padStart(2, '0');
-        const startMin = String(formData.pouringStartMinute).padStart(2, '0');
-        timeOfPouring = `${startHour}:${startMin}`;
-        
-        if (formData.pouringEndHour && formData.pouringEndMinute) {
-          const endHour = String(formData.pouringEndHour).padStart(2, '0');
-          const endMin = String(formData.pouringEndMinute).padStart(2, '0');
-          timeOfPouring += ` - ${endHour}:${endMin}`;
-        }
+      if (pouringFromTime && pouringToTime) {
+        const formatTime = (time) => {
+          const hour = time.hour % 12 || 12;
+          const minute = String(time.minute).padStart(2, '0');
+          const period = time.hour >= 12 ? 'PM' : 'AM';
+          return `${hour}:${minute} ${period}`;
+        };
+        timeOfPouring = `${formatTime(pouringFromTime)} - ${formatTime(pouringToTime)}`;
       }
 
-      // Combine tapping time fields into format: "HH:MM"
-      let tappingTime = '';
-      if (formData.tappingHour && formData.tappingMinute) {
-        const hour = String(formData.tappingHour).padStart(2, '0');
-        const min = String(formData.tappingMinute).padStart(2, '0');
-        tappingTime = `${hour}:${min}`;
+      // Format tapping time
+      let tappingTimeStr = '';
+      if (tappingTime) {
+        const hour = tappingTime.hour % 12 || 12;
+        const minute = String(tappingTime.minute).padStart(2, '0');
+        const period = tappingTime.hour >= 12 ? 'PM' : 'AM';
+        tappingTimeStr = `${hour}:${minute} ${period}`;
       }
 
-      // Prepare payload without the separate time fields
-      const { pouringStartHour, pouringStartMinute,
-              pouringEndHour, pouringEndMinute,
-              tappingHour, tappingMinute, ...payload } = formData;
+      // Prepare payload
+      const payload = { ...formData };
       
       payload.timeOfPouring = timeOfPouring;
-      payload.tappingTime = tappingTime;
+      payload.tappingTime = tappingTimeStr;
 
       // Send all data (primary + other fields) combined to backend
       // Backend will find existing document by date+disa and update it, or create new one
@@ -703,6 +709,11 @@ export default function ProcessControl() {
           }
         });
         setFormData(resetData);
+        
+        // Reset time states
+        setPouringFromTime(null);
+        setPouringToTime(null);
+        setTappingTime(null);
         
         // Reset all validation states to null
         setPartNameValid(null);
@@ -761,33 +772,37 @@ export default function ProcessControl() {
   };
 
 const handleReset = () => {
-    // Get current date
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    const currentDate = `${y}-${m}-${d}`;
-
-    // Reset all fields except primary data (date and disa)
-    const resetData = { date: currentDate };
+    // Reset all fields except disa (if primary is locked)
+    const resetData = { date: '' };
     Object.keys(formData).forEach(key => {
-      if (key !== 'date' && key !== 'disa') {
+      if (key !== 'disa') {
         resetData[key] = '';
       } else if (key === 'disa') {
-        resetData[key] = formData.disa; // Keep disa
+        resetData[key] = formData.disa; // Keep disa if primary is locked
       }
     });
     setFormData(resetData);
+    
+    // Reset time states
+    setPouringFromTime(null);
+    setPouringToTime(null);
+    setTappingTime(null);
+    
+    // Reset all validation states
+    setDateValid(null);
+    setDisaValid(formData.disa ? true : null);
+    setPartNameValid(null);
+    setDatecodeValid(null);
+    setHeatcodeValid(null);
     // Keep primary locked if it was locked
-    // Focus on Part Name for next entry
+    // Focus on date for next entry
     setTimeout(() => {
-      inputRefs.current.partName?.focus();
+      inputRefs.current.date?.focus();
     }, 100);
   };
 
   return (
     <>
-
       <div className="process-header">
         <div className="process-header-text">
           <h2>
@@ -810,6 +825,27 @@ const handleReset = () => {
             </div>
 
             <div className="process-form-group">
+              <label>Date *</label>
+              <CustomDatePicker
+                ref={el => inputRefs.current.date = el}
+                name="date"
+                value={formData.date}
+                onChange={handleChange}
+                onKeyDown={e => handleKeyDown(e, 'date')}
+                max={new Date().toISOString().split('T')[0]}
+                disabled={isPrimarySaved}
+                style={{
+                  border: isPrimarySaved ? '2px solid #cbd5e1' : (dateValid === null ? '2px solid #cbd5e1' : dateValid ? '2px solid #10b981' : '2px solid #ef4444'),
+                  width: '100%',
+                  padding: '0.625rem 0.875rem',
+                  borderRadius: '8px',
+                  fontSize: '0.875rem',
+                  backgroundColor: '#fff'
+                }}
+              />
+            </div>
+
+            <div className="process-form-group">
               <label>DISA *</label>
               <DisaDropdown
                 ref={el => inputRefs.current.disa = el}
@@ -819,7 +855,9 @@ const handleReset = () => {
                 onKeyDown={e => handleKeyDown(e, 'disa')}
                 disabled={isPrimarySaved}
                 className={
-                  disaValid === null
+                  isPrimarySaved
+                    ? ""
+                    : disaValid === null
                     ? ""
                     : disaValid
                     ? "valid-input"
@@ -1087,28 +1125,26 @@ const handleReset = () => {
             {/* Divider line */}
             <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
-            <div className="process-form-group time-range-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="process-form-group" style={{ gridColumn: '1 / -1' }}>
               <label>Time of Pouring (Range) *</label>
-              <TimeRangeInput
-                startHourRef={el => inputRefs.current.pouringStartHour = el}
-                startMinuteRef={el => inputRefs.current.pouringStartMinute = el}
-                endHourRef={el => inputRefs.current.pouringEndHour = el}
-                endMinuteRef={el => inputRefs.current.pouringEndMinute = el}
-                startHourName="pouringStartHour"
-                startMinuteName="pouringStartMinute"
-                endHourName="pouringEndHour"
-                endMinuteName="pouringEndMinute"
-                startHourValue={formData.pouringStartHour}
-                startMinuteValue={formData.pouringStartMinute}
-                endHourValue={formData.pouringEndHour}
-                endMinuteValue={formData.pouringEndMinute}
-                onChange={handleChange}
-                onKeyDown={(e) => {
-                  const name = e.target.name;
-                  handleKeyDown(e, name);
-                }}
-                validationState={pouringTimeValid}
-              />
+              <div style={{ display: 'flex', gap: '1.5rem' }}>
+                <div>
+                  <label>From Time</label>
+                  <CustomTimeInput
+                    value={pouringFromTime}
+                    onChange={setPouringFromTime}
+                    className={pouringTimeValid === null ? '' : pouringTimeValid ? 'valid-input' : 'invalid-input'}
+                  />
+                </div>
+                <div>
+                  <label>To Time</label>
+                  <CustomTimeInput
+                    value={pouringToTime}
+                    onChange={setPouringToTime}
+                    className={pouringTimeValid === null ? '' : pouringTimeValid ? 'valid-input' : 'invalid-input'}
+                  />
+                </div>
+              </div>
             </div>
 
             <div className="process-form-group">
@@ -1187,16 +1223,6 @@ const handleReset = () => {
                     ? "valid-input"
                     : "invalid-input"
                 }
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 0.875rem',
-                  border: '2px solid #cbd5e1',
-                  borderRadius: '8px',
-                  fontSize: '0.875rem',
-                  backgroundColor: '#ffffff',
-                  color: '#1e293b',
-                  cursor: 'pointer'
-                }}
               >
                 <option value="">Select F/C No.</option>
                 <option value="I">I</option>
@@ -1248,29 +1274,17 @@ const handleReset = () => {
               />
             </div>
 
-            <div className="process-form-group" style={{ gridColumn: '1 / -1' }}>
+            <div className="process-form-group">
               <label>Tapping Time</label>
-              <TimeInput
-                hourRef={el => inputRefs.current.tappingHour = el}
-                minuteRef={el => inputRefs.current.tappingMinute = el}
-                hourName="tappingHour"
-                minuteName="tappingMinute"
-                hourValue={formData.tappingHour}
-                minuteValue={formData.tappingMinute}
-                onChange={handleChange}
-                onKeyDown={(e) => {
-                  const name = e.target.name;
-                  handleKeyDown(e, name);
-                }}
-                validationState={tappingTimeValid}
+              <CustomTimeInput
+                value={tappingTime}
+                onChange={setTappingTime}
+                className={tappingTimeValid === null ? '' : tappingTimeValid ? 'valid-input' : 'invalid-input'}
               />
             </div>
 
-            <div className="section-header corrective-addition-header">
-              <h3>Corrective Addition (Kgs)</h3>
-            </div>
             <div className="process-form-group">
-              <label>C</label>
+              <label>Corrective Addition C</label>
               <input 
                 ref={r => inputRefs.current.correctiveAdditionC = r} 
                 type="number" 
@@ -1289,8 +1303,9 @@ const handleReset = () => {
                 }
               />
             </div>
+
             <div className="process-form-group">
-              <label>Si</label>
+              <label>Corrective Addition Si</label>
               <input 
                 ref={r => inputRefs.current.correctiveAdditionSi = r} 
                 type="number" 
@@ -1309,8 +1324,9 @@ const handleReset = () => {
                 }
               />
             </div>
+
             <div className="process-form-group">
-              <label>Mn</label>
+              <label>Corrective Addition Mn</label>
               <input 
                 ref={r => inputRefs.current.correctiveAdditionMn = r} 
                 type="number" 
@@ -1329,8 +1345,9 @@ const handleReset = () => {
                 }
               />
             </div>
+
             <div className="process-form-group">
-              <label>S</label>
+              <label>Corrective Addition S</label>
               <input 
                 ref={r => inputRefs.current.correctiveAdditionS = r} 
                 type="number" 
@@ -1344,66 +1361,6 @@ const handleReset = () => {
                   corrSValid === null
                     ? ""
                     : corrSValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
-            <div className="process-form-group">
-              <label>Cr</label>
-              <input 
-                ref={r => inputRefs.current.correctiveAdditionCr = r} 
-                type="number" 
-                name="correctiveAdditionCr" 
-                step="0.01" 
-                value={formData.correctiveAdditionCr} 
-                onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionCr')} 
-                placeholder="Kgs"
-                className={
-                  corrCrValid === null
-                    ? ""
-                    : corrCrValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
-            <div className="process-form-group">
-              <label>Cu</label>
-              <input 
-                ref={r => inputRefs.current.correctiveAdditionCu = r} 
-                type="number" 
-                name="correctiveAdditionCu" 
-                step="0.01" 
-                value={formData.correctiveAdditionCu} 
-                onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionCu')} 
-                placeholder="Kgs"
-                className={
-                  corrCuValid === null
-                    ? ""
-                    : corrCuValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
-            <div className="process-form-group">
-              <label>Sn</label>
-              <input 
-                ref={r => inputRefs.current.correctiveAdditionSn = r} 
-                type="number" 
-                name="correctiveAdditionSn" 
-                step="0.01" 
-                value={formData.correctiveAdditionSn} 
-                onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionSn')} 
-                placeholder="Kgs"
-                className={
-                  corrSnValid === null
-                    ? ""
-                    : corrSnValid
                     ? "valid-input"
                     : "invalid-input"
                 }

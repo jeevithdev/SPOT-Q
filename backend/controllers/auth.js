@@ -2,7 +2,6 @@ const User = require('../models/user');
 const LoginActivity = require('../models/LoginActivity');
 const { generateToken } = require('../utils/jwt');
 const { hashPassword, comparePassword } = require('../utils/password');
-
 // Centralized Department List
 const DEPARTMENTS = [
     'Melting', 'Sand Lab', 'Moulding', 'Process', 'Micro Tensile',

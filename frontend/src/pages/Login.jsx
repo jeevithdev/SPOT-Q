@@ -1,10 +1,11 @@
 import React, { useState, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { EyeButton } from "../Components/Buttons";
+import Loader from "../Components/Loader";
 import "../styles/PageStyles/Login.css";
 
 const Login = () => {
-  const { login } = useContext(AuthContext);
+  const { setUser, setExpiresAt } = useContext(AuthContext);
 
   // Login state
   const [employeeId, setEmployeeId] = useState("");
@@ -13,6 +14,9 @@ const Login = () => {
   
   // Password visibility state
   const [showPassword, setShowPassword] = useState(false);
+  
+  // Loading state for navigation
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -23,18 +27,61 @@ const Login = () => {
       return;
     }
 
+    setIsLoading(true);
+    
     try {
-      await login(employeeId, password);
-      // Navigation happens automatically via AuthContext setting user
+      // Call login API directly
+      const response = await fetch('http://localhost:5000/api/v1/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ employeeId, password }),
+      });
+
+      const data = await response.json();
+
+      if (response.ok && data.success) {
+        // Wait for minimum 3 seconds while showing loader
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        // Save data to localStorage
+        const readableExpiry = new Date(data.expiresAt).toLocaleString('en-US', {
+          year: 'numeric',
+          month: 'short',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        });
+
+        localStorage.setItem('user', JSON.stringify(data.user));
+        localStorage.setItem('expiresAt', data.expiresAt);
+        localStorage.setItem('expiresAtReadable', readableExpiry);
+        
+        // Update AuthContext state directly - triggers React Router navigation
+        setUser(data.user);
+        setExpiresAt(data.expiresAt);
+      } else {
+        setIsLoading(false);
+        setError(data.message || 'Login failed. Please check your credentials.');
+      }
     } catch (err) {
+      setIsLoading(false);
       setError(err?.message || "Login failed. Please check your credentials.");
     }
   };
 
   return (
-    <div className="login-container">
-      {/* Left side - Company Logo */}
-      <div className="login-left">
+    <>
+      {isLoading ? (
+        <div className="login-loader-overlay">
+          <Loader />
+        </div>
+      ) : null}
+      <div className="login-container" style={{ display: isLoading ? 'none' : 'flex' }}>
+        {/* Left side - Company Logo */}
+        <div className="login-left">
         <img
           src="/images/sakthiautologo.png"
           alt="Sakthi Auto Logo"
@@ -98,6 +145,7 @@ const Login = () => {
         </div>
       </div>
     </div>
+    </>
   );
 };
 

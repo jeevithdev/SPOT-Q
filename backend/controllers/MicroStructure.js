@@ -76,36 +76,6 @@ exports.createEntry = async (req, res) => {
     }
 };
 
-exports.updateEntry = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const document = await MicroStructure.findOne({ 'entries._id': id });
-        if (!document) return res.status(404).json({ success: false, message: 'Record not found.' });
-
-        const entry = document.entries.id(id);
-        Object.assign(entry, req.body); // Dynamically updates all provided fields
-        
-        await document.save();
-        res.status(200).json({ success: true, data: entry });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-exports.deleteEntry = async (req, res) => {
-    try {
-        const { id } = req.params;
-        const document = await MicroStructure.findOne({ 'entries._id': id });
-        if (document) {
-            document.entries.pull(id);
-            await document.save();
-        }
-        res.status(200).json({ success: true, message: 'Entry removed successfully.' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};
-
 /** 4. ADVANCED FILTERING (History View) **/
 
 exports.filterEntries = async (req, res) => {

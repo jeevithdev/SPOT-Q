@@ -12,10 +12,13 @@ export const AuthProvider = ({ children }) => {
     
     const [expiresAt, setExpiresAt] = useState(localStorage.getItem('expiresAt') || null);
     const [loading, setLoading] = useState(false);
+    const [logoutLoading, setLogoutLoading] = useState(false);
 
     // Logout function: Clears all memory and calls backend to clear cookie
     const logout = useCallback(async () => {
         console.warn("Session ended. Clearing data and logging out...");
+        
+        setLogoutLoading(true);
         
         // Call backend to clear cookie
         try {
@@ -27,14 +30,18 @@ export const AuthProvider = ({ children }) => {
             console.error('Logout error:', error);
         }
         
+        // Wait for minimum 2 seconds to show loader
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
         setUser(null);
         setExpiresAt(null);
         localStorage.removeItem('user');
         localStorage.removeItem('expiresAt');
         localStorage.removeItem('expiresAtReadable');
         localStorage.removeItem('token'); // Clean up old token if exists
-        // Optional: Redirect to login page
-        window.location.href = '/login';
+        
+        setLogoutLoading(false);
+        // Navigation happens automatically via React Router when user becomes null
     }, []);
 
     // Auto-logout on token expiry on .env defined time
@@ -129,7 +136,10 @@ export const AuthProvider = ({ children }) => {
 
     const value = {
         user,
+        setUser,
+        setExpiresAt,
         loading,
+        logoutLoading,
         login,
         logout,
         // Check if user is Admin based on role or department

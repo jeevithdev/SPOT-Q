@@ -4,8 +4,6 @@ const {
     createEntry, 
     getEntriesByDate, 
     getGroupedByDate, 
-    updateEntry, 
-    deleteEntry, 
     getCurrentDate, 
     getValidationSchema, 
     filterEntries 
@@ -17,8 +15,5 @@ router.get('/grouped', getGroupedByDate);
 router.get('/by-date', getEntriesByDate);
 router.get('/filter', filterEntries);
 router.post('/', createEntry);
-router.route('/:id')
-    .put(updateEntry)
-    .delete(deleteEntry);
 
 module.exports = router;

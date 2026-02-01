@@ -1,6 +1,7 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef } from 'react';
 import { Save, Loader2 } from 'lucide-react';
 import { DisaDropdown, SubmitButton, ResetButton } from '../../Components/Buttons';
+import CustomDatePicker from '../../Components/CustomDatePicker';
 import '../../styles/PageStyles/MicroStructure/MicroStructure.css';
 
 const MicroStructure = () => {
@@ -27,6 +28,7 @@ const MicroStructure = () => {
   });
 
   // VALIDATION STATES
+  const [dateValid, setDateValid] = useState(null);
   const [disaValid, setDisaValid] = useState(null);
   const [partNameValid, setPartNameValid] = useState(null);
   const [dateCodeValid, setDateCodeValid] = useState(null);
@@ -43,7 +45,6 @@ const MicroStructure = () => {
   const [pearliteToValid, setPearliteToValid] = useState(null);
   const [carbideValid, setCarbideValid] = useState(null);
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [dateLoading, setDateLoading] = useState(true);
   const [submitError, setSubmitError] = useState('');
 
   // Success popup state
@@ -52,39 +53,6 @@ const MicroStructure = () => {
   // Refs
   const submitButtonRef = useRef(null);
   const firstInputRef = useRef(null);
-
-  // ====================== Fetch current date ======================
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setDateLoading(true);
-
-        const resp = await fetch('http://localhost:5000/api/v1/micro-structure/current-date', {
-          method: 'GET',
-          credentials: 'include',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        });
-        const dateData = await resp.json();
-        if (dateData.success && dateData.date) {
-          setFormData(prev => ({ ...prev, date: dateData.date }));
-        }
-      } catch (error) {
-        console.error('Error fetching initial data:', error);
-
-        const today = new Date();
-        const y = today.getFullYear();
-        const m = String(today.getMonth() + 1).padStart(2, '0');
-        const d = String(today.getDate()).padStart(2, '0');
-        setFormData(prev => ({ ...prev, date: `${y}-${m}-${d}` }));
-      } finally {
-        setDateLoading(false);
-      }
-    };
-
-    fetchInitialData();
-  }, []);
 
   // ====================== Format date ======================
   const formatDisplayDate = (iso) => {
@@ -97,7 +65,14 @@ const MicroStructure = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "date") return;
+    // Validate Date
+    if (name === "date") {
+      if (value.trim() === '') {
+        setDateValid(null);
+      } else {
+        setDateValid(value.trim().length > 0);
+      }
+    }
 
     // --- VALIDATE DISA: required ---
     if (name === "disa") {
@@ -251,6 +226,7 @@ const MicroStructure = () => {
 
     // Validate required fields
     const requiredFields = [
+      { name: 'date', value: formData.date, label: 'Date', setState: setDateValid },
       { name: 'disa', value: formData.disa, label: 'DISA', setState: setDisaValid },
       { name: 'partName', value: formData.partName, label: 'Part Name', setState: setPartNameValid },
       { name: 'dateCode', value: formData.dateCode, label: 'Date Code', setState: setDateCodeValid },
@@ -393,92 +369,41 @@ const MicroStructure = () => {
 
   // ====================== Reset ======================
   const handleReset = async () => {
-    try {
-      const resp = await fetch('http://localhost:5000/api/v1/micro-structure/current-date', {
-        method: 'GET',
-        credentials: 'include',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
-      const dateData = await resp.json();
-      const currentDate = dateData.success && dateData.date ? dateData.date : formData.date;
+    setFormData({
+      date: '',
+      disa: '',
+      partName: '',
+      dateCode: '',
+      heatCode: '',
+      nodularity: '',
+      graphiteType: '',
+      countNosFrom: '',
+      countNosTo: '',
+      sizeFrom: '',
+      sizeTo: '',
+      ferriteFrom: '',
+      ferriteTo: '',
+      pearliteFrom: '',
+      pearliteTo: '',
+      carbide: '',
+      remarks: ''
+    });
 
-      setFormData({
-        date: currentDate,
-        disa: '',
-        partName: '',
-        dateCode: '',
-        heatCode: '',
-        nodularity: '',
-        graphiteType: '',
-        countNosFrom: '',
-        countNosTo: '',
-        sizeFrom: '',
-        sizeTo: '',
-        ferriteFrom: '',
-        ferriteTo: '',
-        pearliteFrom: '',
-        pearliteTo: '',
-        carbide: '',
-        remarks: ''
-      });
-
-      setDisaValid(null);
-      setPartNameValid(null);
-      setDateCodeValid(null);
-      setHeatCodeValid(null);
-      setNodularityValid(null);
-      setGraphiteTypeValid(null);
-      setCountNosFromValid(null);
-      setCountNosToValid(null);
-      setSizeFromValid(null);
-      setSizeToValid(null);
-      setFerriteFromValid(null);
-      setFerriteToValid(null);
-      setPearliteFromValid(null);
-      setPearliteToValid(null);
-      setCarbideValid(null);
-
-    } catch (error) {
-      console.error('Error resetting form:', error);
-
-      setFormData({
-        date: formData.date,
-        disa: '',
-        partName: '',
-        dateCode: '',
-        heatCode: '',
-        nodularity: '',
-        graphiteType: '',
-        countNosFrom: '',
-        countNosTo: '',
-        sizeFrom: '',
-        sizeTo: '',
-        ferriteFrom: '',
-        ferriteTo: '',
-        pearliteFrom: '',
-        pearliteTo: '',
-        carbide: '',
-        remarks: ''
-      });
-
-      setDisaValid(null);
-      setPartNameValid(null);
-      setDateCodeValid(null);
-      setHeatCodeValid(null);
-      setNodularityValid(null);
-      setGraphiteTypeValid(null);
-      setCountNosFromValid(null);
-      setCountNosToValid(null);
-      setSizeFromValid(null);
-      setSizeToValid(null);
-      setFerriteFromValid(null);
-      setFerriteToValid(null);
-      setPearliteFromValid(null);
-      setPearliteToValid(null);
-      setCarbideValid(null);
-    }
+    setDisaValid(null);
+    setPartNameValid(null);
+    setDateCodeValid(null);
+    setHeatCodeValid(null);
+    setNodularityValid(null);
+    setGraphiteTypeValid(null);
+    setCountNosFromValid(null);
+    setCountNosToValid(null);
+    setSizeFromValid(null);
+    setSizeToValid(null);
+    setFerriteFromValid(null);
+    setFerriteToValid(null);
+    setPearliteFromValid(null);
+    setPearliteToValid(null);
+    setCarbideValid(null);
   };
 
   // ====================== JSX ======================
@@ -492,13 +417,34 @@ const MicroStructure = () => {
           </h2>
         </div>
         <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c' }}>
-          {dateLoading ? 'Loading date...' : `DATE : ${formatDisplayDate(formData.date)}`}
+          DATE : {formData.date ? formatDisplayDate(formData.date) : '-'}
         </div>
       </div>
 
       <form className="microstructure-form-grid">
         <div className="microstructure-first-row">
-          {/* Row 1: DISA | Part Name | Date Code | Heat Code | Nodularity | Graphite */}
+          <div className="microstructure-form-group date">
+            <label>
+              Date <span className="required-indicator">*</span>
+            </label>
+            <CustomDatePicker
+              ref={firstInputRef}
+              name="date"
+              value={formData.date}
+              onChange={handleChange}
+              onKeyDown={handleKeyDown}
+              max={new Date().toISOString().split('T')[0]}
+              style={{
+                border: dateValid === null ? '2px solid #cbd5e1' : dateValid ? '2px solid #10b981' : '2px solid #ef4444',
+                width: '100%',
+                padding: '0.625rem 0.875rem',
+                borderRadius: '8px',
+                fontSize: '0.875rem',
+                backgroundColor: '#fff'
+              }}
+            />
+          </div>
+
           <div className="microstructure-form-group disa">
             <label>
               DISA <span className="required-indicator">*</span>

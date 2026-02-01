@@ -221,24 +221,3 @@ exports.createEntry = async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 };
-
-/** 3. STANDARD CRUD **/
-
-exports.updateEntry = async (req, res) => {
-    try {
-        const entry = await CupolaHolderLog.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-        if (!entry) return res.status(404).json({ success: false, message: 'Log not found' });
-        res.status(200).json({ success: true, data: entry });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-exports.deleteEntry = async (req, res) => {
-    try {
-        await CupolaHolderLog.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true, message: 'Log deleted successfully.' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};

@@ -6,6 +6,7 @@ import { AuthContext } from './src/context/AuthContext';
 import Sidebar from './src/Components/sidebar';
 import Dashboard from './src/Components/Dashboard';
 import DepartmentRouteGuard from './src/Components/DepartmentRouteGuard';
+import Loader from './src/Components/Loader';
 
 // Pages
 import Login from './src/pages/Login';
@@ -80,10 +81,19 @@ const ProtectedLayout = () => {
 };
 
 const App = () => {
-  const { user, loading } = useContext(AuthContext);
+  const { user, loading, logoutLoading } = useContext(AuthContext);
 
   if (loading) {
     return null; // Show nothing while loading
+  }
+
+  // Show logout loader
+  if (logoutLoading) {
+    return (
+      <div className="logout-loader-overlay">
+        <Loader />
+      </div>
+    );
   }
 
   return (

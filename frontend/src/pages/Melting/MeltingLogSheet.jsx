@@ -1,17 +1,22 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import { Save, Loader2, RotateCcw } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
-import { TimeInput } from '../../Components/Buttons';
+import { CustomTimeInput, Time } from '../../Components/Buttons';
 import '../../styles/PageStyles/Melting/MeltingLogSheet.css';
 
 const MeltingLogSheet = () => {
   // Helper function to get current date in YYYY-MM-DD format
   const getCurrentDate = () => {
-    const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    try {
+      const today = new Date();
+      const year = today.getFullYear();
+      const month = String(today.getMonth() + 1).padStart(2, '0');
+      const day = String(today.getDate()).padStart(2, '0');
+      return `${year}-${month}-${day}`;
+    } catch (error) {
+      console.error('Error getting current date:', error);
+      return new Date().toISOString().split('T')[0];
+    }
   };
 
   // Primary: Date, Shift, Furnace No., Panel, Cumulative Liquid metal, Final KWHr, Initial KWHr, Total Units, Cumulative Units
@@ -112,24 +117,6 @@ const MeltingLogSheet = () => {
     furnace4KwHr: ''
   });
 
-  // Refs for time inputs
-  const chargingTimeHourRef = useRef(null);
-  const chargingTimeMinuteRef = useRef(null);
-  const labCoinTimeHourRef = useRef(null);
-  const labCoinTimeMinuteRef = useRef(null);
-  const deslagingTimeFromHourRef = useRef(null);
-  const deslagingTimeFromMinuteRef = useRef(null);
-  const deslagingTimeToHourRef = useRef(null);
-  const deslagingTimeToMinuteRef = useRef(null);
-  const metalReadyTimeHourRef = useRef(null);
-  const metalReadyTimeMinuteRef = useRef(null);
-  const waitingForTappingFromHourRef = useRef(null);
-  const waitingForTappingFromMinuteRef = useRef(null);
-  const waitingForTappingToHourRef = useRef(null);
-  const waitingForTappingToMinuteRef = useRef(null);
-  const table4TimeHourRef = useRef(null);
-  const table4TimeMinuteRef = useRef(null);
-
   // Validation states (null = neutral, true = valid/green, false = invalid/red)
   // Primary validations
   const [shiftValid, setShiftValid] = useState(null);
@@ -204,6 +191,24 @@ const MeltingLogSheet = () => {
   const [furnace4GldValid, setFurnace4GldValid] = useState(null);
   const [furnace4KwHrValid, setFurnace4KwHrValid] = useState(null);
 
+  // Helper functions to convert between Time object and hour/minute strings
+  const createTimeFromHourMinute = (hour, minute) => {
+    if (!hour && !minute) return null;
+    const h = parseInt(hour) || 0;
+    const m = parseInt(minute) || 0;
+    return new Time(h, m);
+  };
+
+  const handleTimeChange = (tableNum, hourField, minuteField, timeValue) => {
+    if (!timeValue) {
+      handleTableChange(tableNum, hourField, '');
+      handleTableChange(tableNum, minuteField, '');
+    } else {
+      handleTableChange(tableNum, hourField, timeValue.hour.toString());
+      handleTableChange(tableNum, minuteField, timeValue.minute.toString());
+    }
+  };
+
   const [loadingStates, setLoadingStates] = useState({
     table1: false,
     table2: false,
@@ -211,15 +216,6 @@ const MeltingLogSheet = () => {
     table4: false,
     table5: false
   });
-
-  // Automatically fetch data for current date on component mount
-  useEffect(() => {
-    const currentDate = getCurrentDate();
-    if (currentDate) {
-      fetchPrimaryData(currentDate);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []); // Run only once on mount
 
   const handleTableChange = (tableNum, field, value) => {
     // Validation logic for Table 1
@@ -1500,15 +1496,10 @@ const MeltingLogSheet = () => {
 
           <div className="melting-log-form-group">
             <label>Charging Time</label>
-            <TimeInput
-              hourRef={chargingTimeHourRef}
-              minuteRef={chargingTimeMinuteRef}
-              hourName="chargingTimeHour"
-              minuteName="chargingTimeMinute"
-              hourValue={table1.chargingTimeHour}
-              minuteValue={table1.chargingTimeMinute}
-              onChange={(e) => handleTableChange(1, e.target.name, e.target.value)}
-              validationState={chargingTimeValid}
+            <CustomTimeInput
+              value={createTimeFromHourMinute(table1.chargingTimeHour, table1.chargingTimeMinute)}
+              onChange={(time) => handleTimeChange(1, 'chargingTimeHour', 'chargingTimeMinute', time)}
+              className={getValidationClass(chargingTimeValid)}
             />
           </div>
 
@@ -1809,15 +1800,10 @@ const MeltingLogSheet = () => {
         <div className="melting-log-form-grid melting-log-table5-grid" style={{ rowGap: '1.5rem' }}>
           <div className="melting-log-form-group">
             <label>Lab Coin - Time</label>
-            <TimeInput
-              hourRef={labCoinTimeHourRef}
-              minuteRef={labCoinTimeMinuteRef}
-              hourName="labCoinTimeHour"
-              minuteName="labCoinTimeMinute"
-              hourValue={table3.labCoinTimeHour}
-              minuteValue={table3.labCoinTimeMinute}
-              onChange={(e) => handleTableChange(3, e.target.name, e.target.value)}
-              validationState={labCoinTimeValid}
+            <CustomTimeInput
+              value={createTimeFromHourMinute(table3.labCoinTimeHour, table3.labCoinTimeMinute)}
+              onChange={(time) => handleTimeChange(3, 'labCoinTimeHour', 'labCoinTimeMinute', time)}
+              className={getValidationClass(labCoinTimeValid)}
             />
           </div>
 
@@ -1835,43 +1821,28 @@ const MeltingLogSheet = () => {
 
           <div className="melting-log-form-group">
             <label>Deslaging Time - From</label>
-            <TimeInput
-              hourRef={deslagingTimeFromHourRef}
-              minuteRef={deslagingTimeFromMinuteRef}
-              hourName="deslagingTimeFromHour"
-              minuteName="deslagingTimeFromMinute"
-              hourValue={table3.deslagingTimeFromHour}
-              minuteValue={table3.deslagingTimeFromMinute}
-              onChange={(e) => handleTableChange(3, e.target.name, e.target.value)}
-              validationState={deslagingTimeFromValid}
+            <CustomTimeInput
+              value={createTimeFromHourMinute(table3.deslagingTimeFromHour, table3.deslagingTimeFromMinute)}
+              onChange={(time) => handleTimeChange(3, 'deslagingTimeFromHour', 'deslagingTimeFromMinute', time)}
+              className={getValidationClass(deslagingTimeFromValid)}
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Deslaging Time -To</label>
-            <TimeInput
-              hourRef={deslagingTimeToHourRef}
-              minuteRef={deslagingTimeToMinuteRef}
-              hourName="deslagingTimeToHour"
-              minuteName="deslagingTimeToMinute"
-              hourValue={table3.deslagingTimeToHour}
-              minuteValue={table3.deslagingTimeToMinute}
-              validationState={deslagingTimeToValid}
-              onChange={(e) => handleTableChange(3, e.target.name, e.target.value)}
+            <CustomTimeInput
+              value={createTimeFromHourMinute(table3.deslagingTimeToHour, table3.deslagingTimeToMinute)}
+              onChange={(time) => handleTimeChange(3, 'deslagingTimeToHour', 'deslagingTimeToMinute', time)}
+              className={getValidationClass(deslagingTimeToValid)}
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Metal Ready Time</label>
-            <TimeInput
-              hourRef={metalReadyTimeHourRef}
-              minuteRef={metalReadyTimeMinuteRef}
-              hourName="metalReadyTimeHour"
-              minuteName="metalReadyTimeMinute"
-              hourValue={table3.metalReadyTimeHour}
-              minuteValue={table3.metalReadyTimeMinute}
-              validationState={metalReadyTimeValid}
-              onChange={(e) => handleTableChange(3, e.target.name, e.target.value)}
+            <CustomTimeInput
+              value={createTimeFromHourMinute(table3.metalReadyTimeHour, table3.metalReadyTimeMinute)}
+              onChange={(time) => handleTimeChange(3, 'metalReadyTimeHour', 'metalReadyTimeMinute', time)}
+              className={getValidationClass(metalReadyTimeValid)}
             />
           </div>
         </div>
@@ -1879,29 +1850,19 @@ const MeltingLogSheet = () => {
         <div className="melting-log-form-grid melting-log-table5-grid" style={{ rowGap: '1.5rem', marginTop: '1.5rem' }}>
           <div className="melting-log-form-group">
             <label>Waiting for Tapping- From</label>
-            <TimeInput
-              hourRef={waitingForTappingFromHourRef}
-              minuteRef={waitingForTappingFromMinuteRef}
-              hourName="waitingForTappingFromHour"
-              minuteName="waitingForTappingFromMinute"
-              hourValue={table3.waitingForTappingFromHour}
-              validationState={waitingForTappingFromValid}
-              minuteValue={table3.waitingForTappingFromMinute}
-              onChange={(e) => handleTableChange(3, e.target.name, e.target.value)}
+            <CustomTimeInput
+              value={createTimeFromHourMinute(table3.waitingForTappingFromHour, table3.waitingForTappingFromMinute)}
+              onChange={(time) => handleTimeChange(3, 'waitingForTappingFromHour', 'waitingForTappingFromMinute', time)}
+              className={getValidationClass(waitingForTappingFromValid)}
             />
           </div>
 
           <div className="melting-log-form-group">
             <label>Waiting for Tapping -To</label>
-            <TimeInput
-              hourRef={waitingForTappingToHourRef}
-              minuteRef={waitingForTappingToMinuteRef}
-              hourName="waitingForTappingToHour"
-              minuteName="waitingForTappingToMinute"
-              hourValue={table3.waitingForTappingToHour}
-              validationState={waitingForTappingToValid}
-              minuteValue={table3.waitingForTappingToMinute}
-              onChange={(e) => handleTableChange(3, e.target.name, e.target.value)}
+            <CustomTimeInput
+              value={createTimeFromHourMinute(table3.waitingForTappingToHour, table3.waitingForTappingToMinute)}
+              onChange={(time) => handleTimeChange(3, 'waitingForTappingToHour', 'waitingForTappingToMinute', time)}
+              className={getValidationClass(waitingForTappingToValid)}
             />
           </div>
 
@@ -1933,15 +1894,10 @@ const MeltingLogSheet = () => {
         <div className="melting-log-form-grid">
         <div className="melting-log-form-group">
           <label>Time</label>
-          <TimeInput
-            hourRef={table4TimeHourRef}
-            minuteRef={table4TimeMinuteRef}
-            hourName="timeHour"
-            minuteName="timeMinute"
-            hourValue={table4.timeHour}
-            validationState={table4TimeValid}
-            minuteValue={table4.timeMinute}
-            onChange={(e) => handleTableChange(4, e.target.name, e.target.value)}
+          <CustomTimeInput
+            value={createTimeFromHourMinute(table4.timeHour, table4.timeMinute)}
+            onChange={(time) => handleTimeChange(4, 'timeHour', 'timeMinute', time)}
+            className={getValidationClass(table4TimeValid)}
           />
         </div>
 

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Save, Loader2, RotateCcw } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
-import { TimeInput } from '../../Components/Buttons';
+import { CustomTimeInput, Time } from '../../Components/Buttons';
 import '../../styles/PageStyles/Melting/CupolaHolderLogSheet.css';
 
 const CupolaHolderLogSheet = () => {
@@ -62,11 +62,7 @@ const CupolaHolderLogSheet = () => {
     remarks: ''
   });
 
-  // Refs for time inputs
-  const actualTimeHourRef = useRef(null);
-  const actualTimeMinuteRef = useRef(null);
-  const tappingTimeHourRef = useRef(null);
-  const tappingTimeMinuteRef = useRef(null);
+
 
   // Validation states (null = neutral, true = valid/green, false = invalid/red)
   // Primary validations
@@ -104,6 +100,24 @@ const CupolaHolderLogSheet = () => {
   const getValidationClass = (validationState) => {
     if (validationState === null) return '';
     return validationState ? 'valid-input' : 'invalid-input';
+  };
+
+  // Helper functions to convert between Time object and hour/minute strings
+  const createTimeFromHourMinute = (hour, minute) => {
+    if (!hour && !minute) return null;
+    const h = parseInt(hour) || 0;
+    const m = parseInt(minute) || 0;
+    return new Time(h, m);
+  };
+
+  const handleTimeChange = (tableNum, hourField, minuteField, timeValue) => {
+    if (!timeValue) {
+      handleTableChange(tableNum, hourField, '');
+      handleTableChange(tableNum, minuteField, '');
+    } else {
+      handleTableChange(tableNum, hourField, timeValue.hour.toString());
+      handleTableChange(tableNum, minuteField, timeValue.minute.toString());
+    }
   };
 
   // Fetch primary data and heat no automatically on mount
@@ -844,29 +858,19 @@ const CupolaHolderLogSheet = () => {
         <div className="cupola-holder-form-grid">
           <div className="cupola-holder-form-group">
             <label>Actual Time</label>
-            <TimeInput
-              hourRef={actualTimeHourRef}
-              minuteRef={actualTimeMinuteRef}
-              hourName="actualTimeHour"
-              minuteName="actualTimeMinute"
-              hourValue={table2.actualTimeHour}
-              minuteValue={table2.actualTimeMinute}
-              onChange={(e) => handleTableChange(2, e.target.name, e.target.value)}
-              validationState={actualTimeValid}
+            <CustomTimeInput
+              value={createTimeFromHourMinute(table2.actualTimeHour, table2.actualTimeMinute)}
+              onChange={(time) => handleTimeChange(2, 'actualTimeHour', 'actualTimeMinute', time)}
+              className={getValidationClass(actualTimeValid)}
             />
           </div>
 
           <div className="cupola-holder-form-group">
             <label>Tapping Time</label>
-            <TimeInput
-              hourRef={tappingTimeHourRef}
-              minuteRef={tappingTimeMinuteRef}
-              hourName="tappingTimeHour"
-              minuteName="tappingTimeMinute"
-              hourValue={table2.tappingTimeHour}
-              minuteValue={table2.tappingTimeMinute}
-              onChange={(e) => handleTableChange(2, e.target.name, e.target.value)}
-              validationState={tappingTimeValid}
+            <CustomTimeInput
+              value={createTimeFromHourMinute(table2.tappingTimeHour, table2.tappingTimeMinute)}
+              onChange={(time) => handleTimeChange(2, 'tappingTimeHour', 'tappingTimeMinute', time)}
+              className={getValidationClass(tappingTimeValid)}
             />
           </div>
 

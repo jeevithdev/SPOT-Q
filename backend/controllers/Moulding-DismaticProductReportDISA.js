@@ -124,24 +124,3 @@ exports.createDismaticReport = async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 };
-
-/** 4. STANDARD CRUD **/
-
-exports.updateDismaticReport = async (req, res) => {
-    try {
-        const report = await DISA.findByIdAndUpdate(req.params.id, req.body, { new: true, runValidators: true });
-        if (!report) return res.status(404).json({ success: false, message: 'Report not found' });
-        res.status(200).json({ success: true, data: report });
-    } catch (error) {
-        res.status(400).json({ success: false, message: error.message });
-    }
-};
-
-exports.deleteDismaticReport = async (req, res) => {
-    try {
-        await DISA.findByIdAndDelete(req.params.id);
-        res.status(200).json({ success: true, message: 'Deleted' });
-    } catch (error) {
-        res.status(500).json({ success: false, message: error.message });
-    }
-};

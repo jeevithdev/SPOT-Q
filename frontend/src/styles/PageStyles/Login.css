@@ -47,8 +47,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f8fafc;
-  z-index: 9999;
+  background-image: url('/images/factory-bg.png');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: 999999;
+  pointer-events: all;
+  opacity: 1;
 }
 
 /* Make loader medium size on login page */

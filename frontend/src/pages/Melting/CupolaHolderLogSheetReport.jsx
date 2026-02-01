@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { BookOpenCheck } from 'lucide-react';
-import { FilterButton, ClearButton, EditButton, DeleteButton } from '../../Components/Buttons';
+import { FilterButton, ClearButton } from '../../Components/Buttons';
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import Table from '../../Components/Table';
 import '../../styles/PageStyles/Melting/CupolaHolderLogSheetReport.css';
@@ -270,13 +270,6 @@ const CupolaHolderLogSheetReport = () => {
     return columns;
   };
 
-  const renderActions = (row) => (
-    <>
-      <EditButton onClick={() => requestEdit(row)} />
-      <DeleteButton onClick={() => requestDelete(row)} />
-    </>
-  );
-
   const PrimaryTable = ({ list, show }) => {
     const columns = buildColumns();
 
@@ -286,7 +279,6 @@ const CupolaHolderLogSheetReport = () => {
         <Table
           columns={columns}
           data={list}
-          renderActions={renderActions}
           noDataMessage="No records found for the selected date range."
           minWidth={1600}
           striped={true}
@@ -357,165 +349,9 @@ const CupolaHolderLogSheetReport = () => {
 
       <PrimaryTable list={entries} show={show} />
 
-      {/* Error Display */}
-      {error && (
-        <div className="chr-error">{error}</div>
-      )}
 
-      {/* Delete Confirmation Modal */}
 
-      {confirm.open && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 50 }}>
-          <div style={{ background: 'white', borderRadius: 8, padding: 20, width: 'min(420px, 95vw)', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Confirm Deletion</div>
-            <div style={{ color: '#334155' }}>Are you sure you want to delete this record?</div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-              <button onClick={closeConfirm} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={performDelete} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #fecaca', background: '#fee2e2', color: '#b91c1c', cursor: 'pointer' }}>Delete</button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {editModal.open && (
-        <div
-          onClick={closeEditModal}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 60 }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ background: 'white', borderRadius: 12, padding: 20, width: 'min(900px, 95vw)', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-              <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a' }}>Edit Cupola Holder Log</div>
-            </div>
-
-            <div className="microtensile-form-grid">
-              <div className="microtensile-form-group">
-                <label>Date</label>
-                <input type="date" name="date" value={editForm.date || ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Shift</label>
-                <input type="text" name="shift" value={editForm.shift || ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Holder No</label>
-                <input type="text" name="holderNumber" value={editForm.holderNumber || ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Heat No</label>
-                <input type="text" name="heatNo" value={editForm.heatNo || ''} onChange={handleEditChange} />
-              </div>
-
-              <div className="microtensile-form-group">
-                <label>CPC</label>
-                <input type="text" name="cpc" value={editForm.cpc ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Fe Sl</label>
-                <input type="text" name="mFeSl" value={editForm.mFeSl ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Fe Mn</label>
-                <input type="text" name="feMn" value={editForm.feMn ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Sic</label>
-                <input type="text" name="sic" value={editForm.sic ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Pure Mg</label>
-                <input type="text" name="pureMg" value={editForm.pureMg ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Cu</label>
-                <input type="text" name="cu" value={editForm.cu ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Fe Cr</label>
-                <input type="text" name="feCr" value={editForm.feCr ?? ''} onChange={handleEditChange} />
-              </div>
-
-              <div className="microtensile-form-group">
-                <label>Actual Time</label>
-                <input type="text" name="actualTime" value={editForm.actualTime ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Tapping Time</label>
-                <input type="text" name="tappingTime" value={editForm.tappingTime ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Temp (°C)</label>
-                <input type="text" name="tappingTemp" value={editForm.tappingTemp ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>Metal (KG)</label>
-                <input type="text" name="metalKg" value={editForm.metalKg ?? ''} onChange={handleEditChange} />
-              </div>
-
-              <div className="microtensile-form-group">
-                <label>DISA LINE</label>
-                <input type="text" name="disaLine" value={editForm.disaLine ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>IND FUR</label>
-                <input type="text" name="indFur" value={editForm.indFur ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>BAIL NO</label>
-                <input type="text" name="bailNo" value={editForm.bailNo ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>TAP</label>
-                <input type="text" name="tap" value={editForm.tap ?? ''} onChange={handleEditChange} />
-              </div>
-              <div className="microtensile-form-group">
-                <label>KW</label>
-                <input type="text" name="kw" value={editForm.kw ?? ''} onChange={handleEditChange} />
-              </div>
-
-              <div className="microtensile-form-group" style={{ gridColumn: '1 / -1' }}>
-                <label>Remarks</label>
-                <input type="text" name="remarks" value={editForm.remarks || ''} onChange={handleEditChange} />
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-              <button onClick={closeEditModal} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #e2e8f0', background: '#f8fafc', cursor: 'pointer' }}>Cancel</button>
-              <button onClick={openSaveConfirm} style={{ padding: '8px 14px', borderRadius: 6, border: '1px solid #bbf7d0', background: '#dcfce7', color: '#166534', cursor: 'pointer' }}>Save</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {saveConfirm.open && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 70 }}>
-          <div style={{ background: 'white', borderRadius: 8, padding: 20, width: 'min(420px, 95vw)', maxWidth: '95vw', maxHeight: '90vh', overflowY: 'auto', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}>
-            <div style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Confirm Save</div>
-            <div style={{ color: '#334155' }}>Do you want to save the changes?</div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 16 }}>
-              <button onClick={closeSaveConfirm} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #cbd5e1', background: '#f8fafc', cursor: 'pointer' }}>No</button>
-              <button onClick={performSave} style={{ padding: '6px 12px', borderRadius: 6, border: '1px solid #bbf7d0', background: '#dcfce7', color: '#166534', cursor: 'pointer' }}>Yes, Save</button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {remarkModal.open && (
-        <div
-          onClick={() => setRemarkModal({ open: false, text: '' })}
-          style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.45)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 80 }}
-        >
-          <div
-            onClick={(e) => e.stopPropagation()}
-            style={{ background: 'white', borderRadius: 10, padding: 16, width: 'min(520px, 95vw)', maxWidth: '95vw', maxHeight: '80vh', overflowY: 'auto', boxShadow: '0 10px 30px rgba(0,0,0,0.2)' }}
-          >
-            <div style={{ fontSize: 16, fontWeight: 700, color: '#0f172a', marginBottom: 8 }}>Remarks</div>
-            <div style={{ color: '#334155', whiteSpace: 'pre-wrap', lineHeight: 1.5 }}>{remarkModal.text}</div>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

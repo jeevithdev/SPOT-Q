@@ -7,9 +7,6 @@ router.get('/primary/:date/:shift/:holderNumber', cupolaController.getPrimaryByD
 router.post('/primary', cupolaController.createPrimary);
 router.route('/')
     .get(cupolaController.getAllEntries)
-    .post(cupolaController.createEntry); 
-router.route('/:id')
-    .put(cupolaController.updateEntry)
-    .delete(cupolaController.deleteEntry);
+    .post(cupolaController.createEntry);
 
 module.exports = router;

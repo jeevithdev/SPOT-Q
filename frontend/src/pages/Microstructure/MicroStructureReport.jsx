@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
-import { X, BookOpenCheck } from 'lucide-react';
-import { FilterButton, ClearButton, EditButton, DeleteButton } from '../../Components/Buttons';
+import { BookOpenCheck } from 'lucide-react';
+import { FilterButton, ClearButton } from '../../Components/Buttons';
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import Table from '../../Components/Table';
 import "../../styles/PageStyles/MicroStructure/MicroStructureReport.css";
@@ -11,12 +11,6 @@ const MicroStructureReport = () => {
   const [items, setItems] = useState([]);
   const [filteredItems, setFilteredItems] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  // Edit states
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [editingItem, setEditingItem] = useState(null);
-  const [editFormData, setEditFormData] = useState({});
-  const [editLoading, setEditLoading] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -270,196 +264,8 @@ const MicroStructureReport = () => {
           data={filteredItems}
           minWidth={1700}
           defaultAlign="left"
-          renderActions={(item) => (
-            <>
-              <EditButton onClick={() => handleEdit(item)} />
-              <DeleteButton onClick={() => handleDelete(item._id)} />
-            </>
-          )}
           noDataMessage="No records found"
         />
-      )}
-
-      {/* Edit Modal */}
-      {showEditModal && (
-        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
-          <div className="modal-container" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Edit Micro Structure Entry</h2>
-              <button className="modal-close-btn" onClick={() => setShowEditModal(false)}>
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              <div className="microstructure-form-grid">
-                <div className="microstructure-form-group">
-                  <label>DISA</label>
-                  <input
-                    type="text"
-                    name="disa"
-                    value={editFormData.disa}
-                    onChange={handleEditChange}
-                    placeholder="e.g: DISA 1"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Part Name</label>
-                  <input
-                    type="text"
-                    name="partName"
-                    value={editFormData.partName}
-                    onChange={handleEditChange}
-                    placeholder="e.g: Engine Block"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Date Code</label>
-                  <input
-                    type="text"
-                    name="dateCode"
-                    value={editFormData.dateCode}
-                    onChange={handleEditChange}
-                    placeholder="e.g: 6F25"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Heat Code</label>
-                  <input
-                    type="text"
-                    name="heatCode"
-                    value={editFormData.heatCode}
-                    onChange={handleEditChange}
-                    placeholder="e.g: HC-2024-001"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Nodularity %</label>
-                  <input
-                    type="number"
-                    name="nodularity"
-                    value={editFormData.nodularity}
-                    onChange={handleEditChange}
-                    placeholder="e.g: 85"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Graphite Type %</label>
-                  <input
-                    type="number"
-                    name="graphiteType"
-                    value={editFormData.graphiteType}
-                    onChange={handleEditChange}
-                    placeholder="e.g: 15"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Count Nos/mm²</label>
-                  <input
-                    type="text"
-                    name="countNos"
-                    value={editFormData.countNos}
-                    onChange={handleEditChange}
-                    placeholder="e.g: 120-250"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Size</label>
-                  <input
-                    type="text"
-                    name="size"
-                    value={editFormData.size}
-                    onChange={handleEditChange}
-                    placeholder="e.g: 5-7"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Ferrite %</label>
-                  <input
-                    type="number"
-                    name="ferrite"
-                    value={editFormData.ferrite}
-                    onChange={handleEditChange}
-                    placeholder="e.g: 60"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Pearlite %</label>
-                  <input
-                    type="number"
-                    name="pearlite"
-                    value={editFormData.pearlite}
-                    onChange={handleEditChange}
-                    placeholder="e.g: 35"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                </div>
-
-                <div className="microstructure-form-group">
-                  <label>Carbide %</label>
-                  <input
-                    type="number"
-                    name="carbide"
-                    value={editFormData.carbide}
-                    onChange={handleEditChange}
-                    placeholder="e.g: 5"
-                    min="0"
-                    max="100"
-                    step="0.1"
-                  />
-                </div>
-
-                <div className="microstructure-form-group full-width">
-                  <label>Remarks</label>
-                  <textarea
-                    name="remarks"
-                    value={editFormData.remarks}
-                    onChange={handleEditChange}
-                    rows="3"
-                    placeholder="Any additional notes"
-                  />
-                </div>
-              </div>
-            </div>
-
-            <div className="modal-footer">
-              <button
-                className="modal-cancel-btn"
-                onClick={() => setShowEditModal(false)}
-                disabled={editLoading}
-              >
-                Cancel
-              </button>
-              <button
-                className="modal-submit-btn"
-                onClick={handleUpdate}
-                disabled={editLoading}
-              >
-                {editLoading ? 'Updating...' : 'Update Entry'}
-              </button>
-            </div>
-          </div>
-        </div>
       )}
     </>
   );

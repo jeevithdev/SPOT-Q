@@ -148,7 +148,7 @@
 
 @media (max-width: 768px) {
 	.disa-dropdown-wrapper select {
-		width: 100%;
+		min-width: 150px;
 	}
 }
 
@@ -667,66 +667,63 @@
 	opacity: 0.6;
 }
 
-/* ==================== Time Input Styles ==================== */
-.time-input-wrapper,
-.time-range-input-wrapper {
-	display: inline-flex;
-	align-items: center;
-	gap: 0.5rem;
-	font-family: 'Poppins', sans-serif;
+
+/* Base styling for the time input */
+.cus-time-input [data-slot="input-wrapper"] {
+  background: white;
+  border: 2px solid #cbd5e1;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  padding: 5px 5px; 
 }
 
-.time-inputs-group {
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
+.cus-time-input [data-slot="input-wrapper"]:focus-within {
+  border-color: #1a89a4;
+  box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
 }
 
-.time-inputs-group input {
-	padding: 0.625rem 0.5rem;
-	border: 2px solid #cbd5e1;
-	border-radius: 8px;
-	font-size: 0.875rem;
-	font-family: 'Poppins', sans-serif;
-	transition: all 0.3s ease;
-	background: white;
-	text-align: center;
-	color: #1e293b;
-	font-weight: 500;
+.cus-time-input [data-slot="input"] {
+  display: inline-flex;
+  flex-direction: row;
 }
 
-.time-inputs-group input:focus {
-	outline: none;
-	border-color: #5B9AA9;
-	box-shadow: 0 0 0 3px rgba(91, 154, 169, 0.1);
+.cus-time-input [data-slot="segment"] {
+  font-size: 0.95rem;
+  color: #334155;
+  border-radius: 4px;
+  min-width: 10px;
+  padding:2px;
+  padding-top: 2px ;
+  transition: all 0.2s ease;
+  font-family: 'Poppins', sans-serif;
+  line-height: 1;
 }
 
-.time-inputs-group input::placeholder {
-	color: #94a3b8;
-	font-weight: 400;
+.cus-time-input [data-slot="segment"]:focus {
+  background-color: #5B9AA9;
+  margin-right: 4px;
+  color: white;
 }
 
-.time-inputs-group span {
-	font-size: 1.25rem;
-	font-weight: 600;
-	color: #334155;
+.cus-time-input [data-slot="separator"] {
+  display: inline-flex;
+  align-items: center;
+  color: #64748b;
+  font-weight: 600;
 }
 
-.time-separator {
-	font-size: 1rem;
-	font-weight: 600;
-	color: #64748b;
-	margin: 0 0.5rem;
+
+
+/* Validation States */
+.cus-time-input.valid-input [data-slot="input-wrapper"] {
+  border-color: #22c55e;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
 }
 
-/* Remove up/down arrow buttons from number inputs in time inputs */
-.time-inputs-group input[type=number]::-webkit-inner-spin-button,
-.time-inputs-group input[type=number]::-webkit-outer-spin-button {
-	-webkit-appearance: none;
-	margin: 0;
+.cus-time-input.invalid-input [data-slot="input-wrapper"] {
+  border-color: #ef4444;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2);
 }
 
-.time-inputs-group input[type=number] {
-	-moz-appearance: textfield;
-	appearance: textfield;
-}

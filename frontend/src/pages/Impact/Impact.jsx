@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { Save } from 'lucide-react';
 import { SubmitButton, ResetButton } from '../../Components/Buttons';
+import CustomDatePicker from '../../Components/CustomDatePicker';
 import '../../styles/PageStyles/Impact/Impact.css';
 
 const Impact = () => {
@@ -19,13 +20,13 @@ const Impact = () => {
   });
 
   // VALIDATION STATES
+  const [dateValid, setDateValid] = useState(null);
   const [partNameValid, setPartNameValid] = useState(null); // null = default, true = green, false = red
   const [dateCodeValid, setDateCodeValid] = useState(null);
   const [specificationValValid, setSpecificationValValid] = useState(null);
   const [observedValueValid, setObservedValueValid] = useState(null);
 
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [dateLoading, setDateLoading] = useState(true);
   const [submitError, setSubmitError] = useState('');
 
   // Success popup state
@@ -34,35 +35,6 @@ const Impact = () => {
   // Refs
   const submitButtonRef = useRef(null);
   const firstInputRef = useRef(null);
-
-  // ====================== Fetch current date ======================
-  useEffect(() => {
-    const fetchInitialData = async () => {
-      try {
-        setDateLoading(true);
-
-        const response = await fetch('http://localhost:5000/api/v1/impact-tests/current-date', {
-          credentials: 'include'
-        });
-        const dateData = await response.json();
-        if (dateData.success && dateData.date) {
-          setFormData(prev => ({ ...prev, date: dateData.date }));
-        }
-      } catch (error) {
-        console.error('Error fetching initial data:', error);
-
-        const today = new Date();
-        const y = today.getFullYear();
-        const m = String(today.getMonth() + 1).padStart(2, '0');
-        const d = String(today.getDate()).padStart(2, '0');
-        setFormData(prev => ({ ...prev, date: `${y}-${m}-${d}` }));
-      } finally {
-        setDateLoading(false);
-      }
-    };
-
-    fetchInitialData();
-  }, []);
 
   // ====================== Format date ======================
   const formatDisplayDate = (iso) => {
@@ -75,7 +47,12 @@ const Impact = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    if (name === "date") return;
+    // --- VALIDATE DATE ---
+    if (name === "date") {
+      setDateValid(
+        value.trim() === "" ? null : value.trim().length > 0
+      );
+    }
 
     // --- VALIDATE PART NAME: alphabets and spaces ---
     if (name === "partName") {
@@ -171,6 +148,7 @@ const Impact = () => {
 
     // Validate required fields
     const requiredFields = [
+      { name: 'date', value: formData.date, label: 'Date', setState: setDateValid },
       { name: 'partName', value: formData.partName, label: 'Part Name', setState: setPartNameValid },
       { name: 'dateCode', value: formData.dateCode, label: 'Date Code', setState: setDateCodeValid },
       { name: 'specificationVal', value: formData.specification.val, label: 'Specification Value', setState: setSpecificationValValid },
@@ -212,9 +190,9 @@ const Impact = () => {
         // Show success popup
         setShowSuccessPopup(true);
 
-        // Reset form but keep the current date
+        // Reset form
         setFormData({
-          date: formData.date,
+          date: '',
           partName: '',
           dateCode: '',
           specification: { val: '', constraint: '' },
@@ -223,6 +201,7 @@ const Impact = () => {
         });
 
         // Reset validation states
+        setDateValid(null);
         setPartNameValid(null);
         setDateCodeValid(null);
         setSpecificationValValid(null);
@@ -243,7 +222,7 @@ const Impact = () => {
   // ====================== Reset ======================
   const handleReset = () => {
     setFormData({
-      date: formData.date,
+      date: '',
       partName: '',
       dateCode: '',
       specification: { val: '', constraint: '' },
@@ -251,6 +230,7 @@ const Impact = () => {
       remarks: ''
     });
 
+    setDateValid(null);
     setPartNameValid(null);
     setDateCodeValid(null);
     setSpecificationValValid(null);
@@ -268,11 +248,35 @@ const Impact = () => {
           </h2>
         </div>
         <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c' }}>
-          {dateLoading ? 'Loading date...' : `DATE : ${formatDisplayDate(formData.date)}`}
+          DATE : {formData.date ? formatDisplayDate(formData.date) : '-'}
         </div>
       </div>
 
       <form className="impact-form-grid">
+
+        {/* DATE INPUT */}
+        <div className="impact-form-group">
+          <label>
+            Date <span className="required-indicator">*</span>
+          </label>
+
+          <CustomDatePicker
+            ref={firstInputRef}
+            name="date"
+            value={formData.date}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            max={new Date().toISOString().split('T')[0]}
+            style={{
+              border: dateValid === null ? '2px solid #cbd5e1' : dateValid ? '2px solid #10b981' : '2px solid #ef4444',
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              backgroundColor: '#fff'
+            }}
+          />
+        </div>
 
         {/* PART NAME - with validation */}
         <div className="impact-form-group">
@@ -281,7 +285,6 @@ const Impact = () => {
           </label>
 
           <input
-            ref={firstInputRef}
             type="text"
             name="partName"
             value={formData.partName}

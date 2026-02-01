@@ -81,7 +81,7 @@ const AdminDashboard = () => {
 
     const handleViewChange = (view) => {
         setCurrentView(view);
-        if (view === 'view' && users.length === 0) fetchUsers();
+        if (view === 'view') fetchUsers();
     };
 
     const handleInputChange = (e) => {
