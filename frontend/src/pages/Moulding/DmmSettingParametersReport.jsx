@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { BookOpenCheck } from 'lucide-react';
-import { FilterButton } from '../../Components/Buttons';
+import { FilterButton, ClearButton, MachineDropdown, CustomPagination } from '../../Components/Buttons';
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import '../../styles/PageStyles/Moulding/DisamaticProductReport.css';
+import '../../styles/ComponentStyles/Buttons.css';
 
 // Redesigned to mirror TensileReport: one consolidated table showing all parameter rows across shifts.
 // Each parameter row gains Date + Machine + Shift context columns.
@@ -25,12 +26,19 @@ const DmmSettingParametersReport = () => {
     return `${y}-${m}-${d}`;
   };
   const todayStr = getTodayLocal();
-  const [selectedDate, setSelectedDate] = useState(todayStr);
-  const [selectedShift, setSelectedShift] = useState('All');
+  const [fromDate, setFromDate] = useState('');
+  const [toDate, setToDate] = useState('');
+  const [selectedMachine, setSelectedMachine] = useState('');
+  const [selectedShift, setSelectedShift] = useState('');
   const [reports, setReports] = useState([]);
   const [filteredReports, setFilteredReports] = useState([]);
   const [loading, setLoading] = useState(false);
   const [remarksModal, setRemarksModal] = useState({ show: false, content: '', title: 'Remarks' });
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(15);
+
+  // Only fromDate is required
+  const isFilterEnabled = fromDate && fromDate.trim() !== '';
 
   // Section checkboxes removed – always show all columns
 
@@ -47,58 +55,75 @@ const DmmSettingParametersReport = () => {
   const fetchReports = async () => {
     try {
       setLoading(true);
-      const resp = await api.get('/v1/dmm-settings');
-      if (resp.success) {
-        const all = resp.data || [];
-        setReports(all);
-        if (all.length === 0) { setFilteredReports([]); return; }
-        let dateToUse = selectedDate || todayStr;
-        const hasToday = all.some(r => r.date && formatDate(r.date) === todayStr);
-        if (!hasToday) {
-          const latest = [...all].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-          if (latest?.date) {
-            dateToUse = formatDate(latest.date);
-            setSelectedDate(dateToUse);
-          }
+      const resp = await fetch('http://localhost:5000/api/v1/moulding-dmm/all', {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${localStorage.getItem('token') || ''}`
         }
-        setFilteredReports(all.filter(r => r.date && formatDate(r.date) === dateToUse));
+      });
+      const data = await resp.json();
+      if (data.success) {
+        const all = data.data || [];
+        setReports(all);
+        // Don't auto-filter on fetch - wait for user to click Filter button
       }
     } catch (err) {
       console.error('Failed to fetch dmm settings', err);
     } finally { setLoading(false); }
   };
 
-  const applyFilters = (date, shift, allReports = reports) => {
-    let dateToUse = date || todayStr;
-    let filtered = allReports.filter(r => r.date && formatDate(r.date) === dateToUse);
-    if (filtered.length === 0 && dateToUse === todayStr && allReports.length > 0) {
-      const latest = [...allReports].sort((a, b) => new Date(b.date) - new Date(a.date))[0];
-      if (latest?.date) {
-        const latestDate = formatDate(latest.date);
-        setSelectedDate(latestDate);
-        filtered = allReports.filter(r => r.date && formatDate(r.date) === latestDate);
-      }
+  const applyFilters = () => {
+    // Only fromDate is required
+    if (!fromDate) {
+      setFilteredReports([]);
+      return;
     }
+    
+    let filtered = [...reports];
+    
+    // Filter by date range
+    const fromDateStr = fromDate;
+    const toDateStr = toDate || fromDate; // If toDate not selected, use fromDate
+    
+    filtered = filtered.filter(r => {
+      if (!r.date) return false;
+      const reportDate = formatDate(r.date);
+      return reportDate >= fromDateStr && reportDate <= toDateStr;
+    });
+    
+    // Filter by machine (optional)
+    if (selectedMachine && selectedMachine.trim() !== '') {
+      filtered = filtered.filter(r => String(r.machine) === String(selectedMachine));
+    }
+    
     setFilteredReports(filtered);
   };
 
   const handleFilter = () => {
-    applyFilters(selectedDate, selectedShift, reports);
+    if (isFilterEnabled) {
+      applyFilters();
+      setCurrentPage(1);
+    }
   };
 
-  useEffect(() => {
-    if (reports && reports.length >= 0) {
-      applyFilters(selectedDate, selectedShift, reports);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedDate, selectedShift, reports]);
+  const handleClear = () => {
+    setFromDate('');
+    setToDate('');
+    setSelectedMachine('');
+    setSelectedShift('');
+    setFilteredReports([]);
+    setCurrentPage(1);
+  };
 
   // Flatten each shift's parameter arrays into unified list of rows.
   const flattenedRows = filteredReports.flatMap(report => {
     const rows = [];
     if (report.parameters) {
       ['shift1','shift2','shift3'].forEach(shiftKey => {
-        if (selectedShift !== 'All' && selectedShift !== shiftKey.replace('shift','Shift ')) return;
+        // Only show data for the selected shift
+        if (selectedShift && selectedShift !== shiftKey.replace('shift','Shift ')) return;
         const arr = report.parameters[shiftKey];
         if (Array.isArray(arr) && arr.length > 0) {
           arr.forEach((param, rowIndex) => {
@@ -119,6 +144,12 @@ const DmmSettingParametersReport = () => {
     }
     return rows;
   });
+
+  // Pagination calculation
+  const totalPages = Math.ceil(flattenedRows.length / itemsPerPage);
+  const startIndex = (currentPage - 1) * itemsPerPage;
+  const endIndex = startIndex + itemsPerPage;
+  const paginatedRows = flattenedRows.slice(startIndex, endIndex);
 
   // Resolve the full report by id, or fallback to date+machine match
   const resolveReportByRow = (row) => {
@@ -146,49 +177,65 @@ const DmmSettingParametersReport = () => {
         </div>
       </div>
 
-      <div className="impact-filter-container" style={{
-        background: 'white',
-        padding: '1.5rem',
-        borderRadius: '8px',
-        marginBottom: '1rem',
-        boxShadow: '0 1px 3px rgba(0,0,0,0.1)'
-      }}>
-        <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end' }}>
-          <div className="impact-filter-group">
-            <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>Select Date</label>
-            <CustomDatePicker value={selectedDate} onChange={(e) => setSelectedDate(e.target.value)} placeholder="Select date" />
-          </div>
-          <div className="impact-filter-group">
-            <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>Select Shift</label>
-            <select
-              value={selectedShift}
-              onChange={(e) => setSelectedShift(e.target.value)}
-              style={{
-                padding: '0.625rem 0.875rem',
-                border: '2px solid #cbd5e1',
-                borderRadius: '8px',
-                fontSize: '0.875rem',
-                backgroundColor: '#ffffff',
-                cursor: 'pointer',
-                minWidth: '150px'
-              }}
-            >
-              <option value="All">All Shifts</option>
-              <option value="Shift 1">Shift 1</option>
-              <option value="Shift 2">Shift 2</option>
-              <option value="Shift 3">Shift 3</option>
-            </select>
-          </div>
-          {/* Auto-applied filters; removed manual Apply button for consistency */}
+      <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', alignItems: 'flex-end', marginBottom: '1rem' }}>
+        <div className="impact-filter-group">
+          <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>From Date</label>
+          <CustomDatePicker value={fromDate} onChange={(e) => setFromDate(e.target.value)} placeholder="From date" />
         </div>
+        <div className="impact-filter-group">
+          <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>To Date</label>
+          <CustomDatePicker value={toDate} onChange={(e) => setToDate(e.target.value)} placeholder="To date" />
+        </div>
+        <div className="impact-filter-group">
+          <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>Select Machine (Optional)</label>
+          <select
+            value={selectedMachine}
+            onChange={(e) => setSelectedMachine(e.target.value)}
+            style={{
+              padding: '0.625rem 0.875rem',
+              border: '2px solid #cbd5e1',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              backgroundColor: '#ffffff',
+              cursor: 'pointer',
+              minWidth: '150px'
+            }}
+          >
+            <option value="">All Machines</option>
+            <option value="1">Machine 1</option>
+            <option value="2">Machine 2</option>
+            <option value="3">Machine 3</option>
+            <option value="4">Machine 4</option>
+          </select>
+        </div>
+        <div className="impact-filter-group">
+          <label style={{ fontWeight: 600, marginBottom: '0.5rem', display: 'block' }}>Select Shift (Optional)</label>
+          <select
+            value={selectedShift}
+            onChange={(e) => setSelectedShift(e.target.value)}
+            style={{
+              padding: '0.625rem 0.875rem',
+              border: '2px solid #cbd5e1',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              backgroundColor: '#ffffff',
+              cursor: 'pointer',
+              minWidth: '150px'
+            }}
+          >
+            <option value="">All Shifts</option>
+            <option value="Shift 1">Shift 1</option>
+            <option value="Shift 2">Shift 2</option>
+            <option value="Shift 3">Shift 3</option>
+          </select>
+        </div>
+        <FilterButton onClick={handleFilter} disabled={!isFilterEnabled} />
+        <ClearButton onClick={handleClear} />
       </div>
 
-      {/* Section checkboxes removed */}
-
       {loading ? <div className="impact-loader-container"><div>Loading...</div></div> : (
-        <div className="impact-details-card">
-          <div className="impact-table-container">
-            <table className="impact-table">
+        <div className="impact-table-container">
+          <table className="impact-table">
               <thead>
                 <tr>
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Date</th>
@@ -204,8 +251,7 @@ const DmmSettingParametersReport = () => {
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>SP Thickness (mm)</th>
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>SP Height (mm)</th>
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Core Mask Thickness (mm)</th>
-                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Core Mask Height Outside (mm)</th>
-                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Core Mask Height Inside (mm)</th>
+                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Core Mask Height (mm)</th>
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Sand Shot Pressure (Bar)</th>
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Correction Shot Time (s)</th>
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Squeeze Pressure (Kg/cm²)</th>
@@ -216,68 +262,437 @@ const DmmSettingParametersReport = () => {
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Mould Thickness ±10mm</th>
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Close-Up Force/Pressure</th>
                   <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Remarks</th>
-                  <th style={{ padding: '14px 18px', textAlign: 'center', fontWeight: 600, fontSize: '0.875rem', background: '#f8fafc', borderBottom: '2px solid #e2e8f0' }}>Actions</th>
                 </tr>
               </thead>
               <tbody>
-                {flattenedRows.length === 0 ? (
-                  <tr><td colSpan="26" className="impact-no-records">No parameter rows found</td></tr>
+                {paginatedRows.length === 0 ? (
+                  <tr><td colSpan="24" className="impact-no-records">{flattenedRows.length === 0 ? 'No parameter rows found' : 'No data on this page'}</td></tr>
                 ) : (
-                  flattenedRows.map((row, idx) => (
-                    <tr key={row._id + '-' + idx} style={{ transition: 'background-color 0.2s ease' }}>
-                      <td style={{ padding: '12px 18px', textAlign: 'center', fontWeight: 500 }}>{row.date ? (() => {
-                        const date = new Date(row.date);
-                        const day = String(date.getDate()).padStart(2, '0');
-                        const month = String(date.getMonth() + 1).padStart(2, '0');
-                        const year = date.getFullYear();
-                        return `${day} / ${month} / ${year}`;
-                      })() : '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center', fontWeight: 500 }}>{row.machine || '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center', fontWeight: 500 }}>{row.shift}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.operatorName}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.checkedBy}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.customer || '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.itemDescription || '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.time || '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.ppThickness ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.ppHeight ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.spThickness ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.spHeight ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.coreMaskThickness ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.coreMaskHeightOutside ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.coreMaskHeightInside ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.sandShotPressureBar ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.correctionShotTime ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.squeezePressure ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.ppStrippingAcceleration ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.ppStrippingDistance ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.spStrippingAcceleration ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.spStrippingDistance ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.mouldThicknessPlus10 ?? '-'}</td>
-                      <td style={{ padding: '12px 18px', textAlign: 'center' }}>{row.closeUpForceMouldCloseUpPressure || '-'}</td>
-                      <td style={{ 
-                        cursor: row.remarks ? 'pointer' : 'default',
-                        maxWidth: '200px',
-                        overflow: 'hidden',
-                        textOverflow: 'ellipsis',
-                        whiteSpace: 'nowrap',
-                        padding: '12px 18px',
-                        textAlign: 'center',
-                        color: row.remarks ? '#5B9AA9' : '#94a3b8',
-                        textDecoration: row.remarks ? 'underline' : 'none'
-                      }}
-                        onClick={() => row.remarks && showRemarksPopup(row.remarks)}
-                        title={row.remarks || 'No remarks'}>
-                        {row.remarks || '-'}
-                      </td>
-
-                    </tr>
-                  ))
+                  paginatedRows.map((row, idx) => {
+                    // Calculate group size for this row
+                    const getGroupSize = (startIdx) => {
+                      let size = 1;
+                      for (let i = startIdx + 1; i < paginatedRows.length; i++) {
+                        if (paginatedRows[i].date === row.date && 
+                            paginatedRows[i].machine === row.machine && 
+                            paginatedRows[i].shift === row.shift) {
+                          size++;
+                        } else {
+                          break;
+                        }
+                      }
+                      return size;
+                    };
+                    
+                    // Check if this row is the first in a group
+                    const prevRow = idx > 0 ? paginatedRows[idx - 1] : null;
+                    const isFirstInGroup = !prevRow || 
+                      row.date !== prevRow.date || 
+                      row.machine !== prevRow.machine || 
+                      row.shift !== prevRow.shift;
+                    
+                    // Check if this row is the last in a group
+                    const nextRow = idx < paginatedRows.length - 1 ? paginatedRows[idx + 1] : null;
+                    const isLastInGroup = !nextRow || 
+                      row.date !== nextRow.date || 
+                      row.machine !== nextRow.machine || 
+                      row.shift !== nextRow.shift;
+                    
+                    const groupSize = isFirstInGroup ? getGroupSize(idx) : 0;
+                    
+                    // Generate unique group identifier for hover effects
+                    const groupId = `${row.date}-${row.machine}-${row.shift}`.replace(/[^a-zA-Z0-9]/g, '-');
+                    
+                    return (
+                      <tr key={row._id + '-' + idx} 
+                          className={`group-row group-${groupId}`}
+                          style={{ 
+                            transition: 'background-color 0.2s ease',
+                            borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none'
+                          }}>
+                        {isFirstInGroup ? (
+                          <td rowSpan={groupSize} style={{ 
+                            padding: '12px 18px', 
+                            textAlign: 'center', 
+                            fontWeight: 500,
+                            verticalAlign: 'middle',
+                            borderTop: idx > 0 ? '2px solid #e2e8f0' : 'none',
+                            borderBottom: '2px solid #e2e8f0',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          className={`grouped-cell group-${groupId}-cell`}
+                          onMouseEnter={() => {
+                            // Highlight all rows in the same group
+                            const groupRows = document.querySelectorAll(`.group-${groupId}`);
+                            groupRows.forEach(row => row.style.backgroundColor = '#e0f2fe');
+                          }}
+                          onMouseLeave={() => {
+                            // Remove highlight from all rows in the same group
+                            const groupRows = document.querySelectorAll(`.group-${groupId}`);
+                            groupRows.forEach(row => row.style.backgroundColor = '');
+                          }}>
+                            {row.date ? (() => {
+                              const date = new Date(row.date);
+                              const day = String(date.getDate()).padStart(2, '0');
+                              const month = String(date.getMonth() + 1).padStart(2, '0');
+                              const year = date.getFullYear();
+                              return `${day} / ${month} / ${year}`;
+                            })() : '-'}
+                          </td>
+                        ) : null}
+                        
+                        {isFirstInGroup ? (
+                          <td rowSpan={groupSize} style={{ 
+                            padding: '12px 18px', 
+                            textAlign: 'center', 
+                            fontWeight: 500,
+                            verticalAlign: 'middle',
+                            borderTop: idx > 0 ? '2px solid #e2e8f0' : 'none',
+                            borderBottom: '2px solid #e2e8f0',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          className={`grouped-cell group-${groupId}-cell`}
+                          onMouseEnter={() => {
+                            // Highlight all rows in the same group
+                            const groupRows = document.querySelectorAll(`.group-${groupId}`);
+                            groupRows.forEach(row => row.style.backgroundColor = '#e0f2fe');
+                          }}
+                          onMouseLeave={() => {
+                            // Remove highlight from all rows in the same group
+                            const groupRows = document.querySelectorAll(`.group-${groupId}`);
+                            groupRows.forEach(row => row.style.backgroundColor = '');
+                          }}>
+                            {row.machine || '-'}
+                          </td>
+                        ) : null}
+                        
+                        {isFirstInGroup ? (
+                          <td rowSpan={groupSize} style={{ 
+                            padding: '12px 18px', 
+                            textAlign: 'center', 
+                            fontWeight: 500,
+                            verticalAlign: 'middle',
+                            borderTop: idx > 0 ? '2px solid #e2e8f0' : 'none',
+                            borderBottom: '2px solid #e2e8f0',
+                            cursor: 'pointer',
+                            transition: 'all 0.2s ease'
+                          }}
+                          className={`grouped-cell group-${groupId}-cell`}
+                          onMouseEnter={() => {
+                            // Highlight all rows in the same group
+                            const groupRows = document.querySelectorAll(`.group-${groupId}`);
+                            groupRows.forEach(row => row.style.backgroundColor = '#e0f2fe');
+                          }}
+                          onMouseLeave={() => {
+                            // Remove highlight from all rows in the same group
+                            const groupRows = document.querySelectorAll(`.group-${groupId}`);
+                            groupRows.forEach(row => row.style.backgroundColor = '');
+                          }}>
+                            {row.shift}
+                          </td>
+                        ) : null}
+                        
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.operatorName}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.checkedBy}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.customer || '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.itemDescription || '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.time || '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.ppThickness ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.ppHeight ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.spThickness ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.spHeight ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.CoreMaskThickness ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.CoreMaskHeight ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.sandShotPressurebar ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.correctionShotTime ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.squeezePressure ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.ppStrippingAcceleration ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.ppStrippingDistance ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.spStrippingAcceleration ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.spStrippingDistance ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.mouldThickness ?? '-'}</td>
+                        <td style={{ 
+                          padding: '12px 18px', 
+                          textAlign: 'center',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                        onMouseEnter={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.target.closest('tr').style.backgroundColor = '';
+                        }}>{row.closeUpForceMouldCloseUpPressure || '-'}</td>
+                        <td style={{ 
+                          cursor: row.remarks ? 'pointer' : 'default',
+                          maxWidth: '200px',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                          whiteSpace: 'nowrap',
+                          padding: '12px 18px',
+                          textAlign: 'center',
+                          color: row.remarks ? '#5B9AA9' : '#94a3b8',
+                          textDecoration: row.remarks ? 'underline' : 'none',
+                          borderTop: isFirstInGroup && idx > 0 ? '2px solid #e2e8f0' : 'none',
+                          borderBottom: isLastInGroup ? '2px solid #e2e8f0' : 'none',
+                          transition: 'background-color 0.2s ease'
+                        }}
+                          onClick={() => row.remarks && showRemarksPopup(row.remarks)}
+                          onMouseEnter={(e) => {
+                            e.target.closest('tr').style.backgroundColor = '#e0f2fe';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.closest('tr').style.backgroundColor = '';
+                          }}
+                          title={row.remarks || 'No remarks'}>
+                          {row.remarks || '-'}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>
-          </div>
         </div>
+      )}
+
+      {!loading && flattenedRows.length > 0 && (
+        <CustomPagination
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+        />
       )}
 
       {/* Remarks Modal */}

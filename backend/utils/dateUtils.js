@@ -3,14 +3,37 @@ const mongoose = require('mongoose');
 const ensureDateDocument = async (Model, dateString) => {
     // 1. Convert YYYY-MM-DD to a clean UTC Date object (00:00:00)
     const [year, month, day] = dateString.split('-').map(Number);
-    const dateObj = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
-    // 2. Find or Create the daily batch document
-    let document = await Model.findOne({ date: dateObj });
+    const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+    const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+    
+    // 2. Find document using date range to handle any timezone variations
+    let document = await Model.findOne({ 
+        date: { 
+            $gte: startOfDay, 
+            $lte: endOfDay 
+        } 
+    });
+    
+    // 3. If not found, create with exact start of day
     if (!document) {
-        document = await Model.create({
-            date: dateObj,
-            entries: []
-        });
+        try {
+            document = await Model.create({
+                date: startOfDay,
+                entries: []
+            });
+        } catch (error) {
+            // Handle race condition - if another request created it simultaneously
+            if (error.code === 11000) { // Duplicate key error
+                document = await Model.findOne({ 
+                    date: { 
+                        $gte: startOfDay, 
+                        $lte: endOfDay 
+                    } 
+                });
+            } else {
+                throw error;
+            }
+        }
     }
     return document;
 };

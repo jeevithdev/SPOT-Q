@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const dmmController = require('../controllers/Moulding-DmmSettingParameters');
 
+router.get('/all', dmmController.getAllDMMSettings);
 router.get('/search/primary', dmmController.getDMMSettingsByDate); 
 router.get('/search/customer', dmmController.getDMMSettingsByCustomer);
 router.post('/', dmmController.createDMMSettings);

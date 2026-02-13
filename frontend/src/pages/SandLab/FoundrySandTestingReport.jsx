@@ -1,330 +1,431 @@
 import React, { useState, useEffect } from 'react';
-import { BookOpenCheck } from 'lucide-react';
+import { BookOpenCheck, ChevronDown, ChevronUp } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
-import { FilterButton, ClearButton } from '../../Components/Buttons';
+import { FilterButton, ClearButton, ShiftDropdown, DisaDropdown } from '../../Components/Buttons';
 import Table from '../../Components/Table';
 import '../../styles/PageStyles/Sandlab/FoundrySandTestingReport.css';
 
-const FoundrySandTestingReport = () => {
-  const [selectedDate, setSelectedDate] = useState('');
-  const [reportData, setReportData] = useState([]);
-  const [loading, setLoading] = useState(false);
+const API_BASE_URL = 'http://localhost:5000/api/v1/foundry-sand-testing-notes';
 
-  // Helper function to get current date in YYYY-MM-DD format
+const FoundrySandTestingReport = () => {
+  const [entries, setEntries] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [isRangeMode, setIsRangeMode] = useState(false);
+  const [expandedId, setExpandedId] = useState(null);
+
+  // Filter states
+  const [startDate, setStartDate] = useState(null);
+  const [endDate, setEndDate] = useState(null);
+  const [shift, setShift] = useState('');
+  const [sandPlant, setSandPlant] = useState('');
+
   const getCurrentDate = () => {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`;
   };
 
-  // Function to fetch data from API
-  const fetchData = async (date = null) => {
-    try {
-      setLoading(true);
-      const targetDate = date || getCurrentDate();
-      const response = await fetch(`http://localhost:5000/api/v1/foundry-sand-testing-notes/date/${targetDate}`, {
-        credentials: 'include'
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Server error: ${response.status}`);
-      }
+  useEffect(() => { fetchData(); }, []);
 
-      const data = await response.json();
-      
-      if (Array.isArray(data) && data.length > 0) {
-        setReportData(data);
+  const fetchData = async (fromDate = null, toDate = null, shiftFilter = '', sandPlantFilter = '') => {
+    setLoading(true);
+    setError('');
+    setExpandedId(null);
+    try {
+      const from = fromDate || getCurrentDate();
+      const to = toDate || from;
+      const rangeMode = toDate && toDate !== fromDate;
+
+      let url = `${API_BASE_URL}?startDate=${encodeURIComponent(from)}&endDate=${encodeURIComponent(to)}`;
+      const res = await fetch(url, { credentials: 'include' });
+      if (!res.ok) throw new Error(`Server error: ${res.status}`);
+      const data = await res.json();
+      if (data.success && Array.isArray(data.data) && data.data.length > 0) {
+        let filtered = data.data;
+        if (shiftFilter) filtered = filtered.filter(e => e.shift === shiftFilter);
+        if (sandPlantFilter) filtered = filtered.filter(e => e.sandPlant === sandPlantFilter);
+        setEntries(filtered);
+        setIsRangeMode(!!rangeMode);
+        if (filtered.length === 0) setError('No data found for the selected filters');
       } else {
-        setReportData([]);
+        setEntries([]);
+        setIsRangeMode(!!rangeMode);
       }
-    } catch (error) {
-      console.error('Error fetching data:', error);
-      setReportData([]);
+    } catch (err) {
+      console.error('Error fetching data:', err);
+      setEntries([]);
+      setError('Failed to fetch data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Fetch current date data on component mount
-  useEffect(() => {
-    fetchData();
-  }, []);
-
-  const handleDateChange = (e) => {
-    setSelectedDate(e.target.value);
-  };
-
   const handleFilter = () => {
-    if (selectedDate) {
-      fetchData(selectedDate);
-    }
+    if (!startDate) { alert('Please select a From date'); return; }
+    if (endDate && new Date(endDate) < new Date(startDate)) { alert('To date cannot be before From date'); return; }
+    fetchData(startDate, endDate || null, shift, sandPlant);
   };
 
   const handleClear = () => {
-    setSelectedDate('');
+    setStartDate(null);
+    setEndDate(null);
+    setShift('');
+    setSandPlant('');
+    setExpandedId(null);
     fetchData();
   };
 
-  // Helper function to format date
-  const formatDate = (dateString) => {
-    if (!dateString) return '-';
-    const date = new Date(dateString);
-    return date.toLocaleDateString('en-GB');
+  const formatDate = (dateStr) => {
+    if (!dateStr) return '-';
+    try {
+      const d = new Date(dateStr);
+      if (isNaN(d)) return dateStr;
+      return `${String(d.getDate()).padStart(2, '0')} / ${String(d.getMonth() + 1).padStart(2, '0')} / ${d.getFullYear()}`;
+    } catch { return dateStr; }
   };
 
-  // Prepare data for Clay Tests Table
-  const prepareClayTestsData = () => {
-    const rows = [];
-    reportData.forEach((record) => {
-      if (record.clayTests) {
-        ['test1', 'test2'].forEach((testKey) => {
-          const test = record.clayTests[testKey];
-          if (test && Object.values(test).some(val => val && Object.values(val).some(v => v))) {
-            rows.push({
-              _id: `${record._id}-${testKey}`,
-              date: formatDate(record.date),
-              shift: record.shift,
-              testNo: testKey === 'test1' ? 'Test 1' : 'Test 2',
-              totalClay: test.totalClay?.solution || '-',
-              activeClay: test.activeClay?.solution || '-',
-              deadClay: test.deadClay?.solution || '-',
-              vcm: test.vcm?.solution || '-',
-              loi: test.loi?.solution || '-'
-            });
-          }
-        });
-      }
-    });
-    return rows;
-  };
-
-  // Prepare data for Sieve Testing Table
-  const prepareSieveTestingData = () => {
-    const rows = [];
-    reportData.forEach((record) => {
-      if (record.sieveTesting) {
-        ['test1', 'test2'].forEach((testKey) => {
-          const test = record.sieveTesting[testKey];
-          if (test && test.sieveSize) {
-            rows.push({
-              _id: `${record._id}-${testKey}`,
-              date: formatDate(record.date),
-              shift: record.shift,
-              testNo: testKey === 'test1' ? 'Test 1' : 'Test 2',
-              s1700: test.sieveSize['1700'] || '-',
-              s850: test.sieveSize['850'] || '-',
-              s600: test.sieveSize['600'] || '-',
-              s425: test.sieveSize['425'] || '-',
-              s300: test.sieveSize['300'] || '-',
-              s212: test.sieveSize['212'] || '-',
-              s150: test.sieveSize['150'] || '-',
-              s106: test.sieveSize['106'] || '-',
-              s75: test.sieveSize['75'] || '-',
-              pan: test.sieveSize['pan'] || '-',
-              total: test.sieveSize['total'] || '-'
-            });
-          }
-        });
-      }
-    });
-    return rows;
-  };
-
-  // Prepare data for Parameters Table
-  const prepareParametersData = () => {
-    const rows = [];
-    reportData.forEach((record) => {
-      if (record.parameters) {
-        ['test1', 'test2'].forEach((testKey) => {
-          const test = record.parameters[testKey];
-          if (test && Object.values(test).some(v => v)) {
-            rows.push({
-              _id: `${record._id}-${testKey}`,
-              date: formatDate(record.date),
-              shift: record.shift,
-              testNo: testKey === 'test1' ? 'Test 1' : 'Test 2',
-              compactability: test.compactability || '-',
-              permeability: test.permeability || '-',
-              gcs: test.gcs || '-',
-              wts: test.wts || '-',
-              moisture: test.moisture || '-',
-              bentonite: test.bentonite || '-',
-              coalDust: test.coalDust || '-',
-              hopperLevel: test.hopperLevel || '-',
-              shearStrength: test.shearStrength || '-',
-              dustCollectorSettings: test.dustCollectorSettings || '-',
-              returnSandMoisture: test.returnSandMoisture || '-'
-            });
-          }
-        });
-      }
-    });
-    return rows;
-  };
-
-  // Prepare data for Additional Data Table
-  const prepareAdditionalData = () => {
-    const rows = [];
-    reportData.forEach((record) => {
-      if (record.additionalData) {
-        ['test1', 'test2'].forEach((testKey) => {
-          const test = record.additionalData[testKey];
-          if (test && Object.values(test).some(v => v)) {
-            rows.push({
-              _id: `${record._id}-${testKey}`,
-              date: formatDate(record.date),
-              shift: record.shift,
-              testNo: testKey === 'test1' ? 'Test 1' : 'Test 2',
-              afsNo: test.afsNo || '-',
-              fines: test.fines || '-',
-              gd: test.gd || '-'
-            });
-          }
-        });
-      }
-    });
-    return rows;
-  };
-
-  const clayTestsColumns = [
-    { key: 'date', label: 'Date', width: '120px', align: 'center' },
-    { key: 'shift', label: 'Shift', width: '80px', align: 'center' },
-    { key: 'testNo', label: 'Test', width: '80px', align: 'center' },
-    { key: 'totalClay', label: 'Total Clay', width: '120px', align: 'center' },
-    { key: 'activeClay', label: 'Active Clay', width: '120px', align: 'center' },
-    { key: 'deadClay', label: 'Dead Clay', width: '120px', align: 'center' },
-    { key: 'vcm', label: 'VCM', width: '120px', align: 'center' },
-    { key: 'loi', label: 'LOI', width: '120px', align: 'center' }
+  // ─── Sieve data config (same as entry form) ───
+  const sieveData = [
+    { size: 1700, mf: 5 },
+    { size: 850, mf: 10 },
+    { size: 600, mf: 20 },
+    { size: 425, mf: 30 },
+    { size: 300, mf: 40 },
+    { size: 212, mf: 50 },
+    { size: 150, mf: 70 },
+    { size: 106, mf: 100 },
+    { size: 75, mf: 140 },
+    { size: 53, mf: 200 },
+    { size: "Pan", mf: 300 },
   ];
 
-  const sieveTestingColumns = [
-    { key: 'date', label: 'Date', width: '100px', align: 'center' },
-    { key: 'shift', label: 'Shift', width: '70px', align: 'center' },
-    { key: 'testNo', label: 'Test', width: '70px', align: 'center' },
-    { key: 's1700', label: '1700µ', width: '80px', align: 'center' },
-    { key: 's850', label: '850µ', width: '80px', align: 'center' },
-    { key: 's600', label: '600µ', width: '80px', align: 'center' },
-    { key: 's425', label: '425µ', width: '80px', align: 'center' },
-    { key: 's300', label: '300µ', width: '80px', align: 'center' },
-    { key: 's212', label: '212µ', width: '80px', align: 'center' },
-    { key: 's150', label: '150µ', width: '80px', align: 'center' },
-    { key: 's106', label: '106µ', width: '80px', align: 'center' },
-    { key: 's75', label: '75µ', width: '80px', align: 'center' },
-    { key: 'pan', label: 'Pan', width: '80px', align: 'center' },
-    { key: 'total', label: 'Total', width: '80px', align: 'center', bold: true }
+  // ─── Column definitions (same layout as entry form) ───
+  const clayColumns = [
+    { key: 'parameter', label: 'Parameter', width: '180px', align: 'center' },
+    { key: 'test1', label: 'TEST-1', align: 'center' },
+    { key: 'test2', label: 'TEST-2', align: 'center' }
   ];
 
-  const parametersColumns = [
-    { key: 'date', label: 'Date', width: '100px', align: 'center' },
-    { key: 'shift', label: 'Shift', width: '70px', align: 'center' },
-    { key: 'testNo', label: 'Test', width: '70px', align: 'center' },
-    { key: 'compactability', label: 'Compactability', width: '110px', align: 'center' },
-    { key: 'permeability', label: 'Permeability', width: '110px', align: 'center' },
-    { key: 'gcs', label: 'GCS', width: '90px', align: 'center' },
-    { key: 'wts', label: 'WTS', width: '90px', align: 'center' },
-    { key: 'moisture', label: 'Moisture', width: '90px', align: 'center' },
-    { key: 'bentonite', label: 'Bentonite', width: '90px', align: 'center' },
-    { key: 'coalDust', label: 'Coal Dust', width: '90px', align: 'center' },
-    { key: 'hopperLevel', label: 'Hopper Level', width: '100px', align: 'center' },
-    { key: 'shearStrength', label: 'Shear Strength', width: '110px', align: 'center' },
-    { key: 'dustCollectorSettings', label: 'Dust Collector', width: '110px', align: 'center' },
-    { key: 'returnSandMoisture', label: 'Return Sand Moisture', width: '140px', align: 'center' }
+  const sieveColumns = [
+    { key: 'sieveSize', label: 'Sieve Size (Mic)', width: '120px', align: 'center' },
+    { key: 'wtTest1', label: '% Wt Retained - TEST-1', align: 'center' },
+    { key: 'wtTest2', label: '% Wt Retained - TEST-2', align: 'center' },
+    { key: 'mf', label: 'MF', width: '80px', align: 'center' },
+    { key: 'prodTest1', label: 'Product - TEST-1', align: 'center' },
+    { key: 'prodTest2', label: 'Product - TEST-2', align: 'center' }
   ];
 
-  const additionalDataColumns = [
-    { key: 'date', label: 'Date', width: '120px', align: 'center' },
-    { key: 'shift', label: 'Shift', width: '80px', align: 'center' },
-    { key: 'testNo', label: 'Test', width: '80px', align: 'center' },
-    { key: 'afsNo', label: 'AFS No', width: '120px', align: 'center' },
-    { key: 'fines', label: 'Fines', width: '120px', align: 'center' },
-    { key: 'gd', label: 'GD', width: '120px', align: 'center' }
+  const testParamColumns = [
+    { key: 'parameter', label: 'Parameter', width: '200px', align: 'center' },
+    { key: 'test1', label: 'TEST-1', align: 'center' },
+    { key: 'test2', label: 'TEST-2', align: 'center' }
   ];
+
+  const additionalColumns = [
+    { key: 'parameter', label: 'Parameter', width: '180px', align: 'center' },
+    { key: 'test1', label: 'TEST-1', align: 'center' },
+    { key: 'test2', label: 'TEST-2', align: 'center' }
+  ];
+
+  // ─── Parameter configs ───
+  const clayParamKeys = ["totalClay", "activeClay", "deadClay", "vcm", "loi"];
+  const clayParamLabels = ["Total Clay", "Active Clay", "Dead Clay", "VCM", "LOI"];
+
+  const testParamConfig = [
+    { key: "compactability", label: "Compactability" },
+    { key: "permeability", label: "Permeability" },
+    { key: "gcs", label: "GCS" },
+    { key: "wts", label: "WTS" },
+    { key: "moisture", label: "Moisture" },
+    { key: "bentonite", label: "Bentonite" },
+    { key: "coalDust", label: "CoalDust" },
+    { key: "hopperLevel", label: "Hopper Level" },
+    { key: "shearStrength", label: "Shear Strength" },
+    { key: "dustCollectorSettings", label: "Dust Collector Settings" },
+    { key: "returnSandMoisture", label: "Return Sand Moisture" }
+  ];
+
+  const additionalParamKeys = ["afsNo", "fines", "gd"];
+  const additionalParamLabels = ["AFSNO", "FINES", "GD"];
+
+  // ─── Render cell functions for read-only display ───
+  const computeSolution = (param, data) => {
+    if (!data) return '';
+    if (param === 'activeClay') {
+      const a = parseFloat(data.input1), b = parseFloat(data.input2);
+      return (!isNaN(a) && !isNaN(b)) ? (a * b).toFixed(2) : '';
+    }
+    if (param === 'deadClay') {
+      const a = parseFloat(data.input1), b = parseFloat(data.input2);
+      return (!isNaN(a) && !isNaN(b)) ? (a - b).toFixed(2) : '';
+    }
+    // totalClay, vcm, loi
+    const a = parseFloat(data.input1), b = parseFloat(data.input2), c = parseFloat(data.input3);
+    return (!isNaN(a) && !isNaN(b) && !isNaN(c) && c !== 0) ? (((a - b) / c) * 100).toFixed(2) : '';
+  };
+
+  const renderClayCell = (record) => (rowIndex, colIndex, colKey) => {
+    const param = clayParamKeys[rowIndex];
+    if (colKey === 'parameter') {
+      return <strong style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#1e293b' }}>{clayParamLabels[rowIndex]}</strong>;
+    }
+    const testNum = colKey;
+    const data = record.clayTests?.[testNum]?.[param];
+    if (!data) return <span style={{ color: '#94a3b8' }}>-</span>;
+
+    const isSimple = param === "activeClay" || param === "deadClay";
+    const operator = param === "activeClay" ? "x" : "-";
+    const solution = computeSolution(param, data) || data.solution || '0';
+
+    if (isSimple) {
+      return (
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <span style={{ minWidth: '50px', textAlign: 'center', color: '#475569' }}>{data.input1 || '-'}</span>
+          <span>{operator}</span>
+          <span style={{ minWidth: '50px', textAlign: 'center', color: '#475569' }}>{data.input2 || '-'}</span>
+          <span>=</span>
+          <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>{solution}%</span>
+        </div>
+      );
+    }
+    return (
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <span style={{ minWidth: '40px', textAlign: 'center', color: '#475569' }}>{data.input1 || '-'}</span>
+        <span>-</span>
+        <span style={{ minWidth: '40px', textAlign: 'center', color: '#475569' }}>{data.input2 || '-'}</span>
+        <span>/</span>
+        <span style={{ minWidth: '40px', textAlign: 'center', color: '#475569' }}>{data.input3 || '-'}</span>
+        <span>x 100 =</span>
+        <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>{solution}%</span>
+      </div>
+    );
+  };
+
+  const renderSieveCell = (record) => (rowIndex, colIndex, colKey) => {
+    const isTotal = rowIndex === sieveData.length;
+    const row = isTotal ? null : sieveData[rowIndex];
+    const sizeKey = isTotal ? 'total' : row.size;
+    const mfKey = isTotal ? 'total' : row.mf;
+    const cellStyle = { color: '#475569', fontWeight: isTotal ? 700 : 400 };
+
+    if (colKey === 'sieveSize') return <strong style={{ fontWeight: isTotal ? 700 : 600, color: '#1e293b' }}>{isTotal ? 'Total' : row.size}</strong>;
+    if (colKey === 'mf') return <strong style={{ fontWeight: isTotal ? 700 : 600, color: '#1e293b' }}>{isTotal ? 'Total' : row.mf}</strong>;
+    if (colKey === 'wtTest1') return <span style={cellStyle}>{record.sieveTesting?.test1?.sieveSize?.[sizeKey] || '-'}</span>;
+    if (colKey === 'wtTest2') return <span style={cellStyle}>{record.sieveTesting?.test2?.sieveSize?.[sizeKey] || '-'}</span>;
+    if (colKey === 'prodTest1') return <span style={cellStyle}>{record.sieveTesting?.test1?.mf?.[mfKey] || '-'}</span>;
+    if (colKey === 'prodTest2') return <span style={cellStyle}>{record.sieveTesting?.test2?.mf?.[mfKey] || '-'}</span>;
+    return null;
+  };
+
+  const renderTestParamCell = (record) => (rowIndex, colIndex, colKey) => {
+    const paramConfig = testParamConfig[rowIndex];
+    if (colKey === 'parameter') {
+      return <strong style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#1e293b' }}>{paramConfig.label}</strong>;
+    }
+    const val = record.parameters?.[colKey]?.[paramConfig.key];
+    return <span style={{ color: '#475569' }}>{val || '-'}</span>;
+  };
+
+  const renderAdditionalCell = (record) => (rowIndex, colIndex, colKey) => {
+    const param = additionalParamKeys[rowIndex];
+    if (colKey === 'parameter') {
+      return <strong style={{ fontSize: '0.9375rem', fontWeight: 600, color: '#1e293b' }}>{additionalParamLabels[rowIndex]}</strong>;
+    }
+    const val = record.additionalData?.[colKey]?.[param];
+    return <span style={{ color: '#475569' }}>{val || '-'}</span>;
+  };
+
+  // ─── Detail view for a single record ───
+  const renderDetail = (record, idx, total) => (
+    <div key={record._id || idx} style={{ marginBottom: '2.5rem', borderBottom: idx < total - 1 ? '3px solid #e2e8f0' : 'none', paddingBottom: idx < total - 1 ? '2rem' : 0 }}>
+      {/* Primary Info */}
+      <h3 className="foundry-section-header" style={{ marginTop: '1.5rem' }}>
+        Primary {record.date ? `( ${formatDate(record.date)} )` : ''} {record.shift ? `- Shift ${record.shift}` : ''} {record.sandPlant ? `- ${record.sandPlant}` : ''}
+      </h3>
+      <div style={{ display: 'flex', gap: '2rem', flexWrap: 'wrap', padding: '0.75rem 1rem', backgroundColor: '#f8fafc', borderRadius: '8px', border: '1px solid #e2e8f0', marginBottom: '1.5rem' }}>
+        <div>
+          <span style={{ fontWeight: 600, color: '#64748b', fontSize: '0.8rem' }}>Sand Plant</span>
+          <div style={{ fontWeight: 500, color: '#1e293b' }}>{record.sandPlant || '-'}</div>
+        </div>
+        <div>
+          <span style={{ fontWeight: 600, color: '#64748b', fontSize: '0.8rem' }}>Compactability Setting</span>
+          <div style={{ fontWeight: 500, color: '#1e293b' }}>{record.compactibilitySetting || '-'}</div>
+        </div>
+        <div>
+          <span style={{ fontWeight: 600, color: '#64748b', fontSize: '0.8rem' }}>Shear/Mould Strength Setting</span>
+          <div style={{ fontWeight: 500, color: '#1e293b' }}>{record.shearStrengthSetting || '-'}</div>
+        </div>
+        {record.remarks && (
+          <div>
+            <span style={{ fontWeight: 600, color: '#64748b', fontSize: '0.8rem' }}>Remarks</span>
+            <div style={{ fontWeight: 500, color: '#1e293b' }}>{record.remarks}</div>
+          </div>
+        )}
+      </div>
+
+      {/* Clay Parameters */}
+      <div className="foundry-section-header" style={{ marginTop: '1.5rem' }}><h3>Clay Parameters</h3></div>
+      <Table template bordered rows={5} minWidth={800} columns={clayColumns} renderCell={renderClayCell(record)} />
+
+      {/* Sieve Testing */}
+      <div className="foundry-section-header" style={{ marginTop: '1.5rem' }}><h3>Sieve Testing</h3></div>
+      <Table template bordered rows={sieveData.length + 1} minWidth={900} columns={sieveColumns} renderCell={renderSieveCell(record)} />
+
+      {/* Test Parameters */}
+      <div className="foundry-section-header" style={{ marginTop: '1.5rem' }}><h3>Test Parameters</h3></div>
+      <Table template bordered rows={11} minWidth={800} columns={testParamColumns} renderCell={renderTestParamCell(record)} />
+
+      {/* Additional Data */}
+      <div className="foundry-section-header" style={{ marginTop: '1.5rem' }}><h3>Additional Data</h3></div>
+      <Table template bordered rows={3} minWidth={800} columns={additionalColumns} renderCell={renderAdditionalCell(record)} />
+    </div>
+  );
+
+  // ─── Summary table columns for range mode ───
+  const summaryColumns = [
+    { key: 'sno', label: 'S.No', width: '70px', align: 'center' },
+    { key: 'date', label: 'Date', width: '150px', align: 'center' },
+    { key: 'shift', label: 'Shift', width: '100px', align: 'center' },
+    { key: 'sandPlant', label: 'Sand Plant', width: '150px', align: 'center' },
+    { key: 'action', label: 'Action', width: '100px', align: 'center' }
+  ];
+
+  const summaryData = entries.map((e, i) => ({
+    sno: i + 1,
+    date: formatDate(e.date),
+    shift: e.shift || '-',
+    sandPlant: e.sandPlant || '-',
+    action: e._id,
+    _id: e._id
+  }));
 
   return (
     <div className="foundry-sand-testing-report-container">
+      {/* Header */}
       <div className="foundry-sand-testing-report-header">
         <div className="foundry-sand-testing-report-header-text">
-          <BookOpenCheck size={28} style={{ color: '#5B9AA9', marginRight: '0.75rem' }} />
-          <h2>Foundry Sand Testing Note - Report</h2>
+          <h2>
+            <BookOpenCheck size={28} style={{ color: '#5B9AA9' }} />
+            Foundry Sand Testing Note - Report
+          </h2>
         </div>
       </div>
+
+      {/* Filter Section */}
       <div className="foundry-sand-testing-filter-container">
         <div className="foundry-sand-testing-filter-group">
-          <label style={{ fontWeight: '600', marginRight: '0.5rem' }}>Date:</label>
+          <label style={{ fontWeight: 600 }}>From</label>
           <CustomDatePicker
-            value={selectedDate}
-            onChange={handleDateChange}
-            name="selectedDate"
+            value={startDate}
+            onChange={(e) => setStartDate(e.target.value)}
+          />
+        </div>
+        <div className="foundry-sand-testing-filter-group">
+          <label style={{ fontWeight: 600 }}>To</label>
+          <CustomDatePicker
+            value={endDate}
+            onChange={(e) => setEndDate(e.target.value)}
+            disabled={!startDate}
+          />
+        </div>
+        <div className="foundry-sand-testing-filter-group">
+          <label style={{ fontWeight: 600 }}>Shift</label>
+          <ShiftDropdown
+            value={shift}
+            onChange={(e) => setShift(e.target.value)}
+            disabled={!startDate}
+          />
+        </div>
+        <div className="foundry-sand-testing-filter-group">
+          <label style={{ fontWeight: 600 }}>Sand Plant</label>
+          <DisaDropdown
+            value={sandPlant}
+            onChange={(e) => setSandPlant(e.target.value)}
+            name="sandPlant"
+            disabled={!startDate}
           />
         </div>
         <div className="foundry-sand-testing-filter-actions">
-          <FilterButton onClick={handleFilter} disabled={!selectedDate || loading} />
-          <ClearButton onClick={handleClear} disabled={loading} />
+          <FilterButton onClick={handleFilter} disabled={!startDate || loading} />
+          <ClearButton onClick={handleClear} disabled={!startDate && !endDate && !shift && !sandPlant} />
         </div>
       </div>
 
-      {loading && (
-        <div style={{ textAlign: 'center', padding: '20px', color: '#5B9AA9' }}>
-          Loading data...
+      {/* Error / Loading */}
+      {error && (
+        <div style={{ padding: '1rem', backgroundColor: '#fee2e2', border: '1px solid #fecaca', borderRadius: '8px', color: '#991b1b', marginBottom: '1rem' }}>
+          {error}
         </div>
       )}
+      {loading && (
+        <div style={{ textAlign: 'center', padding: '20px', color: '#5B9AA9' }}>Loading data...</div>
+      )}
 
-      {/* Clay Tests Section */}
-      <div className="foundry-section-header" style={{ marginTop: '2rem' }}>
-        <h3>Clay Tests Results</h3>
-      </div>
-      <Table
-        columns={clayTestsColumns}
-        data={prepareClayTestsData()}
-        noDataMessage="No clay test records found for the selected date"
-        minWidth={1200}
-        striped
-        headerGradient
-      />
+      {/* === RANGE MODE: Summary table with expandable rows === */}
+      {!loading && isRangeMode && entries.length > 0 && (
+        <>
+          <h3 className="foundry-section-header" style={{ marginTop: '1.5rem' }}>
+            Entries ({entries.length})
+          </h3>
+          <div className="reusable-table-container">
+            <table className="reusable-table table-bordered" style={{ minWidth: '600px' }}>
+              <thead>
+                <tr>
+                  {summaryColumns.map((col) => (
+                    <th key={col.key} style={{ width: col.width, textAlign: col.align }}>{col.label}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {entries.map((record, idx) => (
+                  <React.Fragment key={record._id || idx}>
+                    <tr
+                      onClick={() => setExpandedId(expandedId === record._id ? null : record._id)}
+                      style={{ cursor: 'pointer', backgroundColor: expandedId === record._id ? '#f0f9ff' : idx % 2 === 0 ? '#ffffff' : '#f8fafc', transition: 'background-color 0.15s' }}
+                      onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#e0f2fe'}
+                      onMouseLeave={(e) => e.currentTarget.style.backgroundColor = expandedId === record._id ? '#f0f9ff' : idx % 2 === 0 ? '#ffffff' : '#f8fafc'}
+                    >
+                      <td style={{ textAlign: 'center', fontWeight: 500 }}>{idx + 1}</td>
+                      <td style={{ textAlign: 'center', fontWeight: 500 }}>{formatDate(record.date)}</td>
+                      <td style={{ textAlign: 'center', fontWeight: 500 }}>{record.shift || '-'}</td>
+                      <td style={{ textAlign: 'center', fontWeight: 500 }}>{record.sandPlant || '-'}</td>
+                      <td style={{ textAlign: 'center' }}>
+                        {expandedId === record._id
+                          ? <ChevronUp size={18} style={{ color: '#5B9AA9' }} />
+                          : <ChevronDown size={18} style={{ color: '#5B9AA9' }} />
+                        }
+                      </td>
+                    </tr>
+                    {expandedId === record._id && (
+                      <tr>
+                        <td colSpan={summaryColumns.length} style={{ padding: '1rem', backgroundColor: '#fafbfc' }}>
+                          {renderDetail(record, 0, 1)}
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
 
-      {/* Sieve Testing Section */}
-      <div className="foundry-section-header" style={{ marginTop: '2rem' }}>
-        <h3>Sieve Testing Results</h3>
-      </div>
-      <Table
-        columns={sieveTestingColumns}
-        data={prepareSieveTestingData()}
-        noDataMessage="No sieve testing records found for the selected date"
-        minWidth={1600}
-        striped
-        headerGradient
-      />
+      {/* === SINGLE DATE MODE: Show detail directly === */}
+      {!loading && !isRangeMode && (
+        (entries.length > 0 ? entries : [{}]).map((record, idx) =>
+          renderDetail(record, idx, entries.length || 1)
+        )
+      )}
 
-      {/* Parameters Section */}
-      <div className="foundry-section-header" style={{ marginTop: '2rem' }}>
-        <h3>Testing Parameters</h3>
-      </div>
-      <Table
-        columns={parametersColumns}
-        data={prepareParametersData()}
-        noDataMessage="No parameter records found for the selected date"
-        minWidth={1800}
-        striped
-        headerGradient
-      />
-
-      {/* Additional Data Section */}
-      <div className="foundry-section-header" style={{ marginTop: '2rem' }}>
-        <h3>Additional Data</h3>
-      </div>
-      <Table
-        columns={additionalDataColumns}
-        data={prepareAdditionalData()}
-        noDataMessage="No additional data found for the selected date"
-        minWidth={800}
-        striped
-        headerGradient
-      />
+      {/* Range mode with no entries */}
+      {!loading && isRangeMode && entries.length === 0 && !error && (
+        <div style={{ textAlign: 'center', padding: '2rem', color: '#94a3b8', fontSize: '1rem' }}>
+          No entries found for the selected date range
+        </div>
+      )}
     </div>
   );
 };
 
 export default FoundrySandTestingReport;
-

@@ -451,4 +451,8 @@ coalDust:{
     collection: 'sand_testing_record'
 });
 
+// Create a unique index on date field to prevent duplicate documents for the same date
+// Using sparse: true to allow multiple null dates if needed, but prevent duplicate actual dates
+SandTestingRecordSchema.index({ date: 1 }, { unique: true });
+
 module.exports = mongoose.model("SandTestingRecord", SandTestingRecordSchema);

@@ -1,8 +1,10 @@
-import React, { useState } from "react";
-import { Save, Plus, X, RefreshCw } from "lucide-react";
+import React, { useState, useEffect } from "react";
+import { Save, Plus, X } from "lucide-react";
 import CustomDatePicker from "../../Components/CustomDatePicker";
-import { CustomTimeInput, Time, PlusButton, MinusButton } from "../../Components/Buttons";
+import { CustomTimeInput, Time, PlusButton, MinusButton, SubmitButton, ShiftDropdown } from "../../Components/Buttons";
 import "../../styles/PageStyles/Moulding/DisamaticProduct.css";
+
+const API_BASE_URL = 'http://localhost:5000/api/v1/moulding-disa';
 
 const initialFormData = {
   date: "",
@@ -13,7 +15,7 @@ const initialFormData = {
   productionTable: [{ counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }],
   nextShiftPlanTable: [{ componentName: "", plannedMoulds: "", remarks: "" }],
   delaysTable: [{ delays: "", durationMinutes: [""], fromTime: [""], toTime: [""] }],
-  mouldHardnessTable: [{ componentName: "", mpPP: "", mpSP: "", bsPP: "", bsSP: "", remarks: "" }],
+  mouldHardnessTable: [{ componentName: "", mpPP: [["", ""]], mpSP: [["", ""]], bsPP: [["", ""]], bsSP: [["", ""]], remarks: "" }],
   patternTempTable: [{ item: "", pp: "", sp: "" }],
   significantEvent: "",
   maintenance: "",
@@ -60,106 +62,170 @@ const formatTimeToString = (timeObj) => {
 
 const DisamaticProduct = () => {
   const [formData, setFormData] = useState(initialFormData);
-  
-  // Validation states (null = neutral, true = valid/green, false = invalid/red)
-  const [dateValid, setDateValid] = useState(null);
-  const [shiftValid, setShiftValid] = useState(null);
-  const [inchargeValid, setInchargeValid] = useState(null);
-  const [ppOperatorValid, setPpOperatorValid] = useState(null);
-  const [membersValid, setMembersValid] = useState([null]);
-  const [supervisorNameValid, setSupervisorNameValid] = useState(null);
-  const [significantEventValid, setSignificantEventValid] = useState(null);
-  const [maintenanceValid, setMaintenanceValid] = useState(null);
-  
-  // Table validation states (arrays of validation objects for each row)
-  const [productionTableValid, setProductionTableValid] = useState([{
-    counterNo: null, componentName: null, produced: null, poured: null, cycleTime: null, mouldsPerHour: null, remarks: null
-  }]);
-  const [nextShiftPlanTableValid, setNextShiftPlanTableValid] = useState([{
-    componentName: null, plannedMoulds: null, remarks: null
-  }]);
-  const [delaysTableValid, setDelaysTableValid] = useState([{
-    delays: null, durationMinutes: [null], fromTime: [null], toTime: [null]
-  }]);
-  const [mouldHardnessTableValid, setMouldHardnessTableValid] = useState([{
-    componentName: null, mpPP: null, mpSP: null, bsPP: null, bsSP: null, remarks: null
-  }]);
-  const [patternTempTableValid, setPatternTempTableValid] = useState([{
-    item: null, pp: null, sp: null
-  }]);
+  const [isPrimaryDataSaved, setIsPrimaryDataSaved] = useState(false);
+  const [lockedFields, setLockedFields] = useState({
+    incharge: false,
+    ppOperator: false
+  });
+  const [lockedMembersCount, setLockedMembersCount] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const [productionErrors, setProductionErrors] = useState({});
+  const [nextShiftPlanErrors, setNextShiftPlanErrors] = useState({});
+  const [delaysErrors, setDelaysErrors] = useState({});
+  const [mouldHardnessErrors, setMouldHardnessErrors] = useState({});
+  const [patternTempErrors, setPatternTempErrors] = useState({});
+  const [focusedField, setFocusedField] = useState(null);
+  const [nextSNo, setNextSNo] = useState(1);
+  const [nextShiftPlanSNo, setNextShiftPlanSNo] = useState(1);
+  const [delaysSNo, setDelaysSNo] = useState(1);
+  const [mouldHardnessSNo, setMouldHardnessSNo] = useState(1);
+  const [patternTempSNo, setPatternTempSNo] = useState(1);
+  const [isEventsSaved, setIsEventsSaved] = useState(false);
+  const [lockedEventsFields, setLockedEventsFields] = useState({
+    significantEvent: false,
+    maintenance: false,
+    supervisorName: false
+  });
+  const [delaysSubmitError, setDelaysSubmitError] = useState('');
+  const [mouldHardnessSubmitError, setMouldHardnessSubmitError] = useState('');
 
-  // Validation helper function
-  const getValidationClass = (isValid) => {
-    if (isValid === true) return 'valid-input';
-    if (isValid === false) return 'invalid-input';
-    return '';
+  // Fetch primary data when date or shift changes
+  useEffect(() => {
+    if (formData.date && formData.shift) {
+      fetchPrimaryData(formData.date, formData.shift);
+    }
+  }, [formData.date, formData.shift]);
+
+  // Fetch primary data from backend
+  const fetchPrimaryData = async (date, shift) => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`${API_BASE_URL}/primary?date=${date}&shift=${shift}`, {
+        method: 'GET',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          console.error('Authentication required');
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+
+      if (result.success && result.data) {
+        const { incharge, ppOperator, memberspresent, productionCount, nextShiftPlanCount, delaysCount, mouldHardnessCount, patternTempCount, significantEvent, maintenance, supervisorName } = result.data;
+        
+        // Set next S.No based on existing production data count
+        const newNextSNo = (productionCount || 0) + 1;
+        setNextSNo(newNextSNo);
+        
+        // Set next shift plan S.No
+        const newNextShiftPlanSNo = (nextShiftPlanCount || 0) + 1;
+        setNextShiftPlanSNo(newNextShiftPlanSNo);
+        
+        // Set delays S.No
+        const newDelaysSNo = (delaysCount || 0) + 1;
+        setDelaysSNo(newDelaysSNo);
+        
+        // Set mould hardness S.No
+        const newMouldHardnessSNo = (mouldHardnessCount || 0) + 1;
+        setMouldHardnessSNo(newMouldHardnessSNo);
+        
+        // Set pattern temperature S.No
+        const newPatternTempSNo = (patternTempCount || 0) + 1;
+        setPatternTempSNo(newPatternTempSNo);
+        
+        // Determine saved members count
+        const savedMembersCount = (memberspresent && memberspresent.length > 0) ? memberspresent.length : 0;
+        
+        // Update form data with fetched values - start with one empty field if no saved members
+        const currentMembers = memberspresent && memberspresent.length > 0 ? [...memberspresent] : [''];
+        
+        setFormData(prev => ({
+          ...prev,
+          incharge: incharge || '',
+          ppOperator: ppOperator || '',
+          members: currentMembers,
+          productionTable: [{ counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }],
+          nextShiftPlanTable: [{ componentName: "", plannedMoulds: "", remarks: "" }],
+          delaysTable: [{ delays: "", durationMinutes: [""], fromTime: [""], toTime: [""] }],
+          significantEvent: significantEvent || '',
+          maintenance: maintenance || '',
+          supervisorName: supervisorName || ''
+        }));
+
+        // Lock fields that have values
+        setLockedFields({
+          incharge: !!incharge,
+          ppOperator: !!ppOperator
+        });
+        
+        // Set count of locked members
+        setLockedMembersCount(savedMembersCount);
+
+        // Check if any primary data exists
+        const hasAnyData = incharge || ppOperator || savedMembersCount > 0;
+        setIsPrimaryDataSaved(hasAnyData);
+        
+        // Lock individual events fields based on what has data
+        setLockedEventsFields({
+          significantEvent: !!(significantEvent && significantEvent.trim()),
+          maintenance: !!(maintenance && maintenance.trim()),
+          supervisorName: !!(supervisorName && supervisorName.trim())
+        });
+        
+        // Check if all events fields are locked
+        const allEventsLocked = !!(significantEvent && significantEvent.trim()) && 
+                               !!(maintenance && maintenance.trim()) && 
+                               !!(supervisorName && supervisorName.trim());
+        setIsEventsSaved(allEventsLocked);
+      } else {
+        // No data found - reset to defaults
+        setFormData(prev => ({
+          ...prev,
+          incharge: '',
+          ppOperator: '',
+          members: [''],
+          productionTable: [{ counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }],
+          nextShiftPlanTable: [{ componentName: "", plannedMoulds: "", remarks: "" }],
+          delaysTable: [{ delays: "", durationMinutes: [""], fromTime: [""], toTime: [""] }],
+          significantEvent: '',
+          maintenance: '',
+          supervisorName: ''
+        }));
+        setLockedFields({
+          incharge: false,
+          ppOperator: false
+        });
+        setLockedMembersCount(0);
+        setIsPrimaryDataSaved(false);
+        setIsEventsSaved(false);
+        setLockedEventsFields({
+          significantEvent: false,
+          maintenance: false,
+          supervisorName: false
+        });
+        setNextSNo(1);
+        setNextShiftPlanSNo(1);
+        setDelaysSNo(1);
+        setMouldHardnessSNo(1);
+        setPatternTempSNo(1);
+      }
+    } catch (error) {
+      console.error('Error fetching primary data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Handle basic field changes with validation
+  // Handle basic field changes
   const handleChange = (field, value) => {
-    // Validate Date
-    if (field === 'date') {
-      if (value.trim() === '') {
-        setDateValid(null);
-      } else {
-        setDateValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate Shift
-    if (field === 'shift') {
-      if (value.trim() === '') {
-        setShiftValid(null);
-      } else {
-        setShiftValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate Incharge
-    if (field === 'incharge') {
-      if (value.trim() === '') {
-        setInchargeValid(null);
-      } else {
-        setInchargeValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate PP Operator
-    if (field === 'ppOperator') {
-      if (value.trim() === '') {
-        setPpOperatorValid(null);
-      } else {
-        setPpOperatorValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate Supervisor Name
-    if (field === 'supervisorName') {
-      if (value.trim() === '') {
-        setSupervisorNameValid(null);
-      } else {
-        setSupervisorNameValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate Significant Event
-    if (field === 'significantEvent') {
-      if (value.trim() === '') {
-        setSignificantEventValid(null);
-      } else {
-        setSignificantEventValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate Maintenance
-    if (field === 'maintenance') {
-      if (value.trim() === '') {
-        setMaintenanceValid(null);
-      } else {
-        setMaintenanceValid(value.trim().length > 0);
-      }
-    }
-
     setFormData(prev => ({ ...prev, [field]: value }));
   };
 
@@ -167,22 +233,13 @@ const DisamaticProduct = () => {
   const handleMemberChange = (index, value) => {
     const newMembers = [...formData.members];
     newMembers[index] = value;
-    
-    // Update validation for this member
-    const newMembersValid = [...membersValid];
-    if (value.trim() === '') {
-      newMembersValid[index] = null;
-    } else {
-      newMembersValid[index] = value.trim().length > 0;
-    }
-    setMembersValid(newMembersValid);
-    
     setFormData(prev => ({ ...prev, members: newMembers }));
   };
 
   const addMemberField = () => {
-    setFormData(prev => ({ ...prev, members: [...prev.members, ""] }));
-    setMembersValid(prev => [...prev, null]);
+    if (formData.members.length < 4) {
+      setFormData(prev => ({ ...prev, members: [...prev.members, ""] }));
+    }
   };
 
   const removeMemberField = (index) => {
@@ -190,7 +247,6 @@ const DisamaticProduct = () => {
       ...prev,
       members: prev.members.filter((_, i) => i !== index)
     }));
-    setMembersValid(prev => prev.filter((_, i) => i !== index));
   };
 
   // Production Table
@@ -199,9 +255,6 @@ const DisamaticProduct = () => {
       ...prev,
       productionTable: [...prev.productionTable, { counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }]
     }));
-    setProductionTableValid(prev => [...prev, {
-      counterNo: null, componentName: null, produced: null, poured: null, cycleTime: null, mouldsPerHour: null, remarks: null
-    }]);
   };
 
   const deleteProductionRow = (index) => {
@@ -209,7 +262,6 @@ const DisamaticProduct = () => {
       ...prev,
       productionTable: prev.productionTable.filter((_, i) => i !== index)
     }));
-    setProductionTableValid(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleProductionChange = (index, field, value) => {
@@ -217,31 +269,190 @@ const DisamaticProduct = () => {
     newTable[index][field] = value;
     setFormData(prev => ({ ...prev, productionTable: newTable }));
     
-    // Update validation
-    const newValid = [...productionTableValid];
-    if (field === 'produced' || field === 'poured' || field === 'mouldsPerHour') {
-      // Numeric fields
-      if (value === '' || value.trim() === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = !isNaN(value) && parseFloat(value) >= 0;
-      }
-    } else if (field === 'cycleTime') {
-      // Time field
-      if (!value || value === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = value.length > 0;
-      }
-    } else {
-      // Text fields
-      if (value.trim() === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = value.trim().length > 0;
+    // Clear error for this field when user enters data
+    if (productionErrors[index]?.[field]) {
+      setProductionErrors(prev => {
+        const newErrors = { ...prev };
+        if (newErrors[index]) {
+          delete newErrors[index][field];
+          if (Object.keys(newErrors[index]).length === 0) {
+            delete newErrors[index];
+          }
+        }
+        return newErrors;
+      });
+    }
+  };
+
+  const getBorderColor = (rowIndex, fieldName) => {
+    const fieldKey = `${rowIndex}-${fieldName}`;
+    const hasError = productionErrors[rowIndex]?.[fieldName];
+    const isFocused = focusedField === fieldKey;
+    
+    if (isFocused) {
+      return '#10b981'; // green when focused
+    }
+    if (hasError) {
+      return '#ef4444'; // red when error
+    }
+    return '#e2e8f0'; // default gray
+  };
+
+  // Handle Enter key to move to next input
+  const handleProductionKeyDown = (e, currentRowIndex, currentField) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Navigation fields
+      const fields = ['counterNo', 'componentName', 'produced', 'poured', 'cycleTime', 'mouldsPerHour', 'remarks'];
+      const currentFieldIndex = fields.indexOf(currentField);
+      
+      // Move to next field in same row
+      if (currentFieldIndex < fields.length - 1) {
+        const nextField = fields[currentFieldIndex + 1];
+        setFocusedField(`${currentRowIndex}-${nextField}`);
+        // Focus the next input using setTimeout to ensure state update
+        setTimeout(() => {
+          // Special handling for cycleTime field (CustomTimeInput component)
+          if (nextField === 'cycleTime') {
+            const timeContainer = document.querySelector(`div[data-field="${currentRowIndex}-cycleTime"]`);
+            if (timeContainer) {
+              const timeInput = timeContainer.querySelector('[data-slot="input"]');
+              if (timeInput) {
+                const firstSegment = timeInput.querySelector('[data-slot="segment"]');
+                if (firstSegment) {
+                  firstSegment.focus();
+                  return;
+                }
+              }
+            }
+          }
+          
+          // Regular input handling
+          const nextInput = document.querySelector(`input[data-field="${currentRowIndex}-${nextField}"]`);
+          if (nextInput) {
+            nextInput.focus();
+          }
+        }, 0);
+      } 
+      // Move to first field of next row
+      else if (currentRowIndex < formData.productionTable.length - 1) {
+        const nextRowIndex = currentRowIndex + 1;
+        setFocusedField(`${nextRowIndex}-counterNo`);
+        setTimeout(() => {
+          const nextInput = document.querySelector(`input[data-field="${nextRowIndex}-counterNo"]`);
+          if (nextInput) nextInput.focus();
+        }, 0);
       }
     }
-    setProductionTableValid(newValid);
+  };
+
+  // Submit Production Data
+  const handleSubmitProduction = async () => {
+    // Validate all fields in production table
+    const errors = {};
+    let hasCompleteRow = false;
+    let hasAnyData = false;
+    
+    formData.productionTable.forEach((row, index) => {
+      const rowErrors = {};
+      
+      // Check if row has any data
+      const hasRowData = row.counterNo || row.componentName || row.produced || row.poured || row.cycleTime || row.mouldsPerHour || row.remarks;
+      
+      if (hasRowData) {
+        hasAnyData = true;
+        // If row has some data, all fields must be filled
+        if (!row.counterNo) rowErrors.counterNo = true;
+        if (!row.componentName) rowErrors.componentName = true;
+        if (!row.produced) rowErrors.produced = true;
+        if (!row.poured) rowErrors.poured = true;
+        if (!row.cycleTime) rowErrors.cycleTime = true;
+        if (!row.mouldsPerHour) rowErrors.mouldsPerHour = true;
+        if (!row.remarks) rowErrors.remarks = true;
+        
+        if (Object.keys(rowErrors).length === 0) {
+          hasCompleteRow = true;
+        } else {
+          errors[index] = rowErrors;
+        }
+      }
+    });
+
+    // If no data at all in any row, show errors on all rows
+    if (!hasAnyData) {
+      formData.productionTable.forEach((row, index) => {
+        errors[index] = {
+          counterNo: true,
+          componentName: true,
+          produced: true,
+          poured: true,
+          cycleTime: true,
+          mouldsPerHour: true,
+          remarks: true
+        };
+      });
+      setProductionErrors(errors);
+      return;
+    }
+
+    // If validation errors exist, set them and return
+    if (Object.keys(errors).length > 0) {
+      setProductionErrors(errors);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Filter out empty rows before sending
+      const validRows = formData.productionTable.filter(row => 
+        row.counterNo || row.componentName || row.produced || row.poured || row.cycleTime || row.mouldsPerHour || row.remarks
+      );
+      
+      // Save production data to backend
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          date: formData.date,
+          section: 'production',
+          productionTable: validRows
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save production data: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        
+        // Calculate new nextSNo based on saved rows
+        const newNextSNo = nextSNo + validRows.length;
+        setNextSNo(newNextSNo);
+        
+        // Clear production table and add one row
+        setFormData(prev => ({
+          ...prev,
+          productionTable: [{ counterNo: "", componentName: "", produced: "", poured: "", cycleTime: "", mouldsPerHour: "", remarks: "" }]
+        }));
+        
+        // Clear errors
+        setProductionErrors({});
+      } else {
+        alert('Failed to save production data: ' + (result.message || 'Unknown error'));
+      }
+      setProductionErrors({});
+    } catch (error) {
+      console.error('Error saving production data:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Next Shift Plan Table
@@ -250,7 +461,6 @@ const DisamaticProduct = () => {
       ...prev,
       nextShiftPlanTable: [...prev.nextShiftPlanTable, { componentName: "", plannedMoulds: "", remarks: "" }]
     }));
-    setNextShiftPlanTableValid(prev => [...prev, { componentName: null, plannedMoulds: null, remarks: null }]);
   };
 
   const deleteNextShiftPlanRow = (index) => {
@@ -258,7 +468,6 @@ const DisamaticProduct = () => {
       ...prev,
       nextShiftPlanTable: prev.nextShiftPlanTable.filter((_, i) => i !== index)
     }));
-    setNextShiftPlanTableValid(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleNextShiftPlanChange = (index, field, value) => {
@@ -266,41 +475,224 @@ const DisamaticProduct = () => {
     newTable[index][field] = value;
     setFormData(prev => ({ ...prev, nextShiftPlanTable: newTable }));
     
-    // Update validation
-    const newValid = [...nextShiftPlanTableValid];
-    if (field === 'plannedMoulds') {
-      // Numeric field
-      if (value === '' || value.trim() === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = !isNaN(value) && parseFloat(value) >= 0;
-      }
-    } else {
-      // Text fields
-      if (value.trim() === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = value.trim().length > 0;
+    // Clear error for this field when user enters data
+    if (nextShiftPlanErrors[index]?.[field]) {
+      setNextShiftPlanErrors(prev => {
+        const newErrors = { ...prev };
+        if (newErrors[index]) {
+          delete newErrors[index][field];
+          if (Object.keys(newErrors[index]).length === 0) {
+            delete newErrors[index];
+          }
+        }
+        return newErrors;
+      });
+    }
+  };
+
+  const getBorderColorNextShiftPlan = (rowIndex, fieldName) => {
+    const fieldKey = `${rowIndex}-nextShiftPlan-${fieldName}`;
+    const isFocused = focusedField === fieldKey;
+    const hasError = nextShiftPlanErrors[rowIndex]?.[fieldName];
+    
+    if (isFocused) {
+      return '#10b981'; // green when focused
+    }
+    if (hasError) {
+      return '#ef4444'; // red when error
+    }
+    return '#e2e8f0'; // default gray
+  };
+
+  // Handle Enter key navigation for Next Shift Plan
+  const handleNextShiftPlanKeyDown = (e, currentRowIndex, currentField) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      const fields = ['componentName', 'plannedMoulds', 'remarks'];
+      const currentFieldIndex = fields.indexOf(currentField);
+      
+      // Move to next field in same row
+      if (currentFieldIndex < fields.length - 1) {
+        const nextField = fields[currentFieldIndex + 1];
+        setFocusedField(`${currentRowIndex}-nextShiftPlan-${nextField}`);
+        setTimeout(() => {
+          const nextInput = document.querySelector(`input[data-field="${currentRowIndex}-nextShiftPlan-${nextField}"]`);
+          if (nextInput) {
+            nextInput.focus();
+          }
+        }, 0);
+      } 
+      // Move to first field of next row
+      else if (currentRowIndex < formData.nextShiftPlanTable.length - 1) {
+        const nextRowIndex = currentRowIndex + 1;
+        setFocusedField(`${nextRowIndex}-nextShiftPlan-componentName`);
+        setTimeout(() => {
+          const nextInput = document.querySelector(`input[data-field="${nextRowIndex}-nextShiftPlan-componentName"]`);
+          if (nextInput) nextInput.focus();
+        }, 0);
       }
     }
-    setNextShiftPlanTableValid(newValid);
+  };
+
+  // Submit Next Shift Plan Data
+  const handleSubmitNextShiftPlan = async () => {
+    // Validate all fields
+    const errors = {};
+    let hasCompleteRow = false;
+    let hasAnyData = false;
+    
+    formData.nextShiftPlanTable.forEach((row, index) => {
+      const rowErrors = {};
+      
+      // Check if row has any data
+      const hasRowData = row.componentName || row.plannedMoulds || row.remarks;
+      
+      if (hasRowData) {
+        hasAnyData = true;
+        // If row has some data, all fields must be filled
+        if (!row.componentName) rowErrors.componentName = true;
+        if (!row.plannedMoulds) rowErrors.plannedMoulds = true;
+        if (!row.remarks) rowErrors.remarks = true;
+        
+        if (Object.keys(rowErrors).length === 0) {
+          hasCompleteRow = true;
+        } else {
+          errors[index] = rowErrors;
+        }
+      }
+    });
+
+    // If no data at all, show errors on all rows
+    if (!hasAnyData) {
+      formData.nextShiftPlanTable.forEach((row, index) => {
+        errors[index] = {
+          componentName: true,
+          plannedMoulds: true,
+          remarks: true
+        };
+      });
+      setNextShiftPlanErrors(errors);
+      return;
+    }
+
+    // If validation errors exist, set them and return
+    if (Object.keys(errors).length > 0) {
+      setNextShiftPlanErrors(errors);
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Filter out empty rows
+      const validRows = formData.nextShiftPlanTable.filter(row => 
+        row.componentName || row.plannedMoulds || row.remarks
+      );
+      
+      // Save to backend
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          date: formData.date,
+          section: 'nextShiftPlan',
+          nextShiftPlanTable: validRows
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save next shift plan: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        
+        // Update next S.No
+        const newNextShiftPlanSNo = nextShiftPlanSNo + validRows.length;
+        setNextShiftPlanSNo(newNextShiftPlanSNo);
+        
+        // Clear table
+        setFormData(prev => ({
+          ...prev,
+          nextShiftPlanTable: [{ componentName: "", plannedMoulds: "", remarks: "" }]
+        }));
+        
+        // Clear errors
+        setNextShiftPlanErrors({});
+      } else {
+        alert('Failed to save: ' + (result.message || 'Unknown error'));
+      }
+      setNextShiftPlanErrors({});
+    } catch (error) {
+      console.error('Error saving next shift plan:', error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Delays Table
+  
+  // Helper: Calculate time difference in minutes
+  const calculateMinutesDifference = (fromTimeStr, toTimeStr) => {
+    if (!fromTimeStr || !toTimeStr) return 0;
+    
+    try {
+      const fromTime = createTimeFromString(fromTimeStr);
+      const toTime = createTimeFromString(toTimeStr);
+      
+      if (!fromTime || !toTime) return 0;
+      
+      let fromMinutes = fromTime.hour * 60 + fromTime.minute;
+      let toMinutes = toTime.hour * 60 + toTime.minute;
+      
+      // Handle overnight times
+      if (toMinutes < fromMinutes) {
+        toMinutes += 24 * 60;
+      }
+      
+      return toMinutes - fromMinutes;
+    } catch {
+      return 0;
+    }
+  };
+  
+  // Helper: Add minutes to time
+  const addMinutesToTime = (timeStr, minutes) => {
+    if (!timeStr || !minutes) return '';
+    
+    try {
+      const time = createTimeFromString(timeStr);
+      if (!time) return '';
+      
+      const totalMinutes = time.hour * 60 + time.minute + parseInt(minutes);
+      const newHour = Math.floor(totalMinutes / 60) % 24;
+      const newMinute = totalMinutes % 60;
+      
+      return formatTimeToString(new Time(newHour, newMinute));
+    } catch {
+      return '';
+    }
+  };
+  
   const addDelaysRow = () => {
+    setDelaysSubmitError('');
     setFormData(prev => ({
       ...prev,
       delaysTable: [...prev.delaysTable, { delays: "", durationMinutes: [""], fromTime: [""], toTime: [""] }]
     }));
-    setDelaysTableValid(prev => [...prev, { delays: null, durationMinutes: [null], fromTime: [null], toTime: [null] }]);
   };
 
   const deleteDelaysRow = (index) => {
+    setDelaysSubmitError('');
     setFormData(prev => ({
       ...prev,
       delaysTable: prev.delaysTable.filter((_, i) => i !== index)
     }));
-    setDelaysTableValid(prev => prev.filter((_, i) => i !== index));
   };
 
   const handleDelaysChange = (index, field, value) => {
@@ -308,123 +700,835 @@ const DisamaticProduct = () => {
     newTable[index][field] = value;
     setFormData(prev => ({ ...prev, delaysTable: newTable }));
     
-    // Update validation for delays field
-    if (field === 'delays') {
-      const newValid = [...delaysTableValid];
-      if (value.trim() === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = value.trim().length > 0;
-      }
-      setDelaysTableValid(newValid);
+    // Clear submit error
+    setDelaysSubmitError('');
+    
+    // Clear error for this field
+    if (delaysErrors[index]?.[field]) {
+      setDelaysErrors(prev => {
+        const newErrors = { ...prev };
+        if (newErrors[index]) {
+          delete newErrors[index][field];
+          if (Object.keys(newErrors[index]).length === 0) {
+            delete newErrors[index];
+          }
+        }
+        return newErrors;
+      });
     }
   };
 
   // Add/Remove duration minute inputs
   const addDurationInput = (rowIndex) => {
+    setDelaysSubmitError('');
     const newTable = [...formData.delaysTable];
     if (newTable[rowIndex].durationMinutes.length < 10) {
       newTable[rowIndex].durationMinutes = [...newTable[rowIndex].durationMinutes, ""];
       newTable[rowIndex].fromTime = [...newTable[rowIndex].fromTime, ""];
       newTable[rowIndex].toTime = [...newTable[rowIndex].toTime, ""];
       setFormData(prev => ({ ...prev, delaysTable: newTable }));
-      
-      // Update validation
-      const newValid = [...delaysTableValid];
-      newValid[rowIndex].durationMinutes = [...newValid[rowIndex].durationMinutes, null];
-      newValid[rowIndex].fromTime = [...newValid[rowIndex].fromTime, null];
-      newValid[rowIndex].toTime = [...newValid[rowIndex].toTime, null];
-      setDelaysTableValid(newValid);
     }
   };
 
   const removeDurationInput = (rowIndex, inputIndex) => {
+    setDelaysSubmitError('');
     const newTable = [...formData.delaysTable];
     if (newTable[rowIndex].durationMinutes.length > 1) {
       newTable[rowIndex].durationMinutes = newTable[rowIndex].durationMinutes.filter((_, i) => i !== inputIndex);
       newTable[rowIndex].fromTime = newTable[rowIndex].fromTime.filter((_, i) => i !== inputIndex);
       newTable[rowIndex].toTime = newTable[rowIndex].toTime.filter((_, i) => i !== inputIndex);
       setFormData(prev => ({ ...prev, delaysTable: newTable }));
-      
-      // Update validation
-      const newValid = [...delaysTableValid];
-      newValid[rowIndex].durationMinutes = newValid[rowIndex].durationMinutes.filter((_, i) => i !== inputIndex);
-      newValid[rowIndex].fromTime = newValid[rowIndex].fromTime.filter((_, i) => i !== inputIndex);
-      newValid[rowIndex].toTime = newValid[rowIndex].toTime.filter((_, i) => i !== inputIndex);
-      setDelaysTableValid(newValid);
     }
   };
 
   const handleDurationInputChange = (rowIndex, inputIndex, value) => {
     const newTable = [...formData.delaysTable];
     newTable[rowIndex].durationMinutes[inputIndex] = value;
+    
+    // Clear submit error
+    setDelaysSubmitError('');
+    
+    // Auto-calculate toTime if fromTime exists and duration is entered
+    if (value && newTable[rowIndex].fromTime[inputIndex]) {
+      const calculatedToTime = addMinutesToTime(newTable[rowIndex].fromTime[inputIndex], value);
+      if (calculatedToTime) {
+        newTable[rowIndex].toTime[inputIndex] = calculatedToTime;
+      }
+    }
+    
     setFormData(prev => ({ ...prev, delaysTable: newTable }));
     
-    // Update validation
-    const newValid = [...delaysTableValid];
-    if (value === '' || value.trim() === '') {
-      newValid[rowIndex].durationMinutes[inputIndex] = null;
+    // Validate duration <= 30 minutes
+    if (value && parseInt(value) > 30) {
+      setDelaysErrors(prev => ({
+        ...prev,
+        [rowIndex]: {
+          ...prev[rowIndex],
+          durationMinutes: {
+            ...prev[rowIndex]?.durationMinutes,
+            [inputIndex]: 'Duration cannot exceed 30 minutes'
+          }
+        }
+      }));
     } else {
-      newValid[rowIndex].durationMinutes[inputIndex] = !isNaN(value) && parseFloat(value) >= 0;
+      // Clear errors
+      if (delaysErrors[rowIndex]?.durationMinutes?.[inputIndex]) {
+        setDelaysErrors(prev => {
+          const newErrors = { ...prev };
+          if (newErrors[rowIndex]?.durationMinutes) {
+            delete newErrors[rowIndex].durationMinutes[inputIndex];
+            if (Object.keys(newErrors[rowIndex].durationMinutes).length === 0) {
+              delete newErrors[rowIndex].durationMinutes;
+            }
+          }
+          return newErrors;
+        });
+      }
     }
-    setDelaysTableValid(newValid);
   };
 
   const handleTimeInputChange = (rowIndex, inputIndex, field, value) => {
     const newTable = [...formData.delaysTable];
     newTable[rowIndex][field][inputIndex] = value;
+    
+    // Clear submit error
+    setDelaysSubmitError('');
+    
+    let calculatedDuration = 0;
+    
+    // Auto-calculate based on what was changed
+    if (field === 'fromTime') {
+      // fromTime changed
+      if (value && newTable[rowIndex].durationMinutes[inputIndex]) {
+        // If duration exists, calculate toTime
+        const calculatedToTime = addMinutesToTime(value, newTable[rowIndex].durationMinutes[inputIndex]);
+        if (calculatedToTime) {
+          newTable[rowIndex].toTime[inputIndex] = calculatedToTime;
+        }
+      } else if (value && newTable[rowIndex].toTime[inputIndex]) {
+        // If toTime exists, calculate duration
+        calculatedDuration = calculateMinutesDifference(value, newTable[rowIndex].toTime[inputIndex]);
+        if (calculatedDuration > 0) {
+          newTable[rowIndex].durationMinutes[inputIndex] = String(calculatedDuration);
+        }
+      }
+    } else if (field === 'toTime') {
+      // toTime changed
+      if (value && newTable[rowIndex].fromTime[inputIndex]) {
+        // Calculate duration from fromTime to toTime
+        calculatedDuration = calculateMinutesDifference(newTable[rowIndex].fromTime[inputIndex], value);
+        if (calculatedDuration > 0) {
+          newTable[rowIndex].durationMinutes[inputIndex] = String(calculatedDuration);
+        }
+      }
+    }
+    
     setFormData(prev => ({ ...prev, delaysTable: newTable }));
     
-    // Update validation
-    const newValid = [...delaysTableValid];
-    if (!value || value === '') {
-      newValid[rowIndex][field][inputIndex] = null;
+    // Validate calculated duration
+    if (calculatedDuration > 30) {
+      setDelaysErrors(prev => ({
+        ...prev,
+        [rowIndex]: {
+          ...prev[rowIndex],
+          durationMinutes: {
+            ...prev[rowIndex]?.durationMinutes,
+            [inputIndex]: 'Duration cannot exceed 30 minutes'
+          }
+        }
+      }));
     } else {
-      newValid[rowIndex][field][inputIndex] = value.length > 0;
+      // Clear errors
+      if (delaysErrors[rowIndex]?.fromTime?.[inputIndex] || delaysErrors[rowIndex]?.toTime?.[inputIndex] || delaysErrors[rowIndex]?.durationMinutes?.[inputIndex]) {
+        setDelaysErrors(prev => {
+          const newErrors = { ...prev };
+          if (newErrors[rowIndex]?.fromTime) {
+            delete newErrors[rowIndex].fromTime[inputIndex];
+          }
+          if (newErrors[rowIndex]?.toTime) {
+            delete newErrors[rowIndex].toTime[inputIndex];
+          }
+          if (newErrors[rowIndex]?.durationMinutes) {
+            delete newErrors[rowIndex].durationMinutes[inputIndex];
+          }
+          return newErrors;
+        });
+      }
     }
-    setDelaysTableValid(newValid);
+  };
+  
+  // Submit Delays Data
+  const handleSubmitDelays = async () => {
+    const errors = {};
+    let hasCompleteRow = false;
+    let hasAnyData = false;
+    
+    formData.delaysTable.forEach((row, index) => {
+      const rowErrors = {};
+      
+      // Check if row has any data
+      const hasRowData = row.delays || row.durationMinutes.some(m => m) || row.fromTime.some(t => t) || row.toTime.some(t => t);
+      
+      if (hasRowData) {
+        hasAnyData = true;
+        
+        // Validate delays field
+        if (!row.delays) rowErrors.delays = true;
+        
+        // Validate each duration entry
+        rowErrors.durationMinutes = {};
+        rowErrors.fromTime = {};
+        rowErrors.toTime = {};
+        let hasEntryError = false;
+        
+        row.durationMinutes.forEach((minutes, idx) => {
+          const hasEntryData = minutes || row.fromTime[idx] || row.toTime[idx];
+          if (hasEntryData) {
+            if (!minutes) {
+              rowErrors.durationMinutes[idx] = true;
+              hasEntryError = true;
+            } else if (parseInt(minutes) > 30) {
+              rowErrors.durationMinutes[idx] = 'Duration cannot exceed 30 minutes';
+              hasEntryError = true;
+            }
+            if (!row.fromTime[idx]) {
+              rowErrors.fromTime[idx] = true;
+              hasEntryError = true;
+            }
+            if (!row.toTime[idx]) {
+              rowErrors.toTime[idx] = true;
+              hasEntryError = true;
+            }
+          }
+        });
+        
+        if (Object.keys(rowErrors.durationMinutes).length === 0) delete rowErrors.durationMinutes;
+        if (Object.keys(rowErrors.fromTime).length === 0) delete rowErrors.fromTime;
+        if (Object.keys(rowErrors.toTime).length === 0) delete rowErrors.toTime;
+        
+        if (Object.keys(rowErrors).length === 0) {
+          hasCompleteRow = true;
+        } else {
+          errors[index] = rowErrors;
+        }
+      }
+    });
+    
+    // If no data, show errors
+    if (!hasAnyData) {
+      formData.delaysTable.forEach((row, index) => {
+        errors[index] = {
+          delays: true,
+          durationMinutes: { 0: true },
+          fromTime: { 0: true },
+          toTime: { 0: true }
+        };
+      });
+      setDelaysErrors(errors);
+      return;
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setDelaysErrors(errors);
+      // Check if there are any duration > 30 errors
+      const hasDurationError = Object.values(errors).some(rowError => 
+        rowError.durationMinutes && Object.values(rowError.durationMinutes).some(err => typeof err === 'string')
+      );
+      if (hasDurationError) {
+        setDelaysSubmitError("Duration cannot exceed 30 minutes. Please check the highlighted fields.");
+      } else {
+        setDelaysSubmitError("Please fill all required fields in rows with data.");
+      }
+      return;
+    }
+    
+    // Clear submit error if validation passes
+    setDelaysSubmitError('');
+    
+    try {
+      setIsLoading(true);
+      
+      // Filter out empty rows
+      const validRows = formData.delaysTable.filter(row => 
+        row.delays || row.durationMinutes.some(m => m) || row.fromTime.some(t => t) || row.toTime.some(t => t)
+      );
+      
+      // Save to backend
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          date: formData.date,
+          section: 'delays',
+          delaysTable: validRows
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save delays: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Update next S.No
+        const newDelaysSNo = delaysSNo + validRows.length;
+        setDelaysSNo(newDelaysSNo);
+        
+        // Clear table
+        setFormData(prev => ({
+          ...prev,
+          delaysTable: [{ delays: "", durationMinutes: [""], fromTime: [""], toTime: [""] }]
+        }));
+        
+        setDelaysErrors({});
+        setDelaysSubmitError('');
+      } else {
+        alert('Failed to save: ' + (result.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error saving delays:', error);
+      alert('Error saving data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+  
+  const getBorderColorDelays = (rowIndex, fieldName) => {
+    const fieldKey = `${rowIndex}-delays-${fieldName}`;
+    const isFocused = focusedField === fieldKey;
+    const hasError = delaysErrors[rowIndex]?.[fieldName];
+    
+    if (isFocused) {
+      return '#10b981'; // green when focused
+    }
+    if (hasError) {
+      return '#ef4444'; // red when error
+    }
+    return '#e2e8f0'; // default gray
+  };
+  
+  const getDurationInputBorderColor = (rowIndex, inputIndex) => {
+    const hasError = delaysErrors[rowIndex]?.durationMinutes?.[inputIndex];
+    return hasError ? '#ef4444' : '#e2e8f0';
+  };
+  
+  // Handle Enter key navigation for Delays table
+  const handleDelaysKeyDown = (e, currentRowIndex, currentField, currentInputIndex = null) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      const row = formData.delaysTable[currentRowIndex];
+      const totalDurationInputs = row.durationMinutes.length;
+      
+      // Determine next field
+      let nextField = null;
+      let nextInputIndex = null;
+      
+      if (currentField === 'delays') {
+        // Move to first duration minutes input
+        nextField = 'durationMinutes';
+        nextInputIndex = 0;
+      } else if (currentField === 'durationMinutes') {
+        // Move to corresponding fromTime
+        nextField = 'fromTime';
+        nextInputIndex = currentInputIndex;
+      } else if (currentField === 'fromTime') {
+        // Move to corresponding toTime
+        nextField = 'toTime';
+        nextInputIndex = currentInputIndex;
+      } else if (currentField === 'toTime') {
+        // Check if there's another duration entry
+        if (currentInputIndex < totalDurationInputs - 1) {
+          // Move to next duration entry
+          nextField = 'durationMinutes';
+          nextInputIndex = currentInputIndex + 1;
+        } else {
+          // Move to next row's delays field
+          if (currentRowIndex < formData.delaysTable.length - 1) {
+            const nextRowIndex = currentRowIndex + 1;
+            setFocusedField(`${nextRowIndex}-delays-delays`);
+            setTimeout(() => {
+              const nextInput = document.querySelector(`input[data-field="${nextRowIndex}-delays-delays"]`);
+              if (nextInput) nextInput.focus();
+            }, 0);
+            return;
+          }
+          return;
+        }
+      }
+      
+      // Focus next field
+      if (nextField) {
+        setFocusedField(`${currentRowIndex}-delays-${nextField}-${nextInputIndex}`);
+        setTimeout(() => {
+          if (nextField === 'durationMinutes') {
+            const nextInput = document.querySelector(`input[data-field="${currentRowIndex}-delays-durationMinutes-${nextInputIndex}"]`);
+            if (nextInput) nextInput.focus();
+          } else if (nextField === 'fromTime' || nextField === 'toTime') {
+            // Handle CustomTimeInput
+            const timeContainer = document.querySelector(`div[data-field="${currentRowIndex}-delays-${nextField}-${nextInputIndex}"]`);
+            if (timeContainer) {
+              const timeInput = timeContainer.querySelector('[data-slot="input"]');
+              if (timeInput) {
+                const firstSegment = timeInput.querySelector('[data-slot="segment"]');
+                if (firstSegment) {
+                  firstSegment.focus();
+                }
+              }
+            }
+          }
+        }, 0);
+      }
+    }
   };
 
   // Mould Hardness Table
   const addMouldHardnessRow = () => {
+    setMouldHardnessSubmitError('');
     setFormData(prev => ({
       ...prev,
-      mouldHardnessTable: [...prev.mouldHardnessTable, { componentName: "", mpPP: "", mpSP: "", bsPP: "", bsSP: "", remarks: "" }]
+      mouldHardnessTable: [...prev.mouldHardnessTable, { componentName: "", mpPP: [["", ""]], mpSP: [["", ""]], bsPP: [["", ""]], bsSP: [["", ""]], remarks: "" }]
     }));
-    setMouldHardnessTableValid(prev => [...prev, { componentName: null, mpPP: null, mpSP: null, bsPP: null, bsSP: null, remarks: null }]);
   };
 
   const deleteMouldHardnessRow = (index) => {
+    setMouldHardnessSubmitError('');
     setFormData(prev => ({
       ...prev,
       mouldHardnessTable: prev.mouldHardnessTable.filter((_, i) => i !== index)
     }));
-    setMouldHardnessTableValid(prev => prev.filter((_, i) => i !== index));
   };
 
-  const handleMouldHardnessChange = (index, field, value) => {
+  const handleMouldHardnessChange = (index, field, value, pairIndex = null, fieldIndex = null) => {
     const newTable = [...formData.mouldHardnessTable];
-    newTable[index][field] = value;
+    if (pairIndex !== null && fieldIndex !== null && Array.isArray(newTable[index][field])) {
+      newTable[index][field][pairIndex][fieldIndex] = value;
+    } else {
+      newTable[index][field] = value;
+    }
     setFormData(prev => ({ ...prev, mouldHardnessTable: newTable }));
     
-    // Update validation
-    const newValid = [...mouldHardnessTableValid];
-    if (field === 'mpPP' || field === 'mpSP' || field === 'bsPP' || field === 'bsSP') {
-      // Numeric fields
-      if (value === '' || value.trim() === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = !isNaN(value) && parseFloat(value) >= 0;
-      }
-    } else {
-      // Text fields (componentName, remarks)
-      if (value.trim() === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = value.trim().length > 0;
+    // Clear submit error
+    setMouldHardnessSubmitError('');
+    
+    // First, clear existing errors for this field
+    if (mouldHardnessErrors[index]) {
+      setMouldHardnessErrors(prev => {
+        const newErrors = { ...prev };
+        if (newErrors[index]) {
+          if (pairIndex !== null && fieldIndex !== null) {
+            // For array fields (mpPP, mpSP, bsPP, bsSP)
+            if (newErrors[index][field]?.[pairIndex]) {
+              const position = fieldIndex === 0 ? 'from' : 'to';
+              delete newErrors[index][field][pairIndex][position];
+              // If both from and to are cleared, remove the pair error
+              if (Object.keys(newErrors[index][field][pairIndex]).length === 0) {
+                delete newErrors[index][field][pairIndex];
+              }
+              // If no more pair errors, remove the field error
+              if (Object.keys(newErrors[index][field]).length === 0) {
+                delete newErrors[index][field];
+              }
+            }
+          } else {
+            // For simple fields (componentName, remarks)
+            delete newErrors[index][field];
+          }
+          // If no more errors for this row, remove the row error
+          if (Object.keys(newErrors[index]).length === 0) {
+            delete newErrors[index];
+          }
+        }
+        return newErrors;
+      });
+    }
+    
+    // Dynamic validation for from-to pairs
+    if (pairIndex !== null && fieldIndex !== null && ['mpPP', 'mpSP', 'bsPP', 'bsSP'].includes(field)) {
+      const pair = newTable[index][field][pairIndex];
+      const fromVal = parseFloat(pair[0]);
+      const toVal = parseFloat(pair[1]);
+      
+      // Check if both values exist and to > from (from >= to is okay)
+      if (pair[0] && pair[1] && !isNaN(fromVal) && !isNaN(toVal) && toVal > fromVal) {
+        setMouldHardnessErrors(prev => ({
+          ...prev,
+          [index]: {
+            ...prev[index],
+            [field]: {
+              ...prev[index]?.[field],
+              [pairIndex]: {
+                from: 'From cannot be less than To',
+                to: 'To cannot be greater than From'
+              }
+            }
+          }
+        }));
       }
     }
-    setMouldHardnessTableValid(newValid);
+  };
+
+  // Format PP/SP values to one decimal place
+  const formatDecimal = (value) => {
+    if (!value || value === '') return value;
+    // Remove any trailing dots
+    let cleaned = value.replace(/\.+$/, '');
+    const num = parseFloat(cleaned);
+    if (isNaN(num)) return value;
+    return num.toFixed(1);
+  };
+
+  // Validate decimal input (allow digits and single decimal point)
+  const cleanDecimalInput = (value) => {
+    // Remove non-numeric characters except first decimal point
+    let cleaned = value.replace(/[^0-9.]/g, '');
+    // Ensure only one decimal point
+    const parts = cleaned.split('.');
+    if (parts.length > 2) {
+      cleaned = parts[0] + '.' + parts.slice(1).join('');
+    }
+    return cleaned;
+  };
+
+  // Handle Enter key navigation for Mould Hardness table
+  const handleMouldHardnessKeyDown = (e, currentRowIndex, currentField, pairIdx = null, fieldIdx = null) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Auto-format to decimal if it's a PP/SP field
+      if (pairIdx !== null && fieldIdx !== null && ['mpPP', 'mpSP', 'bsPP', 'bsSP'].includes(currentField)) {
+        const currentValue = formData.mouldHardnessTable[currentRowIndex][currentField][pairIdx][fieldIdx];
+        if (currentValue) {
+          const formatted = formatDecimal(currentValue);
+          handleMouldHardnessChange(currentRowIndex, currentField, formatted, pairIdx, fieldIdx);
+        }
+      }
+      
+      const row = formData.mouldHardnessTable[currentRowIndex];
+      const totalPairs = row.mpPP.length;
+      
+      // Define navigation order
+      const fields = ['componentName'];
+      
+      // Add all pair fields
+      for (let i = 0; i < totalPairs; i++) {
+        fields.push(`mpPP-${i}-0`, `mpPP-${i}-1`);
+      }
+      for (let i = 0; i < totalPairs; i++) {
+        fields.push(`mpSP-${i}-0`, `mpSP-${i}-1`);
+      }
+      for (let i = 0; i < totalPairs; i++) {
+        fields.push(`bsPP-${i}-0`, `bsPP-${i}-1`);
+      }
+      for (let i = 0; i < totalPairs; i++) {
+        fields.push(`bsSP-${i}-0`, `bsSP-${i}-1`);
+      }
+      fields.push('remarks');
+      
+      // Determine current field key
+      let currentFieldKey;
+      if (pairIdx !== null && fieldIdx !== null) {
+        currentFieldKey = `${currentField}-${pairIdx}-${fieldIdx}`;
+      } else {
+        currentFieldKey = currentField;
+      }
+      
+      const currentFieldIndex = fields.indexOf(currentFieldKey);
+      
+      // Move to next field in same row
+      if (currentFieldIndex >= 0 && currentFieldIndex < fields.length - 1) {
+        const nextFieldKey = fields[currentFieldIndex + 1];
+        const nextFieldParts = nextFieldKey.split('-');
+        
+        if (nextFieldParts.length === 3) {
+          // It's a pair field
+          const fieldName = nextFieldParts[0];
+          const pairIndex = nextFieldParts[1];
+          const fieldIndex = nextFieldParts[2];
+          setFocusedField(`${currentRowIndex}-mouldHardness-${fieldName}-${pairIndex}-${fieldIndex === '0' ? 'from' : 'to'}`);
+          setTimeout(() => {
+            const selector = `[data-field="${currentRowIndex}-mouldHardness-${fieldName}-${pairIndex}-${fieldIndex === '0' ? 'from' : 'to'}"]`;
+            const nextInput = document.querySelector(selector);
+            if (nextInput) nextInput.focus();
+          }, 0);
+        } else {
+          // It's componentName or remarks
+          setFocusedField(`${currentRowIndex}-mouldHardness-${nextFieldKey}`);
+          setTimeout(() => {
+            const selector = `[data-field="${currentRowIndex}-mouldHardness-${nextFieldKey}"]`;
+            const nextInput = document.querySelector(selector);
+            if (nextInput) nextInput.focus();
+          }, 0);
+        }
+      }
+      // Move to first field of next row
+      else if (currentRowIndex < formData.mouldHardnessTable.length - 1) {
+        const nextRowIndex = currentRowIndex + 1;
+        setFocusedField(`${nextRowIndex}-mouldHardness-componentName`);
+        setTimeout(() => {
+          const nextInput = document.querySelector(`[data-field="${nextRowIndex}-mouldHardness-componentName"]`);
+          if (nextInput) nextInput.focus();
+        }, 0);
+      }
+    }
+  };
+
+  // Add a new pair to a specific row in mould hardness table
+  const addMouldHardnessPair = (rowIndex) => {
+    setMouldHardnessSubmitError('');
+    const newTable = [...formData.mouldHardnessTable];
+    newTable[rowIndex].mpPP.push(["", ""]);
+    newTable[rowIndex].mpSP.push(["", ""]);
+    newTable[rowIndex].bsPP.push(["", ""]);
+    newTable[rowIndex].bsSP.push(["", ""]);
+    setFormData(prev => ({ ...prev, mouldHardnessTable: newTable }));
+  };
+
+  // Remove the last pair from a specific row in mould hardness table
+  const removeMouldHardnessPair = (rowIndex) => {
+    setMouldHardnessSubmitError('');
+    const newTable = [...formData.mouldHardnessTable];
+    if (newTable[rowIndex].mpPP.length > 1) {
+      newTable[rowIndex].mpPP.pop();
+      newTable[rowIndex].mpSP.pop();
+      newTable[rowIndex].bsPP.pop();
+      newTable[rowIndex].bsSP.pop();
+      setFormData(prev => ({ ...prev, mouldHardnessTable: newTable }));
+    }
+  };
+
+  // Submit Mould Hardness Data
+  const handleSubmitMouldHardness = async () => {
+    // Validate all fields in mould hardness table
+    const errors = {};
+    let hasCompleteRow = false;
+    let hasAnyData = false;
+    let hasRangeError = false;
+
+    formData.mouldHardnessTable.forEach((row, index) => {
+      const rowErrors = {};
+      
+      // Check if row has any data
+      const hasRowData = row.componentName || row.remarks || 
+        row.mpPP.some(pair => pair[0] || pair[1]) ||
+        row.mpSP.some(pair => pair[0] || pair[1]) ||
+        row.bsPP.some(pair => pair[0] || pair[1]) ||
+        row.bsSP.some(pair => pair[0] || pair[1]);
+      
+      if (hasRowData) {
+        hasAnyData = true;
+        // If row has some data, validate all required fields
+        if (!row.componentName) rowErrors.componentName = true;
+        if (!row.remarks) rowErrors.remarks = true;
+        
+        // Validate each pair in arrays
+        const mpPPErrors = {};
+        const mpSPErrors = {};
+        const bsPPErrors = {};
+        const bsSPErrors = {};
+        
+        row.mpPP.forEach((pair, pairIdx) => {
+          if (!pair[0] || !pair[1]) {
+            mpPPErrors[pairIdx] = { from: !pair[0], to: !pair[1] };
+          } else if (parseFloat(pair[1]) > parseFloat(pair[0])) {
+            mpPPErrors[pairIdx] = { from: 'From cannot be less than To', to: 'To cannot be greater than From' };
+            hasRangeError = true;
+          }
+        });
+        
+        row.mpSP.forEach((pair, pairIdx) => {
+          if (!pair[0] || !pair[1]) {
+            mpSPErrors[pairIdx] = { from: !pair[0], to: !pair[1] };
+          } else if (parseFloat(pair[1]) > parseFloat(pair[0])) {
+            mpSPErrors[pairIdx] = { from: 'From cannot be less than To', to: 'To cannot be greater than From' };
+            hasRangeError = true;
+          }
+        });
+        
+        row.bsPP.forEach((pair, pairIdx) => {
+          if (!pair[0] || !pair[1]) {
+            bsPPErrors[pairIdx] = { from: !pair[0], to: !pair[1] };
+          } else if (parseFloat(pair[1]) > parseFloat(pair[0])) {
+            bsPPErrors[pairIdx] = { from: 'From cannot be less than To', to: 'To cannot be greater than From' };
+            hasRangeError = true;
+          }
+        });
+        
+        row.bsSP.forEach((pair, pairIdx) => {
+          if (!pair[0] || !pair[1]) {
+            bsSPErrors[pairIdx] = { from: !pair[0], to: !pair[1] };
+          } else if (parseFloat(pair[1]) > parseFloat(pair[0])) {
+            bsSPErrors[pairIdx] = { from: 'From cannot be less than To', to: 'To cannot be greater than From' };
+            hasRangeError = true;
+          }
+        });
+        
+        if (Object.keys(mpPPErrors).length > 0) rowErrors.mpPP = mpPPErrors;
+        if (Object.keys(mpSPErrors).length > 0) rowErrors.mpSP = mpSPErrors;
+        if (Object.keys(bsPPErrors).length > 0) rowErrors.bsPP = bsPPErrors;
+        if (Object.keys(bsSPErrors).length > 0) rowErrors.bsSP = bsSPErrors;
+        
+        // Check if all required fields are filled
+        if (Object.keys(rowErrors).length === 0) {
+          hasCompleteRow = true;
+        } else {
+          errors[index] = rowErrors;
+        }
+      }
+    });
+
+    // If no data at all in any row, show errors on all rows
+    if (!hasAnyData) {
+      formData.mouldHardnessTable.forEach((row, index) => {
+        const mpPPErrors = {};
+        const mpSPErrors = {};
+        const bsPPErrors = {};
+        const bsSPErrors = {};
+        
+        row.mpPP.forEach((pair, pairIdx) => {
+          mpPPErrors[pairIdx] = { from: true, to: true };
+        });
+        
+        row.mpSP.forEach((pair, pairIdx) => {
+          mpSPErrors[pairIdx] = { from: true, to: true };
+        });
+        
+        row.bsPP.forEach((pair, pairIdx) => {
+          bsPPErrors[pairIdx] = { from: true, to: true };
+        });
+        
+        row.bsSP.forEach((pair, pairIdx) => {
+          bsSPErrors[pairIdx] = { from: true, to: true };
+        });
+        
+        errors[index] = {
+          componentName: true,
+          remarks: true,
+          mpPP: mpPPErrors,
+          mpSP: mpSPErrors,
+          bsPP: bsPPErrors,
+          bsSP: bsSPErrors
+        };
+      });
+      setMouldHardnessErrors(errors);
+      return;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setMouldHardnessErrors(errors);
+      if (hasRangeError) {
+        setMouldHardnessSubmitError('To value cannot be greater than From value. Please check the highlighted fields.');
+      } else {
+        setMouldHardnessSubmitError('Please fill all required fields in rows with data.');
+      }
+      return;
+    }
+
+    if (!hasCompleteRow) {
+      return;
+    }
+    
+    // Clear submit error if validation passes
+    setMouldHardnessSubmitError('');
+
+    // Proceed with save
+    try {
+      setIsLoading(true);
+      
+      // Filter out empty rows
+      const validRows = formData.mouldHardnessTable.filter(row => 
+        row.componentName || row.remarks ||
+        row.mpPP.some(pair => pair[0] || pair[1]) ||
+        row.mpSP.some(pair => pair[0] || pair[1]) ||
+        row.bsPP.some(pair => pair[0] || pair[1]) ||
+        row.bsSP.some(pair => pair[0] || pair[1])
+      );
+      
+      // Save to backend
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          date: formData.date,
+          section: 'mouldHardness',
+          mouldHardnessTable: validRows
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save mould hardness: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        
+        // Update next S.No
+        const newMouldHardnessSNo = mouldHardnessSNo + validRows.length;
+        setMouldHardnessSNo(newMouldHardnessSNo);
+        
+        // Clear table
+        setFormData(prev => ({
+          ...prev,
+          mouldHardnessTable: [{ componentName: "", mpPP: [["", ""]], mpSP: [["", ""]], bsPP: [["", ""]], bsSP: [["", ""]], remarks: "" }]
+        }));
+        
+        setMouldHardnessErrors({});
+        setMouldHardnessSubmitError('');
+      } else {
+        alert('Failed to save: ' + (result.message || 'Unknown error'));
+      }
+    } catch (error) {
+      console.error('Error saving mould hardness:', error);
+      alert('Error saving data');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const getBorderColorMouldHardness = (rowIndex, fieldName) => {
+    const fieldKey = `${rowIndex}-mouldHardness-${fieldName}`;
+    const isFocused = focusedField === fieldKey;
+    const hasError = mouldHardnessErrors[rowIndex]?.[fieldName];
+    
+    if (isFocused) {
+      return '#10b981'; // green when focused
+    }
+    if (hasError) {
+      return '#ef4444'; // red when error
+    }
+    return '#e2e8f0'; // default gray
+  };
+
+  const getPairInputBorderColor = (rowIndex, fieldName, pairIdx, position) => {
+    const fieldKey = `${rowIndex}-mouldHardness-${fieldName}-${pairIdx}-${position}`;
+    const isFocused = focusedField === fieldKey;
+    const hasError = mouldHardnessErrors[rowIndex]?.[fieldName]?.[pairIdx]?.[position];
+    
+    // Get the pair values
+    const pair = formData.mouldHardnessTable[rowIndex]?.[fieldName]?.[pairIdx];
+    const fromVal = pair ? parseFloat(pair[0]) : NaN;
+    const toVal = pair ? parseFloat(pair[1]) : NaN;
+    const bothExist = pair && pair[0] && pair[1] && !isNaN(fromVal) && !isNaN(toVal);
+    const isValid = bothExist && fromVal >= toVal;
+    
+    if (isFocused) {
+      return '#10b981'; // green when focused
+    }
+    if (hasError) {
+      return '#ef4444'; // red when error
+    }
+    if (isValid) {
+      return '#10b981'; // green when valid
+    }
+    return '#e2e8f0'; // default gray
   };
 
   // Pattern Temp Table
@@ -433,7 +1537,6 @@ const DisamaticProduct = () => {
       ...prev,
       patternTempTable: [...prev.patternTempTable, { item: "", pp: "", sp: "" }]
     }));
-    setPatternTempTableValid(prev => [...prev, { item: null, pp: null, sp: null }]);
   };
 
   const deletePatternTempRow = (index) => {
@@ -441,7 +1544,6 @@ const DisamaticProduct = () => {
       ...prev,
       patternTempTable: prev.patternTempTable.filter((_, i) => i !== index)
     }));
-    setPatternTempTableValid(prev => prev.filter((_, i) => i !== index));
   };
 
   const handlePatternTempChange = (index, field, value) => {
@@ -449,35 +1551,323 @@ const DisamaticProduct = () => {
     newTable[index][field] = value;
     setFormData(prev => ({ ...prev, patternTempTable: newTable }));
     
-    // Update validation
-    const newValid = [...patternTempTableValid];
-    if (field === 'pp' || field === 'sp') {
-      // Numeric fields
-      if (value === '' || value.trim() === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = !isNaN(value) && parseFloat(value) >= 0;
-      }
-    } else {
-      // Text field (item)
-      if (value.trim() === '') {
-        newValid[index][field] = null;
-      } else {
-        newValid[index][field] = value.trim().length > 0;
-      }
+    // Clear error for this field when user enters data
+    if (patternTempErrors[index]) {
+      setPatternTempErrors(prev => {
+        const newErrors = { ...prev };
+        if (newErrors[index]) {
+          delete newErrors[index][field];
+          if (Object.keys(newErrors[index]).length === 0) {
+            delete newErrors[index];
+          }
+        }
+        return newErrors;
+      });
     }
-    setPatternTempTableValid(newValid);
   };
 
-  // Reset Form
-  const resetForm = () => {
-    setFormData(initialFormData);
+  const getBorderColorPatternTemp = (rowIndex, fieldName) => {
+    const fieldKey = `${rowIndex}-patternTemp-${fieldName}`;
+    const isFocused = focusedField === fieldKey;
+    const hasError = patternTempErrors[rowIndex]?.[fieldName];
+    
+    if (isFocused) {
+      return '#10b981'; // green when focused
+    }
+    if (hasError) {
+      return '#ef4444'; // red when error
+    }
+    return '#e2e8f0'; // default gray
+  };
+
+  // Handle Enter key navigation for Pattern Temperature table
+  const handlePatternTempKeyDown = (e, currentRowIndex, currentField) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      
+      // Auto-format to decimal if it's a PP/SP field
+      if (['pp', 'sp'].includes(currentField)) {
+        const currentValue = formData.patternTempTable[currentRowIndex][currentField];
+        if (currentValue) {
+          const formatted = formatDecimal(currentValue);
+          handlePatternTempChange(currentRowIndex, currentField, formatted);
+        }
+      }
+      
+      const fields = ['item', 'pp', 'sp'];
+      const currentFieldIndex = fields.indexOf(currentField);
+      
+      // Move to next field in same row
+      if (currentFieldIndex >= 0 && currentFieldIndex < fields.length - 1) {
+        const nextField = fields[currentFieldIndex + 1];
+        setFocusedField(`${currentRowIndex}-patternTemp-${nextField}`);
+        setTimeout(() => {
+          const nextInput = document.querySelector(`[data-field="${currentRowIndex}-patternTemp-${nextField}"]`);
+          if (nextInput) nextInput.focus();
+        }, 0);
+      }
+      // Move to first field of next row
+      else if (currentRowIndex < formData.patternTempTable.length - 1) {
+        const nextRowIndex = currentRowIndex + 1;
+        setFocusedField(`${nextRowIndex}-patternTemp-item`);
+        setTimeout(() => {
+          const nextInput = document.querySelector(`[data-field="${nextRowIndex}-patternTemp-item"]`);
+          if (nextInput) nextInput.focus();
+        }, 0);
+      }
+    }
+  };
+
+  // Submit Pattern Temperature Data
+  const handleSubmitPatternTemp = async () => {
+    const errors = {};
+    let hasCompleteRow = false;
+    let hasAnyData = false;
+
+    formData.patternTempTable.forEach((row, index) => {
+      const rowErrors = {};
+      
+      // Check if row has any data
+      const hasRowData = row.item || row.pp || row.sp;
+      
+      if (hasRowData) {
+        hasAnyData = true;
+        // If row has some data, all fields must be filled
+        if (!row.item) rowErrors.item = true;
+        if (!row.pp) rowErrors.pp = true;
+        if (!row.sp) rowErrors.sp = true;
+        
+        if (Object.keys(rowErrors).length === 0) {
+          hasCompleteRow = true;
+        } else {
+          errors[index] = rowErrors;
+        }
+      }
+    });
+
+    // If no data at all in any row, show errors on all rows
+    if (!hasAnyData) {
+      formData.patternTempTable.forEach((row, index) => {
+        errors[index] = {
+          item: true,
+          pp: true,
+          sp: true
+        };
+      });
+      setPatternTempErrors(errors);
+      return;
+    }
+
+    if (Object.keys(errors).length > 0) {
+      setPatternTempErrors(errors);
+      return;
+    }
+
+    if (!hasCompleteRow) {
+      return;
+    }
+
+    // Proceed with save
+    try {
+      setIsLoading(true);
+      
+      // Filter out empty rows
+      const validRows = formData.patternTempTable.filter(row => 
+        row.item || row.pp || row.sp
+      );
+      
+      // Save to backend
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          date: formData.date,
+          shift: formData.shift,
+          section: 'patternTemp',
+          patternTempTable: validRows
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save pattern temperature data: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+
+        
+        // Calculate new patternTempSNo based on saved rows
+        const newPatternTempSNo = patternTempSNo + validRows.length;
+        setPatternTempSNo(newPatternTempSNo);
+        
+        // Reset pattern temp table
+        setFormData(prev => ({
+          ...prev,
+          patternTempTable: [{ item: "", pp: "", sp: "" }]
+        }));
+        
+        // Clear errors
+        setPatternTempErrors({});
+      } else {
+        throw new Error(result.message || 'Failed to save pattern temperature data');
+      }
+    } catch (error) {
+      console.error('Error saving pattern temperature data:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Save Primary Data Handler
+  const handleSavePrimary = async () => {
+    // Only validate date and shift (required to identify the entry)
+    if (!formData.date) {
+      return;
+    }
+    if (!formData.shift) {
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+
+      // Prepare data to send - filter out empty members
+      const filteredMembers = formData.members.filter(m => m && m.trim() !== '');
+      
+      // Validate max 4 members
+      if (filteredMembers.length > 4) {
+        return;
+      }
+      
+      const dataToSend = {
+        date: formData.date,
+        shift: formData.shift,
+        incharge: formData.incharge,
+        ppOperator: formData.ppOperator,
+        members: filteredMembers.length > 0 ? filteredMembers : null
+      };
+
+      const response = await fetch(`${API_BASE_URL}/primary`, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(dataToSend)
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          return;
+        }
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+
+      if (result.success) {
+        // Lock fields that now have values
+        setLockedFields({
+          incharge: !!(formData.incharge && formData.incharge.trim()),
+          ppOperator: !!(formData.ppOperator && formData.ppOperator.trim())
+        });
+        
+        // Update locked members count
+        setLockedMembersCount(filteredMembers.length);
+        
+        // Add empty field if less than 4 to allow adding more
+        if (filteredMembers.length < 4) {
+          setFormData(prev => ({
+            ...prev,
+            members: [...filteredMembers, '']
+          }));
+        }
+
+        setIsPrimaryDataSaved(true);
+      } else {
+        alert(`Error: ${result.message}`);
+      }
+    } catch (error) {
+      console.error('Error saving primary data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Submit Events Handler
+  const handleSubmitEvents = async () => {
+    // Check if there's any unlocked field with data to save
+    const hasNewData = (!lockedEventsFields.significantEvent && formData.significantEvent?.trim()) ||
+                       (!lockedEventsFields.maintenance && formData.maintenance?.trim()) ||
+                       (!lockedEventsFields.supervisorName && formData.supervisorName?.trim());
+    
+    if (!hasNewData) {
+      alert("Please fill in at least one unlocked field to save");
+      return;
+    }
+
+    try {
+      setIsLoading(true);
+      
+      // Save events data to backend
+      const response = await fetch(API_BASE_URL, {
+        method: 'POST',
+        credentials: 'include',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          date: formData.date,
+          shift: formData.shift,
+          section: 'events',
+          significantEvent: formData.significantEvent,
+          maintenance: formData.maintenance,
+          supervisorName: formData.supervisorName
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Failed to save events data: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      if (result.success) {
+        // Lock individual fields that now have data
+        const newLockedFields = {
+          significantEvent: !!(formData.significantEvent?.trim()),
+          maintenance: !!(formData.maintenance?.trim()),
+          supervisorName: !!(formData.supervisorName?.trim())
+        };
+        setLockedEventsFields(newLockedFields);
+        
+        // Check if all fields are now locked
+        const allLocked = newLockedFields.significantEvent && 
+                         newLockedFields.maintenance && 
+                         newLockedFields.supervisorName;
+        setIsEventsSaved(allLocked);
+      } else {
+        throw new Error(result.message || 'Failed to save events data');
+      }
+    } catch (error) {
+      console.error('Error saving events data:', error);
+      alert(`Error: ${error.message}`);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   // Submit Handler (placeholder)
   const handleSubmit = () => {
+    if (!isPrimaryDataSaved) {
+      return;
+    }
     console.log("Form Data:", formData);
-    alert("Form submitted! Check console for data.");
   };
 
   return (
@@ -486,7 +1876,7 @@ const DisamaticProduct = () => {
       <div className="disamatic-header">
         <div className="disamatic-header-text">
           <h2>
-            <Save size={28} style={{ color: '#5B9AA9' }} />
+            <Save size={27} style={{ color: '#5B9AA9' }} />
             Disamatic Product - Entry Form
           </h2>
         </div>
@@ -506,45 +1896,46 @@ const DisamaticProduct = () => {
       {/* First Row: Date, Shift, Incharge, PP Operator */}
       <div className="primary-fields-row">
         <div className="disamatic-form-group">
-          <label>Date <span style={{ color: '#ef4444' }}>*</span></label>
+          <label>Date <span style={{ color: '#ef4444',width: '2px' }}>*</span></label>
           <CustomDatePicker
             value={formData.date}
             onChange={(e) => handleChange("date", e.target.value)}
             max={new Date().toISOString().split('T')[0]}
-            className={getValidationClass(dateValid)}
           />
         </div>
         <div className="disamatic-form-group">
           <label>Shift <span style={{ color: '#ef4444' }}>*</span></label>
-          <select
+          <ShiftDropdown
             value={formData.shift}
             onChange={e => handleChange("shift", e.target.value)}
-            className={getValidationClass(shiftValid)}
-          >
-            <option value="">Select Shift</option>
-            <option value="Shift 1">Shift 1</option>
-            <option value="Shift 2">Shift 2</option>
-            <option value="Shift 3">Shift 3</option>
-          </select>
+          />
         </div>
         <div className="disamatic-form-group">
-          <label>Incharge <span style={{ color: '#ef4444' }}>*</span></label>
+          <label>
+            Incharge 
+            {lockedFields.incharge && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ Locked</span>}
+          </label>
           <input 
             type="text" 
             value={formData.incharge} 
             onChange={e => handleChange("incharge", e.target.value)}
             placeholder="Enter incharge name"
-            className={getValidationClass(inchargeValid)}
+            disabled={!formData.date || !formData.shift || lockedFields.incharge}
+            style={{ opacity: lockedFields.incharge ? 0.6 : 1 }}
           />
         </div>
         <div className="disamatic-form-group">
-          <label>PP Operator <span style={{ color: '#ef4444' }}>*</span></label>
+          <label>
+            PP Operator
+            {lockedFields.ppOperator && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ Locked</span>}
+          </label>
           <input 
             type="text" 
             value={formData.ppOperator} 
             onChange={e => handleChange("ppOperator", e.target.value)}
             placeholder="Enter PP Operator name"
-            className={getValidationClass(ppOperatorValid)}
+            disabled={!formData.date || !formData.shift || lockedFields.ppOperator}
+            style={{ opacity: lockedFields.ppOperator ? 0.6 : 1 }}
           />
         </div>
       </div>
@@ -552,7 +1943,10 @@ const DisamaticProduct = () => {
       {/* Second Row: Members Present */}
       <div className="primary-fields-row">
         <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
-          <label>Members Present <span style={{ color: '#ef4444' }}>*</span></label>
+          <label>
+            Members Present
+            {lockedMembersCount > 0 && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ {lockedMembersCount} Locked</span>}
+          </label>
           <div className="disamatic-members-container">
             {formData.members.map((member, index) => (
               <div key={index} className="disamatic-member-input-wrapper">
@@ -561,49 +1955,57 @@ const DisamaticProduct = () => {
                   value={member}
                   onChange={e => handleMemberChange(index, e.target.value)}
                   placeholder={`Enter member name ${index + 1}`}
-                  className={`disamatic-member-input ${getValidationClass(membersValid[index])}`}
+                  className="disamatic-member-input"
+                  disabled={!formData.date || !formData.shift || index < lockedMembersCount}
+                  style={{ opacity: index < lockedMembersCount ? 0.6 : 1 }}
                 />
-                {formData.members.length > 1 && (
+                {formData.members.length > 1 && index >= lockedMembersCount && (
                   <button
                     type="button"
                     onClick={() => removeMemberField(index)}
                     className="disamatic-remove-member-btn"
                     title="Remove member"
+                    disabled={!formData.date || !formData.shift}
                   >
                     <X size={16} />
                   </button>
                 )}
               </div>
             ))}
-            <button
-              type="button"
-              onClick={addMemberField}
-              className="disamatic-add-member-btn"
-              title="Add another member"
-            >
-              <Plus size={16} />
-              Add Member
-            </button>
+            {formData.members.length < 4 && (
+              <button
+                type="button"
+                onClick={addMemberField}
+                className="disamatic-add-member-btn"
+                title="Add another member"
+                disabled={!formData.date || !formData.shift}
+              >
+                <Plus size={16} />
+                Add Member
+              </button>
+            )}
           </div>
         </div>
       </div>
       
       {/* Primary Submit Container */}
-      <div className="disamatic-submit-container">
-        <button className="disamatic-submit-btn" type="button" onClick={handleSubmit}>
-          <Save size={18} />
-          Save Primary
-        </button>
+      <div className="disamatic-submit-container" style={{ gap: '1rem' }}>
+        {isLoading ? (
+          <div style={{ padding: '0.75rem 1.5rem', color: '#64748b', fontWeight: 500 }}>
+            Loading...
+          </div>
+        ) : (
+          <SubmitButton onClick={handleSavePrimary}>
+            {isPrimaryDataSaved ? "Update Primary Data" : "Save Primary"}
+          </SubmitButton>
+        )}
       </div>
 
       {/* Production Table */}
-      <div className="disamatic-section">
+      <div className="disamatic-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
         <div className="disamatic-section-header">
-          <h3 className="disamatic-section-title">Production Table</h3>
+          <h3 className="disamatic-section-title">Production Table {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked - Save Primary Data First)</span>}</h3>
           <div className="disamatic-section-actions">
-            <button type="button" onClick={addProductionRow} className="disamatic-add-row-btn">
-              <Plus size={18} />
-            </button>
             {formData.productionTable.length > 1 && (
               <button
                 type="button"
@@ -624,6 +2026,9 @@ const DisamaticProduct = () => {
                 <X size={18} />
               </button>
             )}
+            <button type="button" onClick={addProductionRow} className="disamatic-add-row-btn">
+              <Plus size={18} />
+            </button>
           </div>
         </div>
         
@@ -644,15 +2049,29 @@ const DisamaticProduct = () => {
             <tbody>
               {formData.productionTable.map((row, index) => (
                 <tr key={index}>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{index + 1}</td>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 500, color: '#475569' }}>{nextSNo + index}</td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
                       type="text"
                       value={row.counterNo}
-                      onChange={e => handleProductionChange(index, 'counterNo', e.target.value)}
+                      onChange={e => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleProductionChange(index, 'counterNo', value);
+                      }}
+                      onKeyDown={e => handleProductionKeyDown(e, index, 'counterNo')}
+                      data-field={`${index}-counterNo`}
                       placeholder="Counter No"
-                      className={getValidationClass(productionTableValid[index]?.counterNo)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColor(index, 'counterNo')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-counterNo`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
@@ -660,47 +2079,105 @@ const DisamaticProduct = () => {
                       type="text"
                       value={row.componentName}
                       onChange={e => handleProductionChange(index, 'componentName', e.target.value)}
+                      onKeyDown={e => handleProductionKeyDown(e, index, 'componentName')}
+                      data-field={`${index}-componentName`}
                       placeholder="Component Name"
-                      className={getValidationClass(productionTableValid[index]?.componentName)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColor(index, 'componentName')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-componentName`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.produced}
-                      onChange={e => handleProductionChange(index, 'produced', e.target.value)}
+                      onChange={e => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleProductionChange(index, 'produced', value);
+                      }}
+                      onKeyDown={e => handleProductionKeyDown(e, index, 'produced')}
+                      data-field={`${index}-produced`}
                       placeholder="0"
-                      className={getValidationClass(productionTableValid[index]?.produced)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColor(index, 'produced')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-produced`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.poured}
-                      onChange={e => handleProductionChange(index, 'poured', e.target.value)}
+                      onChange={e => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleProductionChange(index, 'poured', value);
+                      }}
+                      onKeyDown={e => handleProductionKeyDown(e, index, 'poured')}
+                      data-field={`${index}-poured`}
                       placeholder="0"
-                      className={getValidationClass(productionTableValid[index]?.poured)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColor(index, 'poured')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-poured`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
-                    <CustomTimeInput
-                      value={createTimeFromString(row.cycleTime)}
-                      onChange={(timeObj) => handleProductionChange(index, 'cycleTime', formatTimeToString(timeObj))}
-                      className={getValidationClass(productionTableValid[index]?.cycleTime)}
-                      style={{ width: '100%' }}
-                    />
+                    <div data-field={`${index}-cycleTime`}>
+                      <CustomTimeInput
+                        value={createTimeFromString(row.cycleTime)}
+                        onChange={(timeObj) => handleProductionChange(index, 'cycleTime', formatTimeToString(timeObj))}
+                        hasError={productionErrors[index]?.cycleTime && focusedField !== `${index}-cycleTime`}
+                        onFocus={() => setFocusedField(`${index}-cycleTime`)}
+                        onBlur={() => setFocusedField(null)}
+                        onEnterPress={(e) => handleProductionKeyDown(e, index, 'cycleTime')}
+                        aria-label="Cycle Time"
+                      />
+                    </div>
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.mouldsPerHour}
-                      onChange={e => handleProductionChange(index, 'mouldsPerHour', e.target.value)}
+                      onChange={e => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleProductionChange(index, 'mouldsPerHour', value);
+                      }}
+                      onKeyDown={e => handleProductionKeyDown(e, index, 'mouldsPerHour')}
+                      data-field={`${index}-mouldsPerHour`}
                       placeholder="0"
-                      className={getValidationClass(productionTableValid[index]?.mouldsPerHour)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColor(index, 'mouldsPerHour')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-mouldsPerHour`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
@@ -708,9 +2185,20 @@ const DisamaticProduct = () => {
                       type="text"
                       value={row.remarks}
                       onChange={e => handleProductionChange(index, 'remarks', e.target.value)}
+                      onKeyDown={e => handleProductionKeyDown(e, index, 'remarks')}
+                      data-field={`${index}-remarks`}
                       placeholder="Remarks"
-                      className={getValidationClass(productionTableValid[index]?.remarks)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColor(index, 'remarks')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-remarks`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                 </tr>
@@ -718,16 +2206,19 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
         </div>
+        
+        <div style={{ padding: '1rem', display: 'flex', justifyContent: 'flex-end', borderTop: '1px solid #e2e8f0' }}>
+          <SubmitButton onClick={handleSubmitProduction} disabled={!isPrimaryDataSaved}>
+            Save Production Data
+          </SubmitButton>
+        </div>
       </div>
 
       {/* Next Shift Plan Table */}
-      <div className="disamatic-section">
+      <div className="disamatic-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
         <div className="disamatic-section-header">
-          <h3 className="disamatic-section-title">Next Shift Plan</h3>
+          <h3 className="disamatic-section-title">Next Shift Plan {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked)</span>}</h3>
           <div className="disamatic-section-actions">
-            <button type="button" onClick={addNextShiftPlanRow} className="disamatic-add-row-btn">
-              <Plus size={18} />
-            </button>
             {formData.nextShiftPlanTable.length > 1 && (
               <button
                 type="button"
@@ -748,6 +2239,9 @@ const DisamaticProduct = () => {
                 <X size={18} />
               </button>
             )}
+            <button type="button" onClick={addNextShiftPlanRow} className="disamatic-add-row-btn">
+              <Plus size={18} />
+            </button>
           </div>
         </div>
         
@@ -764,25 +2258,50 @@ const DisamaticProduct = () => {
             <tbody>
               {formData.nextShiftPlanTable.map((row, index) => (
                 <tr key={index}>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{index + 1}</td>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 500, color: '#475569' }}>{nextShiftPlanSNo + index}</td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
                       type="text"
                       value={row.componentName}
                       onChange={e => handleNextShiftPlanChange(index, 'componentName', e.target.value)}
+                      onKeyDown={e => handleNextShiftPlanKeyDown(e, index, 'componentName')}
+                      data-field={`${index}-nextShiftPlan-componentName`}
                       placeholder="Component Name"
-                      className={getValidationClass(nextShiftPlanTableValid[index]?.componentName)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColorNextShiftPlan(index, 'componentName')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-nextShiftPlan-componentName`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.plannedMoulds}
-                      onChange={e => handleNextShiftPlanChange(index, 'plannedMoulds', e.target.value)}
+                      onChange={e => {
+                        const value = e.target.value.replace(/[^0-9]/g, '');
+                        handleNextShiftPlanChange(index, 'plannedMoulds', value);
+                      }}
+                      onKeyDown={e => handleNextShiftPlanKeyDown(e, index, 'plannedMoulds')}
+                      data-field={`${index}-nextShiftPlan-plannedMoulds`}
                       placeholder="0"
-                      className={getValidationClass(nextShiftPlanTableValid[index]?.plannedMoulds)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColorNextShiftPlan(index, 'plannedMoulds')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-nextShiftPlan-plannedMoulds`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
@@ -790,9 +2309,20 @@ const DisamaticProduct = () => {
                       type="text"
                       value={row.remarks}
                       onChange={e => handleNextShiftPlanChange(index, 'remarks', e.target.value)}
+                      onKeyDown={e => handleNextShiftPlanKeyDown(e, index, 'remarks')}
+                      data-field={`${index}-nextShiftPlan-remarks`}
                       placeholder="Remarks"
-                      className={getValidationClass(nextShiftPlanTableValid[index]?.remarks)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColorNextShiftPlan(index, 'remarks')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-nextShiftPlan-remarks`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                 </tr>
@@ -800,16 +2330,19 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
         </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+          <SubmitButton onClick={handleSubmitNextShiftPlan} disabled={!isPrimaryDataSaved}>
+            Save Next Shift Plan
+          </SubmitButton>
+        </div>
       </div>
 
       {/* Delays Table */}
-      <div className="disamatic-section">
+      <div className="disamatic-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
         <div className="disamatic-section-header">
-          <h3 className="disamatic-section-title">Delays</h3>
+          <h3 className="disamatic-section-title">Delays {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked)</span>}</h3>
           <div className="disamatic-section-actions">
-            <button type="button" onClick={addDelaysRow} className="disamatic-add-row-btn">
-              <Plus size={18} />
-            </button>
             {formData.delaysTable.length > 1 && (
               <button
                 type="button"
@@ -830,6 +2363,9 @@ const DisamaticProduct = () => {
                 <X size={18} />
               </button>
             )}
+            <button type="button" onClick={addDelaysRow} className="disamatic-add-row-btn">
+              <Plus size={18} />
+            </button>
           </div>
         </div>
         
@@ -846,15 +2382,26 @@ const DisamaticProduct = () => {
             <tbody>
               {formData.delaysTable.map((row, index) => (
                 <tr key={index}>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{index + 1}</td>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', textAlign: 'center', fontWeight: 500, color: '#475569' }}>{delaysSNo + index}</td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
                       type="text"
                       value={row.delays}
                       onChange={e => handleDelaysChange(index, 'delays', e.target.value)}
+                      onKeyDown={e => handleDelaysKeyDown(e, index, 'delays')}
+                      data-field={`${index}-delays-delays`}
                       placeholder="Delay reason"
-                      className={getValidationClass(delaysTableValid[index]?.delays)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColorDelays(index, 'delays')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-delays-delays`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
@@ -881,12 +2428,29 @@ const DisamaticProduct = () => {
                         {row.durationMinutes.map((value, inputIndex) => (
                           <input
                             key={inputIndex}
-                            type="number"
+                            type="text"
                             value={value}
-                            onChange={e => handleDurationInputChange(index, inputIndex, e.target.value)}
+                            onChange={e => {
+                              const numValue = e.target.value.replace(/[^0-9]/g, '');
+                              const limitedValue = numValue && parseInt(numValue) > 30 ? '30' : numValue;
+                              handleDurationInputChange(index, inputIndex, limitedValue);
+                            }}
+                            onKeyDown={e => handleDelaysKeyDown(e, index, 'durationMinutes', inputIndex)}
+                            data-field={`${index}-delays-durationMinutes-${inputIndex}`}
                             placeholder="0"
-                            className={getValidationClass(delaysTableValid[index]?.durationMinutes[inputIndex])}
-                            style={{ width: '100%', padding: '0.5rem', borderRadius: '4px', textAlign: 'center' }}
+                            maxLength="2"
+                            style={{ 
+                              width: '100%', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              textAlign: 'center',
+                              border: `2px solid ${getDurationInputBorderColor(index, inputIndex)}`,
+                              outline: 'none',
+                              transition: 'border-color 0.2s'
+                            }}
+                            onFocus={() => setFocusedField(`${index}-delays-durationMinutes-${inputIndex}`)}
+                            onBlur={() => setFocusedField(null)}
+                            disabled={!isPrimaryDataSaved}
                           />
                         ))}
                       </div>
@@ -901,19 +2465,29 @@ const DisamaticProduct = () => {
                     }}>
                       {row.fromTime.map((fromValue, inputIndex) => (
                         <div key={inputIndex} style={{ display: 'flex', alignItems: 'center', gap: '0.25rem' }}>
-                          <CustomTimeInput
-                            value={createTimeFromString(fromValue)}
-                            onChange={(timeObj) => handleTimeInputChange(index, inputIndex, 'fromTime', formatTimeToString(timeObj))}
-                            className={getValidationClass(delaysTableValid[index]?.fromTime[inputIndex])}
-                            style={{ flex: 1 }}
-                          />
+                          <div data-field={`${index}-delays-fromTime-${inputIndex}`} style={{ flex: 1 }}>
+                            <CustomTimeInput
+                              value={createTimeFromString(fromValue)}
+                              onChange={(timeObj) => handleTimeInputChange(index, inputIndex, 'fromTime', formatTimeToString(timeObj))}
+                              hasError={delaysErrors[index]?.fromTime?.[inputIndex]}
+                              onFocus={() => setFocusedField(`${index}-delays-fromTime-${inputIndex}`)}
+                              onBlur={() => setFocusedField(null)}
+                              onEnterPress={(e) => handleDelaysKeyDown(e, index, 'fromTime', inputIndex)}
+                              aria-label="From Time"
+                            />
+                          </div>
                           <span style={{ color: '#64748b', fontWeight: 600 }}>-</span>
-                          <CustomTimeInput
-                            value={createTimeFromString(row.toTime[inputIndex])}
-                            onChange={(timeObj) => handleTimeInputChange(index, inputIndex, 'toTime', formatTimeToString(timeObj))}
-                            className={getValidationClass(delaysTableValid[index]?.toTime[inputIndex])}
-                            style={{ flex: 1 }}
-                          />
+                          <div data-field={`${index}-delays-toTime-${inputIndex}`} style={{ flex: 1 }}>
+                            <CustomTimeInput
+                              value={createTimeFromString(row.toTime[inputIndex])}
+                              onChange={(timeObj) => handleTimeInputChange(index, inputIndex, 'toTime', formatTimeToString(timeObj))}
+                              hasError={delaysErrors[index]?.toTime?.[inputIndex]}
+                              onFocus={() => setFocusedField(`${index}-delays-toTime-${inputIndex}`)}
+                              onBlur={() => setFocusedField(null)}
+                              onEnterPress={(e) => handleDelaysKeyDown(e, index, 'toTime', inputIndex)}
+                              aria-label="To Time"
+                            />
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -923,16 +2497,24 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
         </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+          {delaysSubmitError && (
+            <span style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: 500 }}>
+              {delaysSubmitError}
+            </span>
+          )}
+          <SubmitButton onClick={handleSubmitDelays} disabled={!isPrimaryDataSaved}>
+            Save Delays
+          </SubmitButton>
+        </div>
       </div>
 
       {/* Mould Hardness Table */}
-      <div className="disamatic-section">
+      <div className="disamatic-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
         <div className="disamatic-section-header">
-          <h3 className="disamatic-section-title">Mould Hardness</h3>
+          <h3 className="disamatic-section-title">Mould Hardness {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked)</span>}</h3>
           <div className="disamatic-section-actions">
-            <button type="button" onClick={addMouldHardnessRow} className="disamatic-add-row-btn">
-              <Plus size={18} />
-            </button>
             {formData.mouldHardnessTable.length > 1 && (
               <button
                 type="button"
@@ -953,6 +2535,9 @@ const DisamaticProduct = () => {
                 <X size={18} />
               </button>
             )}
+            <button type="button" onClick={addMouldHardnessRow} className="disamatic-add-row-btn">
+              <Plus size={18} />
+            </button>
           </div>
         </div>
         
@@ -976,65 +2561,331 @@ const DisamaticProduct = () => {
             <tbody>
               {formData.mouldHardnessTable.map((row, index) => (
                 <tr key={index}>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{index + 1}</td>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', verticalAlign: 'top' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                      <span>{mouldHardnessSNo + index}</span>
+                      <div style={{ display: 'flex', gap: '0.25rem' }}>
+                        <PlusButton
+                          onClick={() => addMouldHardnessPair(index)}
+                          title="Add pair"
+                        />
+                        {row.mpPP.length > 1 && (
+                          <MinusButton
+                            onClick={() => removeMouldHardnessPair(index)}
+                            title="Remove pair"
+                          />
+                        )}
+                      </div>
+                    </div>
+                  </td>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', verticalAlign: 'top' }}>
                     <input
                       type="text"
                       value={row.componentName}
                       onChange={e => handleMouldHardnessChange(index, 'componentName', e.target.value)}
+                      onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'componentName')}
+                      data-field={`${index}-mouldHardness-componentName`}
                       placeholder="Component Name"
-                      className={getValidationClass(mouldHardnessTableValid[index]?.componentName)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColorMouldHardness(index, 'componentName')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-mouldHardness-componentName`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      value={row.mpPP}
-                      onChange={e => handleMouldHardnessChange(index, 'mpPP', e.target.value)}
-                      placeholder="0"
-                      className={getValidationClass(mouldHardnessTableValid[index]?.mpPP)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
-                    />
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', verticalAlign: 'top' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {row.mpPP.map((pair, pairIdx) => (
+                        <div key={pairIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                          <input
+                            type="text"
+                            value={pair[0]}
+                            onChange={e => {
+                              const value = cleanDecimalInput(e.target.value);
+                              handleMouldHardnessChange(index, 'mpPP', value, pairIdx, 0);
+                            }}
+                            onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'mpPP', pairIdx, 0)}
+                            onBlur={e => {
+                              const formatted = formatDecimal(e.target.value);
+                              if (formatted !== e.target.value) {
+                                handleMouldHardnessChange(index, 'mpPP', formatted, pairIdx, 0);
+                              }
+                              setFocusedField(null);
+                            }}
+                            data-field={`${index}-mouldHardness-mpPP-${pairIdx}-from`}
+                            placeholder="From"
+                            style={{ 
+                              width: '70px', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              textAlign: 'center',
+                              border: `2px solid ${getPairInputBorderColor(index, 'mpPP', pairIdx, 'from')}`,
+                              outline: 'none',
+                              transition: 'border-color 0.2s'
+                            }}
+                            onFocus={() => setFocusedField(`${index}-mouldHardness-mpPP-${pairIdx}-from`)}
+                            disabled={!isPrimaryDataSaved}
+                          />
+                          <span style={{ fontWeight: 600, color: '#64748b' }}>-</span>
+                          <input
+                            type="text"
+                            value={pair[1]}
+                            onChange={e => {
+                              const value = cleanDecimalInput(e.target.value);
+                              handleMouldHardnessChange(index, 'mpPP', value, pairIdx, 1);
+                            }}
+                            onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'mpPP', pairIdx, 1)}
+                            onBlur={e => {
+                              const formatted = formatDecimal(e.target.value);
+                              if (formatted !== e.target.value) {
+                                handleMouldHardnessChange(index, 'mpPP', formatted, pairIdx, 1);
+                              }
+                              setFocusedField(null);
+                            }}
+                            data-field={`${index}-mouldHardness-mpPP-${pairIdx}-to`}
+                            placeholder="To"
+                            style={{ 
+                              width: '70px', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              textAlign: 'center',
+                              border: `2px solid ${getPairInputBorderColor(index, 'mpPP', pairIdx, 'to')}`,
+                              outline: 'none',
+                              transition: 'border-color 0.2s'
+                            }}
+                            onFocus={() => setFocusedField(`${index}-mouldHardness-mpPP-${pairIdx}-to`)}
+                            disabled={!isPrimaryDataSaved}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </td>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      value={row.mpSP}
-                      onChange={e => handleMouldHardnessChange(index, 'mpSP', e.target.value)}
-                      placeholder="0"
-                      className={getValidationClass(mouldHardnessTableValid[index]?.mpSP)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
-                    />
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', verticalAlign: 'top' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {row.mpSP.map((pair, pairIdx) => (
+                        <div key={pairIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                          <input
+                            type="text"
+                            value={pair[0]}
+                            onChange={e => {
+                              const value = cleanDecimalInput(e.target.value);
+                              handleMouldHardnessChange(index, 'mpSP', value, pairIdx, 0);
+                            }}
+                            onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'mpSP', pairIdx, 0)}
+                            onBlur={e => {
+                              const formatted = formatDecimal(e.target.value);
+                              if (formatted !== e.target.value) {
+                                handleMouldHardnessChange(index, 'mpSP', formatted, pairIdx, 0);
+                              }
+                              setFocusedField(null);
+                            }}
+                            data-field={`${index}-mouldHardness-mpSP-${pairIdx}-from`}
+                            placeholder="From"
+                            style={{ 
+                              width: '70px', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              textAlign: 'center',
+                              border: `2px solid ${getPairInputBorderColor(index, 'mpSP', pairIdx, 'from')}`,
+                              outline: 'none',
+                              transition: 'border-color 0.2s'
+                            }}
+                            onFocus={() => setFocusedField(`${index}-mouldHardness-mpSP-${pairIdx}-from`)}
+                            disabled={!isPrimaryDataSaved}
+                          />
+                          <span style={{ fontWeight: 600, color: '#64748b' }}>-</span>
+                          <input
+                            type="text"
+                            value={pair[1]}
+                            onChange={e => {
+                              const value = cleanDecimalInput(e.target.value);
+                              handleMouldHardnessChange(index, 'mpSP', value, pairIdx, 1);
+                            }}
+                            onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'mpSP', pairIdx, 1)}
+                            onBlur={e => {
+                              const formatted = formatDecimal(e.target.value);
+                              if (formatted !== e.target.value) {
+                                handleMouldHardnessChange(index, 'mpSP', formatted, pairIdx, 1);
+                              }
+                              setFocusedField(null);
+                            }}
+                            data-field={`${index}-mouldHardness-mpSP-${pairIdx}-to`}
+                            placeholder="To"
+                            style={{ 
+                              width: '70px', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              textAlign: 'center',
+                              border: `2px solid ${getPairInputBorderColor(index, 'mpSP', pairIdx, 'to')}`,
+                              outline: 'none',
+                              transition: 'border-color 0.2s'
+                            }}
+                            onFocus={() => setFocusedField(`${index}-mouldHardness-mpSP-${pairIdx}-to`)}
+                            disabled={!isPrimaryDataSaved}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </td>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      value={row.bsPP}
-                      onChange={e => handleMouldHardnessChange(index, 'bsPP', e.target.value)}
-                      placeholder="0"
-                      className={getValidationClass(mouldHardnessTableValid[index]?.bsPP)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
-                    />
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', verticalAlign: 'top' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {row.bsPP.map((pair, pairIdx) => (
+                        <div key={pairIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                          <input
+                            type="text"
+                            value={pair[0]}
+                            onChange={e => {
+                              const value = cleanDecimalInput(e.target.value);
+                              handleMouldHardnessChange(index, 'bsPP', value, pairIdx, 0);
+                            }}
+                            onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'bsPP', pairIdx, 0)}
+                            onBlur={e => {
+                              const formatted = formatDecimal(e.target.value);
+                              if (formatted !== e.target.value) {
+                                handleMouldHardnessChange(index, 'bsPP', formatted, pairIdx, 0);
+                              }
+                              setFocusedField(null);
+                            }}
+                            data-field={`${index}-mouldHardness-bsPP-${pairIdx}-from`}
+                            placeholder="From"
+                            style={{ 
+                              width: '70px', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              textAlign: 'center',
+                              border: `2px solid ${getPairInputBorderColor(index, 'bsPP', pairIdx, 'from')}`,
+                              outline: 'none',
+                              transition: 'border-color 0.2s'
+                            }}
+                            onFocus={() => setFocusedField(`${index}-mouldHardness-bsPP-${pairIdx}-from`)}
+                            disabled={!isPrimaryDataSaved}
+                          />
+                          <span style={{ fontWeight: 600, color: '#64748b' }}>-</span>
+                          <input
+                            type="text"
+                            value={pair[1]}
+                            onChange={e => {
+                              const value = cleanDecimalInput(e.target.value);
+                              handleMouldHardnessChange(index, 'bsPP', value, pairIdx, 1);
+                            }}
+                            onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'bsPP', pairIdx, 1)}
+                            onBlur={e => {
+                              const formatted = formatDecimal(e.target.value);
+                              if (formatted !== e.target.value) {
+                                handleMouldHardnessChange(index, 'bsPP', formatted, pairIdx, 1);
+                              }
+                              setFocusedField(null);
+                            }}
+                            data-field={`${index}-mouldHardness-bsPP-${pairIdx}-to`}
+                            placeholder="To"
+                            style={{ 
+                              width: '70px', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              textAlign: 'center',
+                              border: `2px solid ${getPairInputBorderColor(index, 'bsPP', pairIdx, 'to')}`,
+                              outline: 'none',
+                              transition: 'border-color 0.2s'
+                            }}
+                            onFocus={() => setFocusedField(`${index}-mouldHardness-bsPP-${pairIdx}-to`)}
+                            disabled={!isPrimaryDataSaved}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </td>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
-                    <input
-                      type="number"
-                      value={row.bsSP}
-                      onChange={e => handleMouldHardnessChange(index, 'bsSP', e.target.value)}
-                      placeholder="0"
-                      className={getValidationClass(mouldHardnessTableValid[index]?.bsSP)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
-                    />
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', verticalAlign: 'top' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                      {row.bsSP.map((pair, pairIdx) => (
+                        <div key={pairIdx} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.25rem' }}>
+                          <input
+                            type="text"
+                            value={pair[0]}
+                            onChange={e => {
+                              const value = cleanDecimalInput(e.target.value);
+                              handleMouldHardnessChange(index, 'bsSP', value, pairIdx, 0);
+                            }}
+                            onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'bsSP', pairIdx, 0)}
+                            onBlur={e => {
+                              const formatted = formatDecimal(e.target.value);
+                              if (formatted !== e.target.value) {
+                                handleMouldHardnessChange(index, 'bsSP', formatted, pairIdx, 0);
+                              }
+                              setFocusedField(null);
+                            }}
+                            data-field={`${index}-mouldHardness-bsSP-${pairIdx}-from`}
+                            placeholder="From"
+                            style={{ 
+                              width: '70px', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              textAlign: 'center',
+                              border: `2px solid ${getPairInputBorderColor(index, 'bsSP', pairIdx, 'from')}`,
+                              outline: 'none',
+                              transition: 'border-color 0.2s'
+                            }}
+                            onFocus={() => setFocusedField(`${index}-mouldHardness-bsSP-${pairIdx}-from`)}
+                            disabled={!isPrimaryDataSaved}
+                          />
+                          <span style={{ fontWeight: 600, color: '#64748b' }}>-</span>
+                          <input
+                            type="text"
+                            value={pair[1]}
+                            onChange={e => {
+                              const value = cleanDecimalInput(e.target.value);
+                              handleMouldHardnessChange(index, 'bsSP', value, pairIdx, 1);
+                            }}
+                            onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'bsSP', pairIdx, 1)}
+                            onBlur={e => {
+                              const formatted = formatDecimal(e.target.value);
+                              if (formatted !== e.target.value) {
+                                handleMouldHardnessChange(index, 'bsSP', formatted, pairIdx, 1);
+                              }
+                              setFocusedField(null);
+                            }}
+                            data-field={`${index}-mouldHardness-bsSP-${pairIdx}-to`}
+                            placeholder="To"
+                            style={{ 
+                              width: '70px', 
+                              padding: '0.5rem', 
+                              borderRadius: '4px', 
+                              textAlign: 'center',
+                              border: `2px solid ${getPairInputBorderColor(index, 'bsSP', pairIdx, 'to')}`,
+                              outline: 'none',
+                              transition: 'border-color 0.2s'
+                            }}
+                            onFocus={() => setFocusedField(`${index}-mouldHardness-bsSP-${pairIdx}-to`)}
+                            disabled={!isPrimaryDataSaved}
+                          />
+                        </div>
+                      ))}
+                    </div>
                   </td>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0', verticalAlign: 'top' }}>
                     <input
                       type="text"
                       value={row.remarks}
                       onChange={e => handleMouldHardnessChange(index, 'remarks', e.target.value)}
+                      onKeyDown={e => handleMouldHardnessKeyDown(e, index, 'remarks')}
+                      data-field={`${index}-mouldHardness-remarks`}
                       placeholder="Remarks"
-                      className={getValidationClass(mouldHardnessTableValid[index]?.remarks)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColorMouldHardness(index, 'remarks')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-mouldHardness-remarks`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                 </tr>
@@ -1042,16 +2893,24 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
         </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center', gap: '1rem', marginTop: '1rem' }}>
+          {mouldHardnessSubmitError && (
+            <span style={{ color: '#ef4444', fontSize: '0.875rem', fontWeight: 500 }}>
+              {mouldHardnessSubmitError}
+            </span>
+          )}
+          <SubmitButton onClick={handleSubmitMouldHardness} disabled={!isPrimaryDataSaved}>
+            Save Mould Hardness
+          </SubmitButton>
+        </div>
       </div>
 
       {/* Pattern Temp Table */}
-      <div className="disamatic-section">
+      <div className="disamatic-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
         <div className="disamatic-section-header">
-          <h3 className="disamatic-section-title">Pattern Temperature</h3>
+          <h3 className="disamatic-section-title">Pattern Temperature {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked)</span>}</h3>
           <div className="disamatic-section-actions">
-            <button type="button" onClick={addPatternTempRow} className="disamatic-add-row-btn">
-              <Plus size={18} />
-            </button>
             {formData.patternTempTable.length > 1 && (
               <button
                 type="button"
@@ -1072,6 +2931,9 @@ const DisamaticProduct = () => {
                 <X size={18} />
               </button>
             )}
+            <button type="button" onClick={addPatternTempRow} className="disamatic-add-row-btn">
+              <Plus size={18} />
+            </button>
           </div>
         </div>
         
@@ -1088,35 +2950,86 @@ const DisamaticProduct = () => {
             <tbody>
               {formData.patternTempTable.map((row, index) => (
                 <tr key={index}>
-                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{index + 1}</td>
+                  <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>{patternTempSNo + index}</td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
                       type="text"
                       value={row.item}
                       onChange={e => handlePatternTempChange(index, 'item', e.target.value)}
+                      onKeyDown={e => handlePatternTempKeyDown(e, index, 'item')}
+                      data-field={`${index}-patternTemp-item`}
                       placeholder="Item"
-                      className={getValidationClass(patternTempTableValid[index]?.item)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColorPatternTemp(index, 'item')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-patternTemp-item`)}
+                      onBlur={() => setFocusedField(null)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.pp}
-                      onChange={e => handlePatternTempChange(index, 'pp', e.target.value)}
+                      onChange={e => {
+                        const value = cleanDecimalInput(e.target.value);
+                        handlePatternTempChange(index, 'pp', value);
+                      }}
+                      onKeyDown={e => handlePatternTempKeyDown(e, index, 'pp')}
+                      onBlur={e => {
+                        const formatted = formatDecimal(e.target.value);
+                        if (formatted !== e.target.value) {
+                          handlePatternTempChange(index, 'pp', formatted);
+                        }
+                        setFocusedField(null);
+                      }}
+                      data-field={`${index}-patternTemp-pp`}
                       placeholder="0"
-                      className={getValidationClass(patternTempTableValid[index]?.pp)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColorPatternTemp(index, 'pp')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-patternTemp-pp`)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                   <td style={{ padding: '0.75rem', border: '1px solid #e2e8f0' }}>
                     <input
-                      type="number"
+                      type="text"
                       value={row.sp}
-                      onChange={e => handlePatternTempChange(index, 'sp', e.target.value)}
+                      onChange={e => {
+                        const value = cleanDecimalInput(e.target.value);
+                        handlePatternTempChange(index, 'sp', value);
+                      }}
+                      onKeyDown={e => handlePatternTempKeyDown(e, index, 'sp')}
+                      onBlur={e => {
+                        const formatted = formatDecimal(e.target.value);
+                        if (formatted !== e.target.value) {
+                          handlePatternTempChange(index, 'sp', formatted);
+                        }
+                        setFocusedField(null);
+                      }}
+                      data-field={`${index}-patternTemp-sp`}
                       placeholder="0"
-                      className={getValidationClass(patternTempTableValid[index]?.sp)}
-                      style={{ width: '100%', padding: '0.5rem', borderRadius: '4px' }}
+                      style={{ 
+                        width: '100%', 
+                        padding: '0.5rem', 
+                        borderRadius: '4px',
+                        border: `2px solid ${getBorderColorPatternTemp(index, 'sp')}`,
+                        outline: 'none',
+                        transition: 'border-color 0.2s'
+                      }}
+                      onFocus={() => setFocusedField(`${index}-patternTemp-sp`)}
+                      disabled={!isPrimaryDataSaved}
                     />
                   </td>
                 </tr>
@@ -1124,58 +3037,73 @@ const DisamaticProduct = () => {
             </tbody>
           </table>
         </div>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+          <SubmitButton onClick={handleSubmitPatternTemp} disabled={!isPrimaryDataSaved}>
+            Save Pattern Temperature
+          </SubmitButton>
+        </div>
       </div>
 
       {/* Event Section */}
-      <div className="disamatic-section">
-        <h3 className="disamatic-section-title">Significant Events & Maintenance</h3>
+      <div className="disamatic-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
+        <h3 className="disamatic-section-title">
+          Significant Events & Maintenance 
+          {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked - Save Primary Data First)</span>}
+          {isPrimaryDataSaved && isEventsSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#10b981' }}>(Saved)</span>}
+        </h3>
         
         <div className="disamatic-form-grid" style={{ marginTop: '1rem' }}>
           <div className="disamatic-form-group full-width">
-            <label>Significant Event :</label>
+            <label>
+              Significant Event :
+              {lockedEventsFields.significantEvent && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ Locked</span>}
+            </label>
             <textarea
               value={formData.significantEvent}
               onChange={e => handleChange("significantEvent", e.target.value)}
               placeholder="Enter any significant events"
-              className={`disamatic-textarea ${getValidationClass(significantEventValid)}`}
+              className="disamatic-textarea"
               rows={3}
+              disabled={!isPrimaryDataSaved || lockedEventsFields.significantEvent}
             />
           </div>
           
           <div className="disamatic-form-group full-width">
-            <label>Maintenance :</label>
+            <label>
+              Maintenance :
+              {lockedEventsFields.maintenance && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ Locked</span>}
+            </label>
             <textarea
               value={formData.maintenance}
               onChange={e => handleChange("maintenance", e.target.value)}
               placeholder="Enter maintenance details"
-              className={`disamatic-textarea ${getValidationClass(maintenanceValid)}`}
+              className="disamatic-textarea"
               rows={3}
+              disabled={!isPrimaryDataSaved || lockedEventsFields.maintenance}
             />
           </div>
           
           <div className="disamatic-form-group">
-            <label>Supervisor Name :</label>
+            <label>
+              Supervisor Name :
+              {lockedEventsFields.supervisorName && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ Locked</span>}
+            </label>
             <input
               type="text"
               value={formData.supervisorName}
               onChange={e => handleChange("supervisorName", e.target.value)}
               placeholder="Enter supervisor name"
-              className={getValidationClass(supervisorNameValid)}
+              disabled={!isPrimaryDataSaved || lockedEventsFields.supervisorName}
             />
           </div>
         </div>
-      </div>
-
-      {/* Submit All Button */}
-      <div className="disamatic-submit-container">
-        <button className="disamatic-reset-btn" type="button" onClick={resetForm}>
-          <RefreshCw size={18} />
-          Reset Form
-        </button>
-        <button className="disamatic-submit-btn" type="button" onClick={handleSubmit}>
-          <Save size={18} />
-          Submit All
-        </button>
+        
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1rem' }}>
+          <SubmitButton onClick={handleSubmitEvents} disabled={!isPrimaryDataSaved || isEventsSaved}>
+            Save Events
+          </SubmitButton>
+        </div>
       </div>
     </div>
   );

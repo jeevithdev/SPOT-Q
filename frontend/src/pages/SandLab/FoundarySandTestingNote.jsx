@@ -2,11 +2,12 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from 'react-router-dom';
 import { Save, RefreshCw, FileText, Loader2, RotateCcw } from 'lucide-react';
 import CustomDatePicker from '../../Components/CustomDatePicker';
-import { DisaDropdown } from '../../Components/Buttons';
+import { DisaDropdown, ShiftDropdown, SubmitButton } from '../../Components/Buttons';
+import Table from '../../Components/Table';
 import '../../styles/PageStyles/Sandlab/FoundarySandTestingNote.css';
 
 const initialFormData = {
-  date: new Date().toISOString().split('T')[0],
+  date: "",
   shift: "",
   sandPlant: "",
   compactibilitySetting: "",
@@ -89,7 +90,7 @@ export default function FoundrySandTestingNote() {
   
   // Primary data (must be saved first)
   const [primaryData, setPrimaryData] = useState({
-    date: new Date().toISOString().split('T')[0],
+    date: "",
     shift: "",
     sandPlant: "",
     compactibilitySetting: "",
@@ -97,202 +98,61 @@ export default function FoundrySandTestingNote() {
   });
   const [checkingData, setCheckingData] = useState(false);
   const [primaryId, setPrimaryId] = useState(null);
-
-  // Check if there's data for the specific date+shift combination and lock shift dropdown
-  const checkAndLockByDateAndShift = async (date, shift) => {
-    if (!date || !shift) {
-      // If date or shift is not set, unlock shift (unless primaryId exists)
-      if (!primaryId) {
-        setFieldLocks(prev => ({
-          ...prev,
-          primary: {
-            ...prev.primary,
-            shift: false
-          }
-        }));
-      }
-      return;
-    }
-    
-    try {
-      const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
-      const res = await fetch(`http://localhost:5000/api/v1/foundry-sand-testing-notes?startDate=${dateStr}&endDate=${dateStr}`, { credentials: 'include' });
-      const response = await res.json();
-      
-      if (response.success && response.data && response.data.length > 0) {
-        // Check if any entry has the same date AND shift
-        const hasDataForShift = response.data.some(entry => {
-          const entryShift = entry.shift;
-          return entryShift === shift;
-        });
-        
-        if (hasDataForShift) {
-          // Data exists for this date+shift combination, lock shift dropdown
-          setFieldLocks(prev => ({
-            ...prev,
-            primary: {
-              ...prev.primary,
-              shift: true
-            }
-          }));
-        } else {
-          // No data for this date+shift combination, unlock shift (unless primaryId exists)
-          if (!primaryId) {
-            setFieldLocks(prev => ({
-              ...prev,
-              primary: {
-                ...prev.primary,
-                shift: false
-              }
-            }));
-          }
-        }
-      } else {
-        // No data for this date, unlock shift (unless primaryId exists)
-        if (!primaryId) {
-          setFieldLocks(prev => ({
-            ...prev,
-            primary: {
-              ...prev.primary,
-              shift: false
-            }
-          }));
-        }
-      }
-    } catch (error) {
-      console.error('Error checking existing data for date and shift:', error);
-    }
-  };
-
-  // Check for existing data when date or shift changes
-  useEffect(() => {
-    if (primaryData.date && primaryData.shift) {
-      checkAndLockByDateAndShift(primaryData.date, primaryData.shift);
-    } else if (!primaryData.date || !primaryData.shift) {
-      // Clear shift lock when date or shift is cleared (unless primaryId exists)
-      if (!primaryId) {
-        setFieldLocks(prev => ({
-          ...prev,
-          primary: {
-            ...prev.primary,
-            shift: false
-          }
-        }));
-      }
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [primaryData.date, primaryData.shift]);
-
-  // Field locks for all sections
-  const [fieldLocks, setFieldLocks] = useState({
-    primary: {
-      date: false,
-      shift: false,
-      sandPlant: false,
-      compactibilitySetting: false,
-      shearStrengthSetting: false
-    },
-    clayTests: {},
-    sieveTesting: {},
-    parameters: {},
-    additionalData: {},
-    remarks: false
+  const [isPrimaryDataSaved, setIsPrimaryDataSaved] = useState(false);
+  const [lockedFields, setLockedFields] = useState({
+    compactibilitySetting: false,
+    shearStrengthSetting: false
   });
 
-  // Helper function to check if a field is locked
-  const isFieldLocked = (section, fieldPath) => {
-    if (section === 'primary') {
-      return fieldLocks.primary[fieldPath] === true;
+  // Fetch primary data when date, shift, or sandPlant changes
+  useEffect(() => {
+    if (primaryData.date && primaryData.shift && primaryData.sandPlant) {
+      fetchPrimaryData(primaryData.date, primaryData.shift, primaryData.sandPlant);
     }
-    const locks = fieldLocks[section];
-    if (!locks) return false;
-    return locks[fieldPath] === true;
-  };
+  }, [primaryData.date, primaryData.shift, primaryData.sandPlant]);
 
-  // Check if data exists for date - checks all sections
-  const checkExistingData = async (date) => {
-    if (!date) {
-      setFieldLocks({
-        primary: {
-          date: false,
-          shift: false,
-          sandPlant: false,
-          compactibilitySetting: false,
-          shearStrengthSetting: false
-        },
-        clayTests: {},
-        sieveTesting: {},
-        parameters: {},
-        additionalData: {},
-        remarks: false
-      });
-      // Clear all data except date
-      setPrimaryData(prev => ({
-        ...prev,
-        shift: "",
-        sandPlant: "",
-        compactibilitySetting: "",
-        shearStrengthSetting: ""
-      }));
-      setSectionData({
-        clayTests: initialFormData.clayTests,
-        sieveTesting: initialFormData.sieveTesting,
-        parameters: initialFormData.parameters,
-        additionalData: initialFormData.additionalData,
-        remarks: ""
-      });
-      return;
-    }
-
+  // Fetch primary data from backend
+  const fetchPrimaryData = async (date, shift, sandPlant) => {
     try {
       setCheckingData(true);
-      // Get all entries for this date
-      const res = await fetch(`http://localhost:5000/api/v1/foundry-sand-testing-notes?startDate=${encodeURIComponent(date)}&endDate=${encodeURIComponent(date)}`, { credentials: 'include' });
+      const dateStr = date instanceof Date ? date.toISOString().split('T')[0] : date;
+      const res = await fetch(`http://localhost:5000/api/v1/foundry-sand-testing-notes?startDate=${encodeURIComponent(dateStr)}&endDate=${encodeURIComponent(dateStr)}`, { credentials: 'include' });
       const response = await res.json();
-      
+
       let record = null;
       if (response.success && response.data && Array.isArray(response.data) && response.data.length > 0) {
-        record = response.data[0];
-        setPrimaryId(record._id || null);
-      } else {
-        setPrimaryId(null);
+        // Find the record matching the shift and sandPlant
+        record = response.data.find(entry => entry.shift === shift && entry.sandPlant === sandPlant) || null;
       }
-      
+
       if (record) {
+        setPrimaryId(record._id || null);
+
+        // Populate primary data
+        setPrimaryData(prev => ({
+          ...prev,
+          sandPlant: record.sandPlant || '',
+          compactibilitySetting: record.compactibilitySetting || '',
+          shearStrengthSetting: record.shearStrengthSetting || ''
+        }));
+
+        // Lock fields that have values (sandPlant is a selection key, not locked)
+        setLockedFields({
+          compactibilitySetting: !!(record.compactibilitySetting && record.compactibilitySetting.trim()),
+          shearStrengthSetting: !!(record.shearStrengthSetting && record.shearStrengthSetting.trim())
+        });
+
+        setIsPrimaryDataSaved(true);
+
+        // Populate section data
         const locks = {
-          primary: {
-            date: false, // Date is always editable
-            shift: false,
-            sandPlant: false,
-            compactibilitySetting: false,
-            shearStrengthSetting: false
-          },
           clayTests: {},
           sieveTesting: {},
           parameters: {},
           additionalData: {},
           remarks: false
         };
-        
-        // Lock and populate primary data - only lock fields that have actual data
-        if (record.shift && record.shift.trim() !== '') {
-          locks.primary.shift = true;
-          setPrimaryData(prev => ({ ...prev, shift: String(record.shift) }));
-        }
-        if (record.sandPlant && record.sandPlant.trim() !== '') {
-          locks.primary.sandPlant = true;
-          setPrimaryData(prev => ({ ...prev, sandPlant: String(record.sandPlant) }));
-        }
-        if (record.compactibilitySetting && record.compactibilitySetting.trim() !== '') {
-          locks.primary.compactibilitySetting = true;
-          setPrimaryData(prev => ({ ...prev, compactibilitySetting: String(record.compactibilitySetting) }));
-        }
-        if (record.shearStrengthSetting && record.shearStrengthSetting.trim() !== '') {
-          locks.primary.shearStrengthSetting = true;
-          setPrimaryData(prev => ({ ...prev, shearStrengthSetting: String(record.shearStrengthSetting) }));
-        }
-        
-        // Lock and populate section data - only lock fields that have actual data
+
         if (record.clayTests) {
           Object.keys(record.clayTests).forEach(test => {
             Object.keys(record.clayTests[test]).forEach(param => {
@@ -304,37 +164,27 @@ export default function FoundrySandTestingNote() {
               });
             });
           });
-          setSectionData(prev => ({ 
-            ...prev, 
+          setSectionData(prev => ({
+            ...prev,
             clayTests: {
-              test1: {
-                ...prev.clayTests?.test1,
-                ...record.clayTests.test1
-              },
-              test2: {
-                ...prev.clayTests?.test2,
-                ...record.clayTests.test2
-              }
+              test1: { ...prev.clayTests?.test1, ...record.clayTests.test1 },
+              test2: { ...prev.clayTests?.test2, ...record.clayTests.test2 }
             }
           }));
         }
-        
+
         if (record.sieveTesting) {
           if (record.sieveTesting.test1) {
             if (record.sieveTesting.test1.sieveSize) {
               Object.keys(record.sieveTesting.test1.sieveSize || {}).forEach(size => {
                 const value = record.sieveTesting.test1.sieveSize[size];
-                if (value && String(value).trim() !== '') {
-                  locks.sieveTesting[`test1.sieveSize.${size}`] = true;
-                }
+                if (value && String(value).trim() !== '') locks.sieveTesting[`test1.sieveSize.${size}`] = true;
               });
             }
             if (record.sieveTesting.test1.mf) {
               Object.keys(record.sieveTesting.test1.mf || {}).forEach(mf => {
                 const value = record.sieveTesting.test1.mf[mf];
-                if (value && String(value).trim() !== '') {
-                  locks.sieveTesting[`test1.mf.${mf}`] = true;
-                }
+                if (value && String(value).trim() !== '') locks.sieveTesting[`test1.mf.${mf}`] = true;
               });
             }
           }
@@ -342,203 +192,126 @@ export default function FoundrySandTestingNote() {
             if (record.sieveTesting.test2.sieveSize) {
               Object.keys(record.sieveTesting.test2.sieveSize || {}).forEach(size => {
                 const value = record.sieveTesting.test2.sieveSize[size];
-                if (value && String(value).trim() !== '') {
-                  locks.sieveTesting[`test2.sieveSize.${size}`] = true;
-                }
+                if (value && String(value).trim() !== '') locks.sieveTesting[`test2.sieveSize.${size}`] = true;
               });
             }
             if (record.sieveTesting.test2.mf) {
               Object.keys(record.sieveTesting.test2.mf || {}).forEach(mf => {
                 const value = record.sieveTesting.test2.mf[mf];
-                if (value && String(value).trim() !== '') {
-                  locks.sieveTesting[`test2.mf.${mf}`] = true;
-                }
+                if (value && String(value).trim() !== '') locks.sieveTesting[`test2.mf.${mf}`] = true;
               });
             }
           }
-          setSectionData(prev => ({ 
-            ...prev, 
+          setSectionData(prev => ({
+            ...prev,
             sieveTesting: {
               test1: {
                 ...prev.sieveTesting?.test1,
-                sieveSize: {
-                  ...prev.sieveTesting?.test1?.sieveSize,
-                  ...record.sieveTesting.test1?.sieveSize
-                },
-                mf: {
-                  ...prev.sieveTesting?.test1?.mf,
-                  ...record.sieveTesting.test1?.mf
-                }
+                sieveSize: { ...prev.sieveTesting?.test1?.sieveSize, ...record.sieveTesting.test1?.sieveSize },
+                mf: { ...prev.sieveTesting?.test1?.mf, ...record.sieveTesting.test1?.mf }
               },
               test2: {
                 ...prev.sieveTesting?.test2,
-                sieveSize: {
-                  ...prev.sieveTesting?.test2?.sieveSize,
-                  ...record.sieveTesting.test2?.sieveSize
-                },
-                mf: {
-                  ...prev.sieveTesting?.test2?.mf,
-                  ...record.sieveTesting.test2?.mf
-                }
+                sieveSize: { ...prev.sieveTesting?.test2?.sieveSize, ...record.sieveTesting.test2?.sieveSize },
+                mf: { ...prev.sieveTesting?.test2?.mf, ...record.sieveTesting.test2?.mf }
               }
             }
           }));
         }
-        
+
         if (record.parameters) {
           Object.keys(record.parameters.test1 || {}).forEach(param => {
             const value = record.parameters.test1[param];
-            if (value && String(value).trim() !== '') {
-              locks.parameters[`test1.${param}`] = true;
-            }
+            if (value && String(value).trim() !== '') locks.parameters[`test1.${param}`] = true;
           });
           Object.keys(record.parameters.test2 || {}).forEach(param => {
             const value = record.parameters.test2[param];
-            if (value && String(value).trim() !== '') {
-              locks.parameters[`test2.${param}`] = true;
-            }
+            if (value && String(value).trim() !== '') locks.parameters[`test2.${param}`] = true;
           });
-          setSectionData(prev => ({ 
-            ...prev, 
+          setSectionData(prev => ({
+            ...prev,
             parameters: {
               ...prev.parameters,
-              test1: {
-                ...prev.parameters?.test1,
-                ...record.parameters.test1
-              },
-              test2: {
-                ...prev.parameters?.test2,
-                ...record.parameters.test2
-              }
+              test1: { ...prev.parameters?.test1, ...record.parameters.test1 },
+              test2: { ...prev.parameters?.test2, ...record.parameters.test2 }
             }
           }));
         }
-        
+
         if (record.additionalData) {
           Object.keys(record.additionalData.test1 || {}).forEach(param => {
             const value = record.additionalData.test1[param];
-            if (value && String(value).trim() !== '') {
-              locks.additionalData[`test1.${param}`] = true;
-            }
+            if (value && String(value).trim() !== '') locks.additionalData[`test1.${param}`] = true;
           });
           Object.keys(record.additionalData.test2 || {}).forEach(param => {
             const value = record.additionalData.test2[param];
-            if (value && String(value).trim() !== '') {
-              locks.additionalData[`test2.${param}`] = true;
-            }
+            if (value && String(value).trim() !== '') locks.additionalData[`test2.${param}`] = true;
           });
-          setSectionData(prev => ({ 
-            ...prev, 
+          setSectionData(prev => ({
+            ...prev,
             additionalData: {
               ...prev.additionalData,
-              test1: {
-                ...prev.additionalData?.test1,
-                ...record.additionalData.test1
-              },
-              test2: {
-                ...prev.additionalData?.test2,
-                ...record.additionalData.test2
-              }
+              test1: { ...prev.additionalData?.test1, ...record.additionalData.test1 },
+              test2: { ...prev.additionalData?.test2, ...record.additionalData.test2 }
             }
           }));
         }
-        
+
         if (record.remarks !== undefined && record.remarks && String(record.remarks).trim() !== '') {
           locks.remarks = true;
           setSectionData(prev => ({ ...prev, remarks: String(record.remarks || '') }));
         }
-        
+
         setFieldLocks(locks);
       } else {
-        // No data found, clear all locks
+        // No data found for this date+shift+sandPlant, reset
         setPrimaryId(null);
-        setFieldLocks({
-          primary: {
-            date: false,
-            shift: false,
-            sandPlant: false,
-            compactibilitySetting: false,
-            shearStrengthSetting: false
-          },
-          clayTests: {},
-          sieveTesting: {},
-          parameters: {},
-          additionalData: {},
-          remarks: false
-        });
-        // Clear all data except date
+        setIsPrimaryDataSaved(false);
+        setLockedFields({ compactibilitySetting: false, shearStrengthSetting: false });
         setPrimaryData(prev => ({
           ...prev,
-          shift: "",
-          sandPlant: "",
-          compactibilitySetting: "",
-          shearStrengthSetting: ""
+          compactibilitySetting: '',
+          shearStrengthSetting: ''
         }));
         setSectionData({
           clayTests: initialFormData.clayTests,
           sieveTesting: initialFormData.sieveTesting,
           parameters: initialFormData.parameters,
           additionalData: initialFormData.additionalData,
-          remarks: ""
+          remarks: ''
+        });
+        setFieldLocks({
+          clayTests: {},
+          sieveTesting: {},
+          parameters: {},
+          additionalData: {},
+          remarks: false
         });
       }
     } catch (error) {
-      console.error('Error checking existing data:', error);
+      console.error('Error fetching primary data:', error);
       setPrimaryId(null);
-      setFieldLocks({
-        primary: {
-          date: false,
-          shift: false,
-          sandPlant: false,
-          compactibilitySetting: false,
-          shearStrengthSetting: false
-        },
-        clayTests: {},
-        sieveTesting: {},
-        parameters: {},
-        additionalData: {},
-        remarks: false
-      });
+      setIsPrimaryDataSaved(false);
     } finally {
       setCheckingData(false);
     }
   };
 
-  // Load current date data on mount - auto-set to today
-  useEffect(() => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    const currentDate = `${y}-${m}-${d}`;
-    setPrimaryData(prev => ({ ...prev, date: currentDate }));
-    checkExistingData(currentDate);
-  }, []);
+  // Field locks for section data (not primary)
+  const [fieldLocks, setFieldLocks] = useState({
+    clayTests: {},
+    sieveTesting: {},
+    parameters: {},
+    additionalData: {},
+    remarks: false
+  });
 
-  // Check for data when date changes - checks all sections
-  useEffect(() => {
-    if (primaryData.date) {
-      const timeoutId = setTimeout(() => {
-        checkExistingData(primaryData.date);
-      }, 500);
-      return () => clearTimeout(timeoutId);
-    } else {
-      setFieldLocks({
-        primary: {
-          date: false,
-          shift: false,
-          sandPlant: false,
-          compactibilitySetting: false,
-          shearStrengthSetting: false
-        },
-        clayTests: {},
-        sieveTesting: {},
-        parameters: {},
-        additionalData: {},
-        remarks: false
-      });
-    }
-  }, [primaryData.date]);
+  // Helper function to check if a field is locked
+  const isFieldLocked = (section, fieldPath) => {
+    const locks = fieldLocks[section];
+    if (!locks) return false;
+    return locks[fieldPath] === true;
+  };
   
   // Other sections data
   const [sectionData, setSectionData] = useState({
@@ -686,17 +459,15 @@ export default function FoundrySandTestingNote() {
     }, 100);
   };
 
-  // Handle primary data submission - only send fields that have data
+  // Handle primary data submission
   const handlePrimarySubmit = async () => {
     if (!primaryData.date || !primaryData.shift) {
-      alert('Please fill in Date and Shift fields');
       return;
     }
 
     try {
       setLoadingStates(prev => ({ ...prev, primary: true }));
       
-      // Only include fields that have actual data (not empty strings)
       const payload = {
         date: primaryData.date,
         shift: primaryData.shift,
@@ -704,7 +475,6 @@ export default function FoundrySandTestingNote() {
         section: 'primary'
       };
       
-      // Only add optional fields if they have data
       if (primaryData.compactibilitySetting && primaryData.compactibilitySetting.trim() !== '') {
         payload.compactibilitySetting = primaryData.compactibilitySetting;
       }
@@ -717,13 +487,12 @@ export default function FoundrySandTestingNote() {
       
       if (response.success) {
         setPrimaryId(response.data?._id || null);
-        // Check if there's existing data for this date+shift combination and lock shift accordingly
-        await checkAndLockByDateAndShift(primaryData.date, primaryData.shift);
-        alert('Primary data saved successfully!');
-        // Refresh all locks from database
-        if (primaryData.date) {
-          await checkExistingData(primaryData.date);
-        }
+        // Lock fields that now have values (sandPlant is a selection key, not locked)
+        setLockedFields({
+          compactibilitySetting: !!(primaryData.compactibilitySetting && primaryData.compactibilitySetting.trim()),
+          shearStrengthSetting: !!(primaryData.shearStrengthSetting && primaryData.shearStrengthSetting.trim())
+        });
+        setIsPrimaryDataSaved(true);
       } else {
         alert('Error: ' + response.message);
       }
@@ -738,21 +507,6 @@ export default function FoundrySandTestingNote() {
   // Handle primary data changes
   const handlePrimaryChange = (field, value) => {
     setPrimaryData(prev => ({ ...prev, [field]: value }));
-    
-    // When date changes, automatically check for existing data
-    if (field === 'date' && value) {
-      // checkExistingData will be triggered by useEffect
-    } else if (field === 'date' && !value) {
-      // Clear all locks when date is cleared
-      setFieldLocks({
-        primary: {},
-        clayTests: {},
-        sieveTesting: {},
-        parameters: {},
-        additionalData: {},
-        remarks: false
-      });
-    }
   };
   
 
@@ -800,31 +554,33 @@ export default function FoundrySandTestingNote() {
     }
   };
 
-  const calculateClaySolution = (param, testNum) => {
-    const testData = sectionData.clayTests[testNum][param];
-    
+  const calculateClaySolution = (param, testNum, changedField = null, changedValue = null) => {
+    const testData = sectionData.clayTests[testNum]?.[param];
     if (!testData) return "";
-    
+
+    // Build a copy with the just-changed value so we don't rely on stale state
+    const data = { ...testData };
+    if (changedField) data[changedField] = changedValue;
+
     if (param === "activeClay") {
-      // activeClay: input1 x input2 = Solution %
-      const input1 = parseFloat(testData.input1) || 0;
-      const input2 = parseFloat(testData.input2) || 0;
-      const solution = input1 * input2;
-      return isNaN(solution) ? "" : solution.toFixed(2);
+      // activeClay: input1 × input2 = Solution %
+      const input1 = parseFloat(data.input1);
+      const input2 = parseFloat(data.input2);
+      if (isNaN(input1) || isNaN(input2)) return "";
+      return (input1 * input2).toFixed(2);
     } else if (param === "deadClay") {
-      // deadClay: input1 - input2 = Solution %
-      const input1 = parseFloat(testData.input1) || 0;
-      const input2 = parseFloat(testData.input2) || 0;
-      const solution = input1 - input2;
-      return isNaN(solution) ? "" : solution.toFixed(2);
+      // deadClay: input1 − input2 = Solution %
+      const input1 = parseFloat(data.input1);
+      const input2 = parseFloat(data.input2);
+      if (isNaN(input1) || isNaN(input2)) return "";
+      return (input1 - input2).toFixed(2);
     } else {
-      // totalClay, vcm, loi: (input1 - input2 / input3) x 100 = Solution %
-      const input1 = parseFloat(testData.input1) || 0;
-      const input2 = parseFloat(testData.input2) || 0;
-      const input3 = parseFloat(testData.input3) || 0;
-      if (input3 === 0) return "";
-      const solution = ((input1 - input2) / input3) * 100;
-      return isNaN(solution) ? "" : solution.toFixed(2);
+      // totalClay, vcm, loi: (input1 − input2) / input3 × 100 = Solution %
+      const input1 = parseFloat(data.input1);
+      const input2 = parseFloat(data.input2);
+      const input3 = parseFloat(data.input3);
+      if (isNaN(input1) || isNaN(input2) || isNaN(input3) || input3 === 0) return "";
+      return (((input1 - input2) / input3) * 100).toFixed(2);
     }
   };
 
@@ -897,8 +653,8 @@ export default function FoundrySandTestingNote() {
       if (response.success) {
         alert(`${sectionName.replace(/([A-Z])/g, ' $1').replace(/^./, str => str.toUpperCase())} saved successfully!`);
         // Refresh all locks from database
-        if (primaryData.date) {
-          await checkExistingData(primaryData.date);
+        if (primaryData.date && primaryData.shift && primaryData.sandPlant) {
+          await fetchPrimaryData(primaryData.date, primaryData.shift, primaryData.sandPlant);
         }
       } else {
         alert('Error: ' + response.message);
@@ -915,19 +671,31 @@ export default function FoundrySandTestingNote() {
   const resetPrimaryData = () => {
     if (!window.confirm('Are you sure you want to reset Primary data?')) return;
     setPrimaryData({
-      date: new Date().toISOString().split('T')[0],
+      date: "",
       shift: "",
       sandPlant: "",
       compactibilitySetting: "",
       shearStrengthSetting: ""
     });
+    setLockedFields({
+      compactibilitySetting: false,
+      shearStrengthSetting: false
+    });
+    setIsPrimaryDataSaved(false);
+    setPrimaryId(null);
     setFieldLocks({
-      primary: {},
       clayTests: {},
       sieveTesting: {},
       parameters: {},
       additionalData: {},
       remarks: false
+    });
+    setSectionData({
+      clayTests: initialFormData.clayTests,
+      sieveTesting: initialFormData.sieveTesting,
+      parameters: initialFormData.parameters,
+      additionalData: initialFormData.additionalData,
+      remarks: ""
     });
   };
 
@@ -982,6 +750,296 @@ export default function FoundrySandTestingNote() {
     { size: "Pan", mf: 300 },
   ];
 
+  // === Column definitions for reusable Table component ===
+  const clayColumns = [
+    { key: 'parameter', label: 'Parameter', width: '180px', align: 'center' },
+    { key: 'test1', label: 'TEST-1', align: 'center' },
+    { key: 'test2', label: 'TEST-2', align: 'center' }
+  ];
+
+  const sieveColumns = [
+    { key: 'sieveSize', label: 'Sieve Size (Mic)', width: '120px', align: 'center' },
+    { key: 'wtTest1', label: '% Wt Retained - TEST-1', align: 'center' },
+    { key: 'wtTest2', label: '% Wt Retained - TEST-2', align: 'center' },
+    { key: 'mf', label: 'MF', width: '80px', align: 'center' },
+    { key: 'prodTest1', label: 'Product - TEST-1', align: 'center' },
+    { key: 'prodTest2', label: 'Product - TEST-2', align: 'center' }
+  ];
+
+  const testParamColumns = [
+    { key: 'parameter', label: 'Parameter', width: '200px', align: 'center' },
+    { key: 'test1', label: 'TEST-1', align: 'center' },
+    { key: 'test2', label: 'TEST-2', align: 'center' }
+  ];
+
+  const additionalColumns = [
+    { key: 'parameter', label: 'Parameter', width: '180px', align: 'center' },
+    { key: 'test1', label: 'TEST-1', align: 'center' },
+    { key: 'test2', label: 'TEST-2', align: 'center' }
+  ];
+
+  // === Clay Parameters config ===
+  const clayParamKeys = ["totalClay", "activeClay", "deadClay", "vcm", "loi"];
+  const clayParamLabels = ["Total Clay", "Active Clay", "Dead Clay", "VCM", "LOI"];
+
+  const renderClayCell = (rowIndex, colIndex, colKey) => {
+    const param = clayParamKeys[rowIndex];
+    if (colKey === 'parameter') {
+      return <strong style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#1e293b' }}>{clayParamLabels[rowIndex]}</strong>;
+    }
+    const testNum = colKey;
+    const isSimple = param === "activeClay" || param === "deadClay";
+    if (isSimple) {
+      return (
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+          <input
+            ref={param === "activeClay" && testNum === "test1" ? clayParametersFirstInputRef : null}
+            type="number"
+            step="0.01"
+            placeholder="Input 1"
+            value={sectionData.clayTests[testNum][param]?.input1 || ''}
+            disabled={isFieldLocked('clayTests', `${testNum}.${param}.input1`)}
+            onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
+            onChange={(e) => {
+              const val = e.target.value;
+              handleInputChange("clayTests", testNum, val, param, "input1");
+              const solution = calculateClaySolution(param, testNum, "input1", val);
+              handleInputChange("clayTests", testNum, solution, param, "solution");
+            }}
+            style={{ width: '80px', padding: '0.375rem' }}
+          />
+          <span>{param === "activeClay" ? "x" : "-"}</span>
+          <input
+            type="number"
+            step="0.01"
+            placeholder="Input 2"
+            value={sectionData.clayTests[testNum][param]?.input2 || ''}
+            disabled={isFieldLocked('clayTests', `${testNum}.${param}.input2`)}
+            onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
+            onChange={(e) => {
+              const val = e.target.value;
+              handleInputChange("clayTests", testNum, val, param, "input2");
+              const solution = calculateClaySolution(param, testNum, "input2", val);
+              handleInputChange("clayTests", testNum, solution, param, "solution");
+            }}
+            style={{ width: '80px', padding: '0.375rem' }}
+          />
+          <span>=</span>
+          <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
+            {sectionData.clayTests[testNum][param]?.solution || '0'}%
+          </span>
+        </div>
+      );
+    }
+    return (
+      <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap', justifyContent: 'center' }}>
+        <input
+          type="number"
+          step="0.01"
+          placeholder="Input 1"
+          value={sectionData.clayTests[testNum][param]?.input1 || ''}
+          disabled={isFieldLocked('clayTests', `${testNum}.${param}.input1`)}
+          onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
+          onChange={(e) => {
+            const val = e.target.value;
+            handleInputChange("clayTests", testNum, val, param, "input1");
+            const solution = calculateClaySolution(param, testNum, "input1", val);
+            handleInputChange("clayTests", testNum, solution, param, "solution");
+          }}
+          style={{ width: '70px', padding: '0.375rem' }}
+        />
+        <span>-</span>
+        <input
+          type="number"
+          step="0.01"
+          placeholder="Input 2"
+          value={sectionData.clayTests[testNum][param]?.input2 || ''}
+          disabled={isFieldLocked('clayTests', `${testNum}.${param}.input2`)}
+          onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
+          onChange={(e) => {
+            const val = e.target.value;
+            handleInputChange("clayTests", testNum, val, param, "input2");
+            const solution = calculateClaySolution(param, testNum, "input2", val);
+            handleInputChange("clayTests", testNum, solution, param, "solution");
+          }}
+          style={{ width: '70px', padding: '0.375rem' }}
+        />
+        <span>/</span>
+        <input
+          type="number"
+          step="0.01"
+          placeholder="Input 3"
+          value={sectionData.clayTests[testNum][param]?.input3 || ''}
+          disabled={isFieldLocked('clayTests', `${testNum}.${param}.input3`)}
+          onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
+          onChange={(e) => {
+            const val = e.target.value;
+            handleInputChange("clayTests", testNum, val, param, "input3");
+            const solution = calculateClaySolution(param, testNum, "input3", val);
+            handleInputChange("clayTests", testNum, solution, param, "solution");
+          }}
+          style={{ width: '70px', padding: '0.375rem' }}
+        />
+        <span>x 100 =</span>
+        <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
+          {sectionData.clayTests[testNum][param]?.solution || '0'}%
+        </span>
+      </div>
+    );
+  };
+
+  // === Sieve Testing config ===
+  const renderSieveCell = (rowIndex, colIndex, colKey) => {
+    const isTotal = rowIndex === sieveData.length;
+    const row = isTotal ? null : sieveData[rowIndex];
+    const sizeKey = isTotal ? 'total' : row.size;
+    const mfKey = isTotal ? 'total' : row.mf;
+
+    if (colKey === 'sieveSize') {
+      return <strong style={{ fontWeight: isTotal ? 700 : 600, color: '#1e293b' }}>{isTotal ? 'Total' : row.size}</strong>;
+    }
+    if (colKey === 'mf') {
+      return <strong style={{ fontWeight: isTotal ? 700 : 600, color: '#1e293b' }}>{isTotal ? 'Total' : row.mf}</strong>;
+    }
+    if (colKey === 'wtTest1') {
+      return (
+        <input
+          type="text"
+          placeholder={isTotal ? "Total" : "Enter %"}
+          value={sectionData.sieveTesting?.test1?.sieveSize?.[sizeKey] || ''}
+          onChange={(e) => handleInputChange("sieveTesting", "test1", e.target.value, "sieveSize", sizeKey)}
+          onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
+          disabled={isFieldLocked('sieveTesting', `test1.sieveSize.${sizeKey}`)}
+          readOnly={isFieldLocked('sieveTesting', `test1.sieveSize.${sizeKey}`)}
+          ref={rowIndex === 0 ? sieveTestingFirstInputRef : null}
+          style={{
+            backgroundColor: isFieldLocked('sieveTesting', `test1.sieveSize.${sizeKey}`) ? '#f1f5f9' : '#ffffff',
+            cursor: isFieldLocked('sieveTesting', `test1.sieveSize.${sizeKey}`) ? 'not-allowed' : 'text'
+          }}
+        />
+      );
+    }
+    if (colKey === 'wtTest2') {
+      return (
+        <input
+          type="text"
+          placeholder={isTotal ? "Total" : "Enter %"}
+          value={sectionData.sieveTesting?.test2?.sieveSize?.[sizeKey] || ''}
+          onChange={(e) => handleInputChange("sieveTesting", "test2", e.target.value, "sieveSize", sizeKey)}
+          onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
+          disabled={isFieldLocked('sieveTesting', `test2.sieveSize.${sizeKey}`)}
+          readOnly={isFieldLocked('sieveTesting', `test2.sieveSize.${sizeKey}`)}
+          style={{
+            backgroundColor: isFieldLocked('sieveTesting', `test2.sieveSize.${sizeKey}`) ? '#f1f5f9' : '#ffffff',
+            cursor: isFieldLocked('sieveTesting', `test2.sieveSize.${sizeKey}`) ? 'not-allowed' : 'text'
+          }}
+        />
+      );
+    }
+    if (colKey === 'prodTest1') {
+      return (
+        <input
+          type="text"
+          placeholder={isTotal ? "Total" : "Product"}
+          value={sectionData.sieveTesting?.test1?.mf?.[mfKey] || ''}
+          onChange={(e) => handleInputChange("sieveTesting", "test1", e.target.value, "mf", mfKey)}
+          onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
+          disabled={isFieldLocked('sieveTesting', `test1.mf.${mfKey}`)}
+          readOnly={isFieldLocked('sieveTesting', `test1.mf.${mfKey}`)}
+          style={{
+            backgroundColor: isFieldLocked('sieveTesting', `test1.mf.${mfKey}`) ? '#f1f5f9' : '#ffffff',
+            cursor: isFieldLocked('sieveTesting', `test1.mf.${mfKey}`) ? 'not-allowed' : 'text'
+          }}
+        />
+      );
+    }
+    if (colKey === 'prodTest2') {
+      return (
+        <input
+          type="text"
+          placeholder={isTotal ? "Total" : "Product"}
+          value={sectionData.sieveTesting?.test2?.mf?.[mfKey] || ''}
+          onChange={(e) => handleInputChange("sieveTesting", "test2", e.target.value, "mf", mfKey)}
+          onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
+          disabled={isFieldLocked('sieveTesting', `test2.mf.${mfKey}`)}
+          readOnly={isFieldLocked('sieveTesting', `test2.mf.${mfKey}`)}
+          style={{
+            backgroundColor: isFieldLocked('sieveTesting', `test2.mf.${mfKey}`) ? '#f1f5f9' : '#ffffff',
+            cursor: isFieldLocked('sieveTesting', `test2.mf.${mfKey}`) ? 'not-allowed' : 'text'
+          }}
+        />
+      );
+    }
+    return null;
+  };
+
+  // === Test Parameters config ===
+  const testParamConfig = [
+    { key: "compactability", label: "Compactability" },
+    { key: "permeability", label: "Permeability" },
+    { key: "gcs", label: "GCS" },
+    { key: "wts", label: "WTS" },
+    { key: "moisture", label: "Moisture" },
+    { key: "bentonite", label: "Bentonite" },
+    { key: "coalDust", label: "CoalDust" },
+    { key: "hopperLevel", label: "Hopper Level" },
+    { key: "shearStrength", label: "Shear Strength" },
+    { key: "dustCollectorSettings", label: "Dust Collector Settings" },
+    { key: "returnSandMoisture", label: "Return Sand Moisture" }
+  ];
+
+  const renderTestParamCell = (rowIndex, colIndex, colKey) => {
+    const paramConfig = testParamConfig[rowIndex];
+    if (colKey === 'parameter') {
+      return <strong style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#1e293b' }}>{paramConfig.label}</strong>;
+    }
+    const testNum = colKey;
+    return (
+      <input
+        type="text"
+        placeholder="Enter value"
+        value={sectionData.parameters?.[testNum]?.[paramConfig.key] || ''}
+        onChange={(e) => handleInputChange("parameters", testNum, e.target.value, paramConfig.key)}
+        onKeyDown={(e) => handleKeyDown(e, testParametersSubmitRef, testParametersFirstInputRef)}
+        disabled={isFieldLocked('parameters', `${testNum}.${paramConfig.key}`)}
+        readOnly={isFieldLocked('parameters', `${testNum}.${paramConfig.key}`)}
+        ref={paramConfig.key === "compactability" && testNum === "test1" ? testParametersFirstInputRef : null}
+        style={{
+          backgroundColor: isFieldLocked('parameters', `${testNum}.${paramConfig.key}`) ? '#f1f5f9' : '#ffffff',
+          cursor: isFieldLocked('parameters', `${testNum}.${paramConfig.key}`) ? 'not-allowed' : 'text'
+        }}
+      />
+    );
+  };
+
+  // === Additional Data config ===
+  const additionalParamKeys = ["afsNo", "fines", "gd"];
+  const additionalParamLabels = ["AFSNO", "FINES", "GD"];
+
+  const renderAdditionalCell = (rowIndex, colIndex, colKey) => {
+    const param = additionalParamKeys[rowIndex];
+    if (colKey === 'parameter') {
+      return <strong style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#1e293b' }}>{additionalParamLabels[rowIndex]}</strong>;
+    }
+    const testNum = colKey;
+    return (
+      <input
+        type="text"
+        placeholder="Enter value"
+        value={sectionData.additionalData?.[testNum]?.[param] || ''}
+        onChange={(e) => handleInputChange("additionalData", testNum, e.target.value, param)}
+        onKeyDown={(e) => handleKeyDown(e, additionalDataSubmitRef, additionalDataFirstInputRef)}
+        disabled={isFieldLocked('additionalData', `${testNum}.${param}`)}
+        readOnly={isFieldLocked('additionalData', `${testNum}.${param}`)}
+        ref={param === "afsNo" && testNum === "test1" ? additionalDataFirstInputRef : null}
+        style={{
+          backgroundColor: isFieldLocked('additionalData', `${testNum}.${param}`) ? '#f1f5f9' : '#ffffff',
+          cursor: isFieldLocked('additionalData', `${testNum}.${param}`) ? 'not-allowed' : 'text'
+        }}
+      />
+    );
+  };
+
   return (
     <div className="page-wrapper">
       {checkingData && (
@@ -997,347 +1055,99 @@ export default function FoundrySandTestingNote() {
             Foundry Sand Testing Note
           </h2>
         </div>
-        <div style={{ 
-          fontSize: '1.1rem', 
-          fontWeight: '600', 
-          color: '#1e293b',
-          backgroundColor: '#f1f5f9',
-          padding: '0.5rem 1rem',
-          borderRadius: '8px',
-          border: '2px solid #cbd5e1'
-        }}>
-          DATE: {primaryData.date ? new Date(primaryData.date).toLocaleDateString('en-GB') : '-'}
+        <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c' }}>
+          DATE : {primaryData.date ? (() => {
+            const [y, m, d] = primaryData.date.split('-');
+            return `${d} / ${m} / ${y}`;
+          })() : '-'}
         </div>
       </div>
 
-      {/* Primary Fields */}
+      {/* Primary Section */}
+      <div className="primary-header-container" style={{ marginBottom: '0.5rem' }}>
+        <h3 className="foundry-section-title">PRIMARY</h3>
+      </div>
+
       <div className="foundry-form-grid" style={{ marginBottom: '1.5rem' }}>
         <div className="foundry-form-group">
-          <label>Shift *</label>
-          <select
-            ref={primaryFirstInputRef}
-            value={primaryData.shift}
-            onChange={(e) => handlePrimaryChange("shift", e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, primarySubmitRef, primaryFirstInputRef)}
-            onMouseDown={(e) => {
-              if (isFieldLocked('primary', 'shift') || checkingData) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-            }}
-            onClick={(e) => {
-              if (isFieldLocked('primary', 'shift') || checkingData) {
-                e.preventDefault();
-                e.stopPropagation();
-              }
-            }}
-            disabled={isFieldLocked('primary', 'shift') || checkingData}
-            readOnly={isFieldLocked('primary', 'shift')}
-            style={{
-              width: '100%',
-              padding: '0.625rem 0.875rem',
-              border: '2px solid #cbd5e1',
-              borderRadius: '8px',
-              fontSize: '0.875rem',
-              backgroundColor: (isFieldLocked('primary', 'shift') || checkingData) ? '#f1f5f9' : '#ffffff',
-              color: (isFieldLocked('primary', 'shift') || checkingData) ? '#64748b' : '#1e293b',
-              cursor: (isFieldLocked('primary', 'shift') || checkingData) ? 'not-allowed' : 'pointer',
-              opacity: (isFieldLocked('primary', 'shift') || checkingData) ? 0.8 : 1,
-              pointerEvents: (isFieldLocked('primary', 'shift') || checkingData) ? 'none' : 'auto'
-            }}
-          >
-            <option value="">Select Shift</option>
-            <option value="Shift 1">Shift 1</option>
-            <option value="Shift 2">Shift 2</option>
-            <option value="Shift 3">Shift 3</option>
-          </select>
+          <label>Date <span style={{ color: '#ef4444' }}>*</span></label>
+          <CustomDatePicker
+            value={primaryData.date}
+            onChange={(e) => handlePrimaryChange("date", e.target.value)}
+            max={new Date().toISOString().split('T')[0]}
+          />
         </div>
         <div className="foundry-form-group">
-          <label>Sand Plant *</label>
+          <label>Shift <span style={{ color: '#ef4444' }}>*</span></label>
+          <ShiftDropdown
+            value={primaryData.shift}
+            onChange={(e) => handlePrimaryChange("shift", e.target.value)}
+          />
+        </div>
+        <div className="foundry-form-group">
+          <label>Sand Plant <span style={{ color: '#ef4444' }}>*</span></label>
           <DisaDropdown
             value={primaryData.sandPlant}
             onChange={(e) => handlePrimaryChange("sandPlant", e.target.value)}
             name="sandPlant"
-            onKeyDown={(e) => handleKeyDown(e, primarySubmitRef, primaryFirstInputRef)}
-            disabled={isFieldLocked('primary', 'sandPlant') || checkingData}
-            className={isFieldLocked('primary', 'sandPlant') || checkingData ? 'locked-field' : ''}
+            disabled={!primaryData.date || !primaryData.shift}
           />
         </div>
         <div className="foundry-form-group">
-          <label>Compactability Setting</label>
+          <label>
+            Compactability Setting
+            {lockedFields.compactibilitySetting && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ Locked</span>}
+          </label>
           <input
             type="text"
             placeholder="e.g. J.C. mode"
             value={primaryData.compactibilitySetting}
             onChange={(e) => handlePrimaryChange("compactibilitySetting", e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, primarySubmitRef, primaryFirstInputRef)}
-            disabled={isFieldLocked('primary', 'compactibilitySetting') || checkingData}
-            readOnly={isFieldLocked('primary', 'compactibilitySetting')}
-            style={{
-              backgroundColor: (isFieldLocked('primary', 'compactibilitySetting') || checkingData) ? '#f1f5f9' : '#ffffff',
-              cursor: (isFieldLocked('primary', 'compactibilitySetting') || checkingData) ? 'not-allowed' : 'text'
-            }}
+            disabled={!primaryData.date || !primaryData.shift || !primaryData.sandPlant || lockedFields.compactibilitySetting}
+            style={{ opacity: lockedFields.compactibilitySetting ? 0.6 : 1 }}
           />
         </div>
         <div className="foundry-form-group">
-          <label>Shear/Mould Strength Setting</label>
+          <label>
+            Shear/Mould Strength Setting
+            {lockedFields.shearStrengthSetting && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ Locked</span>}
+          </label>
           <input
             type="text"
             placeholder="e.g. MP.VOX"
             value={primaryData.shearStrengthSetting}
             onChange={(e) => handlePrimaryChange("shearStrengthSetting", e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, primarySubmitRef, primaryFirstInputRef)}
-            disabled={isFieldLocked('primary', 'shearStrengthSetting') || checkingData}
-            readOnly={isFieldLocked('primary', 'shearStrengthSetting')}
-            style={{
-              backgroundColor: (isFieldLocked('primary', 'shearStrengthSetting') || checkingData) ? '#f1f5f9' : '#ffffff',
-              cursor: (isFieldLocked('primary', 'shearStrengthSetting') || checkingData) ? 'not-allowed' : 'text'
-            }}
+            disabled={!primaryData.date || !primaryData.shift || !primaryData.sandPlant || lockedFields.shearStrengthSetting}
+            style={{ opacity: lockedFields.shearStrengthSetting ? 0.6 : 1 }}
           />
         </div>
       </div>
       <div style={{ marginBottom: '1.5rem', display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
-        <button
-          ref={primarySubmitRef}
-          type="button"
-          onClick={handlePrimarySubmit}
-          onKeyDown={(e) => handleSubmitButtonKeyDown(e, handlePrimarySubmit)}
-          disabled={loadingStates.primary || checkingData || !primaryData.date || !primaryData.shift}
-          className="foundry-submit-btn"
-          title="Save Primary Data"
-        >
-          {loadingStates.primary ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-          {loadingStates.primary ? 'Saving...' : 'Save Primary'}
-        </button>
+        {checkingData ? (
+          <div style={{ padding: '0.75rem 1.5rem', color: '#64748b', fontWeight: 500 }}>
+            Loading...
+          </div>
+        ) : (
+          <SubmitButton
+            onClick={handlePrimarySubmit}
+            disabled={!primaryData.date || !primaryData.shift || !primaryData.sandPlant || (lockedFields.compactibilitySetting && lockedFields.shearStrengthSetting)}
+          >
+            {isPrimaryDataSaved ? "Update Primary Data" : "Save Primary"}
+          </SubmitButton>
+        )}
       </div>
 
       {/* Clay Parameters */}
-      <div className="foundry-section">
-        <h3 className="foundry-section-title">Clay Parameters</h3>
-            <div className="foundry-table-wrapper">
-              <table className="foundry-table">
-                <thead>
-                  <tr>
-                    <th>Parameter</th>
-                    <th>TEST-1</th>
-                    <th>TEST-2</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {["totalClay", "activeClay", "deadClay", "vcm", "loi"].map((param) => (
-                    <tr key={param}>
-                      <td>{param.replace(/([A-Z])/g, ' $1').replace(/^./, (str) => str.toUpperCase())}</td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                          {param === "activeClay" || param === "deadClay" ? (
-                            <>
-                              <input
-                                ref={param === "activeClay" ? clayParametersFirstInputRef : null}
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 1"
-                                value={sectionData.clayTests.test1[param]?.input1 || ''}
-                                disabled={isFieldLocked('clayTests', `test1.${param}.input1`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test1", e.target.value, param, "input1");
-                                  // Trigger recalculation
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test1");
-                                    handleInputChange("clayTests", "test1", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '80px', padding: '0.375rem' }}
-                              />
-                              <span>{param === "activeClay" ? "x" : "-"}</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 2"
-                                value={sectionData.clayTests.test1[param]?.input2 || ''}
-                                disabled={isFieldLocked('clayTests', `test1.${param}.input2`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test1", e.target.value, param, "input2");
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test1");
-                                    handleInputChange("clayTests", "test1", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '80px', padding: '0.375rem' }}
-                              />
-                              <span>=</span>
-                              <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
-                                {sectionData.clayTests.test1[param]?.solution || '0'}%
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 1"
-                                value={sectionData.clayTests.test1[param]?.input1 || ''}
-                                disabled={isFieldLocked('clayTests', `test1.${param}.input1`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test1", e.target.value, param, "input1");
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test1");
-                                    handleInputChange("clayTests", "test1", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '70px', padding: '0.375rem' }}
-                              />
-                              <span>-</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 2"
-                                value={sectionData.clayTests.test1[param]?.input2 || ''}
-                                disabled={isFieldLocked('clayTests', `test1.${param}.input2`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test1", e.target.value, param, "input2");
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test1");
-                                    handleInputChange("clayTests", "test1", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '70px', padding: '0.375rem' }}
-                              />
-                              <span>/</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 3"
-                                value={sectionData.clayTests.test1[param]?.input3 || ''}
-                                disabled={isFieldLocked('clayTests', `test1.${param}.input3`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test1", e.target.value, param, "input3");
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test1");
-                                    handleInputChange("clayTests", "test1", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '70px', padding: '0.375rem' }}
-                              />
-                              <span>x 100 =</span>
-                              <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
-                                {sectionData.clayTests.test1[param]?.solution || '0'}%
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-                          {param === "activeClay" || param === "deadClay" ? (
-                            <>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 1"
-                                value={sectionData.clayTests.test2[param]?.input1 || ''}
-                                disabled={isFieldLocked('clayTests', `test2.${param}.input1`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test2", e.target.value, param, "input1");
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test2");
-                                    handleInputChange("clayTests", "test2", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '80px', padding: '0.375rem' }}
-                              />
-                              <span>{param === "activeClay" ? "x" : "-"}</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 2"
-                                value={sectionData.clayTests.test2[param]?.input2 || ''}
-                                disabled={isFieldLocked('clayTests', `test2.${param}.input2`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test2", e.target.value, param, "input2");
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test2");
-                                    handleInputChange("clayTests", "test2", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '80px', padding: '0.375rem' }}
-                              />
-                              <span>=</span>
-                              <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
-                                {sectionData.clayTests.test2[param]?.solution || '0'}%
-                              </span>
-                            </>
-                          ) : (
-                            <>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 1"
-                                value={sectionData.clayTests.test2[param]?.input1 || ''}
-                                disabled={isFieldLocked('clayTests', `test2.${param}.input1`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test2", e.target.value, param, "input1");
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test2");
-                                    handleInputChange("clayTests", "test2", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '70px', padding: '0.375rem' }}
-                              />
-                              <span>-</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 2"
-                                value={sectionData.clayTests.test2[param]?.input2 || ''}
-                                disabled={isFieldLocked('clayTests', `test2.${param}.input2`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test2", e.target.value, param, "input2");
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test2");
-                                    handleInputChange("clayTests", "test2", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '70px', padding: '0.375rem' }}
-                              />
-                              <span>/</span>
-                              <input
-                                type="number"
-                                step="0.01"
-                                placeholder="Input 3"
-                                value={sectionData.clayTests.test2[param]?.input3 || ''}
-                                disabled={isFieldLocked('clayTests', `test2.${param}.input3`)}
-                                onKeyDown={(e) => handleKeyDown(e, clayParametersSubmitRef, clayParametersFirstInputRef)}
-                                onChange={(e) => {
-                                  handleInputChange("clayTests", "test2", e.target.value, param, "input3");
-                                  setTimeout(() => {
-                                    const solution = calculateClaySolution(param, "test2");
-                                    handleInputChange("clayTests", "test2", solution, param, "solution");
-                                  }, 0);
-                                }}
-                                style={{ width: '70px', padding: '0.375rem' }}
-                              />
-                              <span>x 100 =</span>
-                              <span style={{ color: '#10b981', fontWeight: 600, fontSize: '0.9375rem' }}>
-                                {sectionData.clayTests.test2[param]?.solution || '0'}%
-                              </span>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      <div className="foundry-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
+        <h3 className="foundry-section-title">Clay Parameters {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked - Save Primary Data First)</span>}</h3>
+        <Table
+          template
+          bordered
+          rows={5}
+          minWidth={800}
+          columns={clayColumns}
+          renderCell={renderClayCell}
+        />
       <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           type="button"
@@ -1363,159 +1173,16 @@ export default function FoundrySandTestingNote() {
       </div>
 
       {/* Sieve Testing */}
-      <div className="foundry-section">
-        <h3 className="foundry-section-title">Sieve Testing</h3>
-            <div className="foundry-table-wrapper">
-              <table className="foundry-table">
-                <thead>
-                  <tr>
-                    <th rowSpan="2">Sieve size (Mic)</th>
-                    <th colSpan="2">% Wt retained sand</th>
-                    <th rowSpan="2">MF</th>
-                    <th colSpan="2">Product</th>
-                  </tr>
-                  <tr>
-                    <th>TEST-1</th>
-                    <th>TEST-2</th>
-                    <th>TEST-1</th>
-                    <th>TEST-2</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {sieveData.map((row) => (
-                    <tr key={row.size}>
-                      <td>{row.size}</td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Enter %"
-                          value={sectionData.sieveTesting?.test1?.sieveSize?.[row.size] || ''}
-                          onChange={(e) => handleInputChange("sieveTesting", "test1", e.target.value, "sieveSize", row.size)}
-                          onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
-                          disabled={isFieldLocked('sieveTesting', `test1.sieveSize.${row.size}`)}
-                          readOnly={isFieldLocked('sieveTesting', `test1.sieveSize.${row.size}`)}
-                          ref={row.size === 1700 ? sieveTestingFirstInputRef : null}
-                          style={{
-                            backgroundColor: isFieldLocked('sieveTesting', `test1.sieveSize.${row.size}`) ? '#f1f5f9' : '#ffffff',
-                            cursor: isFieldLocked('sieveTesting', `test1.sieveSize.${row.size}`) ? 'not-allowed' : 'text'
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Enter %"
-                          value={sectionData.sieveTesting?.test2?.sieveSize?.[row.size] || ''}
-                          onChange={(e) => handleInputChange("sieveTesting", "test2", e.target.value, "sieveSize", row.size)}
-                          onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
-                          disabled={isFieldLocked('sieveTesting', `test2.sieveSize.${row.size}`)}
-                          readOnly={isFieldLocked('sieveTesting', `test2.sieveSize.${row.size}`)}
-                          style={{
-                            backgroundColor: isFieldLocked('sieveTesting', `test2.sieveSize.${row.size}`) ? '#f1f5f9' : '#ffffff',
-                            cursor: isFieldLocked('sieveTesting', `test2.sieveSize.${row.size}`) ? 'not-allowed' : 'text'
-                          }}
-                        />
-                      </td>
-                      <td>{row.mf}</td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Product"
-                          value={sectionData.sieveTesting?.test1?.mf?.[row.mf] || ''}
-                          onChange={(e) => handleInputChange("sieveTesting", "test1", e.target.value, "mf", row.mf)}
-                          onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
-                          disabled={isFieldLocked('sieveTesting', `test1.mf.${row.mf}`)}
-                          readOnly={isFieldLocked('sieveTesting', `test1.mf.${row.mf}`)}
-                          style={{
-                            backgroundColor: isFieldLocked('sieveTesting', `test1.mf.${row.mf}`) ? '#f1f5f9' : '#ffffff',
-                            cursor: isFieldLocked('sieveTesting', `test1.mf.${row.mf}`) ? 'not-allowed' : 'text'
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Product"
-                          value={sectionData.sieveTesting?.test2?.mf?.[row.mf] || ''}
-                          onChange={(e) => handleInputChange("sieveTesting", "test2", e.target.value, "mf", row.mf)}
-                          onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
-                          disabled={isFieldLocked('sieveTesting', `test2.mf.${row.mf}`)}
-                          readOnly={isFieldLocked('sieveTesting', `test2.mf.${row.mf}`)}
-                          style={{
-                            backgroundColor: isFieldLocked('sieveTesting', `test2.mf.${row.mf}`) ? '#f1f5f9' : '#ffffff',
-                            cursor: isFieldLocked('sieveTesting', `test2.mf.${row.mf}`) ? 'not-allowed' : 'text'
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                  <tr className="foundry-table-total">
-                    <td><strong>Total</strong></td>
-                    <td>
-                      <input
-                        type="text"
-                        placeholder="Total"
-                        value={sectionData.sieveTesting?.test1?.sieveSize?.total || ''}
-                        onChange={(e) => handleInputChange("sieveTesting", "test1", e.target.value, "sieveSize", "total")}
-                        onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
-                        disabled={isFieldLocked('sieveTesting', 'test1.sieveSize.total')}
-                        readOnly={isFieldLocked('sieveTesting', 'test1.sieveSize.total')}
-                        style={{
-                          backgroundColor: isFieldLocked('sieveTesting', 'test1.sieveSize.total') ? '#f1f5f9' : '#ffffff',
-                          cursor: isFieldLocked('sieveTesting', 'test1.sieveSize.total') ? 'not-allowed' : 'text'
-                        }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        placeholder="Total"
-                        value={sectionData.sieveTesting?.test2?.sieveSize?.total || ''}
-                        onChange={(e) => handleInputChange("sieveTesting", "test2", e.target.value, "sieveSize", "total")}
-                        onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
-                        disabled={isFieldLocked('sieveTesting', 'test2.sieveSize.total')}
-                        readOnly={isFieldLocked('sieveTesting', 'test2.sieveSize.total')}
-                        style={{
-                          backgroundColor: isFieldLocked('sieveTesting', 'test2.sieveSize.total') ? '#f1f5f9' : '#ffffff',
-                          cursor: isFieldLocked('sieveTesting', 'test2.sieveSize.total') ? 'not-allowed' : 'text'
-                        }}
-                      />
-                    </td>
-                    <td><strong>Total</strong></td>
-                    <td>
-                      <input
-                        type="text"
-                        placeholder="Total"
-                        value={sectionData.sieveTesting?.test1?.mf?.total || ''}
-                        onChange={(e) => handleInputChange("sieveTesting", "test1", e.target.value, "mf", "total")}
-                        onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
-                        disabled={isFieldLocked('sieveTesting', 'test1.mf.total')}
-                        readOnly={isFieldLocked('sieveTesting', 'test1.mf.total')}
-                        style={{
-                          backgroundColor: isFieldLocked('sieveTesting', 'test1.mf.total') ? '#f1f5f9' : '#ffffff',
-                          cursor: isFieldLocked('sieveTesting', 'test1.mf.total') ? 'not-allowed' : 'text'
-                        }}
-                      />
-                    </td>
-                    <td>
-                      <input
-                        type="text"
-                        placeholder="Total"
-                        value={sectionData.sieveTesting?.test2?.mf?.total || ''}
-                        onChange={(e) => handleInputChange("sieveTesting", "test2", e.target.value, "mf", "total")}
-                        onKeyDown={(e) => handleKeyDown(e, sieveTestingSubmitRef, sieveTestingFirstInputRef)}
-                        disabled={isFieldLocked('sieveTesting', 'test2.mf.total')}
-                        readOnly={isFieldLocked('sieveTesting', 'test2.mf.total')}
-                        style={{
-                          backgroundColor: isFieldLocked('sieveTesting', 'test2.mf.total') ? '#f1f5f9' : '#ffffff',
-                          cursor: isFieldLocked('sieveTesting', 'test2.mf.total') ? 'not-allowed' : 'text'
-                        }}
-                      />
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
+      <div className="foundry-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
+        <h3 className="foundry-section-title">Sieve Testing {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked - Save Primary Data First)</span>}</h3>
+        <Table
+          template
+          bordered
+          rows={sieveData.length + 1}
+          minWidth={900}
+          columns={sieveColumns}
+          renderCell={renderSieveCell}
+        />
       <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           type="button"
@@ -1541,69 +1208,16 @@ export default function FoundrySandTestingNote() {
       </div>
 
       {/* Test Parameters */}
-      <div className="foundry-section">
-        <h3 className="foundry-section-title">Test Parameters</h3>
-            <div className="foundry-table-wrapper">
-              <table className="foundry-table">
-                <thead>
-                  <tr>
-                    <th>Parameter</th>
-                    <th>TEST-1</th>
-                    <th>TEST-2</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {[
-                    { key: "compactability", label: "Compactability" },
-                    { key: "permeability", label: "Permeability" },
-                    { key: "gcs", label: "GCS" },
-                    { key: "wts", label: "WTS" },
-                    { key: "moisture", label: "Moisture" },
-                    { key: "bentonite", label: "Bentonite" },
-                    { key: "coalDust", label: "CoalDust" },
-                    { key: "hopperLevel", label: "Hopper Level" },
-                    { key: "shearStrength", label: "Shear Strength" },
-                    { key: "dustCollectorSettings", label: "Dust Collector Settings" },
-                    { key: "returnSandMoisture", label: "Return Sand Moisture" }
-                  ].map((param) => (
-                    <tr key={param.key}>
-                      <td>{param.label}</td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Enter value"
-                          value={sectionData.parameters?.test1?.[param.key] || ''}
-                          onChange={(e) => handleInputChange("parameters", "test1", e.target.value, param.key)}
-                          onKeyDown={(e) => handleKeyDown(e, testParametersSubmitRef, testParametersFirstInputRef)}
-                          disabled={isFieldLocked('parameters', `test1.${param.key}`)}
-                          readOnly={isFieldLocked('parameters', `test1.${param.key}`)}
-                          ref={param.key === "compactability" ? testParametersFirstInputRef : null}
-                          style={{
-                            backgroundColor: isFieldLocked('parameters', `test1.${param.key}`) ? '#f1f5f9' : '#ffffff',
-                            cursor: isFieldLocked('parameters', `test1.${param.key}`) ? 'not-allowed' : 'text'
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Enter value"
-                          value={sectionData.parameters?.test2?.[param.key] || ''}
-                          onChange={(e) => handleInputChange("parameters", "test2", e.target.value, param.key)}
-                          onKeyDown={(e) => handleKeyDown(e, testParametersSubmitRef, testParametersFirstInputRef)}
-                          disabled={isFieldLocked('parameters', `test2.${param.key}`)}
-                          readOnly={isFieldLocked('parameters', `test2.${param.key}`)}
-                          style={{
-                            backgroundColor: isFieldLocked('parameters', `test2.${param.key}`) ? '#f1f5f9' : '#ffffff',
-                            cursor: isFieldLocked('parameters', `test2.${param.key}`) ? 'not-allowed' : 'text'
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      <div className="foundry-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
+        <h3 className="foundry-section-title">Test Parameters {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked - Save Primary Data First)</span>}</h3>
+        <Table
+          template
+          bordered
+          rows={11}
+          minWidth={800}
+          columns={testParamColumns}
+          renderCell={renderTestParamCell}
+        />
       <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           type="button"
@@ -1629,57 +1243,16 @@ export default function FoundrySandTestingNote() {
       </div>
 
       {/* Additional Data */}
-      <div className="foundry-section">
-        <h3 className="foundry-section-title">Additional Data</h3>
-            <div className="foundry-table-wrapper">
-              <table className="foundry-table">
-                <thead>
-                  <tr>
-                    <th>Parameter</th>
-                    <th>TEST-1</th>
-                    <th>TEST-2</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {["afsNo", "fines", "gd"].map((param) => (
-                    <tr key={param}>
-                      <td>{param.toUpperCase()}</td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Enter value"
-                          value={sectionData.additionalData?.test1?.[param] || ''}
-                          onChange={(e) => handleInputChange("additionalData", "test1", e.target.value, param)}
-                          onKeyDown={(e) => handleKeyDown(e, additionalDataSubmitRef, additionalDataFirstInputRef)}
-                          disabled={isFieldLocked('additionalData', `test1.${param}`)}
-                          readOnly={isFieldLocked('additionalData', `test1.${param}`)}
-                          ref={param === "afsNo" ? additionalDataFirstInputRef : null}
-                          style={{
-                            backgroundColor: isFieldLocked('additionalData', `test1.${param}`) ? '#f1f5f9' : '#ffffff',
-                            cursor: isFieldLocked('additionalData', `test1.${param}`) ? 'not-allowed' : 'text'
-                          }}
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          placeholder="Enter value"
-                          value={sectionData.additionalData?.test2?.[param] || ''}
-                          onChange={(e) => handleInputChange("additionalData", "test2", e.target.value, param)}
-                          onKeyDown={(e) => handleKeyDown(e, additionalDataSubmitRef, additionalDataFirstInputRef)}
-                          disabled={isFieldLocked('additionalData', `test2.${param}`)}
-                          readOnly={isFieldLocked('additionalData', `test2.${param}`)}
-                          style={{
-                            backgroundColor: isFieldLocked('additionalData', `test2.${param}`) ? '#f1f5f9' : '#ffffff',
-                            cursor: isFieldLocked('additionalData', `test2.${param}`) ? 'not-allowed' : 'text'
-                          }}
-                        />
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
+      <div className="foundry-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
+        <h3 className="foundry-section-title">Additional Data {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked - Save Primary Data First)</span>}</h3>
+        <Table
+          template
+          bordered
+          rows={3}
+          minWidth={800}
+          columns={additionalColumns}
+          renderCell={renderAdditionalCell}
+        />
       <div style={{ marginTop: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <button
           type="button"
@@ -1705,8 +1278,8 @@ export default function FoundrySandTestingNote() {
       </div>
 
       {/* Remarks */}
-      <div className="foundry-section">
-        <h3 className="foundry-section-title">Remarks</h3>
+      <div className="foundry-section" style={{ opacity: isPrimaryDataSaved ? 1 : 0.6, pointerEvents: isPrimaryDataSaved ? 'auto' : 'none' }}>
+        <h3 className="foundry-section-title">Remarks {!isPrimaryDataSaved && <span style={{ fontSize: '0.875rem', fontWeight: 400, color: '#ef4444' }}>(Locked - Save Primary Data First)</span>}</h3>
         <div className="foundry-form-group">
           <label>Remarks</label>
           <input

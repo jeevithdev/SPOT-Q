@@ -21,7 +21,8 @@
   "author": "Sakthi Auto",
   "license": "MIT",
   "dependencies": {
-    "@lottiefiles/dotlottie-react": "^0.17.13",
+    "@heroui/react": "^2.7.6",
+    "@internationalized/date": "^3.7.0",
     "lucide-react": "^0.544.0",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",

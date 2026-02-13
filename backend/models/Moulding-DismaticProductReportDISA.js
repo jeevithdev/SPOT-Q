@@ -5,24 +5,27 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
     date: {
         type: Date,
         required: true,
-        unique: true, // Primary identifier - one record per date
-        index: true // Index for faster queries
+        index: true 
     },
     shift: {
         type: String,
         required: true,
         trim: true,
-        index: true // Index for faster queries
+        index: true 
     },
     incharge: {
         type: String,
-        default: '',
+        default: null,
+        trim: true
+    },
+    ppOperator: {
+        type: String,
+        default: null,
         trim: true
     },
     memberspresent: {
-        type: String,
-        default: '',
-        trim: true
+        type: [String],
+        default: null
     },
     
     // Production Table
@@ -99,13 +102,16 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
             trim: true
         },
         durationMinutes: {
-            type: Number,
-            default: 0
+            type: [String],
+            default: []
         },
-        durationTime: {
-            type: String,
-            default: '',
-            trim: true
+        fromTime: {
+            type: [String],
+            default: []
+        },
+        toTime: {
+            type: [String],
+            default: []
         }
     }],
 
@@ -121,20 +127,20 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
             trim: true
         },
         mpPP: {
-            type: Number,
-            default: 0
+            type: [],
+            default: []
         },
         mpSP: {
-            type: Number,
-            default: 0
+            type: [],
+            default: []
         },
         bsPP: {
-            type: Number,
-            default: 0
+            type: [],
+            default: []
         },
         bsSP: {
-            type: Number,
-            default: 0
+            type: [],
+            default: []
         },
         remarks: {
             type: String,
@@ -163,10 +169,6 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
             default: 0
         }
     }],
-
-    // Additional Fields
-    // NOTE: No default values - fields will be undefined if not set
-    // This prevents empty strings from being saved and triggering locks
     significantEvent: {
         type: String,
         trim: true
@@ -180,11 +182,13 @@ const DismaticProductReportDISASchema = new mongoose.Schema({
         trim: true
     }
 }, {
-    timestamps: true, // Adds createdAt and updatedAt fields
-    collection: 'disamatic_product' // Explicit collection name in snake_case
+    timestamps: true, 
+    collection: 'disamatic_product' 
 });
 
-// Date is already indexed and unique as primary identifier
+// Compound unique index on date and shift - one record per date+shift combination
+DismaticProductReportDISASchema.index({ date: 1, shift: 1 }, { unique: true });
+
 // Index for date range queries (descending for latest first)
 DismaticProductReportDISASchema.index({ date: -1 });
 

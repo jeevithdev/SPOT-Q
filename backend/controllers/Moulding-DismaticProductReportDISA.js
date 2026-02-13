@@ -4,8 +4,6 @@ const { ensureDateDocument, getCurrentDate } = require('../utils/dateUtils');
 /** 1. SYSTEM INITIALIZATION **/
 
 exports.initializeTodayEntry = async () => {
-    // Skip initialization - DISA documents require 'shift' field
-    // Documents will be created via createDismaticReport when actual data is provided
     return;
 };
 
@@ -87,14 +85,14 @@ exports.createDismaticReport = async (req, res) => {
 
             case 'delays':
                 const delayEntries = formatTable(document.delays, payload.delaysTable, { 
-                    delays: '', durationMinutes: 0, durationTime: '' 
+                    delays: '', durationMinutes: [], fromTime: [], toTime: [] 
                 });
                 document.delays.push(...delayEntries);
                 break;
 
             case 'mouldHardness':
                 const hardEntries = formatTable(document.mouldHardness, payload.mouldHardnessTable, { 
-                    componentName: '', mpPP: 0, mpSP: 0, bsPP: 0, bsSP: 0, remarks: '' 
+                    componentName: '', mpPP: [], mpSP: [], bsPP: [], bsSP: [], remarks: '' 
                 });
                 document.mouldHardness.push(...hardEntries);
                 break;
@@ -106,6 +104,7 @@ exports.createDismaticReport = async (req, res) => {
                 document.patternTemperature.push(...tempEntries);
                 break;
 
+            case 'events':
             case 'eventSection':
                 if (payload.significantEvent) document.significantEvent = payload.significantEvent;
                 if (payload.maintenance) document.maintenance = payload.maintenance;
@@ -122,5 +121,144 @@ exports.createDismaticReport = async (req, res) => {
 
     } catch (error) {
         res.status(400).json({ success: false, message: error.message });
+    }
+};
+
+/** 4. PRIMARY DATA MANAGEMENT **/
+
+// Get primary data by date and shift
+exports.getPrimaryDataByDateShift = async (req, res) => {
+    try {
+        const { date, shift } = req.query;
+        
+        if (!date || !shift) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Date and shift are required.' 
+            });
+        }
+
+        // Parse date to ensure consistent format
+        const queryDate = new Date(date);
+        queryDate.setUTCHours(0, 0, 0, 0);
+
+        // Find document by date and shift
+        const document = await DISA.findOne({ 
+            date: queryDate, 
+            shift: shift 
+        }).lean();
+
+        if (!document) {
+            return res.status(200).json({ 
+                success: true, 
+                data: null,
+                message: 'No data found for this date and shift.' 
+            });
+        }
+
+        // Return only primary data fields
+        const primaryData = {
+            date: document.date,
+            shift: document.shift,
+            incharge: document.incharge,
+            ppOperator: document.ppOperator,
+            memberspresent: document.memberspresent,
+            productionCount: document.productionDetails ? document.productionDetails.length : 0,
+            nextShiftPlanCount: document.nextShiftPlan ? document.nextShiftPlan.length : 0,
+            delaysCount: document.delays ? document.delays.length : 0,
+            mouldHardnessCount: document.mouldHardness ? document.mouldHardness.length : 0,
+            patternTempCount: document.patternTemperature ? document.patternTemperature.length : 0,
+            significantEvent: document.significantEvent,
+            maintenance: document.maintenance,
+            supervisorName: document.supervisorName
+        };
+
+        res.status(200).json({ 
+            success: true, 
+            data: primaryData 
+        });
+
+    } catch (error) {
+        res.status(500).json({ 
+            success: false, 
+            message: error.message 
+        });
+    }
+};
+
+// Save or update primary data
+exports.savePrimaryData = async (req, res) => {
+    try {
+        const { date, shift, incharge, ppOperator, members } = req.body;
+
+        if (!date || !shift) {
+            return res.status(400).json({ 
+                success: false, 
+                message: 'Date and shift are required.' 
+            });
+        }
+
+        // Parse date to ensure consistent format
+        const docDate = new Date(date);
+        docDate.setUTCHours(0, 0, 0, 0);
+
+        // Prepare update data - only include fields that are provided
+        const updateData = {
+            date: docDate,
+            shift: shift
+        };
+
+        // Only add fields if they are provided (not empty)
+        if (incharge !== undefined && incharge !== null) {
+            updateData.incharge = incharge.trim() || null;
+        }
+        if (ppOperator !== undefined && ppOperator !== null) {
+            updateData.ppOperator = ppOperator.trim() || null;
+        }
+        if (members !== undefined && members !== null) {
+            // Filter out empty strings from members array
+            const filteredMembers = Array.isArray(members) 
+                ? members.filter(m => m && m.trim() !== '') 
+                : [];
+            
+            // Limit to maximum 4 members
+            if (filteredMembers.length > 4) {
+                return res.status(400).json({ 
+                    success: false, 
+                    message: 'Maximum 4 members allowed.' 
+                });
+            }
+            
+            updateData.memberspresent = filteredMembers.length > 0 ? filteredMembers : null;
+        }
+
+        // Use findOneAndUpdate with upsert to create or update
+        const document = await DISA.findOneAndUpdate(
+            { date: docDate, shift: shift },
+            { $set: updateData },
+            { 
+                new: true, // Return updated document
+                upsert: true, // Create if doesn't exist
+                setDefaultsOnInsert: true // Set defaults when creating
+            }
+        );
+
+        res.status(200).json({ 
+            success: true, 
+            data: {
+                date: document.date,
+                shift: document.shift,
+                incharge: document.incharge,
+                ppOperator: document.ppOperator,
+                memberspresent: document.memberspresent
+            },
+            message: 'Primary data saved successfully.' 
+        });
+
+    } catch (error) {
+        res.status(400).json({ 
+            success: false, 
+            message: error.message 
+        });
     }
 };

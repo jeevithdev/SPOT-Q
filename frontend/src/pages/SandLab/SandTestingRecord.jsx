@@ -1,13 +1,21 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { BookOpen, Lock } from 'lucide-react';
+import { BookOpen} from 'lucide-react';
 import Table from '../../Components/Table';
-import { PlusButton, MinusButton, SubmitButton, ResetButton } from '../../Components/Buttons';
+import CustomDatePicker from '../../Components/CustomDatePicker';
+import { PlusButton, MinusButton, SubmitButton, CustomTimeInput, Time } from '../../Components/Buttons';
 import '../../styles/PageStyles/Sandlab/SandTestingRecord.css';
+
+// Get today's date in YYYY-MM-DD format
+const getTodaysDate = () => {
+  const today = new Date();
+  return today.toISOString().split('T')[0];
+};
 
 const SandTestingRecord = () => {
   const navigate = useNavigate();
-  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
+  const [selectedDate, setSelectedDate] = useState(getTodaysDate());
+  const [isLoading, setIsLoading] = useState(false);
   
   // Lock state for each table
   const [table1Locked, setTable1Locked] = useState(false);
@@ -28,10 +36,13 @@ const SandTestingRecord = () => {
     mouldStrengthSetting: null
   });
   
+  // State for Table 5 data rows (array of submitted records)
+  const [table5Data, setTable5Data] = useState([]);
+  const [nextTable5SNo, setNextTable5SNo] = useState(1);
+  
   // State for current Table 5 entry form
   const [table5FormData, setTable5FormData] = useState({
-    timeHour: '',
-    timeMinute: '',
+    time: null,
     mixNo: '',
     permeability: '',
     gcsCheckpoint: '',
@@ -89,8 +100,7 @@ const SandTestingRecord = () => {
   const [itemNameValid, setItemNameValid] = useState(null);
 
   // Refs for Table 5 form fields (for Enter key navigation)
-  const timeHourRef = useRef(null);
-  const timeMinuteRef = useRef(null);
+  const timeRef = useRef(null);
   const mixNoRef = useRef(null);
   const permeabilityRef = useRef(null);
   const gcsValueRef = useRef(null);
@@ -107,9 +117,7 @@ const SandTestingRecord = () => {
   const bentonitePercentRef = useRef(null);
   const premixCoalKgsRef = useRef(null);
   const premixCoalPercentRef = useRef(null);
-  const compactabilitySettingRef = useRef(null);
   const compactabilityValueRef = useRef(null);
-  const mouldStrengthSettingRef = useRef(null);
   const mouldStrengthValueRef = useRef(null);
   const preparedSandLumpsRef = useRef(null);
   const itemNameRef = useRef(null);
@@ -134,16 +142,13 @@ const SandTestingRecord = () => {
     });
 
     // Validate based on field type and range
-    if (field === 'timeHour' || field === 'timeMinute') {
-      const updatedData = {...table5FormData, [field]: value};
-      const hasTime = updatedData.timeHour && updatedData.timeMinute;
-      setTimeValid(hasTime ? true : (value ? false : null));
+    if (field === 'time') {
+      setTimeValid(value ? true : null);
     }
 
     if (field === 'mixNo') {
       setMixNoValid(value.trim() ? true : null);
     }
-
     if (field === 'permeability') {
       if (!value.trim()) {
         setPermeabilityValid(null);
@@ -379,17 +384,22 @@ const SandTestingRecord = () => {
   };
 
   // Handle time change
-  const handleTimeChange = (e) => {
-    const { name, value } = e.target;
-    updateFormField(name, value);
+  const handleTimeChange = (timeValue) => {
+    updateFormField('time', timeValue);
   };
 
   // Handle form submission
   const handleTable5Submit = async () => {
+    // Validate date before proceeding
+    if (!selectedDate || selectedDate.trim() === '' || !/\d{4}-\d{2}-\d{2}/.test(selectedDate)) {
+      alert('Please select a valid date before submitting.');
+      return;
+    }
+    
     let hasErrors = false;
 
     // Validate Time (required)
-    if (!table5FormData.timeHour || !table5FormData.timeMinute) {
+    if (!table5FormData.time) {
       setTimeValid(false);
       hasErrors = true;
     }
@@ -616,13 +626,13 @@ const SandTestingRecord = () => {
 
     try {
       // Combine time fields into HH:MM format
-      const time = `${String(table5FormData.timeHour).padStart(2, '0')}:${String(table5FormData.timeMinute).padStart(2, '0')}`;
+      const time = `${String(table5FormData.time.hour).padStart(2, '0')}:${String(table5FormData.time.minute).padStart(2, '0')}`;
 
       // Transform data to match backend model structure
       const dataToSave = {
         date: selectedDate,
         sno: currentSNo === 0 ? 1 : currentSNo + 1,
-        time: parseInt(table5FormData.timeHour) * 100 + parseInt(table5FormData.timeMinute), // Convert to number format
+        time: table5FormData.time.hour * 100 + table5FormData.time.minute, // Convert to number format
         mixno: parseFloat(table5FormData.mixNo) || 0,
         permeability: parseFloat(table5FormData.permeability) || 0,
         gcsFdyA: table5FormData.gcsCheckpoint === 'FDY-A' ? parseFloat(table5FormData.gcsValue) || 0 : 0,
@@ -673,6 +683,9 @@ const SandTestingRecord = () => {
       if (result.success) {
         alert('Table 5 data submitted successfully!');
         
+        // Add the new entry to table5Data array for display
+        setTable5Data(prev => [...prev, dataToSave]);
+        
         // If this is the first entry, lock the option fields
         if (currentSNo === 0) {
           setTable5LockedFields({
@@ -685,15 +698,17 @@ const SandTestingRecord = () => {
         }
         
         // Increment S.No
-        setCurrentSNo(currentSNo === 0 ? 1 : currentSNo + 1);
+        const newSNo = currentSNo === 0 ? 1 : currentSNo + 1;
+        setCurrentSNo(newSNo);
+        setNextTable5SNo(newSNo + 1);
         
         // Reset form and validation states
         handleTable5Reset();
         
-        // Focus on first input (time hour)
+        // Focus on first input (time)
         setTimeout(() => {
-          if (timeHourRef && timeHourRef.current) {
-            timeHourRef.current.focus();
+          if (timeRef && timeRef.current) {
+            timeRef.current.focus();
           }
         }, 100);
       } else {
@@ -708,8 +723,7 @@ const SandTestingRecord = () => {
   // Handle form reset
   const handleTable5Reset = () => {
     setTable5FormData({
-      timeHour: '',
-      timeMinute: '',
+      time: null,
       mixNo: '',
       permeability: '',
       gcsCheckpoint: currentSNo > 0 ? table5LockedFields.gcsCheckpoint : '',
@@ -880,6 +894,12 @@ const SandTestingRecord = () => {
   };
   const checkExistingData = async (date) => {
     try {
+      // Validate date format before making API call
+      if (!date || date.trim() === '' || !/\d{4}-\d{2}-\d{2}/.test(date)) {
+        console.error('Invalid date format:', date);
+        return;
+      }
+      
       const response = await fetch(`http://localhost:5000/api/v1/sand-testing-records/date/${date}`, {
         method: 'GET',
         credentials: 'include'
@@ -1057,9 +1077,13 @@ const SandTestingRecord = () => {
           
           // Load Table 5 data - set S.No and locked fields based on first entry
           if (hasTable5Data && existingData.testParameter.length > 0) {
+            // Populate table5Data with existing records
+            setTable5Data(existingData.testParameter);
+            
             // Get the highest S.No to continue from
             const maxSNo = Math.max(...existingData.testParameter.map(entry => entry.sno || 0));
             setCurrentSNo(maxSNo);
+            setNextTable5SNo(maxSNo + 1);
             
             // Get the first entry to determine locked field values
             const firstEntry = existingData.testParameter[0];
@@ -1090,7 +1114,9 @@ const SandTestingRecord = () => {
             }));
           } else {
             // Reset if no Table 5 data
+            setTable5Data([]);
             setCurrentSNo(0);
+            setNextTable5SNo(1);
             setTable5LockedFields({
               gcsCheckpoint: null,
               bentoniteCheckpoint: null,
@@ -1151,6 +1177,19 @@ const SandTestingRecord = () => {
             friabilityShiftII: { value: '', locked: false },
             friabilityShiftIII: { value: '', locked: false }
           });
+          
+          // Reset Table 5 (Sand Properties & Test Parameters)
+          setTable5Data([]);
+          setCurrentSNo(0);
+          setNextTable5SNo(1);
+          setTable5LockedFields({
+            gcsCheckpoint: null,
+            bentoniteCheckpoint: null,
+            premixCoalCheckpoint: null,
+            compactabilitySetting: null,
+            mouldStrengthSetting: null
+          });
+          handleTable5Reset();
         }
       }
     } catch (error) {
@@ -1158,17 +1197,86 @@ const SandTestingRecord = () => {
     }
   };
 
-  // Check existing data when date changes
+  // Check for existing data when date changes
   useEffect(() => {
-    if (selectedDate) {
+    if (selectedDate && selectedDate.trim() !== '' && /\d{4}-\d{2}-\d{2}/.test(selectedDate)) {
       checkExistingData(selectedDate);
+    } else if (selectedDate === '') {
+      // Reset all tables when no date selected
+      resetAllTables();
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedDate]);
 
+  // Reset all tables to default state
+  const resetAllTables = () => {
+    // Reset Table 1a
+    setTable1aInputs({
+      '0_1': [{ value: '', locked: false }], '0_2': [{ value: '', locked: false }], '0_3': [{ value: '', locked: false }],
+      '1_1': [{ value: '', locked: false }], '1_2': [{ value: '', locked: false }], '1_3': [{ value: '', locked: false }],
+      '2_1': [{ value: '', locked: false }], '2_2': [{ value: '', locked: false }], '2_3': [{ value: '', locked: false }],
+      '3_1': [{ value: '', locked: false }], '3_2': [{ value: '', locked: false }], '3_3': [{ value: '', locked: false }],
+      '4_1': [{ value: '', locked: false }], '4_2': [{ value: '', locked: false }], '4_3': [{ value: '', locked: false }]
+    });
+    
+    // Reset Table 1b
+    setTable1bInputs({
+      batchType: '',
+      bentonite: '',
+      value: '',
+      bentoniteLocked: false,
+      valueLocked: false
+    });
+    
+    // Reset Table 2
+    const resetTable2 = {};
+    for (let row = 0; row < 7; row++) {
+      for (let col = 0; col < 3; col++) {
+        resetTable2[`${row}_${col}`] = { value: '', locked: false };
+      }
+    }
+    setTable2Inputs(resetTable2);
+    
+    // Reset Table 3
+    const resetTable3 = {};
+    for (let row = 0; row < 3; row++) {
+      for (let col = 0; col < 5; col++) {
+        resetTable3[`${row}_${col}`] = [{ value: '', locked: false }];
+      }
+    }
+    setTable3Inputs(resetTable3);
+    
+    // Reset Table 4
+    setTable4Inputs({
+      sandLump: { value: '', locked: false },
+      newSandWt: { value: '', locked: false },
+      friabilityShiftI: { value: '', locked: false },
+      friabilityShiftII: { value: '', locked: false },
+      friabilityShiftIII: { value: '', locked: false }
+    });
+    
+    // Reset Table 5
+    setTable5Data([]);
+    setNextTable5SNo(1);
+    setTable5LockedFields({
+      gcsCheckpoint: null,
+      bentoniteCheckpoint: null,
+      premixCoalCheckpoint: null,
+      compactabilitySetting: null,
+      mouldStrengthSetting: null
+    });
+    handleTable5Reset();
+  };
+
   // Handlers for Table 1
   const handleTable1Submit = async () => {
     try {
+      // Validate date before making API call
+      if (!selectedDate || selectedDate.trim() === '' || !/\d{4}-\d{2}-\d{2}/.test(selectedDate)) {
+        alert('Please select a valid date before submitting.');
+        return;
+      }
+      
       // Transform table1aInputs to match backend structure - only submit unlocked (new) entries
       const sandShifts = {
         shiftI: {
@@ -1212,7 +1320,6 @@ const SandTestingRecord = () => {
       const result = await response.json();
       
       if (result.success) {
-        alert('Table 1 data submitted successfully!');
         console.log('Table 1 submitted:', result.data);
         // Reload data to lock newly submitted entries
         await checkExistingData(selectedDate);
@@ -1225,32 +1332,15 @@ const SandTestingRecord = () => {
     }
   };
 
-  const handleTable1Reset = () => {
-    // Only reset unlocked entries
-    const resetInputs = {};
-    Object.keys(table1aInputs).forEach(key => {
-      const lockedEntries = table1aInputs[key].filter(v => v.locked);
-      resetInputs[key] = lockedEntries.length > 0 
-        ? [...lockedEntries, { value: '', locked: false }]
-        : [{ value: '', locked: false }];
-    });
-    setTable1aInputs(resetInputs);
-    
-    // Reset Table 1b only unlocked fields
-    if (!table1bInputs.bentoniteLocked || !table1bInputs.valueLocked) {
-      setTable1bInputs({
-        batchType: table1bInputs.valueLocked ? table1bInputs.batchType : '',
-        bentonite: table1bInputs.bentoniteLocked ? table1bInputs.bentonite : '',
-        value: table1bInputs.valueLocked ? table1bInputs.value : '',
-        bentoniteLocked: table1bInputs.bentoniteLocked,
-        valueLocked: table1bInputs.valueLocked
-      });
-    }
-  };
-
   // Handlers for Table 2
   const handleTable2Submit = async () => {
     try {
+      // Validate date before making API call
+      if (!selectedDate || selectedDate.trim() === '' || !/\d{4}-\d{2}-\d{2}/.test(selectedDate)) {
+        alert('Please select a valid date before submitting.');
+        return;
+      }
+      
       // Transform table2Inputs to match backend structure - only submit unlocked (new) entries
       const clayShifts = {
         shiftI: {
@@ -1308,22 +1398,15 @@ const SandTestingRecord = () => {
     }
   };
 
-  const handleTable2Reset = () => {
-    // Only reset unlocked entries
-    const resetInputs = {};
-    Object.keys(table2Inputs).forEach(key => {
-      if (!table2Inputs[key].locked) {
-        resetInputs[key] = { value: '', locked: false };
-      } else {
-        resetInputs[key] = table2Inputs[key];
-      }
-    });
-    setTable2Inputs(resetInputs);
-  };
-
   // Handlers for Table 3
   const handleTable3Submit = async () => {
     try {
+      // Validate date before making API call
+      if (!selectedDate || selectedDate.trim() === '' || !/\d{4}-\d{2}-\d{2}/.test(selectedDate)) {
+        alert('Please select a valid date before submitting.');
+        return;
+      }
+      
       // Transform table3Inputs to match backend structure - only submit unlocked (new) entries
       const mixshifts = {
         ShiftI: {
@@ -1381,21 +1464,15 @@ const SandTestingRecord = () => {
     }
   };
 
-  const handleTable3Reset = () => {
-    // Only reset unlocked entries
-    const resetInputs = {};
-    Object.keys(table3Inputs).forEach(key => {
-      const lockedEntries = table3Inputs[key].filter(v => v.locked);
-      resetInputs[key] = lockedEntries.length > 0 
-        ? [...lockedEntries, { value: '', locked: false }]
-        : [{ value: '', locked: false }];
-    });
-    setTable3Inputs(resetInputs);
-  };
-
   // Handlers for Table 4
   const handleTable4Submit = async () => {
     try {
+      // Validate date before making API call
+      if (!selectedDate || selectedDate.trim() === '' || !/\d{4}-\d{2}-\d{2}/.test(selectedDate)) {
+        alert('Please select a valid date before submitting.');
+        return;
+      }
+      
       // Build table4Data object with only non-empty unlocked values
       const table4Data = {};
       
@@ -1452,47 +1529,40 @@ const SandTestingRecord = () => {
     }
   };
 
-  const handleTable4Reset = () => {
-    // Only reset unlocked entries
-    const resetInputs = {};
-    Object.keys(table4Inputs).forEach(key => {
-      if (!table4Inputs[key].locked) {
-        resetInputs[key] = { value: '', locked: false };
-      } else {
-        resetInputs[key] = table4Inputs[key];
-      }
-    });
-    setTable4Inputs(resetInputs);
-  };
-
   return (
     <>
       {/* Header */}
-      <div className="sand-header">     
+      <div className="sand-header">
         <div className="sand-header-text">
           <h2>
             <BookOpen size={28} style={{ color: '#5B9AA9' }} />
             Sand Testing Record
           </h2>
         </div>
-        <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c', fontSize: '1.125rem' }}>
-          DATE : {selectedDate ? (() => {
-            const date = new Date(selectedDate);
-            const day = String(date.getDate()).padStart(2, '0');
-            const month = String(date.getMonth() + 1).padStart(2, '0');
-            const year = date.getFullYear();
-            return `${day} / ${month} / ${year}`;
-          })() : 'Loading...'}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', flexWrap: 'wrap' }}>
+          <label style={{ fontWeight: '600', fontSize: '1rem', color: '#1e293b' }}>Date:</label>
+          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
+            <CustomDatePicker
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              max={new Date().toISOString().split('T')[0]}
+              disabled={isLoading}
+              style={{ 
+                padding: '8px 12px', 
+                fontSize: '1rem',
+                borderRadius: '4px',
+                border: '1px solid #cbd5e1'
+              }}
+            />
+          </div>
         </div>
       </div>
 
       {/* Table 1 */}
-      <div className="sand-section-header">
-        <h3>Table 1</h3>
-      </div>
-
-      {/* Table 1a - with Shift headers and input fields */}
-      <div style={{ marginBottom: '1rem' }}>
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Sand & Mix Testing</h3>
+        {/* Table 1a - with Shift headers and input fields */}
+        <div className="foundry-table-wrapper" style={{ marginBottom: '1rem' }}>
         <Table
           template
           showHeader={true}
@@ -1657,19 +1727,17 @@ const SandTestingRecord = () => {
         </div>
         
         {/* Table 1 Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-          <ResetButton onClick={handleTable1Reset} />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
           <SubmitButton onClick={handleTable1Submit} />
         </div>
       </div>
-
-      {/* Table 2 */}
-      <div className="sand-section-header">
-        <h3>Table 2</h3>
       </div>
 
-      {/* Table 2 - 8x4 with header */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      {/* Table 2 */}
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Clay Testing</h3>
+        {/* Table 2 - 8x4 with header */}
+        <div className="foundry-table-wrapper" style={{ marginBottom: '1.5rem' }}>
         <div className="reusable-table-container">
           <table className="reusable-table table-template table-bordered" style={{ minWidth: '800px' }}>
             <tbody>
@@ -1731,19 +1799,17 @@ const SandTestingRecord = () => {
         </div>
         
         {/* Table 2 Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-          <ResetButton onClick={handleTable2Reset} />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
           <SubmitButton onClick={handleTable2Submit} />
         </div>
       </div>
-
-      {/* Table 3 */}
-      <div className="sand-section-header">
-        <h3>Table 3</h3>
       </div>
 
-      {/* Table 3 - 4x4 empty table with custom column widths */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      {/* Table 3 */}
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Mix Testing & Hopper Level</h3>
+        {/* Table 3 - 4x4 empty table with custom column widths */}
+        <div className="foundry-table-wrapper" style={{ marginBottom: '1.5rem' }}>
         <div className="reusable-table-container">
           <table className="reusable-table table-template table-bordered" style={{ minWidth: '800px', width: '100%' }}>
             <colgroup>
@@ -1839,19 +1905,17 @@ const SandTestingRecord = () => {
         </div>
         
         {/* Table 3 Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-          <ResetButton onClick={handleTable3Reset} />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
           <SubmitButton onClick={handleTable3Submit} />
         </div>
       </div>
-
-      {/* Table 4 */}
-      <div className="sand-section-header">
-        <h3>Table 4</h3>
       </div>
 
-      {/* Table 4a and 4b - Side by Side */}
-      <div style={{ marginBottom: '1.5rem' }}>
+      {/* Table 4 */}
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Sand Weight & Friability</h3>
+        {/* Table 4a and 4b - Side by Side */}
+        <div className="foundry-table-wrapper" style={{ marginBottom: '1.5rem' }}>
         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
           {/* Table 4a - 2x2 */}
           <div>
@@ -1994,539 +2058,480 @@ const SandTestingRecord = () => {
         </div>
         
         {/* Table 4 Buttons */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-          <ResetButton onClick={handleTable4Reset} />
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
           <SubmitButton onClick={handleTable4Submit} />
         </div>
       </div>
+      </div>
 
       {/* Table 5: Sand Properties & Test Parameters */}
-      <div className="sand-section-header">
-        <h3>Sand Properties & Test Parameters</h3>
-      </div>
-
-      {/* Table 5 Form */}
-      <div style={{ marginBottom: '2rem', padding: '1.5rem', border: '2px solid #e2e8f0', borderRadius: '8px' }}>
-        {/* S.No Display */}
-        <div style={{ marginBottom: '1.5rem', fontSize: '1.25rem', fontWeight: '700', color: '#1e293b' }}>
-          S.No: {currentSNo}
-        </div>
-        {/* Table 5 Form Grid */}
-        <div className="sand-table5-form-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '1rem', rowGap: '2rem' }}>
-          <div className="sand-form-field">
-            <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Time (HH:MM)</label>
-            <TimeInput
-              hourRef={timeHourRef}
-              minuteRef={timeMinuteRef}
-              hourName="timeHour"
-              minuteName="timeMinute"
-              hourValue={table5FormData.timeHour}
-              minuteValue={table5FormData.timeMinute}
-              onChange={handleTimeChange}
-              onHourKeyDown={(e) => handleKeyDown(e, timeMinuteRef)}
-              onMinuteKeyDown={(e) => handleKeyDown(e, mixNoRef)}
-              validationState={timeValid}
-            />
-          </div>
-            <div className="sand-form-field">
-              <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Mix No</label>
-              <input 
-                ref={mixNoRef}
-                type="number" 
-                placeholder="Enter Mix No" 
-                value={table5FormData.mixNo}
-                onChange={(e) => updateFormField('mixNo', e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, permeabilityRef)}
-                className={mixNoValid === null ? "" : mixNoValid ? "valid-input" : "invalid-input"}
-              />
-            </div>
-            <div className="sand-form-field">
-              <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Permeability (90 - 160)</label>
-              <input 
-                ref={permeabilityRef}
-                type="number" 
-                placeholder="Enter value" 
-                value={table5FormData.permeability}
-                onChange={(e) => updateFormField('permeability', e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, gcsValueRef)}
-                className={permeabilityValid === null ? "" : permeabilityValid ? "valid-input" : "invalid-input"}
-              />
-            </div>
-            <div className="sand-form-field">
-              <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>
-                G.C.S Gm / cm<sup>2</sup>
-                {currentSNo > 0 && <Lock size={16} style={{ marginLeft: '0.5rem', color: '#64748b' }} />}
-              </label>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-                <div 
-                  className={gcsCheckpointValid === null ? "" : gcsCheckpointValid ? "valid-input" : "invalid-input"}
-                  style={{ 
-                    display: 'flex', 
-                    gap: '1rem',
-                    padding: '0.5rem',
-                    borderRadius: '4px'
-                  }}
-                >
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: '500', fontSize: '1rem', cursor: (currentSNo > 0 && table5FormData.gcsCheckpoint !== 'FDY-A') ? 'not-allowed' : 'pointer', opacity: (currentSNo > 0 && table5FormData.gcsCheckpoint !== 'FDY-A') ? 0.5 : 1 }}>
+      <div className="foundry-section">
+        <h3 className="foundry-section-title">Sand Properties & Test Parameters</h3>
+        {/* Table 5 - Using Table Component with Input Row */}
+        <div className="foundry-table-wrapper" style={{ marginBottom: '2rem' }}>
+        <div className="reusable-table-container" style={{ overflowX: 'auto' }}>
+          <table className="reusable-table table-template table-bordered" style={{ minWidth: '3500px' }}>
+            <thead>
+              <tr>
+                <th style={{ width: '70px', textAlign: 'center' }}>S.No</th>
+                <th style={{ width: '170px', textAlign: 'center' }}>Time</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>Mix No</th>
+                <th style={{ width: '110px', textAlign: 'center' }}>Permeability<br/>(90-160)</th>
+                <th style={{ width: '180px', textAlign: 'center', padding: '10px' }}>
+                  <div style={{ marginBottom: '8px' }}>G.C.S Gm/cm²</div>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', cursor: (nextTable5SNo > 1 && table5FormData.gcsCheckpoint !== 'FDY-A') ? 'not-allowed' : 'pointer', opacity: (nextTable5SNo > 1 && table5FormData.gcsCheckpoint !== 'FDY-A') ? 0.5 : 1 }}>
+                      <input
+                        type="radio"
+                        name="gcsCheckpoint"
+                        value="FDY-A"
+                        checked={table5FormData.gcsCheckpoint === 'FDY-A'}
+                        onChange={(e) => updateFormField('gcsCheckpoint', e.target.value)}
+                        disabled={nextTable5SNo > 1 && table5FormData.gcsCheckpoint !== 'FDY-A'}
+                        style={{ width: '14px', height: '14px' }}
+                      />
+                      FDY-A (Min 1800)
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', cursor: (nextTable5SNo > 1 && table5FormData.gcsCheckpoint !== 'FDY-B') ? 'not-allowed' : 'pointer', opacity: (nextTable5SNo > 1 && table5FormData.gcsCheckpoint !== 'FDY-B') ? 0.5 : 1 }}>
+                      <input
+                        type="radio"
+                        name="gcsCheckpoint"
+                        value="FDY-B"
+                        checked={table5FormData.gcsCheckpoint === 'FDY-B'}
+                        onChange={(e) => updateFormField('gcsCheckpoint', e.target.value)}
+                        disabled={nextTable5SNo > 1 && table5FormData.gcsCheckpoint !== 'FDY-B'}
+                        style={{ width: '14px', height: '14px' }}
+                      />
+                      FDY-B (Min 1900)
+                    </label>
+                  </div>
+                </th>
+                <th style={{ width: '100px', textAlign: 'center' }}>WTS<br/>N/cm²<br/>(Min 0.15)</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>Moisture<br/>(3.0-4.0%)</th>
+                <th style={{ width: '120px', textAlign: 'center' }}>Compactability<br/>At Dmm<br/>(33-40%)</th>
+                <th style={{ width: '120px', textAlign: 'center' }}>Compressability<br/>At Dmm<br/>(20-28%)</th>
+                <th style={{ width: '100px', textAlign: 'center' }}>Water<br/>Litre/Kg Mix</th>
+                <th style={{ width: '180px', textAlign: 'center' }}>Sand Temp °C<br/>(BC/WU/SSU Max 45)</th>
+                <th style={{ width: '120px', textAlign: 'center' }}>New Sand<br/>Kgs/Mould<br/>(0.0-5.0)</th>
+                <th style={{ width: '200px', textAlign: 'center', padding: '10px' }}>
+                  <div style={{ marginBottom: '8px' }}>Bentonite Kgs / Mix</div>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', cursor: (nextTable5SNo > 1 && table5FormData.bentoniteCheckpoint !== '0.60-1.20') ? 'not-allowed' : 'pointer', opacity: (nextTable5SNo > 1 && table5FormData.bentoniteCheckpoint !== '0.60-1.20') ? 0.5 : 1 }}>
+                      <input
+                        type="radio"
+                        name="bentoniteCheckpoint"
+                        value="0.60-1.20"
+                        checked={table5FormData.bentoniteCheckpoint === '0.60-1.20'}
+                        onChange={(e) => updateFormField('bentoniteCheckpoint', e.target.value)}
+                        disabled={nextTable5SNo > 1 && table5FormData.bentoniteCheckpoint !== '0.60-1.20'}
+                        style={{ width: '14px', height: '14px' }}
+                      />
+                      0.60-1.20%
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', cursor: (nextTable5SNo > 1 && table5FormData.bentoniteCheckpoint !== '0.80-2.20') ? 'not-allowed' : 'pointer', opacity: (nextTable5SNo > 1 && table5FormData.bentoniteCheckpoint !== '0.80-2.20') ? 0.5 : 1 }}>
+                      <input
+                        type="radio"
+                        name="bentoniteCheckpoint"
+                        value="0.80-2.20"
+                        checked={table5FormData.bentoniteCheckpoint === '0.80-2.20'}
+                        onChange={(e) => updateFormField('bentoniteCheckpoint', e.target.value)}
+                        disabled={nextTable5SNo > 1 && table5FormData.bentoniteCheckpoint !== '0.80-2.20'}
+                        style={{ width: '14px', height: '14px' }}
+                      />
+                      0.80-2.20%
+                    </label>
+                  </div>
+                </th>
+                <th style={{ width: '200px', textAlign: 'center', padding: '10px' }}>
+                  <div style={{ marginBottom: '8px' }}>Premix/Coal Dust Kgs / Mix</div>
+                  <div style={{ display: 'flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', cursor: (nextTable5SNo > 1 && table5FormData.premixCoalCheckpoint !== 'Premix') ? 'not-allowed' : 'pointer', opacity: (nextTable5SNo > 1 && table5FormData.premixCoalCheckpoint !== 'Premix') ? 0.5 : 1 }}>
+                      <input
+                        type="radio"
+                        name="premixCoalCheckpoint"
+                        value="Premix"
+                        checked={table5FormData.premixCoalCheckpoint === 'Premix'}
+                        onChange={(e) => updateFormField('premixCoalCheckpoint', e.target.value)}
+                        disabled={nextTable5SNo > 1 && table5FormData.premixCoalCheckpoint !== 'Premix'}
+                        style={{ width: '14px', height: '14px' }}
+                      />
+                      Premix (0.60-1.20%)
+                    </label>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '0.8rem', cursor: (nextTable5SNo > 1 && table5FormData.premixCoalCheckpoint !== 'CoalDust') ? 'not-allowed' : 'pointer', opacity: (nextTable5SNo > 1 && table5FormData.premixCoalCheckpoint !== 'CoalDust') ? 0.5 : 1 }}>
+                      <input
+                        type="radio"
+                        name="premixCoalCheckpoint"
+                        value="CoalDust"
+                        checked={table5FormData.premixCoalCheckpoint === 'CoalDust'}
+                        onChange={(e) => updateFormField('premixCoalCheckpoint', e.target.value)}
+                        disabled={nextTable5SNo > 1 && table5FormData.premixCoalCheckpoint !== 'CoalDust'}
+                        style={{ width: '14px', height: '14px' }}
+                      />
+                      Coal Dust (0.28-0.70%)
+                    </label>
+                  </div>
+                </th>
+                <th style={{ width: '180px', textAlign: 'center', padding: '10px' }}>
+                  <div style={{ marginBottom: '8px' }}>Compactability Setting</div>
+                  <select
+                    value={table5FormData.compactabilitySetting}
+                    onChange={(e) => updateFormField('compactabilitySetting', e.target.value)}
+                    disabled={nextTable5SNo > 1}
+                    style={{ width: '90%', padding: '6px', fontSize: '0.875rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: nextTable5SNo > 1 ? '#f1f5f9' : 'white', cursor: nextTable5SNo > 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    <option value="">Select</option>
+                    <option value="LC">LC</option>
+                    <option value="SMC42">SMC42 (42±3)</option>
+                  </select>
+                </th>
+                <th style={{ width: '180px', textAlign: 'center', padding: '10px' }}>
+                  <div style={{ marginBottom: '8px' }}>Mould Strength Setting</div>
+                  <select
+                    value={table5FormData.mouldStrengthSetting}
+                    onChange={(e) => updateFormField('mouldStrengthSetting', e.target.value)}
+                    disabled={nextTable5SNo > 1}
+                    style={{ width: '90%', padding: '6px', fontSize: '0.875rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: nextTable5SNo > 1 ? '#f1f5f9' : 'white', cursor: nextTable5SNo > 1 ? 'not-allowed' : 'pointer' }}
+                  >
+                    <option value="">Select</option>
+                    <option value="SMC23">SMC23 (23±3)</option>
+                    <option value="At15">At15 (5.0±1%)</option>
+                  </select>
+                </th>
+                <th style={{ width: '120px', textAlign: 'center' }}>Prepared Sand<br/>Lumps/Kg</th>
+                <th style={{ width: '150px', textAlign: 'center' }}>Item Name</th>
+                <th style={{ width: '150px', textAlign: 'center' }}>Remarks</th>
+              </tr>
+            </thead>
+            <tbody>
+              {/* Display submitted data rows */}
+              {table5Data.map((row, idx) => (
+                <tr key={idx}>
+                  <td style={{ textAlign: 'center', fontWeight: '600' }}>{row.sno}</td>
+                  <td style={{ textAlign: 'center' }}>{`${String(Math.floor(row.time / 100)).padStart(2, '0')}:${String(row.time % 100).padStart(2, '0')}`}</td>
+                  <td style={{ textAlign: 'center' }}>{row.mixno}</td>
+                  <td style={{ textAlign: 'center' }}>{row.permeability}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    {row.gcsFdyA > 0 ? row.gcsFdyA : row.gcsFdyB > 0 ? row.gcsFdyB : '-'}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>{row.wts}</td>
+                  <td style={{ textAlign: 'center' }}>{row.moisture}</td>
+                  <td style={{ textAlign: 'center' }}>{row.compactability}</td>
+                  <td style={{ textAlign: 'center' }}>{row.compressibility}</td>
+                  <td style={{ textAlign: 'center' }}>{row.waterLitre}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    {`${row.sandTemp.BC} / ${row.sandTemp.WU} / ${row.sandTemp.SSUmax}`}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>{row.newSandKgs}</td>
+                  <td style={{ textAlign: 'center' }}>
+                    {row.bentonite.Percent ? `${row.bentonite.Kgs} / ${row.bentonite.Percent}%` : '-'}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    {row.premix.Kgs > 0 ? `${row.premix.Kgs} / ${row.premix.Percent}%` : 
+                     row.coalDust.Kgs > 0 ? `${row.coalDust.Kgs} / ${row.coalDust.Percent}%` : '-'}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    {row.lc > 0 ? row.lc : row.CompactabilitySettings > 0 ? row.CompactabilitySettings : '-'}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>
+                    {row.mouldStrength > 0 ? row.mouldStrength : row.shearStrengthSetting > 0 ? row.shearStrengthSetting : '-'}
+                  </td>
+                  <td style={{ textAlign: 'center' }}>{row.preparedSandlumps}</td>
+                  <td style={{ textAlign: 'center' }}>{row.itemName}</td>
+                  <td style={{ textAlign: 'center' }}>{row.remarks || '-'}</td>
+                </tr>
+              ))}
+              
+              {/* Input Row for new entry */}
+              <tr style={{ backgroundColor: '#f8fafc' }}>
+                <td style={{ textAlign: 'center', fontWeight: '600', padding: '10px' }}>
+                  {nextTable5SNo}
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <CustomTimeInput
+                    ref={timeRef}
+                    value={table5FormData.time}
+                    onChange={handleTimeChange}
+                    hasError={timeValid === false}
+                    onEnterPress={(e) => handleKeyDown(e, mixNoRef)}
+                    style={{ width: '150px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={mixNoRef}
+                    type="number" 
+                    placeholder="Mix No" 
+                    value={table5FormData.mixNo}
+                    onChange={(e) => updateFormField('mixNo', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, permeabilityRef)}
+                    className={mixNoValid === null ? "" : mixNoValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={permeabilityRef}
+                    type="number" 
+                    placeholder="90-160" 
+                    value={table5FormData.permeability}
+                    onChange={(e) => updateFormField('permeability', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, gcsValueRef)}
+                    className={permeabilityValid === null ? "" : permeabilityValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input
+                    ref={gcsValueRef}
+                    type="number"
+                    placeholder="Value"
+                    value={table5FormData.gcsValue}
+                    onChange={(e) => updateFormField('gcsValue', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, wtsRef)}
+                    disabled={!table5FormData.gcsCheckpoint}
+                    className={gcsValid === null ? "" : gcsValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: !table5FormData.gcsCheckpoint ? '#f1f5f9' : 'white' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={wtsRef}
+                    type="number" 
+                    placeholder="Min 0.15" 
+                    value={table5FormData.wts}
+                    onChange={(e) => updateFormField('wts', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, moistureRef)}
+                    className={wtsValid === null ? "" : wtsValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={moistureRef}
+                    type="number" 
+                    placeholder="3.0-4.0" 
+                    value={table5FormData.moisture}
+                    onChange={(e) => updateFormField('moisture', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, compactabilityRef)}
+                    className={moistureValid === null ? "" : moistureValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={compactabilityRef}
+                    type="number" 
+                    placeholder="33-40" 
+                    value={table5FormData.compactability}
+                    onChange={(e) => updateFormField('compactability', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, compressabilityRef)}
+                    className={compactabilityValid === null ? "" : compactabilityValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={compressabilityRef}
+                    type="number" 
+                    placeholder="20-28" 
+                    value={table5FormData.compressability}
+                    onChange={(e) => updateFormField('compressability', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, waterLitreRef)}
+                    className={compressabilityValid === null ? "" : compressabilityValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={waterLitreRef}
+                    type="number" 
+                    placeholder="Value" 
+                    value={table5FormData.waterLitreKgMix}
+                    onChange={(e) => updateFormField('waterLitreKgMix', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, sandTempBCRef)}
+                    className={waterLitreValid === null ? "" : waterLitreValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <div style={{ display: 'flex', gap: '4px' }}>
                     <input
-                      type="radio"
-                      name={`gcsCheckpoint`}
-                      value="FDY-A"
-                      checked={table5FormData.gcsCheckpoint === 'FDY-A'}
-                      onChange={(e) => updateFormField('gcsCheckpoint', e.target.value)}
-                      disabled={currentSNo > 0 && table5FormData.gcsCheckpoint !== 'FDY-A'}
-                      style={{ width: '18px', height: '18px', cursor: (currentSNo > 0 && table5FormData.gcsCheckpoint !== 'FDY-A') ? 'not-allowed' : 'pointer' }}
+                      ref={sandTempBCRef}
+                      type="number"
+                      placeholder="BC"
+                      value={table5FormData.sandTempBC}
+                      onChange={(e) => updateFormField('sandTempBC', e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, sandTempWURef)}
+                      className={sandTempBCValid === null ? "" : sandTempBCValid ? "valid-input" : "invalid-input"}
+                      style={{ flex: 1, padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
                     />
-                    FDY - A (Min 1800)
-                  </label>
-                  <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: '500', fontSize: '1rem', cursor: (currentSNo > 0 && table5FormData.gcsCheckpoint !== 'FDY-B') ? 'not-allowed' : 'pointer', opacity: (currentSNo > 0 && table5FormData.gcsCheckpoint !== 'FDY-B') ? 0.5 : 1 }}>
                     <input
-                      type="radio"
-                      name={`gcsCheckpoint`}
-                      value="FDY-B"
-                      checked={table5FormData.gcsCheckpoint === 'FDY-B'}
-                      onChange={(e) => updateFormField('gcsCheckpoint', e.target.value)}
-                      disabled={currentSNo > 0 && table5FormData.gcsCheckpoint !== 'FDY-B'}
-                      style={{ width: '18px', height: '18px', cursor: (currentSNo > 0 && table5FormData.gcsCheckpoint !== 'FDY-B') ? 'not-allowed' : 'pointer' }}
+                      ref={sandTempWURef}
+                      type="number"
+                      placeholder="WU"
+                      value={table5FormData.sandTempWU}
+                      onChange={(e) => updateFormField('sandTempWU', e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, sandTempSSURef)}
+                      className={sandTempWUValid === null ? "" : sandTempWUValid ? "valid-input" : "invalid-input"}
+                      style={{ flex: 1, padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
                     />
-                    FDY - B (Min 1900)
-                  </label>
-                </div>
-                <input
-                  ref={gcsValueRef}
-                  type="number"
-                  placeholder="Enter value"
-                  value={table5FormData.gcsValue}
-                  onChange={(e) => updateFormField('gcsValue', e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, wtsRef)}
-                  disabled={!table5FormData.gcsCheckpoint}
-                  className={gcsValid === null ? "" : gcsValid ? "valid-input" : "invalid-input"}
-                  style={{
-                    padding: '10px',
-                    borderRadius: '4px',
-                    fontSize: '1rem',
-                    backgroundColor: !table5FormData.gcsCheckpoint ? '#f1f5f9' : 'white',
-                    cursor: !table5FormData.gcsCheckpoint ? 'not-allowed' : 'text'
-                  }}
-                />
-              </div>
-            </div>
-            <div className="sand-form-field">
-              <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>WTS N/cm<sup>2</sup> (Min 0.15)</label>
-              <input 
-                ref={wtsRef}
-                type="number" 
-                placeholder="Enter value" 
-                value={table5FormData.wts}
-                onChange={(e) => updateFormField('wts', e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, moistureRef)}
-                className={wtsValid === null ? "" : wtsValid ? "valid-input" : "invalid-input"}
-              />
-            </div>
-            <div className="sand-form-field">
-              <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Moisture ( 3.0 - 4.0 % )</label>
-              <input 
-                ref={moistureRef}
-                type="number" 
-                placeholder="Enter value" 
-                value={table5FormData.moisture}
-                onChange={(e) => updateFormField('moisture', e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, compactabilityRef)}
-                className={moistureValid === null ? "" : moistureValid ? "valid-input" : "invalid-input"}
-              />
-            </div>
-            <div className="sand-form-field">
-              <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Compactability At Dmm ( 33 - 40 %)</label>
-              <input 
-                ref={compactabilityRef}
-                type="number" 
-                placeholder="Enter value" 
-                value={table5FormData.compactability}
-                onChange={(e) => updateFormField('compactability', e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, compressabilityRef)}
-                className={compactabilityValid === null ? "" : compactabilityValid ? "valid-input" : "invalid-input"}
-              />
+                    <input
+                      ref={sandTempSSURef}
+                      type="number"
+                      placeholder="SSU"
+                      value={table5FormData.sandTempSSU}
+                      onChange={(e) => updateFormField('sandTempSSU', e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, newSandRef)}
+                      className={sandTempSSUValid === null ? "" : sandTempSSUValid ? "valid-input" : "invalid-input"}
+                      style={{ flex: 1, padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                    />
+                  </div>
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={newSandRef}
+                    type="number" 
+                    placeholder="0.0-5.0" 
+                    value={table5FormData.newSandKgsMould}
+                    onChange={(e) => updateFormField('newSandKgsMould', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, bentoniteKgsRef)}
+                    className={newSandValid === null ? "" : newSandValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <input
+                      ref={bentoniteKgsRef}
+                      type="number"
+                      placeholder="Kgs"
+                      value={table5FormData.bentoniteKgs}
+                      onChange={(e) => updateFormField('bentoniteKgs', e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, bentonitePercentRef)}
+                      disabled={!table5FormData.bentoniteCheckpoint}
+                      className={bentoniteKgsValid === null ? "" : bentoniteKgsValid ? "valid-input" : "invalid-input"}
+                      style={{ flex: 1, padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: !table5FormData.bentoniteCheckpoint ? '#f1f5f9' : 'white' }}
+                    />
+                    <span style={{ alignSelf: 'center', fontSize: '0.9375rem', color: '#64748b' }}>/</span>
+                    <input
+                      ref={bentonitePercentRef}
+                      type="number"
+                      placeholder="%"
+                      value={table5FormData.bentonitePercent}
+                      onChange={(e) => updateFormField('bentonitePercent', e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, premixCoalKgsRef)}
+                      disabled={!table5FormData.bentoniteCheckpoint}
+                      className={bentonitePercentValid === null ? "" : bentonitePercentValid ? "valid-input" : "invalid-input"}
+                      style={{ flex: 1, padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: !table5FormData.bentoniteCheckpoint ? '#f1f5f9' : 'white' }}
+                    />
+                  </div>
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    <input
+                      ref={premixCoalKgsRef}
+                      type="number"
+                      placeholder="Kgs"
+                      value={table5FormData.premixCoalKgs}
+                      onChange={(e) => updateFormField('premixCoalKgs', e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, premixCoalPercentRef)}
+                      disabled={!table5FormData.premixCoalCheckpoint}
+                      className={premixCoalKgsValid === null ? "" : premixCoalKgsValid ? "valid-input" : "invalid-input"}
+                      style={{ flex: 1, padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: !table5FormData.premixCoalCheckpoint ? '#f1f5f9' : 'white' }}
+                    />
+                    <span style={{ alignSelf: 'center', fontSize: '0.9375rem', color: '#64748b' }}>/</span>
+                    <input
+                      ref={premixCoalPercentRef}
+                      type="number"
+                      placeholder="%"
+                      value={table5FormData.premixCoalPercent}
+                      onChange={(e) => updateFormField('premixCoalPercent', e.target.value)}
+                      onKeyDown={(e) => handleKeyDown(e, compactabilityValueRef)}
+                      disabled={!table5FormData.premixCoalCheckpoint}
+                      className={premixCoalPercentValid === null ? "" : premixCoalPercentValid ? "valid-input" : "invalid-input"}
+                      style={{ flex: 1, padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: !table5FormData.premixCoalCheckpoint ? '#f1f5f9' : 'white' }}
+                    />
+                  </div>
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input
+                    ref={compactabilityValueRef}
+                    type="number"
+                    placeholder="Value"
+                    value={table5FormData.compactabilityValue}
+                    onChange={(e) => updateFormField('compactabilityValue', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, mouldStrengthValueRef)}
+                    disabled={!table5FormData.compactabilitySetting}
+                    className={compactabilityValueValid === null ? "" : compactabilityValueValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: !table5FormData.compactabilitySetting ? '#f1f5f9' : 'white' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input
+                    ref={mouldStrengthValueRef}
+                    type="number"
+                    placeholder="Value"
+                    value={table5FormData.mouldStrengthValue}
+                    onChange={(e) => updateFormField('mouldStrengthValue', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, preparedSandLumpsRef)}
+                    disabled={!table5FormData.mouldStrengthSetting}
+                    className={mouldStrengthValueValid === null ? "" : mouldStrengthValueValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px', backgroundColor: !table5FormData.mouldStrengthSetting ? '#f1f5f9' : 'white' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={preparedSandLumpsRef}
+                    type="number" 
+                    placeholder="Value" 
+                    value={table5FormData.preparedSandLumpsKg}
+                    onChange={(e) => updateFormField('preparedSandLumpsKg', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, itemNameRef)}
+                    className={preparedSandLumpsKgValid === null ? "" : preparedSandLumpsKgValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <input 
+                    ref={itemNameRef}
+                    type="text" 
+                    placeholder="Item Name" 
+                    value={table5FormData.itemName}
+                    onChange={(e) => updateFormField('itemName', e.target.value)}
+                    onKeyDown={(e) => handleKeyDown(e, remarksRef)}
+                    className={itemNameValid === null ? "" : itemNameValid ? "valid-input" : "invalid-input"}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px' }}
+                  />
+                </td>
+                <td style={{ padding: '8px' }}>
+                  <textarea 
+                    ref={remarksRef}
+                    placeholder="Remarks" 
+                    rows="2" 
+                    value={table5FormData.remarks}
+                    onChange={(e) => updateFormField('remarks', e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' && !e.shiftKey) {
+                        e.preventDefault();
+                        if (submitButtonRef && submitButtonRef.current) {
+                          submitButtonRef.current.focus();
+                        }
+                      }
+                    }}
+                    style={{ width: '100%', padding: '8px', fontSize: '0.9375rem', border: '1px solid #cbd5e1', borderRadius: '4px', resize: 'vertical' }}
+                  />
+                </td>
+              </tr>
+            </tbody>
+          </table>
         </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Compressability At Dmm ( 20 - 28 % )</label>
-          <input 
-            ref={compressabilityRef}
-            type="number" 
-            placeholder="Enter value"
-            value={table5FormData.compressability}
-            onChange={(e) => updateFormField('compressability', e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, waterLitreRef)}
-            className={compressabilityValid === null ? "" : compressabilityValid ? "valid-input" : "invalid-input"}
-          />
-        </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Water Litre/Kg Mix</label>
-          <input 
-            ref={waterLitreRef}
-            type="number" 
-            placeholder="Enter value"
-            value={table5FormData.waterLitreKgMix}
-            onChange={(e) => updateFormField('waterLitreKgMix', e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, sandTempBCRef)}
-            className={waterLitreValid === null ? "" : waterLitreValid ? "valid-input" : "invalid-input"}
-          />
-        </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Sand Temp °C <span style={{ fontSize: '0.875rem', color: '#64748b' }}></span></label>
-          <div style={{ display: 'flex', gap: '0.5rem' }}>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <label style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#334155' }}>BC</label>
-              <input
-                ref={sandTempBCRef}
-                type="number"
-                placeholder="Enter value"
-                value={table5FormData.sandTempBC}
-                onChange={(e) => updateFormField('sandTempBC', e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, sandTempWURef)}
-                max="45"
-                className={sandTempBCValid === null ? "" : sandTempBCValid ? "valid-input" : "invalid-input"}
-              />
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <label style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#334155' }}>WU</label>
-              <input
-                ref={sandTempWURef}
-                type="number"
-                placeholder="Enter value"
-                value={table5FormData.sandTempWU}
-                onChange={(e) => updateFormField('sandTempWU', e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, sandTempSSURef)}
-                max="45"
-                className={sandTempWUValid === null ? "" : sandTempWUValid ? "valid-input" : "invalid-input"}
-              />
-            </div>
-            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-              <label style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#334155' }}>SSU MAX 45°</label>
-              <input
-                ref={sandTempSSURef}
-                type="number"
-                placeholder="Enter value"
-                value={table5FormData.sandTempSSU}
-                onChange={(e) => updateFormField('sandTempSSU', e.target.value)}
-                onKeyDown={(e) => handleKeyDown(e, newSandRef)}
-                max="45"
-                className={sandTempSSUValid === null ? "" : sandTempSSUValid ? "valid-input" : "invalid-input"}
-              />
-            </div>
-          </div>
-        </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>New Sand Kgs / Mould ( 0.0 - 5.0 )</label>
-          <input 
-            ref={newSandRef}
-            type="number" 
-            placeholder="Enter value"
-            value={table5FormData.newSandKgsMould}
-            onChange={(e) => updateFormField('newSandKgsMould', e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, bentoniteKgsRef)}
-            className={newSandValid === null ? "" : newSandValid ? "valid-input" : "invalid-input"}
-          />
-        </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>
-            Bentonite Kgs / Mix
-            {currentSNo > 0 && <Lock size={16} style={{ marginLeft: '0.5rem', color: '#64748b' }} />}
-          </label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div 
-              className={bentoniteCheckpointValid === null ? "" : bentoniteCheckpointValid ? "valid-input" : "invalid-input"}
-              style={{ 
-                display: 'flex', 
-                gap: '1rem',
-                padding: '0.5rem',
-                borderRadius: '4px'
-              }}
-            >
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: '500', fontSize: '1rem', cursor: (currentSNo > 0 && table5FormData.bentoniteCheckpoint !== '0.60-1.20') ? 'not-allowed' : 'pointer', opacity: (currentSNo > 0 && table5FormData.bentoniteCheckpoint !== '0.60-1.20') ? 0.5 : 1 }}>
-                <input
-                  type="radio"
-                  name={`bentoniteCheckpoint`}
-                  value="0.60-1.20"
-                  checked={table5FormData.bentoniteCheckpoint === '0.60-1.20'}
-                  onChange={(e) => updateFormField('bentoniteCheckpoint', e.target.value)}
-                  disabled={currentSNo > 0 && table5FormData.bentoniteCheckpoint !== '0.60-1.20'}
-                  style={{ width: '18px', height: '18px', cursor: (currentSNo > 0 && table5FormData.bentoniteCheckpoint !== '0.60-1.20') ? 'not-allowed' : 'pointer' }}
-                />
-                0.60 - 1.20 %
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: '500', fontSize: '1rem', cursor: (currentSNo > 0 && table5FormData.bentoniteCheckpoint !== '0.80-2.20') ? 'not-allowed' : 'pointer', opacity: (currentSNo > 0 && table5FormData.bentoniteCheckpoint !== '0.80-2.20') ? 0.5 : 1 }}>
-                <input
-                  type="radio"
-                  name={`bentoniteCheckpoint`}
-                  value="0.80-2.20"
-                  checked={table5FormData.bentoniteCheckpoint === '0.80-2.20'}
-                  onChange={(e) => updateFormField('bentoniteCheckpoint', e.target.value)}
-                  disabled={currentSNo > 0 && table5FormData.bentoniteCheckpoint !== '0.80-2.20'}
-                  style={{ width: '18px', height: '18px', cursor: (currentSNo > 0 && table5FormData.bentoniteCheckpoint !== '0.80-2.20') ? 'not-allowed' : 'pointer' }}
-                />
-                0.80 - 2.20 %
-              </label>
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#334155' }}>Kgs</label>
-                <input
-                  ref={bentoniteKgsRef}
-                  type="number"
-                  placeholder="Enter Kgs"
-                  value={table5FormData.bentoniteKgs}
-                  onChange={(e) => updateFormField('bentoniteKgs', e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, bentonitePercentRef)}
-                  disabled={!table5FormData.bentoniteCheckpoint}
-                  className={bentoniteKgsValid === null ? "" : bentoniteKgsValid ? "valid-input" : "invalid-input"}
-                  style={{
-                    backgroundColor: !table5FormData.bentoniteCheckpoint ? '#f1f5f9' : 'white',
-                    cursor: !table5FormData.bentoniteCheckpoint ? 'not-allowed' : 'text'
-                  }}
-                />
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#334155' }}>%</label>
-                <input
-                  ref={bentonitePercentRef}
-                  type="number"
-                  placeholder="Enter %"
-                  value={table5FormData.bentonitePercent}
-                  onChange={(e) => updateFormField('bentonitePercent', e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, premixCoalKgsRef)}
-                  disabled={!table5FormData.bentoniteCheckpoint}
-                  className={bentonitePercentValid === null ? "" : bentonitePercentValid ? "valid-input" : "invalid-input"}
-                  style={{
-                    backgroundColor: !table5FormData.bentoniteCheckpoint ? '#f1f5f9' : 'white',
-                    cursor: !table5FormData.bentoniteCheckpoint ? 'not-allowed' : 'text'
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>
-            Premix / Coal Dust Kgs / Mix
-            {currentSNo > 0 && <Lock size={16} style={{ marginLeft: '0.5rem', color: '#64748b' }} />}
-          </label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div 
-              className={premixCoalCheckpointValid === null ? "" : premixCoalCheckpointValid ? "valid-input" : "invalid-input"}
-              style={{ 
-                display: 'flex', 
-                gap: '1rem',
-                padding: '0.5rem',
-                borderRadius: '4px'
-              }}
-            >
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: '500', fontSize: '1rem', cursor: (currentSNo > 0 && table5FormData.premixCoalCheckpoint !== 'Premix') ? 'not-allowed' : 'pointer', opacity: (currentSNo > 0 && table5FormData.premixCoalCheckpoint !== 'Premix') ? 0.5 : 1 }}>
-                <input
-                  type="radio"
-                  name={`premixCoalCheckpoint`}
-                  value="Premix"
-                  checked={table5FormData.premixCoalCheckpoint === 'Premix'}
-                  onChange={(e) => updateFormField('premixCoalCheckpoint', e.target.value)}
-                  disabled={currentSNo > 0 && table5FormData.premixCoalCheckpoint !== 'Premix'}
-                  style={{ width: '18px', height: '18px', cursor: (currentSNo > 0 && table5FormData.premixCoalCheckpoint !== 'Premix') ? 'not-allowed' : 'pointer' }}
-                />
-                Premix 0.60 - 1.20 %
-              </label>
-              <label style={{ display: 'flex', alignItems: 'center', gap: '0.25rem', fontWeight: '500', fontSize: '1rem', cursor: (currentSNo > 0 && table5FormData.premixCoalCheckpoint !== 'CoalDust') ? 'not-allowed' : 'pointer', opacity: (currentSNo > 0 && table5FormData.premixCoalCheckpoint !== 'CoalDust') ? 0.5 : 1 }}>
-                <input
-                  type="radio"
-                  name={`premixCoalCheckpoint`}
-                  value="CoalDust"
-                  checked={table5FormData.premixCoalCheckpoint === 'CoalDust'}
-                  onChange={(e) => updateFormField('premixCoalCheckpoint', e.target.value)}
-                  disabled={currentSNo > 0 && table5FormData.premixCoalCheckpoint !== 'CoalDust'}
-                  style={{ width: '18px', height: '18px', cursor: (currentSNo > 0 && table5FormData.premixCoalCheckpoint !== 'CoalDust') ? 'not-allowed' : 'pointer' }}
-                />
-                Coal Dust 0.28 - 0.70 %
-              </label>
-            </div>
-            <div style={{ display: 'flex', gap: '0.5rem' }}>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#334155' }}>Kgs</label>
-                <input
-                  ref={premixCoalKgsRef}
-                  type="number"
-                  placeholder="Enter Kgs"
-                  value={table5FormData.premixCoalKgs}
-                  onChange={(e) => updateFormField('premixCoalKgs', e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, premixCoalPercentRef)}
-                  disabled={!table5FormData.premixCoalCheckpoint}
-                  className={premixCoalKgsValid === null ? "" : premixCoalKgsValid ? "valid-input" : "invalid-input"}
-                  style={{
-                    backgroundColor: !table5FormData.premixCoalCheckpoint ? '#f1f5f9' : 'white',
-                    cursor: !table5FormData.premixCoalCheckpoint ? 'not-allowed' : 'text'
-                  }}
-                />
-              </div>
-              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-                <label style={{ fontSize: '0.9375rem', fontWeight: '600', color: '#334155' }}>%</label>
-                <input
-                  ref={premixCoalPercentRef}
-                  type="number"
-                  placeholder="Enter %"
-                  value={table5FormData.premixCoalPercent}
-                  onChange={(e) => updateFormField('premixCoalPercent', e.target.value)}
-                  onKeyDown={(e) => handleKeyDown(e, compactabilitySettingRef)}
-                  disabled={!table5FormData.premixCoalCheckpoint}
-                  className={premixCoalPercentValid === null ? "" : premixCoalPercentValid ? "valid-input" : "invalid-input"}
-                  style={{
-                    backgroundColor: !table5FormData.premixCoalCheckpoint ? '#f1f5f9' : 'white',
-                    cursor: !table5FormData.premixCoalCheckpoint ? 'not-allowed' : 'text'
-                  }}
-                />
-              </div>
-            </div>
-          </div>
-        </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>
-            Compactability Setting
-            {currentSNo > 0 && <Lock size={16} style={{ marginLeft: '0.5rem', color: '#64748b' }} />}
-          </label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <select
-              ref={compactabilitySettingRef}
-              value={table5FormData.compactabilitySetting}
-              onChange={(e) => updateFormField('compactabilitySetting', e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, compactabilityValueRef)}
-              disabled={currentSNo > 0}
-              className={compactabilitySettingValid === null ? "" : compactabilitySettingValid ? "valid-input" : "invalid-input"}
-              style={{
-                padding: '10px',
-                border: '1px solid #cbd5e1',
-                borderRadius: '4px',
-                fontSize: '1rem',
-                backgroundColor: currentSNo > 0 ? '#f1f5f9' : 'white',
-                cursor: currentSNo > 0 ? 'not-allowed' : 'pointer'
-              }}
-            >
-              <option value="">Select Setting</option>
-              <option value="LC">LC</option>
-              <option value="SMC42">Compact ability Setting SMC 42 ± 3</option>
-              <option value="At140">At1 40 ± 3</option>
-            </select>
-            <input
-              ref={compactabilityValueRef}
-              type="number"
-              placeholder="Enter value"
-              value={table5FormData.compactabilityValue}
-              onChange={(e) => updateFormField('compactabilityValue', e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, mouldStrengthSettingRef)}
-              disabled={!table5FormData.compactabilitySetting}
-              className={compactabilityValueValid === null ? "" : compactabilityValueValid ? "valid-input" : "invalid-input"}
-              style={{
-                padding: '10px',
-                border: '1px solid #cbd5e1',
-                borderRadius: '4px',
-                fontSize: '1rem',
-                backgroundColor: !table5FormData.compactabilitySetting ? '#f1f5f9' : 'white',
-                cursor: !table5FormData.compactabilitySetting ? 'not-allowed' : 'text'
-              }}
-            />
-          </div>
-        </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>
-            Mould Strength Setting
-            {currentSNo > 0 && <Lock size={16} style={{ marginLeft: '0.5rem', color: '#64748b' }} />}
-          </label>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <select
-              ref={mouldStrengthSettingRef}
-              value={table5FormData.mouldStrengthSetting}
-              onChange={(e) => updateFormField('mouldStrengthSetting', e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, mouldStrengthValueRef)}
-              disabled={currentSNo > 0}
-              className={mouldStrengthSettingValid === null ? "" : mouldStrengthSettingValid ? "valid-input" : "invalid-input"}
-              style={{
-                padding: '10px',
-                border: '1px solid #cbd5e1',
-                borderRadius: '4px',
-                fontSize: '1rem',
-                backgroundColor: currentSNo > 0 ? '#f1f5f9' : 'white',
-                cursor: currentSNo > 0 ? 'not-allowed' : 'pointer'
-              }}
-            >
-              <option value="">Select Setting</option>
-              <option value="SMC23">SMC - 23 ± 3</option>
-              <option value="At15">Shear Strength Setting At1 5.0 ± 1 %</option>
-            </select>
-            <input
-              ref={mouldStrengthValueRef}
-              type="number"
-              placeholder="Enter value"
-              value={table5FormData.mouldStrengthValue}
-              onChange={(e) => updateFormField('mouldStrengthValue', e.target.value)}
-              onKeyDown={(e) => handleKeyDown(e, preparedSandLumpsRef)}
-              disabled={!table5FormData.mouldStrengthSetting}
-              className={mouldStrengthValueValid === null ? "" : mouldStrengthValueValid ? "valid-input" : "invalid-input"}
-              style={{
-                padding: '10px',
-                border: '1px solid #cbd5e1',
-                borderRadius: '4px',
-                fontSize: '1rem',
-                backgroundColor: !table5FormData.mouldStrengthSetting ? '#f1f5f9' : 'white',
-                cursor: !table5FormData.mouldStrengthSetting ? 'not-allowed' : 'text'
-              }}
-            />
-          </div>
-        </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Prepared Sand Lumps/Kg</label>
-          <input 
-            ref={preparedSandLumpsRef}
-            type="number" 
-            placeholder="Enter value"
-            value={table5FormData.preparedSandLumpsKg}
-            onChange={(e) => updateFormField('preparedSandLumpsKg', e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, itemNameRef)}
-            className={preparedSandLumpsKgValid === null ? "" : preparedSandLumpsKgValid ? "valid-input" : "invalid-input"}
-          />
-        </div>
-        <div className="sand-form-field">
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Item Name</label>
-          <input 
-            ref={itemNameRef}
-            type="text" 
-            placeholder="Enter item name"
-            value={table5FormData.itemName}
-            onChange={(e) => updateFormField('itemName', e.target.value)}
-            onKeyDown={(e) => handleKeyDown(e, remarksRef)}
-            className={itemNameValid === null ? "" : itemNameValid ? "valid-input" : "invalid-input"}
-          />
-        </div>
-        <div className="sand-form-field" style={{ gridColumn: '1 / -1' }}>
-          <label style={{ fontWeight: '700', fontSize: '1.0625rem', color: '#1e293b' }}>Remarks</label>
-          <textarea 
-            ref={remarksRef}
-            placeholder="Enter remarks" 
-            rows="3" 
-            style={{ width: '100%', padding: '10px', border: '1px solid #cbd5e1', borderRadius: '4px', fontSize: '1rem' }}
-            value={table5FormData.remarks}
-            onChange={(e) => updateFormField('remarks', e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault();
-                if (submitButtonRef && submitButtonRef.current) {
-                  submitButtonRef.current.focus();
-                }
-              }
-            }}
-          />
-        </div>
-      </div>
 
-      {/* Submit and Reset Buttons */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '1.5rem' }}>
-        <ResetButton onClick={handleTable5Reset} />
-        <SubmitButton ref={submitButtonRef} onClick={handleTable5Submit} />
+        {/* Submit Button */}
+        <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '1.5rem' }}>
+          <SubmitButton ref={submitButtonRef} onClick={handleTable5Submit} />
+        </div>
       </div>
-    </div>
+      </div>
     </>
   );
 };

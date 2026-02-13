@@ -1,4 +1,4 @@
-import React, { forwardRef } from 'react';
+import React, { forwardRef, useState, useEffect, useRef } from 'react';
 import { Settings, Filter, X, Pencil, Trash2, Plus, Minus, Save, RefreshCw } from 'lucide-react';
 import { TimeInput } from '@heroui/react';
 import { Time } from '@internationalized/date';
@@ -168,16 +168,217 @@ export const DisaDropdown = forwardRef(({ value, onChange, name, disabled, onKey
 });
 DisaDropdown.displayName = 'DisaDropdown';
 
+// Machine Dropdown Component
+
+export const MachineDropdown = forwardRef(({ value, onChange, name, disabled, onKeyDown, className = '', style = {}, id }, ref) => {
+  const machineOptions = ['1', '2', '3', '4'];
+
+  return (
+    <div className={`machine-dropdown-wrapper ${className}`}>
+      <select
+        ref={ref}
+        id={id}
+        name={name}
+        value={value}
+        onChange={onChange}
+        onKeyDown={onKeyDown}
+        disabled={disabled}
+        style={style}
+      >
+        <option value="">Select Machine</option>
+        {machineOptions.map((option) => (
+          <option key={option} value={option}>
+            Machine {option}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+});
+MachineDropdown.displayName = 'MachineDropdown';
+
+// Shift Dropdown Component
+
+export const ShiftDropdown = forwardRef(({ value, onChange, name, disabled, onKeyDown, className = '' }, ref) => {
+  const shiftOptions = ['Shift 1', 'Shift 2', 'Shift 3'];
+
+  return (
+    <div className={`shift-dropdown-wrapper ${className}`}>
+      <select
+        ref={ref}
+        name={name}
+        value={value}
+        onChange={onChange}
+        onKeyDown={onKeyDown}
+        disabled={disabled}
+      >
+        <option value="">Select Shift</option>
+        {shiftOptions.map((option) => (
+          <option key={option} value={option}>
+            {option}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+});
+ShiftDropdown.displayName = 'ShiftDropdown';
+
 export { Time };
-export const CustomTimeInput = forwardRef(({ value, onChange, className = '', ...props }, ref) => (
-  <div className={`cus-time-input ${className}`}>
-    <TimeInput
-      ref={ref}
-      value={value}
-      onChange={onChange}
-      hourCycle={12}
-      {...props}
-    />
-  </div>
-));
+export const CustomTimeInput = forwardRef(({ value, onChange, className = '', hasError = false, onFocus, onBlur, onEnterPress, disabled = false, style = {}, ...props }, ref) => {
+  const [isFocused, setIsFocused] = useState(false);
+  const containerRef = useRef(null);
+  
+  const handleFocus = () => {
+    if (disabled) return;
+    setIsFocused(true);
+    if (onFocus) onFocus();
+  };
+  
+  const handleBlur = () => {
+    setIsFocused(false);
+    if (onBlur) onBlur();
+  };
+  
+  const getClassName = () => {
+    let classes = `cus-time-input ${className}`;
+    if (isFocused) {
+      classes += ' valid-input';
+    } else if (hasError) {
+      classes += ' invalid-input';
+    }
+    return classes;
+  };
+
+  // Handle Enter key press
+  useEffect(() => {
+    if (!onEnterPress || !containerRef.current || disabled) return;
+    
+    const handleKeyDown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        e.stopPropagation();
+        onEnterPress(e);
+      }
+    };
+    
+    const container = containerRef.current;
+    const inputs = container.querySelectorAll('input, [tabindex]');
+    
+    inputs.forEach(input => {
+      input.addEventListener('keydown', handleKeyDown);
+    });
+    
+    return () => {
+      inputs.forEach(input => {
+        input.removeEventListener('keydown', handleKeyDown);
+      });
+    };
+  }, [onEnterPress, disabled]);
+
+  return (
+    <div 
+      ref={containerRef} 
+      className={getClassName()}
+      style={{
+        ...style,
+        pointerEvents: disabled ? 'none' : style.pointerEvents || 'auto',
+        opacity: disabled ? 0.6 : style.opacity || 1
+      }}
+    >
+      <TimeInput
+        ref={ref}
+        value={value}
+        onChange={onChange}
+        hourCycle={12}
+        onFocus={handleFocus}
+        onBlur={handleBlur}
+        isDisabled={disabled}
+        {...props}
+      />
+    </div>
+  );
+});
 CustomTimeInput.displayName = 'CustomTimeInput';
+
+// Pagination Component
+
+export const CustomPagination = ({ currentPage, totalPages, onPageChange, className = '' }) => {
+  if (totalPages <= 1) return null;
+
+  const getPageNumbers = () => {
+    const pages = [];
+    const showPages = 5; // Number of pages to show around current page
+    const halfShow = Math.floor(showPages / 2);
+    
+    let startPage = Math.max(1, currentPage - halfShow);
+    let endPage = Math.min(totalPages, currentPage + halfShow);
+    
+    // Adjust if we're near the beginning or end
+    if (endPage - startPage + 1 < showPages) {
+      if (startPage === 1) {
+        endPage = Math.min(totalPages, startPage + showPages - 1);
+      } else {
+        startPage = Math.max(1, endPage - showPages + 1);
+      }
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pages.push(i);
+    }
+    
+    return pages;
+  };
+  
+  const pageNumbers = getPageNumbers();
+  const showLeftEllipsis = pageNumbers[0] > 2;
+  const showRightEllipsis = pageNumbers[pageNumbers.length - 1] < totalPages - 1;
+  
+  return (
+    <div className={`custom-pagination-wrapper ${className}`}>
+      <div className="custom-pagination">
+        {/* Previous */}
+        <button 
+          className="pagination-nav pagination-prev" 
+          onClick={() => onPageChange(currentPage - 1)}
+          disabled={currentPage === 1}
+        >
+          &lt;
+        </button>
+        
+        {/* First page if not in range */}
+        {pageNumbers[0] > 1 && (
+          <>
+            <button 
+              className="pagination-item" 
+              onClick={() => onPageChange(1)}
+            >
+              1
+            </button>
+            {showLeftEllipsis && <span className="pagination-ellipsis">...</span>}
+          </>
+        )}
+        
+        {/* Page Numbers */}
+        {pageNumbers.map(page => (
+          <button
+            key={page}
+            className={`pagination-item ${page === currentPage ? 'pagination-active' : ''}`}
+            onClick={() => onPageChange(page)}
+          >
+            {page}
+          </button>
+        ))}
+        
+        {/* Next */}
+        <button 
+          className="pagination-nav pagination-next" 
+          onClick={() => onPageChange(currentPage + 1)}
+          disabled={currentPage === totalPages}
+        >
+          &gt;
+        </button>
+      </div>
+    </div>
+  );
+};

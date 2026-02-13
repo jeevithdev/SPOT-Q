@@ -258,21 +258,7 @@ const CustomDatePicker = forwardRef(({ value, onChange, max, style, name, onKeyD
                 </div>
               </div>
             </div>
-        
-        {selectedDate && (
-          <div className="selected-date-display" style={{
-            textAlign: 'center',
-            padding: '8px 12px',
-            backgroundColor: '#f0f9ff',
-            borderBottom: '1px solid #e0e7ff',
-            fontSize: '0.875rem',
-            fontWeight: '500',
-            color: '#1e40af'
-          }}>
-            Selected: {formatDisplayDate(selectedDate)}
-          </div>
-        )}
-
+            
         {showYearList && (
           <div className="year-list-container" ref={yearListRef}>
             <div className="year-list">

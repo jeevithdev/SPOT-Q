@@ -1,17 +1,7 @@
 const SandTestingRecord = require('../models/SandLab-SandTestingRecord');
 const { ensureDateDocument, getCurrentDate } = require('../utils/dateUtils');
 
-/** 1. SYSTEM INITIALIZATION **/
-
-exports.initializeTodayEntry = async () => {
-    try {
-        await ensureDateDocument(SandTestingRecord, getCurrentDate());
-    } catch (error) {
-        console.error('Sand Lab Initialization Error:', error.message);
-    }
-};
-
-/** 2. DATA RETRIEVAL **/
+/** 1. DATA RETRIEVAL **/
 
 exports.getAllEntries = async (req, res) => {
     try {
@@ -45,9 +35,23 @@ exports.getAllEntries = async (req, res) => {
 exports.getEntriesByDate = async (req, res) => {
     try {
         const { date } = req.params;
-        const document = await ensureDateDocument(SandTestingRecord, date);
-        // Return as array for frontend compatibility
-        res.status(200).json({ success: true, data: [document] });
+        const [year, month, day] = date.split('-').map(Number);
+        const startOfDay = new Date(Date.UTC(year, month - 1, day, 0, 0, 0, 0));
+        const endOfDay = new Date(Date.UTC(year, month - 1, day, 23, 59, 59, 999));
+        
+        // Find document without creating if it doesn't exist
+        const document = await SandTestingRecord.findOne({ 
+            date: { 
+                $gte: startOfDay, 
+                $lte: endOfDay 
+            } 
+        });
+        
+        // Return as array for frontend compatibility (empty array if no document)
+        res.status(200).json({ 
+            success: true, 
+            data: document ? [document] : [] 
+        });
     } catch (error) {
         res.status(500).json({ success: false, message: 'Error fetching records by date.' });
     }

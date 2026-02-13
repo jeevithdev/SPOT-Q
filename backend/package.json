@@ -9,8 +9,7 @@
     "dotenv": "^16.6.1",
     "express": "^4.22.1",
     "jsonwebtoken": "^9.0.2",
-    "mongoose": "^8.20.4",
-    "node-cron": "^4.2.1"
+    "mongoose": "^8.20.4"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
@@ -18,10 +17,10 @@
     "dev": "nodemon server.js",
     "create-admin": "node utils/createAdmin.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "description": "",
+  "keywords": ["quality-control", "manufacturing", "api", "express", "mongoose"],
+  "author": "Sakthi Auto",
+  "license": "MIT",
+  "description": "SPOT-Q Backend - Quality Control and Process Management API",
   "devDependencies": {
     "nodemon": "^3.1.11"
   }

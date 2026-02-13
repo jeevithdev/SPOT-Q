@@ -52,7 +52,7 @@ const StyledWrapper = styled.div`
     letter-spacing: 0.25ch;
     position: relative;
     z-index: 0;
-    color: #1e293b;
+    color: #ffffff;
     display: flex;
     align-items: center;
   }
