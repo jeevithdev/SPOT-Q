@@ -58,6 +58,8 @@ const MicroTensileReport = () => {
       const data = await resp.json();
       if (data?.success) {
         const list = Array.isArray(data.data) ? data.data : [];
+        console.log('Fetched entries:', list);
+        console.log('Sample entry DISA:', list[0]?.disa);
         const sorted = [...list].sort((a, b) => {
           const da = new Date(a.dateOfInspection || a.createdAt || 0).getTime();
           const db = new Date(b.dateOfInspection || b.createdAt || 0).getTime();
@@ -149,7 +151,10 @@ const MicroTensileReport = () => {
         label: 'DISA', 
         width: '8%',
         align: 'center',
-        render: (r) => Array.isArray(r.disa) ? r.disa.join(', ') : (r.disa || '-')
+        render: (r) => {
+          console.log('Rendering DISA for row:', r.disa, 'Full row:', r);
+          return Array.isArray(r.disa) ? r.disa.join(', ') : (r.disa || '-');
+        }
       },
       { 
         key: 'item', 
