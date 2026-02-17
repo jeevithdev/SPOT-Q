@@ -117,6 +117,11 @@ app.get('/', (req, res) => {
   });
 });
 
+// Health check endpoint (for cold start detection)
+app.get('/health', (req, res) => {
+  res.json({ status: 'ok', mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected', timestamp: new Date() });
+});
+
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok', mongodb: mongoose.connection.readyState === 1 ? 'connected' : 'disconnected', timestamp: new Date() });
 });

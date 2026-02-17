@@ -1,8 +1,8 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { EyeButton } from "../Components/Buttons";
 import Loader from "../Components/Loader";
-import { API_ENDPOINTS } from "../config/api";
+import { API_ENDPOINTS, API_URL } from "../config/api";
 import "../styles/PageStyles/Login.css";
 
 const Login = () => {
@@ -18,6 +18,38 @@ const Login = () => {
   
   // Loading state for navigation
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Server connection status
+  const [serverStatus, setServerStatus] = useState("connecting"); // connecting, connected, error
+
+  // Check server health on component mount
+  useEffect(() => {
+    const checkServerHealth = async () => {
+      try {
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+        
+        const response = await fetch(`${API_URL}/health`, {
+          method: 'GET',
+          signal: controller.signal,
+        });
+        
+        clearTimeout(timeoutId);
+        
+        if (response.ok) {
+          setServerStatus("connected");
+          setTimeout(() => setServerStatus(null), 3000); // Hide after 3 seconds
+        } else {
+          setServerStatus("error");
+        }
+      } catch (err) {
+        console.error('Server health check failed:', err);
+        setServerStatus("error");
+      }
+    };
+    
+    checkServerHealth();
+  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -81,6 +113,18 @@ const Login = () => {
         </div>
       ) : null}
       <div className="login-container" style={{ display: isLoading ? 'none' : 'flex' }}>
+        {/* Server Status Indicator */}
+        {serverStatus && (
+          <div className={`server-status-indicator ${serverStatus}`}>
+            <div className="status-dot"></div>
+            <span className="status-text">
+              {serverStatus === "connecting" && "Connecting to server..."}
+              {serverStatus === "connected" && "Connected"}
+              {serverStatus === "error" && "Connection issue"}
+            </span>
+          </div>
+        )}
+        
         {/* Left side - Company Logo */}
         <div className="login-left">
         <img
