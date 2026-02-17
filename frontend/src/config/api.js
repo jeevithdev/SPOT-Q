@@ -4,6 +4,13 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api/
 // Remove trailing /api/v1 if it exists in env to normalize
 const normalizedURL = API_BASE_URL.replace(/\/api\/v1$/, '');
 
+// Debug: Log the API URL being used (will show in browser console)
+console.log('🔗 API Configuration:', {
+  env: import.meta.env.VITE_API_URL,
+  baseURL: API_BASE_URL,
+  normalizedURL: normalizedURL
+});
+
 export const API_URL = normalizedURL;
 export const API_ENDPOINTS = {
   // Auth
