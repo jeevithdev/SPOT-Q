@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { Save, Plus, X } from "lucide-react";
 import CustomDatePicker from "../../Components/CustomDatePicker";
 import { CustomTimeInput, Time, PlusButton, MinusButton, SubmitButton, ShiftDropdown } from "../../Components/Buttons";
@@ -88,6 +88,79 @@ const DisamaticProduct = () => {
   });
   const [delaysSubmitError, setDelaysSubmitError] = useState('');
   const [mouldHardnessSubmitError, setMouldHardnessSubmitError] = useState('');
+
+  // Sequential validation highlighting
+  const [dateErrorHighlight, setDateErrorHighlight] = useState(false);
+  const [shiftErrorHighlight, setShiftErrorHighlight] = useState(false);
+  const [inchargeErrorHighlight, setInchargeErrorHighlight] = useState(false);
+  const [ppOperatorErrorHighlight, setPpOperatorErrorHighlight] = useState(false);
+  const [membersErrorHighlight, setMembersErrorHighlight] = useState(false);
+
+  // Validation flag for primary section
+  const [primarySubmitted, setPrimarySubmitted] = useState(false);
+
+  // Refs for navigation
+  const dateRef = useRef(null);
+  const shiftRef = useRef(null);
+  const inchargeRef = useRef(null);
+  const ppOperatorRef = useRef(null);
+  const primarySaveButtonRef = useRef(null);
+
+  // Helper function for primary field validation classes (no green success outline, only error)
+  const classFor = (value, submitted, required = false, locked = false) => {
+    if (locked) return '';
+    const has = value !== undefined && value !== null && String(value).trim() !== '';
+    if (has) return ''; // No green success outline
+    if (submitted && required) return 'disa-error-outline';
+    return '';
+  };
+
+  // Handle Enter/Tab key navigation for primary section
+  const handlePrimaryKeyDown = (e, nextRef, currentField = null) => {
+    // Block e, E, +, - keys for numeric inputs
+    if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+      e.preventDefault();
+      return;
+    }
+    
+    // Handle Enter and Tab for navigation within primary section
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      
+      // Navigate to next field
+      if (nextRef?.current) {
+        nextRef.current.focus();
+      }
+    }
+  };
+
+  // Get next available field after date
+  const getNextAfterDate = () => {
+    if (formData.date) return shiftRef;
+    return dateRef; // Stay on date if not filled
+  };
+
+  // Get next available field after shift
+  const getNextAfterShift = () => {
+    if (formData.date && formData.shift) {
+      if (!lockedFields.incharge) return inchargeRef;
+      if (!lockedFields.ppOperator) return ppOperatorRef;
+      return primarySaveButtonRef;
+    }
+    if (!formData.date) return dateRef;
+    return shiftRef; // Stay on shift if not filled
+  };
+
+  // Get next available field after incharge
+  const getNextAfterIncharge = () => {
+    if (!lockedFields.ppOperator) return ppOperatorRef;
+    return primarySaveButtonRef;
+  };
+
+  // Get next available field after ppOperator
+  const getNextAfterPpOperator = () => {
+    return primarySaveButtonRef;
+  };
 
   // Fetch primary data when date or shift changes
   useEffect(() => {
@@ -226,7 +299,63 @@ const DisamaticProduct = () => {
 
   // Handle basic field changes
   const handleChange = (field, value) => {
+    // Remove error highlight when filling the field
+    if (field === 'date' && value) {
+      setDateErrorHighlight(false);
+    }
+    if (field === 'shift' && value) {
+      setShiftErrorHighlight(false);
+    }
+
+    // When date changes, reset everything
+    if (field === 'date') {
+      setFormData({
+        ...initialFormData,
+        date: value
+      });
+      setIsPrimaryDataSaved(false);
+      setLockedFields({
+        incharge: false,
+        ppOperator: false
+      });
+      setLockedMembersCount(0);
+      setPrimarySubmitted(false);
+      // Reset error highlights
+      setDateErrorHighlight(false);
+      setShiftErrorHighlight(false);
+      // Reset all S.No counters
+      setNextSNo(1);
+      setNextShiftPlanSNo(1);
+      setDelaysSNo(1);
+      setMouldHardnessSNo(1);
+      setPatternTempSNo(1);
+      // Reset events
+      setIsEventsSaved(false);
+      setLockedEventsFields({
+        significantEvent: false,
+        maintenance: false,
+        supervisorName: false
+      });
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [field]: value }));
+  };
+
+  // Handler for when value fields are focused - check if prerequisites are filled
+  const handleValueFieldFocus = (e) => {
+    if (!formData.date) {
+      setDateErrorHighlight(true);
+      e?.preventDefault();
+      e?.stopPropagation();
+      return;
+    }
+    if (!formData.shift) {
+      setShiftErrorHighlight(true);
+      e?.preventDefault();
+      e?.stopPropagation();
+      return;
+    }
   };
 
   // Members management
@@ -1725,6 +1854,7 @@ const DisamaticProduct = () => {
 
   // Save Primary Data Handler
   const handleSavePrimary = async () => {
+    setPrimarySubmitted(true);
     // Only validate date and shift (required to identify the entry)
     if (!formData.date) {
       return;
@@ -1895,54 +2025,143 @@ const DisamaticProduct = () => {
       
       {/* First Row: Date, Shift, Incharge, PP Operator */}
       <div className="primary-fields-row">
-        <div className="disamatic-form-group">
+        <div className={`disamatic-form-group ${classFor(formData.date, primarySubmitted, true)} ${dateErrorHighlight ? 'error-highlight' : ''}`}>
           <label>Date <span style={{ color: '#ef4444',width: '2px' }}>*</span></label>
           <CustomDatePicker
+            ref={dateRef}
             value={formData.date}
             onChange={(e) => handleChange("date", e.target.value)}
             max={new Date().toISOString().split('T')[0]}
+            onKeyDown={(e) => handlePrimaryKeyDown(e, getNextAfterDate(), 'date')}
           />
         </div>
-        <div className="disamatic-form-group">
+        <div 
+          className={`disamatic-form-group ${classFor(formData.shift, primarySubmitted, true)} ${shiftErrorHighlight ? 'error-highlight' : ''}`}
+          onMouseDownCapture={(e) => {
+            if (!formData.date && e.target.tagName !== 'SELECT') {
+              setDateErrorHighlight(true);
+            }
+          }}
+        >
           <label>Shift <span style={{ color: '#ef4444' }}>*</span></label>
           <ShiftDropdown
+            ref={shiftRef}
             value={formData.shift}
             onChange={e => handleChange("shift", e.target.value)}
+            disabled={!formData.date}
+            onKeyDown={(e) => handlePrimaryKeyDown(e, getNextAfterShift(), 'shift')}
+            onMouseDown={(e) => {
+              if (!formData.date) {
+                setDateErrorHighlight(true);
+              }
+            }}
           />
         </div>
-        <div className="disamatic-form-group">
+        <div 
+          className={`disamatic-form-group ${classFor(formData.incharge, primarySubmitted, false, lockedFields.incharge)} ${inchargeErrorHighlight ? 'error-highlight' : ''}`}
+          onMouseDownCapture={(e) => {
+            if (e.target.tagName !== 'INPUT') {
+              if (!formData.date) {
+                setDateErrorHighlight(true);
+                setInchargeErrorHighlight(true);
+                setTimeout(() => setInchargeErrorHighlight(false), 600);
+              } else if (!formData.shift) {
+                setShiftErrorHighlight(true);
+                setInchargeErrorHighlight(true);
+                setTimeout(() => setInchargeErrorHighlight(false), 600);
+              }
+            }
+          }}
+        >
           <label>
             Incharge 
             {lockedFields.incharge && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ Locked</span>}
           </label>
           <input 
+            ref={inchargeRef}
             type="text" 
             value={formData.incharge} 
             onChange={e => handleChange("incharge", e.target.value)}
             placeholder="Enter incharge name"
             disabled={!formData.date || !formData.shift || lockedFields.incharge}
             style={{ opacity: lockedFields.incharge ? 0.6 : 1 }}
+            onKeyDown={(e) => handlePrimaryKeyDown(e, getNextAfterIncharge(), 'incharge')}
+            onMouseDown={(e) => {
+              if (!formData.date) {
+                setDateErrorHighlight(true);
+                setInchargeErrorHighlight(true);
+                setTimeout(() => setInchargeErrorHighlight(false), 600);
+              } else if (!formData.shift) {
+                setShiftErrorHighlight(true);
+                setInchargeErrorHighlight(true);
+                setTimeout(() => setInchargeErrorHighlight(false), 600);
+              }
+            }}
           />
         </div>
-        <div className="disamatic-form-group">
+        <div 
+          className={`disamatic-form-group ${classFor(formData.ppOperator, primarySubmitted, false, lockedFields.ppOperator)} ${ppOperatorErrorHighlight ? 'error-highlight' : ''}`}
+          onMouseDownCapture={(e) => {
+            if (e.target.tagName !== 'INPUT') {
+              if (!formData.date) {
+                setDateErrorHighlight(true);
+                setPpOperatorErrorHighlight(true);
+                setTimeout(() => setPpOperatorErrorHighlight(false), 600);
+              } else if (!formData.shift) {
+                setShiftErrorHighlight(true);
+                setPpOperatorErrorHighlight(true);
+                setTimeout(() => setPpOperatorErrorHighlight(false), 600);
+              }
+            }
+          }}
+        >
           <label>
             PP Operator
             {lockedFields.ppOperator && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ Locked</span>}
           </label>
           <input 
+            ref={ppOperatorRef}
             type="text" 
             value={formData.ppOperator} 
             onChange={e => handleChange("ppOperator", e.target.value)}
             placeholder="Enter PP Operator name"
             disabled={!formData.date || !formData.shift || lockedFields.ppOperator}
             style={{ opacity: lockedFields.ppOperator ? 0.6 : 1 }}
+            onKeyDown={(e) => handlePrimaryKeyDown(e, getNextAfterPpOperator(), 'ppOperator')}
+            onMouseDown={(e) => {
+              if (!formData.date) {
+                setDateErrorHighlight(true);
+                setPpOperatorErrorHighlight(true);
+                setTimeout(() => setPpOperatorErrorHighlight(false), 600);
+              } else if (!formData.shift) {
+                setShiftErrorHighlight(true);
+                setPpOperatorErrorHighlight(true);
+                setTimeout(() => setPpOperatorErrorHighlight(false), 600);
+              }
+            }}
           />
         </div>
       </div>
       
       {/* Second Row: Members Present */}
       <div className="primary-fields-row">
-        <div className="disamatic-form-group" style={{ gridColumn: '1 / -1' }}>
+        <div 
+          className={`disamatic-form-group ${membersErrorHighlight ? 'error-highlight' : ''}`} 
+          style={{ gridColumn: '1 / -1' }}
+          onMouseDownCapture={(e) => {
+            if (e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+              if (!formData.date) {
+                setDateErrorHighlight(true);
+                setMembersErrorHighlight(true);
+                setTimeout(() => setMembersErrorHighlight(false), 600);
+              } else if (!formData.shift) {
+                setShiftErrorHighlight(true);
+                setMembersErrorHighlight(true);
+                setTimeout(() => setMembersErrorHighlight(false), 600);
+              }
+            }
+          }}
+        >
           <label>
             Members Present
             {lockedMembersCount > 0 && <span style={{ fontSize: '0.75rem', color: '#10b981', marginLeft: '0.5rem' }}>✓ {lockedMembersCount} Locked</span>}
@@ -1958,6 +2177,17 @@ const DisamaticProduct = () => {
                   className="disamatic-member-input"
                   disabled={!formData.date || !formData.shift || index < lockedMembersCount}
                   style={{ opacity: index < lockedMembersCount ? 0.6 : 1 }}
+                  onMouseDown={(e) => {
+                    if (!formData.date) {
+                      setDateErrorHighlight(true);
+                      setMembersErrorHighlight(true);
+                      setTimeout(() => setMembersErrorHighlight(false), 600);
+                    } else if (!formData.shift) {
+                      setShiftErrorHighlight(true);
+                      setMembersErrorHighlight(true);
+                      setTimeout(() => setMembersErrorHighlight(false), 600);
+                    }
+                  }}
                 />
                 {formData.members.length > 1 && index >= lockedMembersCount && (
                   <button
@@ -1995,7 +2225,7 @@ const DisamaticProduct = () => {
             Loading...
           </div>
         ) : (
-          <SubmitButton onClick={handleSavePrimary}>
+          <SubmitButton ref={primarySaveButtonRef} onClick={handleSavePrimary}>
             {isPrimaryDataSaved ? "Update Primary Data" : "Save Primary"}
           </SubmitButton>
         )}

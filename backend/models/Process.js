@@ -65,6 +65,10 @@ const ProcessSchema = new mongoose.Schema({
         required: true,
         unique: true
     },
+    savedDisas: [{
+        type: String,
+        trim: true
+    }],
     entries: [ProcessEntrySchema]
 }, {
     timestamps: true,

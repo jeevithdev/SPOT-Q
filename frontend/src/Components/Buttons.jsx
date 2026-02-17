@@ -135,15 +135,21 @@ ResetButton.displayName = 'ResetButton';
 
 export const LockPrimaryButton = ({ onClick, disabled = false, isLocked = false }) => (
   <div className="lock-primary-button-wrapper">
-    <button onClick={onClick} type="button" disabled={disabled} title={isLocked ? 'Unlock Primary' : 'Lock Primary'}>
-      {isLocked ? 'Unlock Primary' : 'Lock Primary'}
+    <button 
+      onClick={onClick} 
+      type="button" 
+      disabled={disabled || isLocked} 
+      title={isLocked ? 'Primary Saved' : 'Save Primary'}
+      style={isLocked ? { backgroundColor: '#10b981', cursor: 'not-allowed', opacity: 0.8 } : {}}
+    >
+      {isLocked ? 'Primary Saved' : 'Save Primary'}
     </button>
   </div>
 );
 
  // DISA Dropdown Component
 
-export const DisaDropdown = forwardRef(({ value, onChange, name, disabled, onKeyDown, className = '' }, ref) => {
+export const DisaDropdown = forwardRef(({ value, onChange, name, disabled, onKeyDown, className = '', onFocus, onBlur }, ref) => {
   const disaOptions = ['DISA 1', 'DISA 2', 'DISA 3', 'DISA 4'];
 
   return (
@@ -154,6 +160,8 @@ export const DisaDropdown = forwardRef(({ value, onChange, name, disabled, onKey
         value={value}
         onChange={onChange}
         onKeyDown={onKeyDown}
+        onFocus={onFocus}
+        onBlur={onBlur}
         disabled={disabled}
       >
         <option value="">Select DISA</option>
@@ -328,25 +336,20 @@ PanelDropdown.displayName = 'PanelDropdown';
 
 export { Time };
 export const CustomTimeInput = forwardRef(({ value, onChange, className = '', hasError = false, onFocus, onBlur, onEnterPress, disabled = false, style = {}, ...props }, ref) => {
-  const [isFocused, setIsFocused] = useState(false);
   const containerRef = useRef(null);
   
   const handleFocus = () => {
     if (disabled) return;
-    setIsFocused(true);
     if (onFocus) onFocus();
   };
   
   const handleBlur = () => {
-    setIsFocused(false);
     if (onBlur) onBlur();
   };
   
   const getClassName = () => {
     let classes = `cus-time-input ${className}`;
-    if (isFocused) {
-      classes += ' valid-input';
-    } else if (hasError) {
+    if (hasError) {
       classes += ' invalid-input';
     }
     return classes;

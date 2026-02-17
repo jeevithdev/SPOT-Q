@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Loader2, FileText } from 'lucide-react';
-import { SubmitButton, ResetButton, LockPrimaryButton, DisaDropdown, CustomTimeInput, Time } from '../../Components/Buttons';
+import { SubmitButton, LockPrimaryButton, DisaDropdown, CustomTimeInput, Time } from '../../Components/Buttons';
 import CustomDatePicker from '../../Components/CustomDatePicker';
 import '../../styles/PageStyles/Process/Process.css';
 
@@ -28,9 +28,16 @@ export default function ProcessControl() {
   const [submitLoading, setSubmitLoading] = useState(false);
   const [isPrimarySaved, setIsPrimarySaved] = useState(false);
   const [submitError, setSubmitError] = useState('');
+  const [savePrimaryLoading, setSavePrimaryLoading] = useState(false);
+  const [entryCount, setEntryCount] = useState(0);
 
-  // VALIDATION STATES (null = neutral/default, true = green/valid, false = red/invalid)
-  const [disaValid, setDisaValid] = useState(null);
+  /* 
+   * VALIDATION STATES
+   * null = neutral/default (no border color)
+   * true = valid (green border) - NOT USED, kept for backwards compatibility
+   * false = invalid (red border) - shown after submit when field is empty/invalid
+   */
+  // Basic fields
   const [partNameValid, setPartNameValid] = useState(null);
   const [datecodeValid, setDatecodeValid] = useState(null);
   const [heatcodeValid, setHeatcodeValid] = useState(null);
@@ -71,8 +78,32 @@ export default function ProcessControl() {
   const [resMgConvertorValid, setResMgConvertorValid] = useState(null);
   const [recOfMgValid, setRecOfMgValid] = useState(null);
   const [pTimeValid, setPTimeValid] = useState(null);
-  const [dateValid, setDateValid] = useState(null);
 
+  // Submit error message state
+  const [submitErrorMessage, setSubmitErrorMessage] = useState('');
+
+  /*
+   * Returns the appropriate CSS class for an input field based on validation state:
+   * - Red border (invalid-input) when field is invalid/empty after submit
+   * - Neutral (no color) otherwise
+   * 
+   * Flow:
+   * 1. After submit, if invalid -> red border (invalid-input)
+   * 2. When user starts typing/entering data -> resets to neutral via handleChange
+   * 
+   * @param {string} fieldName - The name of the field
+   * @param {boolean|null} validationState - null=neutral, false=invalid
+   */
+  const getInputClassName = (fieldName, validationState) => {
+    // Show red border if invalid (validationState === false)
+    if (validationState === false) return 'invalid-input';
+    // Otherwise show neutral (no color)
+    return '';
+  };
+
+  /**
+   * Legacy validation class getter for backwards compatibility
+   */
   const getValidationClass = (isValid) => {
     if (isValid === true) return 'valid-input';
     if (isValid === false) return 'invalid-input';
@@ -89,13 +120,40 @@ export default function ProcessControl() {
       ...prev,
       date: `${y}-${m}-${d}`
     }));
-    setDateValid(true);
   }, []);
+
+  // Check if date+disa combination exists in database
+  useEffect(() => {
+    const checkDateDisaExists = async () => {
+      if (!formData.date || !formData.disa) {
+        setIsPrimarySaved(false);
+        setEntryCount(0);
+        return;
+      }
+
+      try {
+        const response = await fetch(`/v1/process/check?date=${formData.date}&disa=${encodeURIComponent(formData.disa)}`, {
+          method: 'GET',
+          credentials: 'include'
+        });
+        const data = await response.json();
+        
+        if (data.success) {
+          setIsPrimarySaved(data.exists);
+          setEntryCount(data.count || 0);
+        }
+      } catch (error) {
+        console.error('Error checking date+disa:', error);
+      }
+    };
+
+    checkDateDisaExists();
+  }, [formData.date, formData.disa]);
 
   // Validate pouring time when time values change
   useEffect(() => {
     if (pouringFromTime && pouringToTime) {
-      setPouringTimeValid(true);
+      setPouringTimeValid(null);
     } else if (!pouringFromTime && !pouringToTime) {
       setPouringTimeValid(null);
     } else {
@@ -106,7 +164,7 @@ export default function ProcessControl() {
   // Validate tapping time when time value changes
   useEffect(() => {
     if (tappingTime) {
-      setTappingTimeValid(true);
+      setTappingTimeValid(null);
     } else {
       setTappingTimeValid(null);
     }
@@ -119,298 +177,118 @@ export default function ProcessControl() {
     'correctiveAdditionCr', 'correctiveAdditionCu', 'correctiveAdditionSn', 'tappingWt', 'mg', 'resMgConvertor',
     'recOfMg', 'streamInoculant', 'pTime', 'remarks'];
 
+  /*
+   * Handle input change
+   * When user starts typing, reset validation state to null (neutral)
+   * This removes the red border as user begins correcting the field
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Validate Date
-    if (name === 'date') {
-      if (value.trim() === '') {
-        setDateValid(null);
-      } else {
-        setDateValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate DISA
-    if (name === 'disa') {
-      if (value.trim() === '') {
-        setDisaValid(null);
-      } else {
-        setDisaValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate Part Name
-    if (name === 'partName') {
-      if (value.trim() === '') {
+    switch (name) {
+      case 'partName':
         setPartNameValid(null);
-      } else {
-        setPartNameValid(value.trim().length > 0);
-      }
+        break;
+      case 'datecode':
+        setDatecodeValid(null);
+        break;
+      case 'heatcode':
+        setHeatcodeValid(null);
+        break;
+      case 'quantityOfMoulds':
+        setQuantityOfMouldsValid(null);
+        break;
+      case 'metalCompositionC':
+        setMetalCValid(null);
+        break;
+      case 'metalCompositionSi':
+        setMetalSiValid(null);
+        break;
+      case 'metalCompositionMn':
+        setMetalMnValid(null);
+        break;
+      case 'metalCompositionP':
+        setMetalPValid(null);
+        break;
+      case 'metalCompositionS':
+        setMetalSValid(null);
+        break;
+      case 'metalCompositionMgFL':
+        setMetalMgFLValid(null);
+        break;
+      case 'metalCompositionCu':
+        setMetalCuValid(null);
+        break;
+      case 'metalCompositionCr':
+        setMetalCrValid(null);
+        break;
+      case 'pouringTemperature':
+        setPouringTempValid(null);
+        break;
+      case 'ppCode':
+        setPpCodeValid(null);
+        break;
+      case 'treatmentNo':
+        setTreatmentNoValid(null);
+        break;
+      case 'fcNo':
+        setFcNoValid(null);
+        break;
+      case 'heatNo':
+        setHeatNoValid(null);
+        break;
+      case 'conNo':
+        setConNoValid(null);
+        break;
+      case 'correctiveAdditionC':
+        setCorrCValid(null);
+        break;
+      case 'correctiveAdditionSi':
+        setCorrSiValid(null);
+        break;
+      case 'correctiveAdditionMn':
+        setCorrMnValid(null);
+        break;
+      case 'correctiveAdditionS':
+        setCorrSValid(null);
+        break;
+      case 'correctiveAdditionCr':
+        setCorrCrValid(null);
+        break;
+      case 'correctiveAdditionCu':
+        setCorrCuValid(null);
+        break;
+      case 'correctiveAdditionSn':
+        setCorrSnValid(null);
+        break;
+      case 'tappingWt':
+        setTappingWtValid(null);
+        break;
+      case 'mg':
+        setMgValid(null);
+        break;
+      case 'resMgConvertor':
+        setResMgConvertorValid(null);
+        break;
+      case 'recOfMg':
+        setRecOfMgValid(null);
+        break;
+      case 'streamInoculant':
+        setStreamInoculantValid(null);
+        break;
+      case 'pTime':
+        setPTimeValid(null);
+        break;
+      case 'remarks':
+        setRemarksValid(null);
+        break;
+      default:
+        break;
     }
 
-    // Validate Date Code - specific format (e.g., 6F25)
     if (name === 'datecode') {
-      const pattern = /^[0-9][A-Z][0-9]{2}$/;
-      if (value.trim() === '') {
-        setDatecodeValid(null);
-      } else {
-        setDatecodeValid(pattern.test(value));
-      }
       setFormData({...formData, [name]: value.toUpperCase()});
       return;
-    }
-
-    // Validate Heat Code - only numbers
-    if (name === 'heatcode') {
-      const numericPattern = /^\d+$/;
-      if (value.trim() === '') {
-        setHeatcodeValid(null);
-      } else {
-        setHeatcodeValid(numericPattern.test(value));
-      }
-    }
-
-    // Validate Quantity of Moulds (number)
-    if (name === 'quantityOfMoulds') {
-      if (value.trim() === '') {
-        setQuantityOfMouldsValid(null);
-      } else {
-        setQuantityOfMouldsValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-
-    // Metal Composition validations (all are numbers)
-    if (name === 'metalCompositionC') {
-      if (value.trim() === '') {
-        setMetalCValid(null);
-      } else {
-        setMetalCValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'metalCompositionSi') {
-      if (value.trim() === '') {
-        setMetalSiValid(null);
-      } else {
-        setMetalSiValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'metalCompositionMn') {
-      if (value.trim() === '') {
-        setMetalMnValid(null);
-      } else {
-        setMetalMnValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'metalCompositionP') {
-      if (value.trim() === '') {
-        setMetalPValid(null);
-      } else {
-        setMetalPValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'metalCompositionS') {
-      if (value.trim() === '') {
-        setMetalSValid(null);
-      } else {
-        setMetalSValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'metalCompositionMgFL') {
-      if (value.trim() === '') {
-        setMetalMgFLValid(null);
-      } else {
-        setMetalMgFLValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'metalCompositionCu') {
-      if (value.trim() === '') {
-        setMetalCuValid(null);
-      } else {
-        setMetalCuValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'metalCompositionCr') {
-      if (value.trim() === '') {
-        setMetalCrValid(null);
-      } else {
-        setMetalCrValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-
-    // Pouring time validation is now handled by the time components
-
-    // Validate Pouring Temperature
-    if (name === 'pouringTemperature') {
-      if (value.trim() === '') {
-        setPouringTempValid(null);
-      } else {
-        setPouringTempValid(!isNaN(value) && parseFloat(value) > 0);
-      }
-    }
-
-    // Validate PP Code - only numbers
-    if (name === 'ppCode') {
-      const numericPattern = /^\d+$/;
-      if (value.trim() === '') {
-        setPpCodeValid(null);
-      } else {
-        setPpCodeValid(numericPattern.test(value));
-      }
-    }
-
-    // Validate Treatment No - only numbers
-    if (name === 'treatmentNo') {
-      const numericPattern = /^\d+$/;
-      if (value.trim() === '') {
-        setTreatmentNoValid(null);
-      } else {
-        setTreatmentNoValid(numericPattern.test(value));
-      }
-    }
-
-    // Validate FC No - roman numerals from dropdown
-    if (name === 'fcNo') {
-      if (value.trim() === '') {
-        setFcNoValid(null);
-      } else {
-        setFcNoValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate Heat No
-    if (name === 'heatNo') {
-      if (value.trim() === '') {
-        setHeatNoValid(null);
-      } else {
-        setHeatNoValid(value.trim().length > 0);
-      }
-    }
-
-    // Validate Con No - only numbers
-    if (name === 'conNo') {
-      const numericPattern = /^\d+$/;
-      if (value.trim() === '') {
-        setConNoValid(null);
-      } else {
-        setConNoValid(numericPattern.test(value));
-      }
-    }
-
-    // Tapping time validation is now handled by the time component
-
-    // Corrective Addition validations (all are numbers)
-    if (name === 'correctiveAdditionC') {
-      if (value.trim() === '') {
-        setCorrCValid(null);
-      } else {
-        setCorrCValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'correctiveAdditionSi') {
-      if (value.trim() === '') {
-        setCorrSiValid(null);
-      } else {
-        setCorrSiValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'correctiveAdditionMn') {
-      if (value.trim() === '') {
-        setCorrMnValid(null);
-      } else {
-        setCorrMnValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'correctiveAdditionS') {
-      if (value.trim() === '') {
-        setCorrSValid(null);
-      } else {
-        setCorrSValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'correctiveAdditionCr') {
-      if (value.trim() === '') {
-        setCorrCrValid(null);
-      } else {
-        setCorrCrValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'correctiveAdditionCu') {
-      if (value.trim() === '') {
-        setCorrCuValid(null);
-      } else {
-        setCorrCuValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-    if (name === 'correctiveAdditionSn') {
-      if (value.trim() === '') {
-        setCorrSnValid(null);
-      } else {
-        setCorrSnValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-
-    // Validate Tapping Wt
-    if (name === 'tappingWt') {
-      if (value.trim() === '') {
-        setTappingWtValid(null);
-      } else {
-        setTappingWtValid(!isNaN(value) && parseFloat(value) > 0);
-      }
-    }
-
-    // Validate Mg
-    if (name === 'mg') {
-      if (value.trim() === '') {
-        setMgValid(null);
-      } else {
-        setMgValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-
-    // Validate Res. Mg. Convertor
-    if (name === 'resMgConvertor') {
-      if (value.trim() === '') {
-        setResMgConvertorValid(null);
-      } else {
-        setResMgConvertorValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-
-    // Validate Rec. Of Mg
-    if (name === 'recOfMg') {
-      if (value.trim() === '') {
-        setRecOfMgValid(null);
-      } else {
-        setRecOfMgValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-
-    // Validate Stream Inoculant
-    if (name === 'streamInoculant') {
-      if (value.trim() === '') {
-        setStreamInoculantValid(null);
-      } else {
-        setStreamInoculantValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-
-    // Validate P.Time
-    if (name === 'pTime') {
-      if (value.trim() === '') {
-        setPTimeValid(null);
-      } else {
-        setPTimeValid(!isNaN(value) && parseFloat(value) >= 0);
-      }
-    }
-
-    // Validate Remarks
-    if (name === 'remarks') {
-      if (value.trim() === '') {
-        setRemarksValid(null);
-      } else {
-        setRemarksValid(value.trim().length > 0);
-      }
     }
 
     setFormData({...formData, [name]: value});
@@ -430,220 +308,309 @@ export default function ProcessControl() {
     }
   };
 
-  const handlePrimarySubmit = () => {
-    // If already locked, unlock it
-    if (isPrimarySaved) {
-      setIsPrimarySaved(false);
-      return;
-    }
-
+  const handlePrimarySubmit = async () => {
     // Validate required fields
-    if (!formData.disa) {
-      alert('Please fill in DISA');
+    if (!formData.date || !formData.disa) {
+      alert('Please fill in Date and DISA');
       return;
     }
 
-    // Lock primary field (disa) without saving to database
-    // The actual save will happen when user clicks "Submit Entry"
-    setIsPrimarySaved(true);
+    try {
+      setSavePrimaryLoading(true);
+      
+      // Call save-primary API to save date+disa and get entry count
+      const response = await fetch('/v1/process/save-primary', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        credentials: 'include',
+        body: JSON.stringify({
+          date: formData.date,
+          disa: formData.disa
+        })
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        setIsPrimarySaved(true);
+        setEntryCount(data.count || 0);
+        // Focus on Part Name field after primary is saved
+        setTimeout(() => {
+          inputRefs.current.partName?.focus();
+        }, 100);
+      } else {
+        alert('Failed to save primary: ' + data.message);
+      }
+    } catch (error) {
+      console.error('Error saving primary:', error);
+      alert('Failed to save primary: ' + error.message);
+    } finally {
+      setSavePrimaryLoading(false);
+    }
   };
 
+  /*
+   * Handle form submission with validation
+   * 
+   * Validation Flow:
+   * 1. Check each required field for empty/invalid values
+   * 2. If invalid, set validation state to false (shows red border)
+   * 3. If valid, set validation state to null (neutral, no color)
+   * 4. If any errors exist, show error message and stop submission
+   * 5. On successful submission, reset all validation states to null
+   */
   const handleSubmit = async () => {
-    // Check all fields and mark empty/invalid ones as red
     let hasErrors = false;
-    
-    // Validate DISA (required)
-    if (!formData.disa || !formData.disa.trim()) {
-      setDisaValid(false);
-      hasErrors = true;
-    }
-    
-    // Validate Part Name (required)
+
+    const datecodePattern = /^[0-9][A-Z][0-9]{2}$/;
+    const numericPattern = /^\d+$/;
+
     if (!formData.partName || !formData.partName.trim()) {
       setPartNameValid(false);
       hasErrors = true;
+    } else {
+      setPartNameValid(null);
     }
-    
-    // Validate Date Code (required)
-    const datecodePattern = /^[0-9][A-Z][0-9]{2}$/;
+
     if (!formData.datecode || !formData.datecode.trim() || !datecodePattern.test(formData.datecode)) {
       setDatecodeValid(false);
       hasErrors = true;
+    } else {
+      setDatecodeValid(null);
     }
-    
-    // Validate Heat Code (required)
-    if (!formData.heatcode || !formData.heatcode.trim()) {
+
+    if (!formData.heatcode || !formData.heatcode.trim() || !numericPattern.test(formData.heatcode)) {
       setHeatcodeValid(false);
       hasErrors = true;
+    } else {
+      setHeatcodeValid(null);
     }
-    
-    // Validate Quantity of Moulds (optional but validate if empty)
-    if (!formData.quantityOfMoulds || formData.quantityOfMoulds.trim() === '') {
+
+    if (!formData.quantityOfMoulds || formData.quantityOfMoulds.trim() === '' || isNaN(formData.quantityOfMoulds) || parseFloat(formData.quantityOfMoulds) < 0) {
       setQuantityOfMouldsValid(false);
       hasErrors = true;
-    } else if (isNaN(formData.quantityOfMoulds) || parseFloat(formData.quantityOfMoulds) < 0) {
-      setQuantityOfMouldsValid(false);
-      hasErrors = true;
+    } else {
+      setQuantityOfMouldsValid(null);
     }
-    
-    // Validate Metal Composition fields (all optional but validate if empty)
-    if (!formData.metalCompositionC || formData.metalCompositionC.trim() === '') {
+
+    if (!formData.metalCompositionC || formData.metalCompositionC.trim() === '' || isNaN(formData.metalCompositionC) || parseFloat(formData.metalCompositionC) < 0) {
       setMetalCValid(false);
       hasErrors = true;
+    } else {
+      setMetalCValid(null);
     }
-    if (!formData.metalCompositionSi || formData.metalCompositionSi.trim() === '') {
+
+    if (!formData.metalCompositionSi || formData.metalCompositionSi.trim() === '' || isNaN(formData.metalCompositionSi) || parseFloat(formData.metalCompositionSi) < 0) {
       setMetalSiValid(false);
       hasErrors = true;
+    } else {
+      setMetalSiValid(null);
     }
-    if (!formData.metalCompositionMn || formData.metalCompositionMn.trim() === '') {
+
+    if (!formData.metalCompositionMn || formData.metalCompositionMn.trim() === '' || isNaN(formData.metalCompositionMn) || parseFloat(formData.metalCompositionMn) < 0) {
       setMetalMnValid(false);
       hasErrors = true;
+    } else {
+      setMetalMnValid(null);
     }
-    if (!formData.metalCompositionP || formData.metalCompositionP.trim() === '') {
+
+    if (!formData.metalCompositionP || formData.metalCompositionP.trim() === '' || isNaN(formData.metalCompositionP) || parseFloat(formData.metalCompositionP) < 0) {
       setMetalPValid(false);
       hasErrors = true;
+    } else {
+      setMetalPValid(null);
     }
-    if (!formData.metalCompositionS || formData.metalCompositionS.trim() === '') {
+
+    if (!formData.metalCompositionS || formData.metalCompositionS.trim() === '' || isNaN(formData.metalCompositionS) || parseFloat(formData.metalCompositionS) < 0) {
       setMetalSValid(false);
       hasErrors = true;
+    } else {
+      setMetalSValid(null);
     }
-    if (!formData.metalCompositionMgFL || formData.metalCompositionMgFL.trim() === '') {
+
+    if (!formData.metalCompositionMgFL || formData.metalCompositionMgFL.trim() === '' || isNaN(formData.metalCompositionMgFL) || parseFloat(formData.metalCompositionMgFL) < 0) {
       setMetalMgFLValid(false);
       hasErrors = true;
+    } else {
+      setMetalMgFLValid(null);
     }
-    if (!formData.metalCompositionCu || formData.metalCompositionCu.trim() === '') {
+
+    if (!formData.metalCompositionCu || formData.metalCompositionCu.trim() === '' || isNaN(formData.metalCompositionCu) || parseFloat(formData.metalCompositionCu) < 0) {
       setMetalCuValid(false);
       hasErrors = true;
+    } else {
+      setMetalCuValid(null);
     }
-    if (!formData.metalCompositionCr || formData.metalCompositionCr.trim() === '') {
+
+    if (!formData.metalCompositionCr || formData.metalCompositionCr.trim() === '' || isNaN(formData.metalCompositionCr) || parseFloat(formData.metalCompositionCr) < 0) {
       setMetalCrValid(false);
       hasErrors = true;
+    } else {
+      setMetalCrValid(null);
     }
-    
-    // Validate PP Code (required)
-    if (!formData.ppCode || !formData.ppCode.trim()) {
+
+    if (!formData.ppCode || !formData.ppCode.trim() || !numericPattern.test(formData.ppCode)) {
       setPpCodeValid(false);
       hasErrors = true;
+    } else {
+      setPpCodeValid(null);
     }
-    
-    // Validate Treatment No (required)
-    if (!formData.treatmentNo || !formData.treatmentNo.trim()) {
+
+    if (!formData.treatmentNo || !formData.treatmentNo.trim() || !numericPattern.test(formData.treatmentNo)) {
       setTreatmentNoValid(false);
       hasErrors = true;
+    } else {
+      setTreatmentNoValid(null);
     }
-    
-    // Validate FC No (required)
+
     if (!formData.fcNo || !formData.fcNo.trim()) {
       setFcNoValid(false);
       hasErrors = true;
+    } else {
+      setFcNoValid(null);
     }
-    
-    // Validate Heat No (required)
+
     if (!formData.heatNo || !formData.heatNo.trim()) {
       setHeatNoValid(false);
       hasErrors = true;
+    } else {
+      setHeatNoValid(null);
     }
-    
-    // Validate Con No (optional but validate if empty)
-    if (!formData.conNo || formData.conNo.trim() === '') {
+
+    if (!formData.conNo || formData.conNo.trim() === '' || isNaN(formData.conNo) || parseFloat(formData.conNo) < 0) {
       setConNoValid(false);
       hasErrors = true;
+    } else {
+      setConNoValid(null);
     }
-    
-    // Validate Pouring Temperature (required)
+
     if (!formData.pouringTemperature || isNaN(formData.pouringTemperature) || parseFloat(formData.pouringTemperature) <= 0) {
       setPouringTempValid(false);
       hasErrors = true;
+    } else {
+      setPouringTempValid(null);
     }
-    
-    // Validate Time of Pouring (required)
+
     if (!pouringFromTime || !pouringToTime) {
       setPouringTimeValid(false);
       hasErrors = true;
+    } else {
+      setPouringTimeValid(null);
     }
-    
-    // Validate Tapping Time (optional but validate if empty)
+
     if (!tappingTime) {
       setTappingTimeValid(false);
       hasErrors = true;
+    } else {
+      setTappingTimeValid(null);
     }
-    
-    // Validate Corrective Addition fields (all optional but validate if empty)
-    if (!formData.correctiveAdditionC || formData.correctiveAdditionC.trim() === '') {
+
+    if (!formData.correctiveAdditionC || formData.correctiveAdditionC.trim() === '' || isNaN(formData.correctiveAdditionC) || parseFloat(formData.correctiveAdditionC) < 0) {
       setCorrCValid(false);
       hasErrors = true;
+    } else {
+      setCorrCValid(null);
     }
-    if (!formData.correctiveAdditionSi || formData.correctiveAdditionSi.trim() === '') {
+
+    if (!formData.correctiveAdditionSi || formData.correctiveAdditionSi.trim() === '' || isNaN(formData.correctiveAdditionSi) || parseFloat(formData.correctiveAdditionSi) < 0) {
       setCorrSiValid(false);
       hasErrors = true;
+    } else {
+      setCorrSiValid(null);
     }
-    if (!formData.correctiveAdditionMn || formData.correctiveAdditionMn.trim() === '') {
+
+    if (!formData.correctiveAdditionMn || formData.correctiveAdditionMn.trim() === '' || isNaN(formData.correctiveAdditionMn) || parseFloat(formData.correctiveAdditionMn) < 0) {
       setCorrMnValid(false);
       hasErrors = true;
+    } else {
+      setCorrMnValid(null);
     }
-    if (!formData.correctiveAdditionS || formData.correctiveAdditionS.trim() === '') {
+
+    if (!formData.correctiveAdditionS || formData.correctiveAdditionS.trim() === '' || isNaN(formData.correctiveAdditionS) || parseFloat(formData.correctiveAdditionS) < 0) {
       setCorrSValid(false);
       hasErrors = true;
+    } else {
+      setCorrSValid(null);
     }
-    if (!formData.correctiveAdditionCr || formData.correctiveAdditionCr.trim() === '') {
+
+    if (!formData.correctiveAdditionCr || formData.correctiveAdditionCr.trim() === '' || isNaN(formData.correctiveAdditionCr) || parseFloat(formData.correctiveAdditionCr) < 0) {
       setCorrCrValid(false);
       hasErrors = true;
+    } else {
+      setCorrCrValid(null);
     }
-    if (!formData.correctiveAdditionCu || formData.correctiveAdditionCu.trim() === '') {
+
+    if (!formData.correctiveAdditionCu || formData.correctiveAdditionCu.trim() === '' || isNaN(formData.correctiveAdditionCu) || parseFloat(formData.correctiveAdditionCu) < 0) {
       setCorrCuValid(false);
       hasErrors = true;
+    } else {
+      setCorrCuValid(null);
     }
-    if (!formData.correctiveAdditionSn || formData.correctiveAdditionSn.trim() === '') {
+
+    if (!formData.correctiveAdditionSn || formData.correctiveAdditionSn.trim() === '' || isNaN(formData.correctiveAdditionSn) || parseFloat(formData.correctiveAdditionSn) < 0) {
       setCorrSnValid(false);
       hasErrors = true;
+    } else {
+      setCorrSnValid(null);
     }
-    
-    // Validate Tapping Wt (required)
+
     if (!formData.tappingWt || isNaN(formData.tappingWt) || parseFloat(formData.tappingWt) <= 0) {
       setTappingWtValid(false);
       hasErrors = true;
+    } else {
+      setTappingWtValid(null);
     }
-    
-    // Validate Mg (optional but validate if empty)
-    if (!formData.mg || formData.mg.trim() === '') {
+
+    if (!formData.mg || formData.mg.trim() === '' || isNaN(formData.mg) || parseFloat(formData.mg) < 0) {
       setMgValid(false);
       hasErrors = true;
+    } else {
+      setMgValid(null);
     }
-    
-    // Validate Res. Mg. Convertor (optional but validate if empty)
-    if (!formData.resMgConvertor || formData.resMgConvertor.trim() === '') {
+
+    if (!formData.resMgConvertor || formData.resMgConvertor.trim() === '' || isNaN(formData.resMgConvertor) || parseFloat(formData.resMgConvertor) < 0) {
       setResMgConvertorValid(false);
       hasErrors = true;
+    } else {
+      setResMgConvertorValid(null);
     }
-    
-    // Validate Rec. Of Mg (optional but validate if empty)
-    if (!formData.recOfMg || formData.recOfMg.trim() === '') {
+
+    if (!formData.recOfMg || formData.recOfMg.trim() === '' || isNaN(formData.recOfMg) || parseFloat(formData.recOfMg) < 0) {
       setRecOfMgValid(false);
       hasErrors = true;
+    } else {
+      setRecOfMgValid(null);
     }
-    
-    // Validate Stream Inoculant (required)
+
     if (!formData.streamInoculant || isNaN(formData.streamInoculant) || parseFloat(formData.streamInoculant) < 0) {
       setStreamInoculantValid(false);
       hasErrors = true;
+    } else {
+      setStreamInoculantValid(null);
     }
-    
-    // Validate P.Time (optional but validate if empty)
-    if (!formData.pTime || formData.pTime.trim() === '') {
+
+    if (!formData.pTime || formData.pTime.trim() === '' || isNaN(formData.pTime) || parseFloat(formData.pTime) < 0) {
       setPTimeValid(false);
       hasErrors = true;
+    } else {
+      setPTimeValid(null);
     }
-    
-    // Validate Remarks (required)
+
     if (!formData.remarks || !formData.remarks.trim()) {
       setRemarksValid(false);
       hasErrors = true;
+    } else {
+      setRemarksValid(null);
     }
-    
-    // If there are errors, stop submission
+
     if (hasErrors) {
+      setSubmitErrorMessage('Enter data in correct Format');
       return;
     }
+
+    setSubmitErrorMessage('');
 
     try {
       setSubmitLoading(true);
@@ -751,6 +718,13 @@ export default function ProcessControl() {
         setPTimeValid(null);
         setRemarksValid(null);
         
+        // Reset focus and error states
+        setFocusedField(null);
+        setSubmitErrorMessage('');
+        
+        // Increment entry count
+        setEntryCount(prev => prev + 1);
+        
         // Keep primary locked, focus on Part Name for next entry
         setTimeout(() => {
           inputRefs.current.partName?.focus();
@@ -769,36 +743,6 @@ export default function ProcessControl() {
       e.preventDefault();
       handleSubmit();
     }
-  };
-
-const handleReset = () => {
-    // Reset all fields except disa (if primary is locked)
-    const resetData = { date: '' };
-    Object.keys(formData).forEach(key => {
-      if (key !== 'disa') {
-        resetData[key] = '';
-      } else if (key === 'disa') {
-        resetData[key] = formData.disa; // Keep disa if primary is locked
-      }
-    });
-    setFormData(resetData);
-    
-    // Reset time states
-    setPouringFromTime(null);
-    setPouringToTime(null);
-    setTappingTime(null);
-    
-    // Reset all validation states
-    setDateValid(null);
-    setDisaValid(formData.disa ? true : null);
-    setPartNameValid(null);
-    setDatecodeValid(null);
-    setHeatcodeValid(null);
-    // Keep primary locked if it was locked
-    // Focus on date for next entry
-    setTimeout(() => {
-      inputRefs.current.date?.focus();
-    }, 100);
   };
 
   return (
@@ -821,11 +765,11 @@ const handleReset = () => {
       <div className="process-form-grid">
             {/* Primary Data Section */}
             <div className="section-header primary-data-header">
-              <h3>Primary Data</h3>
+              <h3>Primary Data {isPrimarySaved && <span style={{ fontWeight: 400, fontSize: '0.875rem', color: '#5B9AA9' }}>(Entries: {entryCount})</span>}</h3>
             </div>
 
             <div className="process-form-group">
-              <label>Date *</label>
+              <label>Date </label>
               <CustomDatePicker
                 ref={el => inputRefs.current.date = el}
                 name="date"
@@ -833,9 +777,8 @@ const handleReset = () => {
                 onChange={handleChange}
                 onKeyDown={e => handleKeyDown(e, 'date')}
                 max={new Date().toISOString().split('T')[0]}
-                disabled={isPrimarySaved}
                 style={{
-                  border: isPrimarySaved ? '2px solid #cbd5e1' : (dateValid === null ? '2px solid #cbd5e1' : dateValid ? '2px solid #10b981' : '2px solid #ef4444'),
+                  border: '2px solid #cbd5e1',
                   width: '100%',
                   padding: '0.625rem 0.875rem',
                   borderRadius: '8px',
@@ -846,23 +789,13 @@ const handleReset = () => {
             </div>
 
             <div className="process-form-group">
-              <label>DISA *</label>
+              <label>DISA </label>
               <DisaDropdown
                 ref={el => inputRefs.current.disa = el}
                 name="disa"
                 value={formData.disa}
                 onChange={handleChange}
                 onKeyDown={e => handleKeyDown(e, 'disa')}
-                disabled={isPrimarySaved}
-                className={
-                  isPrimarySaved
-                    ? ""
-                    : disaValid === null
-                    ? ""
-                    : disaValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
               />
             </div>
 
@@ -870,96 +803,77 @@ const handleReset = () => {
               <label>&nbsp;</label>
               <LockPrimaryButton
                 onClick={handlePrimarySubmit}
-                disabled={!isPrimarySaved && !formData.disa}
+                disabled={savePrimaryLoading || !formData.date || !formData.disa || isPrimarySaved}
                 isLocked={isPrimarySaved}
               />
+              {savePrimaryLoading && <span style={{ fontSize: '0.75rem', color: '#5B9AA9' }}>Saving...</span>}
             </div>
 
             {/* Divider line to separate primary data from other inputs */}
             <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '1rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
             <div className="process-form-group">
-              <label>Part Name *</label>
+              <label>Part Name </label>
               <input 
                 ref={el => inputRefs.current.partName = el} 
                 type="text" 
                 name="partName" 
                 value={formData.partName} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'partName')} 
+                onKeyDown={e => handleKeyDown(e, 'partName')}
                 placeholder="e.g., ABC-123"
-                className={
-                  partNameValid === null
-                    ? ""
-                    : partNameValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('partName', partNameValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Date Code *</label>
+              <label>Date Code </label>
               <input 
                 ref={el => inputRefs.current.datecode = el} 
                 type="text" 
                 name="datecode" 
                 value={formData.datecode} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'datecode')} 
+                onKeyDown={e => handleKeyDown(e, 'datecode')}
                 placeholder="e.g., 6F25"
-                className={
-                  datecodeValid === null
-                    ? ""
-                    : datecodeValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('datecode', datecodeValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Heat Code *</label>
+              <label>Heat Code </label>
               <input 
                 ref={el => inputRefs.current.heatcode = el} 
                 type="number" 
                 name="heatcode" 
                 value={formData.heatcode} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'heatcode')} 
+                onKeyDown={e => handleKeyDown(e, 'heatcode')}
                 placeholder="Enter number only"
-                className={
-                  heatcodeValid === null
-                    ? ""
-                    : heatcodeValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('heatcode', heatcodeValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Qty. Of Moulds</label>
+              <label>Qty. Of Moulds *</label>
               <input 
                 ref={el => inputRefs.current.quantityOfMoulds = el} 
                 type="number" 
                 name="quantityOfMoulds" 
                 value={formData.quantityOfMoulds} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'quantityOfMoulds')} 
+                onKeyDown={e => handleKeyDown(e, 'quantityOfMoulds')}
                 placeholder="Enter quantity"
-                className={
-                  quantityOfMouldsValid === null
-                    ? ""
-                    : quantityOfMouldsValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('quantityOfMoulds', quantityOfMouldsValid)}
               />
             </div>
 
             <div className="section-header metal-composition-header">
-              <h3>Metal Composition (%)</h3>
+              <h3>Metal Composition (%) </h3>
             </div>
             <div className="process-form-group">
               <label>C</label>
@@ -970,15 +884,10 @@ const handleReset = () => {
                 step="0.001" 
                 value={formData.metalCompositionC} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'metalCompositionC')} 
+                onKeyDown={e => handleKeyDown(e, 'metalCompositionC')}
                 placeholder="%"
-                className={
-                  metalCValid === null
-                    ? ""
-                    : metalCValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('metalCompositionC', metalCValid)}
               />
             </div>
             <div className="process-form-group">
@@ -990,15 +899,10 @@ const handleReset = () => {
                 step="0.001" 
                 value={formData.metalCompositionSi} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'metalCompositionSi')} 
+                onKeyDown={e => handleKeyDown(e, 'metalCompositionSi')}
                 placeholder="%"
-                className={
-                  metalSiValid === null
-                    ? ""
-                    : metalSiValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('metalCompositionSi', metalSiValid)}
               />
             </div>
             <div className="process-form-group">
@@ -1010,15 +914,10 @@ const handleReset = () => {
                 step="0.001" 
                 value={formData.metalCompositionMn} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'metalCompositionMn')} 
+                onKeyDown={e => handleKeyDown(e, 'metalCompositionMn')}
                 placeholder="%"
-                className={
-                  metalMnValid === null
-                    ? ""
-                    : metalMnValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('metalCompositionMn', metalMnValid)}
               />
             </div>
             <div className="process-form-group">
@@ -1030,15 +929,10 @@ const handleReset = () => {
                 step="0.001" 
                 value={formData.metalCompositionP} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'metalCompositionP')} 
+                onKeyDown={e => handleKeyDown(e, 'metalCompositionP')}
                 placeholder="%"
-                className={
-                  metalPValid === null
-                    ? ""
-                    : metalPValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('metalCompositionP', metalPValid)}
               />
             </div>
             <div className="process-form-group">
@@ -1050,15 +944,10 @@ const handleReset = () => {
                 step="0.001" 
                 value={formData.metalCompositionS} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'metalCompositionS')} 
+                onKeyDown={e => handleKeyDown(e, 'metalCompositionS')}
                 placeholder="%"
-                className={
-                  metalSValid === null
-                    ? ""
-                    : metalSValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('metalCompositionS', metalSValid)}
               />
             </div>
             <div className="process-form-group">
@@ -1070,15 +959,10 @@ const handleReset = () => {
                 step="0.001" 
                 value={formData.metalCompositionMgFL} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'metalCompositionMgFL')} 
+                onKeyDown={e => handleKeyDown(e, 'metalCompositionMgFL')}
                 placeholder="%"
-                className={
-                  metalMgFLValid === null
-                    ? ""
-                    : metalMgFLValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('metalCompositionMgFL', metalMgFLValid)}
               />
             </div>
             <div className="process-form-group">
@@ -1090,15 +974,10 @@ const handleReset = () => {
                 step="0.001" 
                 value={formData.metalCompositionCu} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'metalCompositionCu')} 
+                onKeyDown={e => handleKeyDown(e, 'metalCompositionCu')}
                 placeholder="%"
-                className={
-                  metalCuValid === null
-                    ? ""
-                    : metalCuValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('metalCompositionCu', metalCuValid)}
               />
             </div>
             <div className="process-form-group">
@@ -1110,15 +989,10 @@ const handleReset = () => {
                 step="0.001" 
                 value={formData.metalCompositionCr} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'metalCompositionCr')} 
+                onKeyDown={e => handleKeyDown(e, 'metalCompositionCr')}
                 placeholder="%"
-                className={
-                  metalCrValid === null
-                    ? ""
-                    : metalCrValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('metalCompositionCr', metalCrValid)}
               />
             </div>
 
@@ -1126,14 +1000,15 @@ const handleReset = () => {
             <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
             <div className="process-form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>Time of Pouring (Range) *</label>
+              <label>Time of Pouring (Range) </label>
               <div style={{ display: 'flex', gap: '1.5rem' }}>
                 <div>
                   <label>From Time</label>
                   <CustomTimeInput
                     value={pouringFromTime}
                     onChange={setPouringFromTime}
-                    className={pouringTimeValid === null ? '' : pouringTimeValid ? 'valid-input' : 'invalid-input'}
+                    disabled={!isPrimarySaved}
+                    hasError={pouringTimeValid === false}
                   />
                 </div>
                 <div>
@@ -1141,14 +1016,15 @@ const handleReset = () => {
                   <CustomTimeInput
                     value={pouringToTime}
                     onChange={setPouringToTime}
-                    className={pouringTimeValid === null ? '' : pouringTimeValid ? 'valid-input' : 'invalid-input'}
+                    disabled={!isPrimarySaved}
+                    hasError={pouringTimeValid === false}
                   />
                 </div>
               </div>
             </div>
 
             <div className="process-form-group">
-              <label>Pouring Temp (°C) *</label>
+              <label>Pouring Temp (°C) </label>
               <input 
                 ref={el => inputRefs.current.pouringTemperature = el} 
                 type="number" 
@@ -1156,73 +1032,53 @@ const handleReset = () => {
                 step="0.01" 
                 value={formData.pouringTemperature} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'pouringTemperature')} 
+                onKeyDown={e => handleKeyDown(e, 'pouringTemperature')}
                 placeholder="e.g., 1450"
-                className={
-                  pouringTempValid === null
-                    ? ""
-                    : pouringTempValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('pouringTemperature', pouringTempValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>PP Code *</label>
+              <label>PP Code </label>
               <input 
                 ref={el => inputRefs.current.ppCode = el} 
                 type="number" 
                 name="ppCode" 
                 value={formData.ppCode} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'ppCode')} 
+                onKeyDown={e => handleKeyDown(e, 'ppCode')}
                 placeholder="Enter number only"
-                className={
-                  ppCodeValid === null
-                    ? ""
-                    : ppCodeValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('ppCode', ppCodeValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Treatment No *</label>
+              <label>Treatment No </label>
               <input 
                 ref={el => inputRefs.current.treatmentNo = el} 
                 type="number" 
                 name="treatmentNo" 
                 value={formData.treatmentNo} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'treatmentNo')} 
+                onKeyDown={e => handleKeyDown(e, 'treatmentNo')}
                 placeholder="Enter number only"
-                className={
-                  treatmentNoValid === null
-                    ? ""
-                    : treatmentNoValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('treatmentNo', treatmentNoValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>F/C No. *</label>
+              <label>F/C No. </label>
               <select
                 ref={el => inputRefs.current.fcNo = el} 
                 name="fcNo" 
                 value={formData.fcNo} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'fcNo')} 
-                className={
-                  fcNoValid === null
-                    ? ""
-                    : fcNoValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                onKeyDown={e => handleKeyDown(e, 'fcNo')}
+                disabled={!isPrimarySaved}
+                className={getInputClassName('fcNo', fcNoValid)}
               >
                 <option value="">Select F/C No.</option>
                 <option value="I">I</option>
@@ -1235,56 +1091,50 @@ const handleReset = () => {
             </div>
 
             <div className="process-form-group">
-              <label>Heat No *</label>
+              <label>Heat No </label>
               <input 
                 ref={el => inputRefs.current.heatNo = el} 
                 type="text" 
                 name="heatNo" 
                 value={formData.heatNo} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'heatNo')} 
+                onKeyDown={e => handleKeyDown(e, 'heatNo')}
                 placeholder="Enter Heat No"
-                className={
-                  heatNoValid === null
-                    ? ""
-                    : heatNoValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('heatNo', heatNoValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Con No</label>
+              <label>Con No </label>
               <input 
                 ref={el => inputRefs.current.conNo = el} 
                 type="number" 
                 name="conNo" 
                 value={formData.conNo} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'conNo')} 
+                onKeyDown={e => handleKeyDown(e, 'conNo')}
                 placeholder="Enter number only"
-                className={
-                  conNoValid === null
-                    ? ""
-                    : conNoValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('conNo', conNoValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Tapping Time</label>
+              <label>Tapping Time </label>
               <CustomTimeInput
                 value={tappingTime}
                 onChange={setTappingTime}
-                className={tappingTimeValid === null ? '' : tappingTimeValid ? 'valid-input' : 'invalid-input'}
+                disabled={!isPrimarySaved}
+                hasError={tappingTimeValid === false}
               />
             </div>
 
+            <div className="section-header corrective-addition-header">
+              <h3>Corrective Additions (Kgs) </h3>
+            </div>
             <div className="process-form-group">
-              <label>Corrective Addition C</label>
+              <label>C</label>
               <input 
                 ref={r => inputRefs.current.correctiveAdditionC = r} 
                 type="number" 
@@ -1292,20 +1142,15 @@ const handleReset = () => {
                 step="0.01" 
                 value={formData.correctiveAdditionC} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionC')} 
+                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionC')}
                 placeholder="Kgs"
-                className={
-                  corrCValid === null
-                    ? ""
-                    : corrCValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('correctiveAdditionC', corrCValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Corrective Addition Si</label>
+              <label>Si</label>
               <input 
                 ref={r => inputRefs.current.correctiveAdditionSi = r} 
                 type="number" 
@@ -1313,20 +1158,15 @@ const handleReset = () => {
                 step="0.01" 
                 value={formData.correctiveAdditionSi} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionSi')} 
+                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionSi')}
                 placeholder="Kgs"
-                className={
-                  corrSiValid === null
-                    ? ""
-                    : corrSiValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('correctiveAdditionSi', corrSiValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Corrective Addition Mn</label>
+              <label>Mn</label>
               <input 
                 ref={r => inputRefs.current.correctiveAdditionMn = r} 
                 type="number" 
@@ -1334,20 +1174,15 @@ const handleReset = () => {
                 step="0.01" 
                 value={formData.correctiveAdditionMn} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionMn')} 
+                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionMn')}
                 placeholder="Kgs"
-                className={
-                  corrMnValid === null
-                    ? ""
-                    : corrMnValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('correctiveAdditionMn', corrMnValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Corrective Addition S</label>
+              <label>S</label>
               <input 
                 ref={r => inputRefs.current.correctiveAdditionS = r} 
                 type="number" 
@@ -1355,15 +1190,58 @@ const handleReset = () => {
                 step="0.01" 
                 value={formData.correctiveAdditionS} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionS')} 
+                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionS')}
                 placeholder="Kgs"
-                className={
-                  corrSValid === null
-                    ? ""
-                    : corrSValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('correctiveAdditionS', corrSValid)}
+              />
+            </div>
+
+            <div className="process-form-group">
+              <label>Cr</label>
+              <input 
+                ref={r => inputRefs.current.correctiveAdditionCr = r} 
+                type="number" 
+                name="correctiveAdditionCr" 
+                step="0.01" 
+                value={formData.correctiveAdditionCr} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionCr')}
+                placeholder="Kgs"
+                disabled={!isPrimarySaved}
+                className={getInputClassName('correctiveAdditionCr', corrCrValid)}
+              />
+            </div>
+
+            <div className="process-form-group">
+              <label>Cu</label>
+              <input 
+                ref={r => inputRefs.current.correctiveAdditionCu = r} 
+                type="number" 
+                name="correctiveAdditionCu" 
+                step="0.01" 
+                value={formData.correctiveAdditionCu} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionCu')}
+                placeholder="Kgs"
+                disabled={!isPrimarySaved}
+                className={getInputClassName('correctiveAdditionCu', corrCuValid)}
+              />
+            </div>
+
+            <div className="process-form-group">
+              <label>Sn</label>
+              <input 
+                ref={r => inputRefs.current.correctiveAdditionSn = r} 
+                type="number" 
+                name="correctiveAdditionSn" 
+                step="0.01" 
+                value={formData.correctiveAdditionSn} 
+                onChange={handleChange} 
+                onKeyDown={e => handleKeyDown(e, 'correctiveAdditionSn')}
+                placeholder="Kgs"
+                disabled={!isPrimarySaved}
+                className={getInputClassName('correctiveAdditionSn', corrSnValid)}
               />
             </div>
 
@@ -1371,7 +1249,7 @@ const handleReset = () => {
             <div style={{ gridColumn: '1 / -1', marginTop: '1rem', marginBottom: '0.5rem', paddingTop: '1rem', borderTop: '2px solid #e2e8f0' }}></div>
 
             <div className="process-form-group">
-              <label>Tapping Wt (Kgs) *</label>
+              <label>Tapping Wt (Kgs) </label>
               <input 
                 ref={el => inputRefs.current.tappingWt = el} 
                 type="number" 
@@ -1379,15 +1257,10 @@ const handleReset = () => {
                 step="0.01" 
                 value={formData.tappingWt} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'tappingWt')} 
+                onKeyDown={e => handleKeyDown(e, 'tappingWt')}
                 placeholder="Enter weight"
-                className={
-                  tappingWtValid === null
-                    ? ""
-                    : tappingWtValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('tappingWt', tappingWtValid)}
               />
             </div>
 
@@ -1400,15 +1273,10 @@ const handleReset = () => {
                 step="0.01" 
                 value={formData.mg} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'mg')} 
+                onKeyDown={e => handleKeyDown(e, 'mg')}
                 placeholder="Enter Mg"
-                className={
-                  mgValid === null
-                    ? ""
-                    : mgValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('mg', mgValid)}
               />
             </div>
 
@@ -1421,15 +1289,10 @@ const handleReset = () => {
                 step="0.01" 
                 value={formData.resMgConvertor} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'resMgConvertor')} 
+                onKeyDown={e => handleKeyDown(e, 'resMgConvertor')}
                 placeholder="Enter %"
-                className={
-                  resMgConvertorValid === null
-                    ? ""
-                    : resMgConvertorValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('resMgConvertor', resMgConvertorValid)}
               />
             </div>
 
@@ -1442,20 +1305,15 @@ const handleReset = () => {
                 step="0.01" 
                 value={formData.recOfMg} 
                 onChange={handleChange} 
-                onKeyDown={e => handleKeyDown(e, 'recOfMg')} 
+                onKeyDown={e => handleKeyDown(e, 'recOfMg')}
                 placeholder="Enter %"
-                className={
-                  recOfMgValid === null
-                    ? ""
-                    : recOfMgValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('recOfMg', recOfMgValid)}
               />
             </div>
 
             <div className="process-form-group">
-              <label>Stream Inoculant (gm/Sec) *</label>
+              <label>Stream Inoculant (gm/Sec) </label>
               <input 
                 ref={el => inputRefs.current.streamInoculant = el}
                 type="number"
@@ -1465,13 +1323,8 @@ const handleReset = () => {
                 onKeyDown={e => handleKeyDown(e, 'streamInoculant')}
                 step="0.1"
                 placeholder="e.g., 5.5"
-                className={
-                  streamInoculantValid === null
-                    ? ""
-                    : streamInoculantValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('streamInoculant', streamInoculantValid)}
               />
             </div>
 
@@ -1486,56 +1339,41 @@ const handleReset = () => {
                 onKeyDown={e => handleKeyDown(e, 'pTime')}
                 step="0.1"
                 placeholder="e.g., 120"
-                className={
-                  pTimeValid === null
-                    ? ""
-                    : pTimeValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
+                disabled={!isPrimarySaved}
+                className={getInputClassName('pTime', pTimeValid)}
               />
             </div>
 
             <div className="process-form-group" style={{ gridColumn: '1 / -1' }}>
-              <label>Remarks *</label>
+              <label>Remarks </label>
               <textarea 
                 ref={el => inputRefs.current.remarks = el} 
                 name="remarks" 
                 value={formData.remarks} 
                 onChange={handleChange} 
                 onKeyDown={e => handleKeyDown(e, 'remarks')}
-                placeholder="Enter any additional notes..." 
+                placeholder="Enter any additional notes..."
                 maxLength={200}
                 rows={3}
-                className={
-                  remarksValid === null
-                    ? ""
-                    : remarksValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-                style={{
-                  width: '100%',
-                  padding: '0.625rem 0.875rem',
-                  border: '2px solid #cbd5e1',
-                  borderRadius: '8px',
-                  fontSize: '0.875rem',
-                  fontFamily: 'inherit',
-                  resize: 'vertical',
-                  minHeight: '80px'
-                }}
+                disabled={!isPrimarySaved}
+                className={getInputClassName('remarks', remarksValid)}
               />
             </div>
       </div>
 
-      <div className="process-submit-container">
-        <ResetButton onClick={handleReset}>
-          Reset Form
-        </ResetButton>
+      <div className="process-submit-container" style={{ justifyContent: 'flex-end', alignItems: 'center', gap: '1rem' }}>
+        {/* Error message display near submit button */}
+        {submitErrorMessage && (
+          <span className="submit-error-message">
+            {submitErrorMessage}
+          </span>
+        )}
         <SubmitButton
+          ref={el => inputRefs.current.submitBtn = el}
           onClick={handleSubmit}
-          disabled={submitLoading}
+          disabled={submitLoading || !isPrimarySaved}
           type="button"
+          onKeyDown={handleSubmitKeyDown}
         >
           {submitLoading ? (
             <>

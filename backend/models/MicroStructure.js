@@ -17,8 +17,7 @@ const MicroStructureEntrySchema = new mongoose.Schema({
     dateCode: {
         type: String,
         required: true,
-        trim: true,
-        match: /^[0-9][A-Z][0-9]{2}$/  // Example: '3A21'
+        trim: true
     },
 
     heatCode: {
@@ -35,41 +34,68 @@ const MicroStructureEntrySchema = new mongoose.Schema({
     },
 
     graphiteType: {
-        type: Number,
-        required: true,
-        min: 0,
-        max: 100
-    },
-
-    countNos: {
         type: String,
         required: true,
         trim: true
     },
 
-    size: {
-        type: String,
+    countMin: {
+        type: Number,
         required: true,
-        trim: true
+        min: 0
+    },
+    countMax: {
+        type: Number,
+        default: 0,
+        min: 0
     },
 
-    ferrite: {
+    sizeMin: {
+        type: Number,
+        required: true,
+        min: 0
+    },
+    sizeMax: {
+        type: Number,
+        default: 0,
+        min: 0
+    },
+
+    ferriteMin: {
         type: Number,
         required: true,
         min: 0,
         max: 100
     },
+    ferriteMax: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+    },
 
-    pearlite: {
+    pearliteMin: {
         type: Number,
         required: true,
         min: 0,
         max: 100
     },
+    pearliteMax: {
+        type: Number,
+        default: 0,
+        min: 0,
+        max: 100
+    },
 
-    carbide: {
+    carbideMin: {
         type: Number,
         required: true,
+        min: 0,
+        max: 100
+    },
+    carbideMax: {
+        type: Number,
+        default: 0,
         min: 0,
         max: 100
     },
@@ -81,20 +107,24 @@ const MicroStructureEntrySchema = new mongoose.Schema({
     }
 }, {
     timestamps: true,
-    _id: true  // Each entry gets its own _id for editing/deleting
+    _id: true
 });
 
 // Main schema - one document per date
 const MicroStructureSchema = new mongoose.Schema({
     date: {
-        type: Date,
+        type: String,
         required: true,
-        unique: true,  // Only one document per date
+        unique: true,
         index: true
     },
+    savedDisas: [{
+        type: String,
+        trim: true
+    }],
     entries: {
         type: [MicroStructureEntrySchema],
-        default: []  // Array of test entries for this date
+        default: []
     }
 }, {
     timestamps: true,

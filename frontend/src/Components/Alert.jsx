@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check } from 'lucide-react';
+import { Check, AlertCircle } from 'lucide-react';
 import '../styles/ComponentStyles/Alert.css';
 
 // DELETING STATUS COMPONENT
@@ -78,6 +78,23 @@ export const SuccessAlert = ({
         <Check size={20} strokeWidth={3} />
       </div>
       <span className="success-alert-text">{message}</span>
+    </div>
+  );
+};
+
+// Error Alert component
+export const ErrorAlert = ({
+  isVisible,
+  message = 'Error occurred'
+}) => {
+  if (!isVisible) return null;
+
+  return (
+    <div className="error-alert">
+      <div className="error-alert-icon">
+        <AlertCircle size={18} strokeWidth={2.5} />
+      </div>
+      <span className="error-alert-text">{message}</span>
     </div>
   );
 };

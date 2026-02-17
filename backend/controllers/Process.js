@@ -93,3 +93,96 @@ exports.createEntry = async (req, res) => {
         res.status(400).json({ success: false, message: error.message });
     }
 };
+
+/** 4. CHECK DATE+DISA ENTRIES COUNT **/
+exports.checkDateDisaEntries = async (req, res) => {
+    try {
+        const { date, disa } = req.query;
+
+        if (!date || !disa) {
+            return res.status(400).json({ success: false, message: 'Date and DISA are required.' });
+        }
+
+        // Find document for this date
+        const document = await Process.findOne({ date });
+
+        if (!document) {
+            return res.status(200).json({
+                success: true,
+                exists: false,
+                isSaved: false,
+                count: 0,
+                message: 'No entries found for this date.'
+            });
+        }
+
+        // Check if this DISA has been saved as primary
+        const isSaved = document.savedDisas && document.savedDisas.includes(disa);
+
+        // Count entries for this specific DISA on this date
+        const disaEntries = document.entries.filter(entry => entry.disa === disa);
+        const count = disaEntries.length;
+
+        res.status(200).json({
+            success: true,
+            exists: isSaved,
+            isSaved: isSaved,
+            count: count,
+            totalEntriesForDate: document.entries.length,
+            message: isSaved ? `Primary saved. Found ${count} entries for ${disa} on ${date}.` : 'Primary not saved yet.'
+        });
+
+    } catch (error) {
+        console.error('Error checking date+disa entries:', error);
+        res.status(500).json({ success: false, message: error.message });
+    }
+};
+
+/** 5. SAVE PRIMARY (Date + DISA) - Creates document if not exists **/
+exports.savePrimary = async (req, res) => {
+    try {
+        const { date, disa } = req.body;
+
+        if (!date || !disa) {
+            return res.status(400).json({ success: false, message: 'Date and DISA are required.' });
+        }
+
+        // Find or create document for this date
+        let document = await Process.findOne({ date });
+
+        if (!document) {
+            // Create new document for this date with savedDisas array containing this DISA
+            document = await Process.create({
+                date,
+                savedDisas: [disa],
+                entries: []
+            });
+        } else {
+            // Add DISA to savedDisas if not already present
+            if (!document.savedDisas) {
+                document.savedDisas = [];
+            }
+            if (!document.savedDisas.includes(disa)) {
+                document.savedDisas.push(disa);
+                await document.save();
+            }
+        }
+
+        // Count entries for this specific DISA on this date
+        const disaEntries = document.entries.filter(entry => entry.disa === disa);
+        const count = disaEntries.length;
+
+        res.status(200).json({
+            success: true,
+            exists: true,
+            isSaved: true,
+            count: count,
+            totalEntriesForDate: document.entries.length,
+            message: 'Primary saved successfully.'
+        });
+
+    } catch (error) {
+        console.error('Error saving primary:', error);
+        res.status(400).json({ success: false, message: error.message });
+    }
+};

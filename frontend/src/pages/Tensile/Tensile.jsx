@@ -1,20 +1,20 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Save, Loader2 } from 'lucide-react';
-import { SubmitButton, ResetButton } from '../../Components/Buttons';
+import { Save } from 'lucide-react';
+import { SubmitButton } from '../../Components/Buttons';
+import { ErrorAlert } from '../../Components/Alert';
+import CustomDatePicker from '../../Components/CustomDatePicker';
+import Sakthi from '../../Components/Sakthi';
 import '../../styles/PageStyles/Tensile/Tensile.css';
 
 const Tensile = () => {
-  // Helper function to get today's date in YYYY-MM-DD format (fallback)
-  const getTodayDate = () => {
+  // Get current date in YYYY-MM-DD format
+  const getCurrentDate = () => {
     const today = new Date();
-    const year = today.getFullYear();
-    const month = String(today.getMonth() + 1).padStart(2, '0');
-    const day = String(today.getDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
+    return today.toISOString().split('T')[0];
   };
 
   const [formData, setFormData] = useState({
-    dateOfInspection: getTodayDate(), // Temporary, will be updated with server date
+    dateOfInspection: getCurrentDate(),
     item: '',
     dateCode: '',
     heatCode: '',
@@ -31,11 +31,18 @@ const Tensile = () => {
   });
 
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [validationErrors, setValidationErrors] = useState({});
-  const [submitError, setSubmitError] = useState('');
-  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [submitErrorMessage, setSubmitErrorMessage] = useState('');
+  const [showSuccessPopup, setShowSuccessPopup] = useState(false);
 
-  // VALIDATION STATES
+  // Check if date is selected (for locking other inputs)
+  const isDateSelected = formData.dateOfInspection && formData.dateOfInspection.trim() !== '';
+
+  /* 
+   * VALIDATION STATES
+   * null = neutral/default (no border color)
+   * false = invalid (red border) - shown after submit when field is empty/invalid
+   */
+  const [dateValid, setDateValid] = useState(null);
   const [itemValid, setItemValid] = useState(null);
   const [dateCodeValid, setDateCodeValid] = useState(null);
   const [heatCodeValid, setHeatCodeValid] = useState(null);
@@ -48,211 +55,104 @@ const Tensile = () => {
   const [ysValid, setYsValid] = useState(null);
   const [elongationValid, setElongationValid] = useState(null);
   const [testedByValid, setTestedByValid] = useState(null);
+  const [remarksValid, setRemarksValid] = useState(null);
 
   const firstFieldRef = useRef(null);
   const submitButtonRef = useRef(null);
 
-  // Set current date on mount (client-side, like Process.jsx)
-  useEffect(() => {
-    const today = new Date();
-    const y = today.getFullYear();
-    const m = String(today.getMonth() + 1).padStart(2, '0');
-    const d = String(today.getDate()).padStart(2, '0');
-    setFormData(prev => ({
-      ...prev,
-      dateOfInspection: `${y}-${m}-${d}`
-    }));
-  }, []);
+  /*
+   * Returns the appropriate CSS class for an input field based on validation state:
+   * - Red border (invalid-input) when field is invalid/empty after submit
+   * - Neutral (no color) otherwise
+   */
+  const getInputClassName = (validationState) => {
+    if (validationState === false) return 'invalid-input';
+    return '';
+  };
 
+  // Format date for display
+  const formatDisplayDate = (iso) => {
+    if (!iso || typeof iso !== 'string' || !iso.includes('-')) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d} / ${m} / ${y}`;
+  };
+
+  /*
+   * Handle input change
+   * When user starts typing, reset validation state to null (neutral)
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Prevent date changes
-    if (name === 'dateOfInspection') {
-      return;
+    // Reset validation to neutral when user starts typing
+    switch (name) {
+      case 'dateOfInspection':
+        setDateValid(null);
+        break;
+      case 'item':
+        setItemValid(null);
+        break;
+      case 'dateCode':
+        setDateCodeValid(null);
+        break;
+      case 'heatCode':
+        setHeatCodeValid(null);
+        break;
+      case 'dia':
+        setDiaValid(null);
+        break;
+      case 'lo':
+        setLoValid(null);
+        break;
+      case 'li':
+        setLiValid(null);
+        break;
+      case 'breakingLoad':
+        setBreakingLoadValid(null);
+        break;
+      case 'yieldLoad':
+        setYieldLoadValid(null);
+        break;
+      case 'uts':
+        setUtsValid(null);
+        break;
+      case 'ys':
+        setYsValid(null);
+        break;
+      case 'elongation':
+        setElongationValid(null);
+        break;
+      case 'testedBy':
+        setTestedByValid(null);
+        break;
+      case 'remarks':
+        setRemarksValid(null);
+        break;
+      default:
+        break;
     }
 
-    // --- VALIDATE ITEM: text required ---
-    if (name === 'item') {
-      if (value.trim() === "") {
-        // Only show red if submit was attempted, otherwise neutral
-        setItemValid(submitAttempted ? false : null);
-      } else {
-        setItemValid(value.trim().length > 0);
-      }
-    }
-
-    // --- VALIDATE DATE CODE: specific format (e.g., 6F25) ---
-    if (name === 'dateCode') {
-      const pattern = /^[0-9][A-Z][0-9]{2}$/;
-      if (value.trim() === "") {
-        // Only show red if submit was attempted, otherwise neutral
-        setDateCodeValid(submitAttempted ? false : null);
-      } else {
-        setDateCodeValid(pattern.test(value));
-      }
-      setFormData(prev => ({
-        ...prev,
-        [name]: value.toUpperCase()
-      }));
-      if (validationErrors[name]) {
-        setValidationErrors(prev => {
-          const newErrors = { ...prev };
-          delete newErrors[name];
-          return newErrors;
-        });
-      }
-      return;
-    }
-
-    // --- VALIDATE HEAT CODE: only numbers ---
-    if (name === 'heatCode') {
-      const numericPattern = /^\d+$/;
-      if (value.trim() === "") {
-        setHeatCodeValid(null); // Optional field, always neutral when empty
-      } else {
-        setHeatCodeValid(numericPattern.test(value));
-      }
-    }
-
-    // --- VALIDATE DIA: number ---
-    if (name === 'dia') {
-      if (value.trim() === "") {
-        setDiaValid(null); // Optional field, always neutral when empty
-      } else {
-        setDiaValid(!isNaN(value) && parseFloat(value) > 0);
-      }
-    }
-
-    // --- VALIDATE LO: number ---
-    if (name === 'lo') {
-      if (value.trim() === "") {
-        setLoValid(null); // Optional field, always neutral when empty
-      } else {
-        setLoValid(!isNaN(value) && parseFloat(value) > 0);
-      }
-    }
-
-    // --- VALIDATE LI: number ---
-    if (name === 'li') {
-      if (value.trim() === "") {
-        setLiValid(null); // Optional field, always neutral when empty
-      } else {
-        setLiValid(!isNaN(value) && parseFloat(value) > 0);
-      }
-    }
-
-    // --- VALIDATE BREAKING LOAD: number ---
-    if (name === 'breakingLoad') {
-      if (value.trim() === "") {
-        setBreakingLoadValid(null); // Optional field, always neutral when empty
-      } else {
-        setBreakingLoadValid(!isNaN(value) && parseFloat(value) > 0);
-      }
-    }
-
-    // --- VALIDATE YIELD LOAD: number ---
-    if (name === 'yieldLoad') {
-      if (value.trim() === "") {
-        setYieldLoadValid(null); // Optional field, always neutral when empty
-      } else {
-        setYieldLoadValid(!isNaN(value) && parseFloat(value) > 0);
-      }
-    }
-
-    // --- VALIDATE UTS: number ---
-    if (name === 'uts') {
-      if (value.trim() === "") {
-        setUtsValid(null); // Optional field, always neutral when empty
-      } else {
-        setUtsValid(!isNaN(value) && parseFloat(value) > 0);
-      }
-    }
-
-    // --- VALIDATE YS: number ---
-    if (name === 'ys') {
-      if (value.trim() === "") {
-        setYsValid(null); // Optional field, always neutral when empty
-      } else {
-        setYsValid(!isNaN(value) && parseFloat(value) > 0);
-      }
-    }
-
-    // --- VALIDATE ELONGATION: number between 0-100 ---
-    if (name === 'elongation') {
-      if (value.trim() === "") {
-        setElongationValid(null); // Optional field, always neutral when empty
-      } else {
-        const num = parseFloat(value);
-        setElongationValid(!isNaN(num) && num >= 0 && num <= 100);
-      }
-    }
-
-    // --- VALIDATE TESTED BY: optional text field ---
-    if (name === 'testedBy') {
-      if (value.trim() === "") {
-        setTestedByValid(null); // Optional field, always neutral when empty
-      } else {
-        setTestedByValid(value.trim().length > 0);
-      }
-    }
+    // Auto-uppercase dateCode
+    const finalValue = name === 'dateCode' ? value.toUpperCase() : value;
 
     setFormData(prev => ({
       ...prev,
-      [name]: value
+      [name]: finalValue
     }));
-
-    // Clear validation error when user starts typing
-    if (validationErrors[name]) {
-      setValidationErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[name];
-        return newErrors;
-      });
-    }
-  };
-
-  const handleBlur = (e) => {
-    const { name, value, type } = e.target;
-    
-    // Auto-format single digit numbers with leading zero
-    if (type === 'number' && value && !isNaN(value) && parseFloat(value) >= 0 && parseFloat(value) <= 9 && !value.includes('.') && value.length === 1) {
-      const formattedValue = '0' + value;
-      setFormData(prev => ({
-        ...prev,
-        [name]: formattedValue
-      }));
-    }
   };
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
       e.preventDefault();
-      
-      // If on the last field (testedBy), focus submit button
-      if (e.target.name === 'testedBy') {
-        submitButtonRef.current?.focus();
-        return;
-      }
-      
-      // If on remarks textarea, move to testedBy
-      if (e.target.name === 'remarks') {
-        const form = e.target.form;
-        const testedByInput = form.querySelector('input[name="testedBy"]');
-        if (testedByInput) {
-          testedByInput.focus();
-        }
-        return;
-      }
-      
-      // For other fields, move to next input (excluding disabled/readonly fields)
       const form = e.target.form;
-      const inputs = Array.from(form.querySelectorAll('input:not([readonly]):not([disabled]), textarea'));
+      const inputs = Array.from(form.querySelectorAll('input:not([disabled]), textarea'));
       const currentIndex = inputs.indexOf(e.target);
       const nextInput = inputs[currentIndex + 1];
-      
+
       if (nextInput) {
         nextInput.focus();
+      } else {
+        submitButtonRef.current?.focus();
       }
     }
   };
@@ -264,137 +164,111 @@ const Tensile = () => {
     }
   };
 
+  /*
+   * Handle form submission with validation
+   * 
+   * Validation Flow:
+   * 1. Check each required field for empty/invalid values
+   * 2. If invalid, set validation state to false (shows red border)
+   * 3. If valid, set validation state to null (neutral, no color)
+   * 4. If any errors exist, show error message and stop submission
+   * 5. On successful submission, reset all validation states to null
+   */
   const handleSubmit = async () => {
-    // Clear any previous error
-    setSubmitError('');
-    setSubmitAttempted(true);
-
-    // Validate ALL fields - turn empty fields red on submit
     let hasErrors = false;
-    const errors = {};
 
-    // Required fields validation
-    if (!formData.item || formData.item.trim() === '') {
-      setItemValid(false);
-      errors.item = 'Item is required';
-      hasErrors = true;
-    } else if (formData.item.trim().length > 0) {
-      setItemValid(true);
-    }
+    const dateCodePattern = /^[0-9][A-Z][0-9]{2}$/;
+    const numericPattern = /^\d+$/;
 
-    if (!formData.dateCode || formData.dateCode.trim() === '') {
-      setDateCodeValid(false);
-      errors.dateCode = 'Date Code is required';
+    // Validate Date
+    if (!formData.dateOfInspection || !formData.dateOfInspection.trim()) {
+      setDateValid(false);
       hasErrors = true;
     } else {
-      const pattern = /^[0-9][A-Z][0-9]{2}$/;
-      if (!pattern.test(formData.dateCode)) {
-        setDateCodeValid(false);
-        errors.dateCode = 'Invalid format (e.g., 6F25)';
-        hasErrors = true;
-      } else {
-        setDateCodeValid(true);
-      }
+      setDateValid(null);
     }
 
-    // All other fields - mark as invalid if empty OR if they have invalid data
-    if (!formData.heatCode || formData.heatCode.trim() === '') {
+    // Validate Item
+    if (!formData.item || !formData.item.trim()) {
+      setItemValid(false);
+      hasErrors = true;
+    } else {
+      setItemValid(null);
+    }
+
+    // Validate Date Code
+    if (!formData.dateCode || !formData.dateCode.trim() || !dateCodePattern.test(formData.dateCode)) {
+      setDateCodeValid(false);
+      hasErrors = true;
+    } else {
+      setDateCodeValid(null);
+    }
+
+    // Validate Heat Code
+    if (!formData.heatCode || !formData.heatCode.trim() || !numericPattern.test(formData.heatCode)) {
       setHeatCodeValid(false);
       hasErrors = true;
     } else {
-      const numericPattern = /^\d+$/;
-      if (!numericPattern.test(formData.heatCode)) {
-        setHeatCodeValid(false);
-        hasErrors = true;
-      } else {
-        setHeatCodeValid(true);
-      }
+      setHeatCodeValid(null);
     }
 
-    if (!formData.dia || formData.dia.toString().trim() === '') {
+    // Validate Dia
+    if (!formData.dia || formData.dia.toString().trim() === '' || isNaN(formData.dia) || parseFloat(formData.dia) <= 0) {
       setDiaValid(false);
       hasErrors = true;
     } else {
-      if (isNaN(formData.dia) || parseFloat(formData.dia) <= 0) {
-        setDiaValid(false);
-        hasErrors = true;
-      } else {
-        setDiaValid(true);
-      }
+      setDiaValid(null);
     }
 
-    if (!formData.lo || formData.lo.toString().trim() === '') {
+    // Validate Lo
+    if (!formData.lo || formData.lo.toString().trim() === '' || isNaN(formData.lo) || parseFloat(formData.lo) <= 0) {
       setLoValid(false);
       hasErrors = true;
     } else {
-      if (isNaN(formData.lo) || parseFloat(formData.lo) <= 0) {
-        setLoValid(false);
-        hasErrors = true;
-      } else {
-        setLoValid(true);
-      }
+      setLoValid(null);
     }
 
-    if (!formData.li || formData.li.toString().trim() === '') {
+    // Validate Li
+    if (!formData.li || formData.li.toString().trim() === '' || isNaN(formData.li) || parseFloat(formData.li) <= 0) {
       setLiValid(false);
       hasErrors = true;
     } else {
-      if (isNaN(formData.li) || parseFloat(formData.li) <= 0) {
-        setLiValid(false);
-        hasErrors = true;
-      } else {
-        setLiValid(true);
-      }
+      setLiValid(null);
     }
 
-    if (!formData.breakingLoad || formData.breakingLoad.toString().trim() === '') {
+    // Validate Breaking Load
+    if (!formData.breakingLoad || formData.breakingLoad.toString().trim() === '' || isNaN(formData.breakingLoad) || parseFloat(formData.breakingLoad) <= 0) {
       setBreakingLoadValid(false);
       hasErrors = true;
     } else {
-      if (isNaN(formData.breakingLoad) || parseFloat(formData.breakingLoad) <= 0) {
-        setBreakingLoadValid(false);
-        hasErrors = true;
-      } else {
-        setBreakingLoadValid(true);
-      }
+      setBreakingLoadValid(null);
     }
 
-    if (!formData.yieldLoad || formData.yieldLoad.toString().trim() === '') {
+    // Validate Yield Load
+    if (!formData.yieldLoad || formData.yieldLoad.toString().trim() === '' || isNaN(formData.yieldLoad) || parseFloat(formData.yieldLoad) <= 0) {
       setYieldLoadValid(false);
       hasErrors = true;
     } else {
-      if (isNaN(formData.yieldLoad) || parseFloat(formData.yieldLoad) <= 0) {
-        setYieldLoadValid(false);
-        hasErrors = true;
-      } else {
-        setYieldLoadValid(true);
-      }
+      setYieldLoadValid(null);
     }
 
-    if (!formData.uts || formData.uts.toString().trim() === '') {
+    // Validate UTS
+    if (!formData.uts || formData.uts.toString().trim() === '' || isNaN(formData.uts) || parseFloat(formData.uts) <= 0) {
       setUtsValid(false);
       hasErrors = true;
     } else {
-      if (isNaN(formData.uts) || parseFloat(formData.uts) <= 0) {
-        setUtsValid(false);
-        hasErrors = true;
-      } else {
-        setUtsValid(true);
-      }
+      setUtsValid(null);
     }
 
-    if (!formData.ys || formData.ys.toString().trim() === '') {
+    // Validate YS
+    if (!formData.ys || formData.ys.toString().trim() === '' || isNaN(formData.ys) || parseFloat(formData.ys) <= 0) {
       setYsValid(false);
       hasErrors = true;
     } else {
-      if (isNaN(formData.ys) || parseFloat(formData.ys) <= 0) {
-        setYsValid(false);
-        hasErrors = true;
-      } else {
-        setYsValid(true);
-      }
+      setYsValid(null);
     }
 
+    // Validate Elongation
     if (!formData.elongation || formData.elongation.toString().trim() === '') {
       setElongationValid(false);
       hasErrors = true;
@@ -404,33 +278,38 @@ const Tensile = () => {
         setElongationValid(false);
         hasErrors = true;
       } else {
-        setElongationValid(true);
+        setElongationValid(null);
       }
     }
 
-    // Tested By is optional - only validate if it has a value
-    if (formData.testedBy && formData.testedBy.trim() !== '') {
-      if (formData.testedBy.trim().length === 0) {
-        setTestedByValid(false);
-        hasErrors = true;
-      } else {
-        setTestedByValid(true);
-      }
+    // Validate Tested By (required)
+    if (!formData.testedBy || !formData.testedBy.trim()) {
+      setTestedByValid(false);
+      hasErrors = true;
+    } else {
+      setTestedByValid(null);
     }
 
+    // Validate Remarks (required)
+    if (!formData.remarks || !formData.remarks.trim()) {
+      setRemarksValid(false);
+      hasErrors = true;
+    } else {
+      setRemarksValid(null);
+    }
+
+    // If there are errors, show error message and stop submission
     if (hasErrors) {
-      setValidationErrors(errors);
+      setSubmitErrorMessage('Enter data in correct Format');
       return;
     }
 
-    // Clear validation errors if all fields are valid
-    setValidationErrors({});
+    // Clear error message if validation passes
+    setSubmitErrorMessage('');
 
     try {
       setSubmitLoading(true);
 
-      // Send payload with date from dateOfInspection
-      // Convert numeric fields from strings to numbers
       const payload = {
         date: formData.dateOfInspection,
         item: formData.item,
@@ -457,17 +336,12 @@ const Tensile = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert('Tensile test entry created successfully!');
+        // Show success popup
+        setShowSuccessPopup(true);
 
-        // Get current date (client-side)
-        const today = new Date();
-        const y = today.getFullYear();
-        const m = String(today.getMonth() + 1).padStart(2, '0');
-        const d = String(today.getDate()).padStart(2, '0');
-        const currentDate = `${y}-${m}-${d}`;
-
+        // Reset form
         setFormData({
-          dateOfInspection: currentDate,
+          dateOfInspection: getCurrentDate(),
           item: '',
           dateCode: '',
           heatCode: '',
@@ -482,10 +356,9 @@ const Tensile = () => {
           remarks: '',
           testedBy: ''
         });
-        setValidationErrors({});
-        setSubmitAttempted(false);
 
         // Reset validation states
+        setDateValid(null);
         setItemValid(null);
         setDateCodeValid(null);
         setHeatCodeValid(null);
@@ -498,8 +371,9 @@ const Tensile = () => {
         setYsValid(null);
         setElongationValid(null);
         setTestedByValid(null);
+        setRemarksValid(null);
+        setSubmitErrorMessage('');
 
-        // Focus first editable field for next entry
         setTimeout(() => {
           firstFieldRef.current?.focus();
         }, 100);
@@ -512,76 +386,6 @@ const Tensile = () => {
     }
   };
 
-  const handleReset = async () => {
-    try {
-      // Get current date (client-side)
-      const today = new Date();
-      const y = today.getFullYear();
-      const m = String(today.getMonth() + 1).padStart(2, '0');
-      const d = String(today.getDate()).padStart(2, '0');
-      const currentDate = `${y}-${m}-${d}`;
-
-      setFormData({
-        dateOfInspection: currentDate,
-        item: '',
-        dateCode: '',
-        heatCode: '',
-        dia: '',
-        lo: '',
-        li: '',
-        breakingLoad: '',
-        yieldLoad: '',
-        uts: '',
-        ys: '',
-        elongation: '',
-        remarks: '',
-        testedBy: ''
-      });
-      setValidationErrors({});
-      setSubmitAttempted(false);
-    } catch (error) {
-      console.error('Error fetching current date:', error);
-      // Reset with current date in formData if API fails
-      setFormData({
-        dateOfInspection: formData.dateOfInspection,
-        item: '',
-        dateCode: '',
-        heatCode: '',
-        dia: '',
-        lo: '',
-        li: '',
-        breakingLoad: '',
-        yieldLoad: '',
-        uts: '',
-        ys: '',
-        elongation: '',
-        remarks: '',
-        testedBy: ''
-      });
-      setValidationErrors({});
-      setSubmitAttempted(false);
-    }
-
-    // Reset validation states
-    setItemValid(null);
-    setDateCodeValid(null);
-    setHeatCodeValid(null);
-    setDiaValid(null);
-    setLoValid(null);
-    setLiValid(null);
-    setBreakingLoadValid(null);
-    setYieldLoadValid(null);
-    setUtsValid(null);
-    setYsValid(null);
-    setElongationValid(null);
-    setTestedByValid(null);
-
-    // Focus first editable field after reset
-    setTimeout(() => {
-      firstFieldRef.current?.focus();
-    }, 100);
-  };
-
   return (
     <>
       <div className="tensile-header">
@@ -592,298 +396,258 @@ const Tensile = () => {
           </h2>
         </div>
         <div aria-label="Date" style={{ fontWeight: 600, color: '#25424c' }}>
-          DATE : {formData.dateOfInspection ? (() => {
-            const [y, m, d] = formData.dateOfInspection.split('-');
-            return `${d} / ${m} / ${y}`;
-          })() : '-'}
+          DATE : {formData.dateOfInspection ? formatDisplayDate(formData.dateOfInspection) : '-'}
         </div>
       </div>
 
-      {/* Entry Form */}
       <form className="tensile-form-grid">
-            <div className="tensile-form-group">
-              <label>Item *</label>
-              <input
-                ref={firstFieldRef}
-                type="text"
-                name="item"
-                value={formData.item}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: Steel Rod"
-                className={
-                  itemValid === null
-                    ? ""
-                    : itemValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        {/* DATE INPUT */}
+        <div className="tensile-form-group">
+          <label>Date</label>
+          <CustomDatePicker
+            ref={firstFieldRef}
+            name="dateOfInspection"
+            value={formData.dateOfInspection}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            max={new Date().toISOString().split('T')[0]}
+            style={{
+              border: dateValid === false ? '2px solid #ef4444' : '2px solid #cbd5e1',
+              width: '100%',
+              padding: '0.625rem 0.875rem',
+              borderRadius: '8px',
+              fontSize: '0.875rem',
+              backgroundColor: '#fff'
+            }}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Date Code *</label>
-              <input
-                type="text"
-                name="dateCode"
-                value={formData.dateCode}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 6F25"
-                className={
-                  dateCodeValid === null
-                    ? ""
-                    : dateCodeValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Item</label>
+          <input
+            type="text"
+            name="item"
+            value={formData.item}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder="e.g: Steel Rod"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(itemValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Heat Code</label>
-              <input
-                type="number"
-                name="heatCode"
-                value={formData.heatCode}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="Enter number only"
-                className={
-                  heatCodeValid === null
-                    ? ""
-                    : heatCodeValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Date Code</label>
+          <input
+            type="text"
+            name="dateCode"
+            value={formData.dateCode}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder="e.g: 6F25"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(dateCodeValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Dia (mm)</label>
-              <input
-                type="number"
-                name="dia"
-                value={formData.dia}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                step="0.01"
-                placeholder="e.g: 10.5"
-                className={
-                  diaValid === null
-                    ? ""
-                    : diaValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Heat Code</label>
+          <input
+            type="number"
+            name="heatCode"
+            value={formData.heatCode}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter number only"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(heatCodeValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Lo (mm)</label>
-              <input
-                type="number"
-                name="lo"
-                value={formData.lo}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                step="0.01"
-                placeholder="e.g: 50.0"
-                className={
-                  loValid === null
-                    ? ""
-                    : loValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Dia (mm)</label>
+          <input
+            type="number"
+            name="dia"
+            value={formData.dia}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            step="0.01"
+            placeholder="e.g: 10.5"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(diaValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Li (mm)</label>
-              <input
-                type="number"
-                name="li"
-                value={formData.li}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                step="0.01"
-                placeholder="e.g: 52.5"
-                className={
-                  liValid === null
-                    ? ""
-                    : liValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Lo (mm)</label>
+          <input
+            type="number"
+            name="lo"
+            value={formData.lo}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            step="0.01"
+            placeholder="e.g: 50.0"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(loValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Breaking Load (kN)</label>
-              <input
-                type="number"
-                name="breakingLoad"
-                value={formData.breakingLoad}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                step="0.01"
-                placeholder="e.g: 45.5"
-                className={
-                  breakingLoadValid === null
-                    ? ""
-                    : breakingLoadValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Li (mm)</label>
+          <input
+            type="number"
+            name="li"
+            value={formData.li}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            step="0.01"
+            placeholder="e.g: 52.5"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(liValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Yield Load</label>
-              <input
-                type="number"
-                name="yieldLoad"
-                value={formData.yieldLoad}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                step="0.01"
-                placeholder="e.g: 38.2"
-                className={
-                  yieldLoadValid === null
-                    ? ""
-                    : yieldLoadValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Breaking Load (kN)</label>
+          <input
+            type="number"
+            name="breakingLoad"
+            value={formData.breakingLoad}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            step="0.01"
+            placeholder="e.g: 45.5"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(breakingLoadValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>UTS (N/mm²)</label>
-              <input
-                type="number"
-                name="uts"
-                value={formData.uts}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                step="0.01"
-                placeholder="e.g: 550"
-                className={
-                  utsValid === null
-                    ? ""
-                    : utsValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Yield Load</label>
+          <input
+            type="number"
+            name="yieldLoad"
+            value={formData.yieldLoad}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            step="0.01"
+            placeholder="e.g: 38.2"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(yieldLoadValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>YS (N/mm²)</label>
-              <input
-                type="number"
-                name="ys"
-                value={formData.ys}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                step="0.01"
-                placeholder="e.g: 460"
-                className={
-                  ysValid === null
-                    ? ""
-                    : ysValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>UTS (N/mm²)</label>
+          <input
+            type="number"
+            name="uts"
+            value={formData.uts}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            step="0.01"
+            placeholder="e.g: 550"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(utsValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Elongation (%)</label>
-              <input
-                type="number"
-                name="elongation"
-                value={formData.elongation}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                step="0.01"
-                placeholder="e.g: 18.5"
-                className={
-                  elongationValid === null
-                    ? ""
-                    : elongationValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>YS (N/mm²)</label>
+          <input
+            type="number"
+            name="ys"
+            value={formData.ys}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            step="0.01"
+            placeholder="e.g: 460"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(ysValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Tested By</label>
-              <input
-                type="text"
-                name="testedBy"
-                value={formData.testedBy}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: John Doe"
-                className={
-                  testedByValid === null
-                    ? ""
-                    : testedByValid
-                    ? "valid-input"
-                    : "invalid-input"
-                }
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Elongation (%)</label>
+          <input
+            type="number"
+            name="elongation"
+            value={formData.elongation}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            step="0.01"
+            placeholder="e.g: 18.5"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(elongationValid)}
+          />
+        </div>
 
-            <div className="tensile-form-group">
-              <label>Remarks</label>
-              <input
-                type="text"
-                name="remarks"
-                value={formData.remarks}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="Enter any additional notes..."
-                maxLength={200}
-              />
-            </div>
+        <div className="tensile-form-group">
+          <label>Tested By</label>
+          <input
+            type="text"
+            name="testedBy"
+            value={formData.testedBy}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder="e.g: John Doe"
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(testedByValid)}
+          />
+        </div>
+
+        <div className="tensile-form-group">
+          <label>Remarks</label>
+          <input
+            type="text"
+            name="remarks"
+            value={formData.remarks}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder="Enter any additional notes..."
+            maxLength={200}
+            autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(remarksValid)}
+          />
+        </div>
       </form>
 
       <div className="tensile-submit-container">
-        <ResetButton onClick={handleReset}>
-          Reset Form
-        </ResetButton>
-
         <div className="tensile-submit-right">
-          {submitError && (
-            <span className="tensile-submit-error">{submitError}</span>
-          )}
+          <ErrorAlert 
+            isVisible={!!submitErrorMessage} 
+            message={submitErrorMessage} 
+          />
           <SubmitButton
             onClick={handleSubmit}
             disabled={submitLoading}
           >
-            {submitLoading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Submit Entry'
-            )}
+            {submitLoading ? 'Saving...' : 'Submit Entry'}
           </SubmitButton>
         </div>
       </div>
+
+      {/* Success Loader */}
+      {showSuccessPopup && (
+        <div className="sakthi-overlay">
+          <Sakthi onComplete={() => setShowSuccessPopup(false)} />
+        </div>
+      )}
     </>
   );
 };

@@ -1,33 +1,47 @@
 import { useState, useRef, useEffect } from 'react';
 import { Save } from 'lucide-react';
-import { SubmitButton, ResetButton } from '../../Components/Buttons';
+import { SubmitButton } from '../../Components/Buttons';
+import { ErrorAlert } from '../../Components/Alert';
 import CustomDatePicker from '../../Components/CustomDatePicker';
+import Sakthi from '../../Components/Sakthi';
 import '../../styles/PageStyles/Impact/Impact.css';
 
 const Impact = () => {
 
+  // Get current date in YYYY-MM-DD format
+  const getCurrentDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
   // ====================== State ======================
   const [formData, setFormData] = useState({
-    date: '',
+    date: getCurrentDate(),
     partName: '',
     dateCode: '',
-    specification: {
-      val: '',
-      constraint: ''
-    },
+    specification: '',
     observedValue: '',
     remarks: ''
   });
 
-  // VALIDATION STATES
+  /* 
+   * VALIDATION STATES
+   * null = neutral/default (no border color)
+   * false = invalid (red border) - shown after submit when field is empty/invalid
+   */
   const [dateValid, setDateValid] = useState(null);
-  const [partNameValid, setPartNameValid] = useState(null); // null = default, true = green, false = red
+  const [partNameValid, setPartNameValid] = useState(null);
   const [dateCodeValid, setDateCodeValid] = useState(null);
-  const [specificationValValid, setSpecificationValValid] = useState(null);
+  const [specificationValid, setSpecificationValid] = useState(null);
   const [observedValueValid, setObservedValueValid] = useState(null);
+  const [remarksValid, setRemarksValid] = useState(null);
+
+  // Check if date is selected (for locking other inputs)
+  const isDateSelected = formData.date && formData.date.trim() !== '';
 
   const [submitLoading, setSubmitLoading] = useState(false);
-  const [submitError, setSubmitError] = useState('');
+  // Submit error message state
+  const [submitErrorMessage, setSubmitErrorMessage] = useState('');
 
   // Success popup state
   const [showSuccessPopup, setShowSuccessPopup] = useState(false);
@@ -36,6 +50,16 @@ const Impact = () => {
   const submitButtonRef = useRef(null);
   const firstInputRef = useRef(null);
 
+  /*
+   * Returns the appropriate CSS class for an input field based on validation state:
+   * - Red border (invalid-input) when field is invalid/empty after submit
+   * - Neutral (no color) otherwise
+   */
+  const getInputClassName = (validationState) => {
+    if (validationState === false) return 'invalid-input';
+    return '';
+  };
+
   // ====================== Format date ======================
   const formatDisplayDate = (iso) => {
     if (!iso || typeof iso !== 'string' || !iso.includes('-')) return '';
@@ -43,68 +67,36 @@ const Impact = () => {
     return `${d} / ${m} / ${y}`;
   };
 
-  // ====================== Handle input change ======================
+  /*
+   * Handle input change
+   * When user starts typing, reset validation state to null (neutral)
+   * This removes the red border as user begins correcting the field
+   */
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // --- VALIDATE DATE ---
-    if (name === "date") {
-      setDateValid(
-        value.trim() === "" ? null : value.trim().length > 0
-      );
-    }
-
-    // --- VALIDATE PART NAME: alphabets and spaces ---
-    if (name === "partName") {
-      const pattern = /^[A-Za-z\s]+$/;
-      setPartNameValid(
-        value.trim() === "" ? null : pattern.test(value)
-      );
-    }
-
-    // --- VALIDATE DATE CODE: specific format (e.g., 6F25) ---
-    // Pattern: 1 digit + 1 uppercase letter + 2 digits
-    if (name === "dateCode") {
-      const pattern = /^[0-9][A-Z][0-9]{2}$/;
-      setDateCodeValid(
-        value.trim() === "" ? null : pattern.test(value)
-      );
-    }
-
-    // --- VALIDATE SPECIFICATION VALUE: number ---
-    if (name === 'specificationVal') {
-      const isValid = value.trim() === "" ? null : !isNaN(value) && value.trim() !== "";
-      setSpecificationValValid(isValid);
-
-      setFormData(prev => ({
-        ...prev,
-        specification: {
-          ...prev.specification,
-          val: value
-        }
-      }));
-      return;
-    }
-
-    // --- VALIDATE OBSERVED VALUE: number or comma-separated numbers ---
-    if (name === "observedValue") {
-      // Pattern allows: single number, or comma-separated numbers (e.g., "12" or "34,45")
-      const pattern = /^[\d.,\s]+$/;
-      setObservedValueValid(
-        value.trim() === "" ? null : pattern.test(value)
-      );
-    }
-
-    // Specification Constraint (no validation needed)
-    if (name === 'specificationConstraint') {
-      setFormData(prev => ({
-        ...prev,
-        specification: {
-          ...prev.specification,
-          constraint: value
-        }
-      }));
-      return;
+    // Reset validation to neutral when user starts typing
+    switch (name) {
+      case 'date':
+        setDateValid(null);
+        break;
+      case 'partName':
+        setPartNameValid(null);
+        break;
+      case 'dateCode':
+        setDateCodeValid(null);
+        break;
+      case 'specification':
+        setSpecificationValid(null);
+        break;
+      case 'observedValue':
+        setObservedValueValid(null);
+        break;
+      case 'remarks':
+        setRemarksValid(null);
+        break;
+      default:
+        break;
     }
 
     // Auto-uppercase dateCode
@@ -142,37 +134,79 @@ const Impact = () => {
     }
   };
 
+  /*
+   * Handle form submission with validation
+   * 
+   * Validation Flow:
+   * 1. Check each required field for empty/invalid values
+   * 2. If invalid, set validation state to false (shows red border)
+   * 3. If valid, set validation state to null (neutral, no color)
+   * 4. If any errors exist, show error message and stop submission
+   * 5. On successful submission, reset all validation states to null
+   */
   const handleSubmit = async () => {
-    // Clear any previous error
-    setSubmitError('');
+    let hasErrors = false;
 
-    // Validate required fields
-    const requiredFields = [
-      { name: 'date', value: formData.date, label: 'Date', setState: setDateValid },
-      { name: 'partName', value: formData.partName, label: 'Part Name', setState: setPartNameValid },
-      { name: 'dateCode', value: formData.dateCode, label: 'Date Code', setState: setDateCodeValid },
-      { name: 'specificationVal', value: formData.specification.val, label: 'Specification Value', setState: setSpecificationValValid },
-      { name: 'observedValue', value: formData.observedValue, label: 'Observed Value', setState: setObservedValueValid }
-    ];
+    const dateCodePattern = /^[0-9][A-Z][0-9]{2}$/;
+    const partNamePattern = /^[A-Za-z\s]+$/;
+    const observedValuePattern = /^[\d.,\s]+$/;
 
-    const emptyFields = requiredFields.filter(field => !field.value || field.value.trim() === '');
+    // Validate Date
+    if (!formData.date || !formData.date.trim()) {
+      setDateValid(false);
+      hasErrors = true;
+    } else {
+      setDateValid(null);
+    }
 
-    if (emptyFields.length > 0) {
-      // Highlight all empty required fields in red
-      emptyFields.forEach(field => {
-        field.setState(false);
-      });
+    // Validate Part Name
+    if (!formData.partName || !formData.partName.trim() || !partNamePattern.test(formData.partName)) {
+      setPartNameValid(false);
+      hasErrors = true;
+    } else {
+      setPartNameValid(null);
+    }
 
-      // Set error message
-      setSubmitError('Please fill in all required fields');
+    // Validate Date Code
+    if (!formData.dateCode || !formData.dateCode.trim() || !dateCodePattern.test(formData.dateCode)) {
+      setDateCodeValid(false);
+      hasErrors = true;
+    } else {
+      setDateCodeValid(null);
+    }
 
-      // Clear error message after 3 seconds
-      setTimeout(() => {
-        setSubmitError('');
-      }, 3000);
+    // Validate Specification
+    if (!formData.specification || !formData.specification.trim()) {
+      setSpecificationValid(false);
+      hasErrors = true;
+    } else {
+      setSpecificationValid(null);
+    }
 
+    // Validate Observed Value
+    if (!formData.observedValue || !formData.observedValue.trim() || !observedValuePattern.test(formData.observedValue)) {
+      setObservedValueValid(false);
+      hasErrors = true;
+    } else {
+      setObservedValueValid(null);
+    }
+
+    // Validate Remarks
+    if (!formData.remarks || !formData.remarks.trim()) {
+      setRemarksValid(false);
+      hasErrors = true;
+    } else {
+      setRemarksValid(null);
+    }
+
+    // If there are errors, show error message and stop submission
+    if (hasErrors) {
+      setSubmitErrorMessage('Enter data in correct Format');
       return;
     }
+
+    // Clear error message if validation passes
+    setSubmitErrorMessage('');
 
     try {
       setSubmitLoading(true);
@@ -192,10 +226,10 @@ const Impact = () => {
 
         // Reset form
         setFormData({
-          date: '',
+          date: getCurrentDate(),
           partName: '',
           dateCode: '',
-          specification: { val: '', constraint: '' },
+          specification: '',
           observedValue: '',
           remarks: ''
         });
@@ -204,8 +238,10 @@ const Impact = () => {
         setDateValid(null);
         setPartNameValid(null);
         setDateCodeValid(null);
-        setSpecificationValValid(null);
+        setSpecificationValid(null);
         setObservedValueValid(null);
+        setRemarksValid(null);
+        setSubmitErrorMessage('');
 
         setTimeout(() => {
           firstInputRef.current?.focus();
@@ -217,24 +253,6 @@ const Impact = () => {
     } finally {
       setSubmitLoading(false);
     }
-  };
-
-  // ====================== Reset ======================
-  const handleReset = () => {
-    setFormData({
-      date: '',
-      partName: '',
-      dateCode: '',
-      specification: { val: '', constraint: '' },
-      observedValue: '',
-      remarks: ''
-    });
-
-    setDateValid(null);
-    setPartNameValid(null);
-    setDateCodeValid(null);
-    setSpecificationValValid(null);
-    setObservedValueValid(null);
   };
 
   // ====================== JSX ======================
@@ -256,9 +274,7 @@ const Impact = () => {
 
         {/* DATE INPUT */}
         <div className="impact-form-group">
-          <label>
-            Date <span className="required-indicator">*</span>
-          </label>
+          <label>Date</label>
 
           <CustomDatePicker
             ref={firstInputRef}
@@ -268,7 +284,7 @@ const Impact = () => {
             onKeyDown={handleKeyDown}
             max={new Date().toISOString().split('T')[0]}
             style={{
-              border: dateValid === null ? '2px solid #cbd5e1' : dateValid ? '2px solid #10b981' : '2px solid #ef4444',
+              border: dateValid === false ? '2px solid #ef4444' : '2px solid #cbd5e1',
               width: '100%',
               padding: '0.625rem 0.875rem',
               borderRadius: '8px',
@@ -280,10 +296,7 @@ const Impact = () => {
 
         {/* PART NAME - with validation */}
         <div className="impact-form-group">
-          <label>
-            Part Name <span className="required-indicator">*</span>
-          </label>
-
+          <label>Part Name</label>
           <input
             type="text"
             name="partName"
@@ -292,19 +305,14 @@ const Impact = () => {
             onKeyDown={handleKeyDown}
             placeholder="e.g: Crankshaft"
             autoComplete="off"
-            className={
-              partNameValid === null
-                ? ""
-                : partNameValid
-                ? "valid-input"
-                : "invalid-input"
-            }
+            disabled={!isDateSelected}
+            className={getInputClassName(partNameValid)}
           />
         </div>
 
         {/* DATE CODE */}
         <div className="impact-form-group">
-          <label>Date Code <span className="required-indicator">*</span></label>
+          <label>Date Code</label>
           <input
             type="text"
             name="dateCode"
@@ -313,55 +321,30 @@ const Impact = () => {
             onKeyDown={handleKeyDown}
             placeholder="e.g: 6F25"
             autoComplete="off"
-            className={
-              dateCodeValid === null
-                ? ""
-                : dateCodeValid
-                ? "valid-input"
-                : "invalid-input"
-            }
+            disabled={!isDateSelected}
+            className={getInputClassName(dateCodeValid)}
           />
         </div>
 
-        {/* SPEC VALUE */}
+        {/* SPECIFICATION */}
         <div className="impact-form-group">
-          <label>Specification Value <span className="required-indicator">*</span></label>
-          <input
-            type="number"
-            name="specificationVal"
-            value={formData.specification.val}
-            onChange={handleChange}
-            onKeyDown={handleKeyDown}
-            placeholder="e.g: 12.5"
-            step="0.1"
-            autoComplete="off"
-            className={
-              specificationValValid === null
-                ? ""
-                : specificationValValid
-                ? "valid-input"
-                : "invalid-input"
-            }
-          />
-        </div>
-
-        {/* SPEC CONSTRAINT */}
-        <div className="impact-form-group">
-          <label>Specification Constraint</label>
+          <label>Specification</label>
           <input
             type="text"
-            name="specificationConstraint"
-            value={formData.specification.constraint}
+            name="specification"
+            value={formData.specification}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
-            placeholder="e.g: 30° unnotch"
+            placeholder="e.g: 12.5 J, 30° unnotch"
             autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(specificationValid)}
           />
         </div>
 
         {/* OBSERVED VALUE */}
         <div className="impact-form-group">
-          <label>Observed Value <span className="required-indicator">*</span></label>
+          <label>Observed Value</label>
           <input
             type="text"
             name="observedValue"
@@ -370,13 +353,8 @@ const Impact = () => {
             onKeyDown={handleKeyDown}
             placeholder="e.g: 12 or 34,45"
             autoComplete="off"
-            className={
-              observedValueValid === null
-                ? ""
-                : observedValueValid
-                ? "valid-input"
-                : "invalid-input"
-            }
+            disabled={!isDateSelected}
+            className={getInputClassName(observedValueValid)}
           />
         </div>
 
@@ -392,20 +370,19 @@ const Impact = () => {
             placeholder="Enter any additional notes or observations..."
             maxLength={80}
             autoComplete="off"
+            disabled={!isDateSelected}
+            className={getInputClassName(remarksValid)}
           />
         </div>
 
       </form>
 
       <div className="impact-submit-container">
-        <ResetButton onClick={handleReset}>
-          Reset Form
-        </ResetButton>
-
         <div className="impact-submit-right">
-          {submitError && (
-            <span className="impact-submit-error">{submitError}</span>
-          )}
+          <ErrorAlert 
+            isVisible={!!submitErrorMessage} 
+            message={submitErrorMessage} 
+          />
           <SubmitButton
             onClick={handleSubmit}
             disabled={submitLoading}
@@ -414,6 +391,13 @@ const Impact = () => {
           </SubmitButton>
         </div>
       </div>
+
+      {/* Success Loader */}
+      {showSuccessPopup && (
+        <div className="sakthi-overlay">
+          <Sakthi onComplete={() => setShowSuccessPopup(false)} />
+        </div>
+      )}
     </>
   );
 };

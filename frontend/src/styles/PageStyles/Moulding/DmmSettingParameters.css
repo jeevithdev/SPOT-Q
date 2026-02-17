@@ -727,3 +727,20 @@
   background-color: #f1f5f9;
   cursor: not-allowed;
 }
+
+/* Error highlight with shake animation */
+.dmm-error-highlight {
+  animation: dmm-shake 0.5s ease-in-out;
+}
+
+.dmm-error-highlight input,
+.dmm-error-highlight select {
+  border-color: #ef4444 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+}
+
+@keyframes dmm-shake {
+  0%, 100% { transform: translateX(0); }
+  10%, 30%, 50%, 70%, 90% { transform: translateX(-4px); }
+  20%, 40%, 60%, 80% { transform: translateX(4px); }
+}

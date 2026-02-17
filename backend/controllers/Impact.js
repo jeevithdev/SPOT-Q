@@ -37,8 +37,7 @@ exports.getValidationSchema = async (req, res) => {
                 patternMessage: 'Format: 1 digit, 1 uppercase letter, 2 digits (e.g: 6F25)', 
                 label: 'Date Code' 
             },
-            specificationVal: { type: 'number', required: true, label: 'Specification Value' },
-            specificationConstraint: { type: 'string', required: false, label: 'Specification Constraint' },
+            specification: { type: 'string', required: true, label: 'Specification', placeholder: 'e.g: 12.5 J, 30° unnotch' },
             observedValue: { 
                 type: 'string', 
                 required: true, 
@@ -46,7 +45,7 @@ exports.getValidationSchema = async (req, res) => {
                 patternMessage: 'Format: numbers separated by comma (e.g: 12 or 34,45)', 
                 label: 'Observed Value' 
             },
-            remarks: { type: 'string', required: false, maxLength: 80, label: 'Remarks' }
+            remarks: { type: 'string', required: true, maxLength: 80, label: 'Remarks' }
         };
         res.status(200).json({ success: true, schema });
     } catch (error) {
@@ -87,13 +86,13 @@ exports.getEntriesByDate = async (req, res) => {
 exports.createEntry = async (req, res) => {
     try {
         const { date, partName, dateCode, specification, observedValue, remarks } = req.body;
-        if (!date || !partName || !dateCode || !specification || observedValue == null) {
+        if (!date || !partName || !dateCode || !specification || !observedValue || !remarks) {
             return res.status(400).json({ success: false, message: 'Required fields missing.' });
         }
 
         const document = await ensureDateDocument(Impact, date);
         
-        const newEntry = { partName, dateCode, specification, observedValue, remarks: remarks || '' };
+        const newEntry = { partName, dateCode, specification, observedValue, remarks };
         document.entries.push(newEntry);
         await document.save();
 

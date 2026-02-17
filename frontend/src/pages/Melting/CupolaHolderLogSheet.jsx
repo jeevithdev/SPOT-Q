@@ -20,6 +20,70 @@ const CupolaHolderLogSheet = () => {
   const [isPrimaryDataSaved, setIsPrimaryDataSaved] = useState(false);
   const [dynamicCheckAlert, setDynamicCheckAlert] = useState(false);
 
+  // Sequential validation highlighting
+  const [dateErrorHighlight, setDateErrorHighlight] = useState(false);
+  const [shiftErrorHighlight, setShiftErrorHighlight] = useState(false);
+  const [holderNumberErrorHighlight, setHolderNumberErrorHighlight] = useState(false);
+
+  // Validation flag for primary section
+  const [primarySubmitted, setPrimarySubmitted] = useState(false);
+
+  // Refs for navigation
+  const dateRef = useRef(null);
+  const shiftRef = useRef(null);
+  const holderRef = useRef(null);
+  const primarySaveButtonRef = useRef(null);
+
+  // Helper function for primary field validation classes
+  const classFor = (value, submitted, required = false) => {
+    const has = value !== undefined && value !== null && String(value).trim() !== '';
+    if (has) return 'cupola-success-outline';
+    if (submitted && required) return 'cupola-error-outline';
+    return '';
+  };
+
+  // Handle Enter/Tab key navigation for primary section
+  const handlePrimaryKeyDown = (e, nextRef, currentField = null) => {
+    // Block e, E, +, - keys for numeric inputs
+    if (e.key === 'e' || e.key === 'E' || e.key === '+' || e.key === '-') {
+      e.preventDefault();
+      return;
+    }
+    
+    // Handle Enter and Tab for navigation within primary section
+    if (e.key === 'Enter' || e.key === 'Tab') {
+      e.preventDefault();
+      
+      // Navigate to next field
+      if (nextRef?.current) {
+        nextRef.current.focus();
+      }
+    }
+  };
+
+  // Get next available field after date
+  const getNextAfterDate = () => {
+    if (primaryData.date) return shiftRef;
+    return dateRef; // Stay on date if not filled
+  };
+
+  // Get next available field after shift
+  const getNextAfterShift = () => {
+    if (primaryData.date && primaryData.shift) return holderRef;
+    if (!primaryData.date) return dateRef;
+    return shiftRef; // Stay on shift if not filled
+  };
+
+  // Get next available field after holder
+  const getNextAfterHolder = () => {
+    if (primaryData.date && primaryData.shift && primaryData.holderNumber) {
+      return primarySaveButtonRef;
+    }
+    if (!primaryData.date) return dateRef;
+    if (!primaryData.shift) return shiftRef;
+    return holderRef; // Stay on holder if not filled
+  };
+
   // Auto-dismiss dynamic check alert
   useEffect(() => {
     if (dynamicCheckAlert) {
@@ -257,21 +321,61 @@ const CupolaHolderLogSheet = () => {
   };
 
   const handlePrimaryChange = (field, value) => {
-    setPrimaryData(prev => ({
-      ...prev,
-      [field]: value
-    }));
-    
-    // When date is cleared, reset everything
-    if (field === 'date' && !value) {
+    // Remove error highlight when filling the field
+    if (field === 'date' && value) {
+      setDateErrorHighlight(false);
+    }
+    if (field === 'shift' && value) {
+      setShiftErrorHighlight(false);
+    }
+    if (field === 'holderNumber' && value) {
+      setHolderNumberErrorHighlight(false);
+    }
+
+    // When date changes, reset everything
+    if (field === 'date') {
+      setPrimaryData({
+        date: value,
+        shift: '',
+        holderNumber: ''
+      });
       setPrimaryId(null);
       setIsPrimaryDataSaved(false);
       setSubmittedRows([]);
       setHeatNo(1);
+      setPrimarySubmitted(false);
+      // Reset error highlights
+      setDateErrorHighlight(false);
+      setShiftErrorHighlight(false);
+      setHolderNumberErrorHighlight(false);
+      return;
+    }
+
+    setPrimaryData(prev => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  // Handler for when holder field is focused - check if prerequisites are filled
+  const handleHolderFieldFocus = (e) => {
+    if (!primaryData.date) {
+      setDateErrorHighlight(true);
+      e?.preventDefault();
+      e?.stopPropagation();
+      return;
+    }
+    if (!primaryData.shift) {
+      setShiftErrorHighlight(true);
+      e?.preventDefault();
+      e?.stopPropagation();
+      return;
     }
   };
 
   const handlePrimarySubmit = async () => {
+    setPrimarySubmitted(true);
+    // Validate required key fields
     if (!primaryData.date || !primaryData.shift || !primaryData.holderNumber) {
       return;
     }
@@ -546,30 +650,66 @@ const CupolaHolderLogSheet = () => {
         </h3>
 
         <div className="cupola-holder-form-grid">
-          <div className="cupola-holder-form-group">
+          <div className={`cupola-holder-form-group ${classFor(primaryData.date, primarySubmitted, true)} ${dateErrorHighlight ? 'error-highlight' : ''}`}>
             <label>Date <span style={{ color: '#ef4444' }}>*</span></label>
             <CustomDatePicker
+              ref={dateRef}
               value={primaryData.date}
               onChange={(e) => handlePrimaryChange('date', e.target.value)}
               max={new Date().toISOString().split('T')[0]}
+              onKeyDown={(e) => handlePrimaryKeyDown(e, getNextAfterDate(), 'date')}
             />
           </div>
 
-          <div className="cupola-holder-form-group">
+          <div 
+            className={`cupola-holder-form-group ${classFor(primaryData.shift, primarySubmitted, true)} ${shiftErrorHighlight ? 'error-highlight' : ''}`}
+            onMouseDownCapture={(e) => {
+              if (!primaryData.date && e.target.tagName !== 'SELECT') {
+                setDateErrorHighlight(true);
+              }
+            }}
+          >
             <label>Shift <span style={{ color: '#ef4444' }}>*</span></label>
             <ShiftDropdown
+              ref={shiftRef}
               value={primaryData.shift}
               onChange={(e) => handlePrimaryChange('shift', e.target.value)}
               disabled={!primaryData.date || fetchingPrimary}
+              onKeyDown={(e) => handlePrimaryKeyDown(e, getNextAfterShift(), 'shift')}
+              onMouseDown={(e) => {
+                if (!primaryData.date) {
+                  setDateErrorHighlight(true);
+                }
+              }}
             />
           </div>
 
-          <div className="cupola-holder-form-group">
+          <div 
+            className={`cupola-holder-form-group ${classFor(primaryData.holderNumber, primarySubmitted, true)} ${holderNumberErrorHighlight ? 'error-highlight' : ''}`}
+            onMouseDownCapture={(e) => {
+              if (e.target.tagName !== 'SELECT') {
+                if (!primaryData.date) {
+                  setDateErrorHighlight(true);
+                } else if (!primaryData.shift) {
+                  setShiftErrorHighlight(true);
+                }
+              }
+            }}
+          >
             <label>Holder No <span style={{ color: '#ef4444' }}>*</span></label>
             <HolderDropdown
+              ref={holderRef}
               value={primaryData.holderNumber}
               onChange={(e) => handlePrimaryChange('holderNumber', e.target.value)}
               disabled={!primaryData.date || !primaryData.shift || fetchingPrimary}
+              onKeyDown={(e) => handlePrimaryKeyDown(e, getNextAfterHolder(), 'holderNumber')}
+              onMouseDown={(e) => {
+                if (!primaryData.date) {
+                  setDateErrorHighlight(true);
+                } else if (!primaryData.shift) {
+                  setShiftErrorHighlight(true);
+                }
+              }}
             />
           </div>
         </div>
@@ -577,6 +717,7 @@ const CupolaHolderLogSheet = () => {
         <div className={`cupola-primary-btn-wrapper ${!isPrimaryDataSaved && primaryData.date && primaryData.shift && primaryData.holderNumber ? 'show' : 'hide'}`}>
           <div className="cupola-holder-submit-container" style={{ display: 'flex', alignItems: 'center', gap: '1rem', borderTop: 'none', paddingTop: '0.5rem' }}>
             <button
+              ref={primarySaveButtonRef}
               className={`cupola-holder-submit-btn ${primarySavedVisual ? 'saved' : ''}`}
               type="button"
               onClick={handlePrimarySubmit}

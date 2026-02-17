@@ -104,6 +104,13 @@ const DmmSettingParameters = () => {
     operatorName: false,
     operatedBy: false
   });
+
+  // Sequential validation highlighting (red shake animation)
+  const [dateErrorHighlight, setDateErrorHighlight] = useState(false);
+  const [machineErrorHighlight, setMachineErrorHighlight] = useState(false);
+  const [shiftErrorHighlight, setShiftErrorHighlight] = useState(false);
+  const [operatorNameErrorHighlight, setOperatorNameErrorHighlight] = useState(false);
+  const [operatedByErrorHighlight, setOperatedByErrorHighlight] = useState(false);
   const [primaryValidationErrors, setPrimaryValidationErrors] = useState({
     date: false,
     machine: false,
@@ -233,6 +240,23 @@ const DmmSettingParameters = () => {
   };
 
   const handlePrimaryChange = (field, value) => {
+    // Clear error highlight when field gets a value
+    if (field === 'date' && value && value.trim() !== '') {
+      setDateErrorHighlight(false);
+    }
+    if (field === 'machine' && value && value.trim() !== '') {
+      setMachineErrorHighlight(false);
+    }
+    if (field === 'shift' && value && value.trim() !== '') {
+      setShiftErrorHighlight(false);
+    }
+    if (field === 'operatorName' && value && value.trim() !== '') {
+      setOperatorNameErrorHighlight(false);
+    }
+    if (field === 'operatedBy' && value && value.trim() !== '') {
+      setOperatedByErrorHighlight(false);
+    }
+
     // If date, machine, or shift is cleared, also clear operator fields and unlock
     if (['date', 'machine', 'shift'].includes(field) && (!value || value.trim() === '')) {
       setPrimaryData((prev) => ({
@@ -1197,7 +1221,7 @@ const DmmSettingParameters = () => {
           </div>
           {/* Primary Data Fields */}
           <div className="primary-fields-row">
-            <div className="dmm-form-group">
+            <div className={`dmm-form-group ${dateErrorHighlight ? 'dmm-error-highlight' : ''}`}>
               <label>Date <span style={{ color: '#ef4444' }}>*</span></label>
               <CustomDatePicker
                 id="date-field"
@@ -1227,12 +1251,24 @@ const DmmSettingParameters = () => {
                 required
               />
             </div>
-            <div className="dmm-form-group">
+            <div 
+              className={`dmm-form-group ${machineErrorHighlight ? 'dmm-error-highlight' : ''}`}
+              onMouseDownCapture={(e) => {
+                if (e.target.tagName !== 'SELECT') {
+                  if (!primaryData.date) {
+                    setDateErrorHighlight(true);
+                    setMachineErrorHighlight(true);
+                    setTimeout(() => setMachineErrorHighlight(false), 600);
+                  }
+                }
+              }}
+            >
               <label>Machine <span style={{ color: '#ef4444' }}>*</span></label>
               <MachineDropdown
                 id="machine-field"
                 value={primaryData.machine}
                 onChange={(e) => handlePrimaryChange("machine", e.target.value)}
+                disabled={!primaryData.date}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -1241,6 +1277,13 @@ const DmmSettingParameters = () => {
                     } else {
                       validateField('machine', primaryData.machine);
                     }
+                  }
+                }}
+                onMouseDown={(e) => {
+                  if (!primaryData.date) {
+                    setDateErrorHighlight(true);
+                    setMachineErrorHighlight(true);
+                    setTimeout(() => setMachineErrorHighlight(false), 600);
                   }
                 }}
                 className=""
@@ -1256,7 +1299,22 @@ const DmmSettingParameters = () => {
                 }}
               />
             </div>
-            <div className="dmm-form-group">
+            <div 
+              className={`dmm-form-group ${shiftErrorHighlight ? 'dmm-error-highlight' : ''}`}
+              onMouseDownCapture={(e) => {
+                if (e.target.tagName !== 'SELECT') {
+                  if (!primaryData.date) {
+                    setDateErrorHighlight(true);
+                    setShiftErrorHighlight(true);
+                    setTimeout(() => setShiftErrorHighlight(false), 600);
+                  } else if (!primaryData.machine) {
+                    setMachineErrorHighlight(true);
+                    setShiftErrorHighlight(true);
+                    setTimeout(() => setShiftErrorHighlight(false), 600);
+                  }
+                }
+              }}
+            >
               <label>Shift <span style={{ color: '#ef4444' }}>*</span></label>
               <select
                 id="shift-field"
@@ -1264,7 +1322,19 @@ const DmmSettingParameters = () => {
                 onChange={(e) => {
                   handlePrimaryChange("shift", e.target.value);
                 }}
+                disabled={!primaryData.date || !primaryData.machine}
                 onBlur={() => validateField('shift', primaryData.shift)}
+                onMouseDown={(e) => {
+                  if (!primaryData.date) {
+                    setDateErrorHighlight(true);
+                    setShiftErrorHighlight(true);
+                    setTimeout(() => setShiftErrorHighlight(false), 600);
+                  } else if (!primaryData.machine) {
+                    setMachineErrorHighlight(true);
+                    setShiftErrorHighlight(true);
+                    setTimeout(() => setShiftErrorHighlight(false), 600);
+                  }
+                }}
                 onKeyDown={async (e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
@@ -1309,7 +1379,26 @@ const DmmSettingParameters = () => {
           
           {/* Operator Fields Row */}
           <div className="primary-fields-row" style={{ marginTop: '1rem' }}>
-            <div className="dmm-form-group">
+            <div 
+              className={`dmm-form-group ${operatorNameErrorHighlight ? 'dmm-error-highlight' : ''}`}
+              onMouseDownCapture={(e) => {
+                if (e.target.tagName !== 'INPUT') {
+                  if (!primaryData.date) {
+                    setDateErrorHighlight(true);
+                    setOperatorNameErrorHighlight(true);
+                    setTimeout(() => setOperatorNameErrorHighlight(false), 600);
+                  } else if (!primaryData.machine) {
+                    setMachineErrorHighlight(true);
+                    setOperatorNameErrorHighlight(true);
+                    setTimeout(() => setOperatorNameErrorHighlight(false), 600);
+                  } else if (!primaryData.shift) {
+                    setShiftErrorHighlight(true);
+                    setOperatorNameErrorHighlight(true);
+                    setTimeout(() => setOperatorNameErrorHighlight(false), 600);
+                  }
+                }
+              }}
+            >
               <label>Operator Name <span style={{ color: '#ef4444' }}>*</span></label>
               <input
                 id="operatorName-field"
@@ -1329,7 +1418,22 @@ const DmmSettingParameters = () => {
                     }
                   }
                 }}
-                disabled={primaryFieldLocked.operatorName}
+                onMouseDown={(e) => {
+                  if (!primaryData.date) {
+                    setDateErrorHighlight(true);
+                    setOperatorNameErrorHighlight(true);
+                    setTimeout(() => setOperatorNameErrorHighlight(false), 600);
+                  } else if (!primaryData.machine) {
+                    setMachineErrorHighlight(true);
+                    setOperatorNameErrorHighlight(true);
+                    setTimeout(() => setOperatorNameErrorHighlight(false), 600);
+                  } else if (!primaryData.shift) {
+                    setShiftErrorHighlight(true);
+                    setOperatorNameErrorHighlight(true);
+                    setTimeout(() => setOperatorNameErrorHighlight(false), 600);
+                  }
+                }}
+                disabled={primaryFieldLocked.operatorName || !primaryData.date || !primaryData.machine || !primaryData.shift}
                 readOnly={primaryFieldLocked.operatorName}
                 placeholder="Enter operator name"
                 style={{
@@ -1345,7 +1449,26 @@ const DmmSettingParameters = () => {
                 required
               />
             </div>
-            <div className="dmm-form-group">
+            <div 
+              className={`dmm-form-group ${operatedByErrorHighlight ? 'dmm-error-highlight' : ''}`}
+              onMouseDownCapture={(e) => {
+                if (e.target.tagName !== 'INPUT') {
+                  if (!primaryData.date) {
+                    setDateErrorHighlight(true);
+                    setOperatedByErrorHighlight(true);
+                    setTimeout(() => setOperatedByErrorHighlight(false), 600);
+                  } else if (!primaryData.machine) {
+                    setMachineErrorHighlight(true);
+                    setOperatedByErrorHighlight(true);
+                    setTimeout(() => setOperatedByErrorHighlight(false), 600);
+                  } else if (!primaryData.shift) {
+                    setShiftErrorHighlight(true);
+                    setOperatedByErrorHighlight(true);
+                    setTimeout(() => setOperatedByErrorHighlight(false), 600);
+                  }
+                }
+              }}
+            >
               <label>Operated By <span style={{ color: '#ef4444' }}>*</span></label>
               <input
                 id="operatedBy-field"
@@ -1363,7 +1486,22 @@ const DmmSettingParameters = () => {
                     }
                   }
                 }}
-                disabled={primaryFieldLocked.operatedBy}
+                onMouseDown={(e) => {
+                  if (!primaryData.date) {
+                    setDateErrorHighlight(true);
+                    setOperatedByErrorHighlight(true);
+                    setTimeout(() => setOperatedByErrorHighlight(false), 600);
+                  } else if (!primaryData.machine) {
+                    setMachineErrorHighlight(true);
+                    setOperatedByErrorHighlight(true);
+                    setTimeout(() => setOperatedByErrorHighlight(false), 600);
+                  } else if (!primaryData.shift) {
+                    setShiftErrorHighlight(true);
+                    setOperatedByErrorHighlight(true);
+                    setTimeout(() => setOperatedByErrorHighlight(false), 600);
+                  }
+                }}
+                disabled={primaryFieldLocked.operatedBy || !primaryData.date || !primaryData.machine || !primaryData.shift}
                 readOnly={primaryFieldLocked.operatedBy}
                 placeholder="Enter name"
                 style={{

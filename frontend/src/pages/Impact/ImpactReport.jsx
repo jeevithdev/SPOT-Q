@@ -198,18 +198,11 @@ const ImpactReport = () => {
             { key: 'partName', label: 'Part Name', width: '200px', align : 'center' },
             { key: 'dateCode', label: 'Date Code', width: '120px', align: 'center' },
             { 
-              key: 'specification.val', 
-              label: 'Specification Value', 
-              width: '160px',
+              key: 'specification', 
+              label: 'Specification', 
+              width: '200px',
               align: 'center',
-              render: (item) => item.specification?.val || '-'
-            },
-            { 
-              key: 'specification.constraint', 
-              label: 'Specification Constraint', 
-              width: '180px',
-              align: 'center',
-              render: (item) => item.specification?.constraint || '-'
+              render: (item) => item.specification || '-'
             },
             { 
               key: 'observedValue', 
@@ -221,7 +214,7 @@ const ImpactReport = () => {
             { key: 'remarks', label: 'Remarks', width: '250px', align: 'center' }
           ]}
           data={entries}
-          minWidth={1400}
+          minWidth={1200}
           defaultAlign="left"
           groupByColumn="date"
           noDataMessage={isFiltered ? 'No entries found for the selected date' : 'No entries found for today'}

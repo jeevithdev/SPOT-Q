@@ -217,3 +217,29 @@
   gap: 1rem;
   margin-bottom: 1rem;
 }
+
+/* Primary Data Validation Outline Styles */
+.disa-error-outline input,
+.disa-error-outline select,
+.disa-error-outline .custom-date-picker .date-input {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+}
+
+/* Error Highlight for Required Fields */
+.error-highlight input,
+.error-highlight select,
+.error-highlight .shift-dropdown-wrapper select,
+.error-highlight .date-input,
+.error-highlight .custom-date-picker input {
+  border-color: #ef4444 !important;
+  background-color: #fef2f2 !important;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1) !important;
+  animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-5px); }
+  75% { transform: translateX(5px); }
+}

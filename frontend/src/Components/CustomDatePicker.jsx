@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, forwardRef, useImperativeHandle } from 'react';
 import '../styles/ComponentStyles/CustomDatePicker.css';
 
-const CustomDatePicker = forwardRef(({ value, onChange, max, style, name, onKeyDown, disabled }, ref) => {
+const CustomDatePicker = forwardRef(({ value, onChange, max, style, name, onKeyDown, disabled, className = '', onFocus, onBlur }, ref) => {
   const [isOpen, setIsOpen] = useState(false);
   const [selectedDate, setSelectedDate] = useState(value || '');
   const [viewDate, setViewDate] = useState(value ? new Date(value) : new Date());
@@ -308,7 +308,7 @@ const CustomDatePicker = forwardRef(({ value, onChange, max, style, name, onKeyD
   };
 
   return (
-    <div className="custom-date-picker" ref={pickerRef}>
+    <div className={`custom-date-picker ${className}`} ref={pickerRef}>
       <div className="date-input-wrapper">
         <input
           ref={inputRef}
@@ -316,6 +316,8 @@ const CustomDatePicker = forwardRef(({ value, onChange, max, style, name, onKeyD
           value={formatDisplayDate(selectedDate)}
           onClick={() => !disabled && setIsOpen(!isOpen)}
           onKeyDown={onKeyDown}
+          onFocus={onFocus}
+          onBlur={onBlur}
           placeholder="e.g: DD/MM/YYYY"
           readOnly
           disabled={disabled}

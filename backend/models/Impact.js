@@ -15,14 +15,9 @@ const ImpactEntrySchema = new mongoose.Schema({
         match: /^[0-9][A-Z][0-9]{2}$/  // Example: '3A21'
     },
     specification: {
-        val:{
-            type: Number,
-            required: true
-        },
-
-        constraint: {
-            type: String
-        }
+        type: String,
+        required: true,
+        trim: true
     },
     observedValue: {
         type: String,
@@ -32,8 +27,8 @@ const ImpactEntrySchema = new mongoose.Schema({
     },
     remarks: {
         type: String,
-        trim: true,
-        default: ''
+        required: true,
+        trim: true
     }
 }, {
     timestamps: true,
