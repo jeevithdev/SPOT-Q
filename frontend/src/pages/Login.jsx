@@ -20,67 +20,46 @@ const Login = () => {
   const [isLoading, setIsLoading] = useState(false);
   
   // Server connection status
-  const [serverStatus, setServerStatus] = useState("connecting"); // connecting, connected, error
-  const [connectionMessage, setConnectionMessage] = useState("Waking up server...");
+  const [serverStatus, setServerStatus] = useState("connecting");
 
-  // Check server health on component mount
+  // Check server health on component mount - simple polling until connected
   useEffect(() => {
     let isMounted = true;
-    let retryCount = 0;
-    const maxRetries = 3;
+    let pollInterval;
     
     const checkServerHealth = async () => {
       if (!isMounted) return;
       
       try {
-        const controller = new AbortController();
-        // 60 second timeout for cold start
-        const timeoutId = setTimeout(() => controller.abort(), 60000);
-        
-        setConnectionMessage(retryCount > 0 ? `Retrying... (${retryCount}/${maxRetries})` : "Waking up server...");
-        
-        const response = await fetch(`${API_URL}/health`, {
+        const response = await fetch(`${API_URL}/api/health`, {
           method: 'GET',
-          signal: controller.signal,
+          cache: 'no-cache',
         });
-        
-        clearTimeout(timeoutId);
         
         if (response.ok && isMounted) {
           setServerStatus("connected");
-          setConnectionMessage("Connected!");
+          // Clear polling
+          if (pollInterval) clearInterval(pollInterval);
+          // Hide after 3 seconds
           setTimeout(() => {
             if (isMounted) setServerStatus(null);
           }, 3000);
-        } else if (isMounted) {
-          throw new Error('Health check failed');
         }
       } catch (err) {
-        console.warn('Server health check attempt failed:', err.message);
-        
-        if (!isMounted) return;
-        
-        retryCount++;
-        
-        if (retryCount < maxRetries) {
-          // Retry after 2 seconds
-          setConnectionMessage(`Connection delayed, retrying...`);
-          setTimeout(() => checkServerHealth(), 2000);
-        } else {
-          setServerStatus("error");
-          setConnectionMessage("Server slow to respond");
-          // Still hide after some time even on error
-          setTimeout(() => {
-            if (isMounted) setServerStatus(null);
-          }, 8000);
-        }
+        // Keep polling - server not ready yet
+        console.log('Server still starting...');
       }
     };
     
+    // Initial check
     checkServerHealth();
+    
+    // Poll every 3 seconds until connected
+    pollInterval = setInterval(checkServerHealth, 3000);
     
     return () => {
       isMounted = false;
+      if (pollInterval) clearInterval(pollInterval);
     };
   }, []);
 
@@ -150,7 +129,10 @@ const Login = () => {
         {serverStatus && (
           <div className={`server-status-indicator ${serverStatus}`}>
             <div className="status-dot"></div>
-            <span className="status-text">{connectionMessage}</span>
+            <span className="status-text">
+              {serverStatus === "connecting" && "Connecting to server..."}
+              {serverStatus === "connected" && "Server connected"}
+            </span>
           </div>
         )}
         

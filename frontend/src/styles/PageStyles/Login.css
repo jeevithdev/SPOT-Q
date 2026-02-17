@@ -526,15 +526,6 @@ form {
   color: #059669;
 }
 
-.server-status-indicator.error .status-dot {
-  background: #ef4444;
-  animation: pulse 1.5s infinite;
-}
-
-.server-status-indicator.error .status-text {
-  color: #dc2626;
-}
-
 /* Mobile responsive for server status */
 @media (max-width: 768px) {
   .server-status-indicator {
