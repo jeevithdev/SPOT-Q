@@ -28,6 +28,26 @@ const QcProductionDetailsReport = () => {
     return rangePattern.test(trimmed) || numberPattern.test(trimmed);
   };
 
+  // Helper function to display range values
+  const displayRange = (from, to) => {
+    if (from === undefined || from === null || from === '') return '-';
+    
+    // Format the from value
+    const fromNum = typeof from === 'number' ? from : parseFloat(from);
+    if (isNaN(fromNum)) return '-';
+    const fromFormatted = fromNum.toFixed(1);
+    
+    if (to === undefined || to === null || to === '' || to === 0) {
+      return fromFormatted;
+    }
+    
+    // Format the to value
+    const toNum = typeof to === 'number' ? to : parseFloat(to);
+    if (isNaN(toNum)) return fromFormatted;
+    const toFormatted = toNum.toFixed(1);
+    return `${fromFormatted} - ${toFormatted}`;
+  };
+
   const fetchItems = async () => {
 
     try {
@@ -193,68 +213,74 @@ const QcProductionDetailsReport = () => {
             { 
               key: 'cPercent', 
               label: 'C %', 
-              width: '80px',
+              width: '120px',
               align: 'center',
-              render: (item) => item.cPercent !== undefined && item.cPercent !== null ? item.cPercent : '-'
+              render: (item) => displayRange(item.cPercentFrom, item.cPercentTo)
             },
             { 
               key: 'siPercent', 
               label: 'Si %', 
-              width: '80px',
+              width: '120px',
               align: 'center',
-              render: (item) => item.siPercent !== undefined && item.siPercent !== null ? item.siPercent : '-'
+              render: (item) => displayRange(item.siPercentFrom, item.siPercentTo)
             },
             { 
               key: 'mnPercent', 
               label: 'Mn %', 
-              width: '80px',
+              width: '120px',
               align: 'center',
-              render: (item) => item.mnPercent !== undefined && item.mnPercent !== null ? item.mnPercent : '-'
+              render: (item) => displayRange(item.mnPercentFrom, item.mnPercentTo)
             },
             { 
               key: 'pPercent', 
               label: 'P %', 
-              width: '80px',
+              width: '120px',
               align: 'center',
-              render: (item) => item.pPercent !== undefined && item.pPercent !== null ? item.pPercent : '-'
+              render: (item) => displayRange(item.pPercentFrom, item.pPercentTo)
             },
             { 
               key: 'sPercent', 
               label: 'S %', 
-              width: '80px',
+              width: '120px',
               align: 'center',
-              render: (item) => item.sPercent !== undefined && item.sPercent !== null ? item.sPercent : '-'
+              render: (item) => displayRange(item.sPercentFrom, item.sPercentTo)
             },
             { 
               key: 'mgPercent', 
               label: 'Mg %', 
-              width: '80px',
+              width: '120px',
               align: 'center',
-              render: (item) => item.mgPercent !== undefined && item.mgPercent !== null ? item.mgPercent : '-'
+              render: (item) => displayRange(item.mgPercentFrom, item.mgPercentTo)
             },
             { 
               key: 'cuPercent', 
               label: 'Cu %', 
-              width: '80px',
+              width: '120px',
               align: 'center',
-              render: (item) => item.cuPercent !== undefined && item.cuPercent !== null ? item.cuPercent : '-'
+              render: (item) => displayRange(item.cuPercentFrom, item.cuPercentTo)
             },
             { 
               key: 'crPercent', 
               label: 'Cr %', 
-              width: '80px',
+              width: '120px',
               align: 'center',
-              render: (item) => item.crPercent !== undefined && item.crPercent !== null ? item.crPercent : '-'
+              render: (item) => displayRange(item.crPercentFrom, item.crPercentTo)
             },
             { key: 'nodularity', label: 'Nodularity', width: '110px', align: 'center' },
-            { key: 'graphiteType', label: 'Graphite Type', width: '130px', align: 'center' },
+            { 
+              key: 'graphiteType', 
+              label: 'Graphite Type', 
+              width: '130px', 
+              align: 'center',
+              render: (item) => displayRange(item.graphiteTypeFrom, item.graphiteTypeTo)
+            },
             { key: 'pearliteFerrite', label: 'Pearlite Ferrite', width: '140px', align: 'center' },
             { 
               key: 'hardnessBHN', 
               label: 'Hardness BHN', 
               width: '130px',
               align: 'center',
-              render: (item) => item.hardnessBHN !== undefined && item.hardnessBHN !== null ? item.hardnessBHN : '-'
+              render: (item) => displayRange(item.hardnessBHNFrom, item.hardnessBHNTo)
             },
             { 
               key: 'ts', 

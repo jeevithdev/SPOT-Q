@@ -1,7 +1,8 @@
 import React, { useState, useRef } from 'react';
 import { Save, Loader2, FileText } from 'lucide-react';
-import { SubmitButton, ResetButton } from '../../Components/Buttons';
+import { SubmitButton } from '../../Components/Buttons';
 import CustomDatePicker from '../../Components/CustomDatePicker';
+import Sakthi from '../../Components/Sakthi';
 import { API_ENDPOINTS } from '../../config/api';
 import '../../styles/PageStyles/QcProduction/QcProductionDetails.css';
 
@@ -13,28 +14,45 @@ const QcProductionDetails = () => {
     return `${d} / ${m} / ${y}`;
   };
 
+  // Helper to get current date
+  const getTodayDate = () => {
+    const today = new Date();
+    return today.toISOString().split('T')[0];
+  };
+
   const [formData, setFormData] = useState({
-    date: '',
+    date: getTodayDate(),
     partName: '',
     noOfMoulds: '',
-    cPercent: '',
-    siPercent: '',
-    mnPercent: '',
-    pPercent: '',
-    sPercent: '',
-    mgPercent: '',
-    cuPercent: '',
-    crPercent: '',
+    cPercentFrom: '',
+    cPercentTo: '',
+    siPercentFrom: '',
+    siPercentTo: '',
+    mnPercentFrom: '',
+    mnPercentTo: '',
+    pPercentFrom: '',
+    pPercentTo: '',
+    sPercentFrom: '',
+    sPercentTo: '',
+    mgPercentFrom: '',
+    mgPercentTo: '',
+    cuPercentFrom: '',
+    cuPercentTo: '',
+    crPercentFrom: '',
+    crPercentTo: '',
     nodularity: '',
-    graphiteType: '',
+    graphiteTypeFrom: '',
+    graphiteTypeTo: '',
     pearliteFerrite: '',
-    hardnessBHN: '',
+    hardnessBHNFrom: '',
+    hardnessBHNTo: '',
     ts: '',
     ys: '',
     el: ''
   });
 
   const [submitLoading, setSubmitLoading] = useState(false);
+  const [showSakthi, setShowSakthi] = useState(false);
 
   /* 
    * VALIDATION STATES
@@ -44,18 +62,28 @@ const QcProductionDetails = () => {
   const [dateValid, setDateValid] = useState(null);
   const [partNameValid, setPartNameValid] = useState(null);
   const [noOfMouldsValid, setNoOfMouldsValid] = useState(null);
-  const [cPercentValid, setCPercentValid] = useState(null);
-  const [siPercentValid, setSiPercentValid] = useState(null);
-  const [mnPercentValid, setMnPercentValid] = useState(null);
-  const [pPercentValid, setPPercentValid] = useState(null);
-  const [sPercentValid, setSPercentValid] = useState(null);
-  const [mgPercentValid, setMgPercentValid] = useState(null);
-  const [cuPercentValid, setCuPercentValid] = useState(null);
-  const [crPercentValid, setCrPercentValid] = useState(null);
+  const [cPercentFromValid, setCPercentFromValid] = useState(null);
+  const [cPercentToValid, setCPercentToValid] = useState(null);
+  const [siPercentFromValid, setSiPercentFromValid] = useState(null);
+  const [siPercentToValid, setSiPercentToValid] = useState(null);
+  const [mnPercentFromValid, setMnPercentFromValid] = useState(null);
+  const [mnPercentToValid, setMnPercentToValid] = useState(null);
+  const [pPercentFromValid, setPPercentFromValid] = useState(null);
+  const [pPercentToValid, setPPercentToValid] = useState(null);
+  const [sPercentFromValid, setSPercentFromValid] = useState(null);
+  const [sPercentToValid, setSPercentToValid] = useState(null);
+  const [mgPercentFromValid, setMgPercentFromValid] = useState(null);
+  const [mgPercentToValid, setMgPercentToValid] = useState(null);
+  const [cuPercentFromValid, setCuPercentFromValid] = useState(null);
+  const [cuPercentToValid, setCuPercentToValid] = useState(null);
+  const [crPercentFromValid, setCrPercentFromValid] = useState(null);
+  const [crPercentToValid, setCrPercentToValid] = useState(null);
   const [nodularityValid, setNodularityValid] = useState(null);
-  const [graphiteTypeValid, setGraphiteTypeValid] = useState(null);
+  const [graphiteTypeFromValid, setGraphiteTypeFromValid] = useState(null);
+  const [graphiteTypeToValid, setGraphiteTypeToValid] = useState(null);
   const [pearliteFertiteValid, setPearliteFertiteValid] = useState(null);
-  const [hardnessBHNValid, setHardnessBHNValid] = useState(null);
+  const [hardnessBHNFromValid, setHardnessBHNFromValid] = useState(null);
+  const [hardnessBHNToValid, setHardnessBHNToValid] = useState(null);
   const [tsValid, setTsValid] = useState(null);
   const [ysValid, setYsValid] = useState(null);
   const [elValid, setElValid] = useState(null);
@@ -74,14 +102,10 @@ const QcProductionDetails = () => {
     return '';
   };
 
-  // Helper function to validate range format (e.g., "3.50-3.75" or "3.50")
-  const isValidRange = (value) => {
+  // Helper function to validate number input
+  const isValidNumber = (value) => {
     if (!value || value.trim() === '') return false;
-    const trimmed = value.trim();
-    // Check if it's a range (e.g., "3.50-3.75") or single number
-    const rangePattern = /^\d+(\.\d+)?\s*-\s*\d+(\.\d+)?$/;
-    const numberPattern = /^\d+(\.\d+)?$/;
-    return rangePattern.test(trimmed) || numberPattern.test(trimmed);
+    return !isNaN(parseFloat(value)) && isFinite(value);
   };
 
   /*
@@ -104,41 +128,71 @@ const QcProductionDetails = () => {
       case 'noOfMoulds':
         setNoOfMouldsValid(null);
         break;
-      case 'cPercent':
-        setCPercentValid(null);
+      case 'cPercentFrom':
+        setCPercentFromValid(null);
         break;
-      case 'siPercent':
-        setSiPercentValid(null);
+      case 'cPercentTo':
+        setCPercentToValid(null);
         break;
-      case 'mnPercent':
-        setMnPercentValid(null);
+      case 'siPercentFrom':
+        setSiPercentFromValid(null);
         break;
-      case 'pPercent':
-        setPPercentValid(null);
+      case 'siPercentTo':
+        setSiPercentToValid(null);
         break;
-      case 'sPercent':
-        setSPercentValid(null);
+      case 'mnPercentFrom':
+        setMnPercentFromValid(null);
         break;
-      case 'mgPercent':
-        setMgPercentValid(null);
+      case 'mnPercentTo':
+        setMnPercentToValid(null);
         break;
-      case 'cuPercent':
-        setCuPercentValid(null);
+      case 'pPercentFrom':
+        setPPercentFromValid(null);
         break;
-      case 'crPercent':
-        setCrPercentValid(null);
+      case 'pPercentTo':
+        setPPercentToValid(null);
+        break;
+      case 'sPercentFrom':
+        setSPercentFromValid(null);
+        break;
+      case 'sPercentTo':
+        setSPercentToValid(null);
+        break;
+      case 'mgPercentFrom':
+        setMgPercentFromValid(null);
+        break;
+      case 'mgPercentTo':
+        setMgPercentToValid(null);
+        break;
+      case 'cuPercentFrom':
+        setCuPercentFromValid(null);
+        break;
+      case 'cuPercentTo':
+        setCuPercentToValid(null);
+        break;
+      case 'crPercentFrom':
+        setCrPercentFromValid(null);
+        break;
+      case 'crPercentTo':
+        setCrPercentToValid(null);
         break;
       case 'nodularity':
         setNodularityValid(null);
         break;
-      case 'graphiteType':
-        setGraphiteTypeValid(null);
+      case 'graphiteTypeFrom':
+        setGraphiteTypeFromValid(null);
+        break;
+      case 'graphiteTypeTo':
+        setGraphiteTypeToValid(null);
         break;
       case 'pearliteFerrite':
         setPearliteFertiteValid(null);
         break;
-      case 'hardnessBHN':
-        setHardnessBHNValid(null);
+      case 'hardnessBHNFrom':
+        setHardnessBHNFromValid(null);
+        break;
+      case 'hardnessBHNTo':
+        setHardnessBHNToValid(null);
         break;
       case 'ts':
         setTsValid(null);
@@ -157,18 +211,81 @@ const QcProductionDetails = () => {
       ...prev,
       [name]: value
     }));
+
+    // Dynamic validation removal for from/to pairs
+    if (name.endsWith('From') || name.endsWith('To')) {
+      const isFromField = name.endsWith('From');
+      const fromField = isFromField ? name : name.replace('To', 'From');
+      const toField = isFromField ? name.replace('From', 'To') : name;
+      
+      const fromValue = isFromField ? parseFloat(value) : parseFloat(formData[fromField]);
+      const toValue = isFromField ? parseFloat(formData[toField]) : parseFloat(value);
+
+      // If the range is now valid, remove red borders from both
+      if (!isNaN(fromValue) && !isNaN(toValue) && (toValue === 0 || fromValue <= toValue)) {
+        // Clear validation errors for both from and to fields
+        const baseField = fromField.replace('From', '');
+        
+        switch(baseField) {
+          case 'cPercent':
+            setCPercentFromValid(null);
+            setCPercentToValid(null);
+            break;
+          case 'siPercent':
+            setSiPercentFromValid(null);
+            setSiPercentToValid(null);
+            break;
+          case 'mnPercent':
+            setMnPercentFromValid(null);
+            setMnPercentToValid(null);
+            break;
+          case 'pPercent':
+            setPPercentFromValid(null);
+            setPPercentToValid(null);
+            break;
+          case 'sPercent':
+            setSPercentFromValid(null);
+            setSPercentToValid(null);
+            break;
+          case 'mgPercent':
+            setMgPercentFromValid(null);
+            setMgPercentToValid(null);
+            break;
+          case 'cuPercent':
+            setCuPercentFromValid(null);
+            setCuPercentToValid(null);
+            break;
+          case 'crPercent':
+            setCrPercentFromValid(null);
+            setCrPercentToValid(null);
+            break;
+          case 'graphiteType':
+            setGraphiteTypeFromValid(null);
+            setGraphiteTypeToValid(null);
+            break;
+          case 'hardnessBHN':
+            setHardnessBHNFromValid(null);
+            setHardnessBHNToValid(null);
+            break;
+        }
+      }
+    }
   };
 
   const handleBlur = (e) => {
     const { name, value, type } = e.target;
 
-    // Auto-format single digit numbers with leading zero
-    if (type === 'number' && value && !isNaN(value) && parseFloat(value) >= 0 && parseFloat(value) <= 9 && !value.includes('.') && value.length === 1) {
-      const formattedValue = '0' + value;
-      setFormData(prev => ({
-        ...prev,
-        [name]: formattedValue
-      }));
+    // Auto-format numbers to decimal format (e.g., 2 -> 2.0)
+    if (type === 'number' && value && !isNaN(value)) {
+      const numValue = parseFloat(value);
+      if (!value.includes('.')) {
+        // Add .0 if no decimal point
+        const formattedValue = numValue.toFixed(1);
+        setFormData(prev => ({
+          ...prev,
+          [name]: formattedValue
+        }));
+      }
     }
   };
 
@@ -214,52 +331,52 @@ const QcProductionDetails = () => {
       setNoOfMouldsValid(false);
       hasErrors = true;
     }
-    if (!formData.cPercent || !isValidRange(formData.cPercent)) {
-      setCPercentValid(false);
+    if (!formData.cPercentFrom || !isValidNumber(formData.cPercentFrom)) {
+      setCPercentFromValid(false);
       hasErrors = true;
     }
-    if (!formData.siPercent || !isValidRange(formData.siPercent)) {
-      setSiPercentValid(false);
+    if (!formData.siPercentFrom || !isValidNumber(formData.siPercentFrom)) {
+      setSiPercentFromValid(false);
       hasErrors = true;
     }
-    if (!formData.mnPercent || !isValidRange(formData.mnPercent)) {
-      setMnPercentValid(false);
+    if (!formData.mnPercentFrom || !isValidNumber(formData.mnPercentFrom)) {
+      setMnPercentFromValid(false);
       hasErrors = true;
     }
-    if (!formData.pPercent || !isValidRange(formData.pPercent)) {
-      setPPercentValid(false);
+    if (!formData.pPercentFrom || !isValidNumber(formData.pPercentFrom)) {
+      setPPercentFromValid(false);
       hasErrors = true;
     }
-    if (!formData.sPercent || !isValidRange(formData.sPercent)) {
-      setSPercentValid(false);
+    if (!formData.sPercentFrom || !isValidNumber(formData.sPercentFrom)) {
+      setSPercentFromValid(false);
       hasErrors = true;
     }
-    if (!formData.mgPercent || !isValidRange(formData.mgPercent)) {
-      setMgPercentValid(false);
+    if (!formData.mgPercentFrom || !isValidNumber(formData.mgPercentFrom)) {
+      setMgPercentFromValid(false);
       hasErrors = true;
     }
-    if (!formData.cuPercent || !isValidRange(formData.cuPercent)) {
-      setCuPercentValid(false);
+    if (!formData.cuPercentFrom || !isValidNumber(formData.cuPercentFrom)) {
+      setCuPercentFromValid(false);
       hasErrors = true;
     }
-    if (!formData.crPercent || !isValidRange(formData.crPercent)) {
-      setCrPercentValid(false);
+    if (!formData.crPercentFrom || !isValidNumber(formData.crPercentFrom)) {
+      setCrPercentFromValid(false);
       hasErrors = true;
     }
     if (!formData.nodularity || formData.nodularity.trim() === '') {
       setNodularityValid(false);
       hasErrors = true;
     }
-    if (!formData.graphiteType || formData.graphiteType.trim() === '') {
-      setGraphiteTypeValid(false);
+    if (!formData.graphiteTypeFrom || !isValidNumber(formData.graphiteTypeFrom)) {
+      setGraphiteTypeFromValid(false);
       hasErrors = true;
     }
     if (!formData.pearliteFerrite || formData.pearliteFerrite.trim() === '') {
       setPearliteFertiteValid(false);
       hasErrors = true;
     }
-    if (!formData.hardnessBHN || !isValidRange(formData.hardnessBHN)) {
-      setHardnessBHNValid(false);
+    if (!formData.hardnessBHNFrom || !isValidNumber(formData.hardnessBHNFrom)) {
+      setHardnessBHNFromValid(false);
       hasErrors = true;
     }
     if (!formData.ts || formData.ts.trim() === '') {
@@ -275,6 +392,28 @@ const QcProductionDetails = () => {
       hasErrors = true;
     }
 
+    // Validate from/to pairs - ensure from <= to when to > 0
+    const validateRange = (fromVal, toVal, fromSetter, toSetter, label) => {
+      const from = parseFloat(fromVal);
+      const to = parseFloat(toVal);
+      if (!isNaN(from) && !isNaN(to) && to > 0 && from > to) {
+        fromSetter(false);
+        toSetter(false);
+        hasErrors = true;
+      }
+    };
+
+    validateRange(formData.cPercentFrom, formData.cPercentTo, setCPercentFromValid, setCPercentToValid, 'C %');
+    validateRange(formData.siPercentFrom, formData.siPercentTo, setSiPercentFromValid, setSiPercentToValid, 'Si %');
+    validateRange(formData.mnPercentFrom, formData.mnPercentTo, setMnPercentFromValid, setMnPercentToValid, 'Mn %');
+    validateRange(formData.pPercentFrom, formData.pPercentTo, setPPercentFromValid, setPPercentToValid, 'P %');
+    validateRange(formData.sPercentFrom, formData.sPercentTo, setSPercentFromValid, setSPercentToValid, 'S %');
+    validateRange(formData.mgPercentFrom, formData.mgPercentTo, setMgPercentFromValid, setMgPercentToValid, 'Mg %');
+    validateRange(formData.cuPercentFrom, formData.cuPercentTo, setCuPercentFromValid, setCuPercentToValid, 'Cu %');
+    validateRange(formData.crPercentFrom, formData.crPercentTo, setCrPercentFromValid, setCrPercentToValid, 'Cr %');
+    validateRange(formData.graphiteTypeFrom, formData.graphiteTypeTo, setGraphiteTypeFromValid, setGraphiteTypeToValid, 'Graphite Type');
+    validateRange(formData.hardnessBHNFrom, formData.hardnessBHNTo, setHardnessBHNFromValid, setHardnessBHNToValid, 'Hardness BHN');
+
     if (hasErrors) {
       return;
     }
@@ -283,18 +422,28 @@ const QcProductionDetails = () => {
     setDateValid(null);
     setPartNameValid(null);
     setNoOfMouldsValid(null);
-    setCPercentValid(null);
-    setSiPercentValid(null);
-    setMnPercentValid(null);
-    setPPercentValid(null);
-    setSPercentValid(null);
-    setMgPercentValid(null);
-    setCuPercentValid(null);
-    setCrPercentValid(null);
+    setCPercentFromValid(null);
+    setCPercentToValid(null);
+    setSiPercentFromValid(null);
+    setSiPercentToValid(null);
+    setMnPercentFromValid(null);
+    setMnPercentToValid(null);
+    setPPercentFromValid(null);
+    setPPercentToValid(null);
+    setSPercentFromValid(null);
+    setSPercentToValid(null);
+    setMgPercentFromValid(null);
+    setMgPercentToValid(null);
+    setCuPercentFromValid(null);
+    setCuPercentToValid(null);
+    setCrPercentFromValid(null);
+    setCrPercentToValid(null);
     setNodularityValid(null);
-    setGraphiteTypeValid(null);
+    setGraphiteTypeFromValid(null);
+    setGraphiteTypeToValid(null);
     setPearliteFertiteValid(null);
-    setHardnessBHNValid(null);
+    setHardnessBHNFromValid(null);
+    setHardnessBHNToValid(null);
     setTsValid(null);
     setYsValid(null);
     setElValid(null);
@@ -322,27 +471,48 @@ const QcProductionDetails = () => {
       const data = await response.json();
 
       if (data.success) {
-        alert('QC Production report created successfully!');
+        setShowSakthi(true);
         // Reset form and validation states
         setFormData({
-          date: getTodayDate(), partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
-          pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
-          nodularity: '', graphiteType: '', pearliteFerrite: '', hardnessBHN: '', ts: '', ys: '', el: ''
+          date: getTodayDate(), partName: '', noOfMoulds: '',
+          cPercentFrom: '', cPercentTo: '',
+          siPercentFrom: '', siPercentTo: '',
+          mnPercentFrom: '', mnPercentTo: '',
+          pPercentFrom: '', pPercentTo: '',
+          sPercentFrom: '', sPercentTo: '',
+          mgPercentFrom: '', mgPercentTo: '',
+          cuPercentFrom: '', cuPercentTo: '',
+          crPercentFrom: '', crPercentTo: '',
+          nodularity: '',
+          graphiteTypeFrom: '', graphiteTypeTo: '',
+          pearliteFerrite: '',
+          hardnessBHNFrom: '', hardnessBHNTo: '',
+          ts: '', ys: '', el: ''
         });
         setPartNameValid(null);
         setNoOfMouldsValid(null);
-        setCPercentValid(null);
-        setSiPercentValid(null);
-        setMnPercentValid(null);
-        setPPercentValid(null);
-        setSPercentValid(null);
-        setMgPercentValid(null);
-        setCuPercentValid(null);
-        setCrPercentValid(null);
+        setCPercentFromValid(null);
+        setCPercentToValid(null);
+        setSiPercentFromValid(null);
+        setSiPercentToValid(null);
+        setMnPercentFromValid(null);
+        setMnPercentToValid(null);
+        setPPercentFromValid(null);
+        setPPercentToValid(null);
+        setSPercentFromValid(null);
+        setSPercentToValid(null);
+        setMgPercentFromValid(null);
+        setMgPercentToValid(null);
+        setCuPercentFromValid(null);
+        setCuPercentToValid(null);
+        setCrPercentFromValid(null);
+        setCrPercentToValid(null);
         setNodularityValid(null);
-        setGraphiteTypeValid(null);
+        setGraphiteTypeFromValid(null);
+        setGraphiteTypeToValid(null);
         setPearliteFertiteValid(null);
-        setHardnessBHNValid(null);
+        setHardnessBHNFromValid(null);
+        setHardnessBHNToValid(null);
         setTsValid(null);
         setYsValid(null);
         setElValid(null);
@@ -356,25 +526,46 @@ const QcProductionDetails = () => {
       }
 
       setFormData({
-        date: getTodayDate(), partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
-        pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
-        nodularity: '', graphiteType: '', pearliteFerrite: '', hardnessBHN: '', ts: '', ys: '', el: ''
+        date: getTodayDate(), partName: '', noOfMoulds: '',
+        cPercentFrom: '', cPercentTo: '',
+        siPercentFrom: '', siPercentTo: '',
+        mnPercentFrom: '', mnPercentTo: '',
+        pPercentFrom: '', pPercentTo: '',
+        sPercentFrom: '', sPercentTo: '',
+        mgPercentFrom: '', mgPercentTo: '',
+        cuPercentFrom: '', cuPercentTo: '',
+        crPercentFrom: '', crPercentTo: '',
+        nodularity: '',
+        graphiteTypeFrom: '', graphiteTypeTo: '',
+        pearliteFerrite: '',
+        hardnessBHNFrom: '', hardnessBHNTo: '',
+        ts: '', ys: '', el: ''
       });
       // Reset all validation states
       setPartNameValid(null);
       setNoOfMouldsValid(null);
-      setCPercentValid(null);
-      setSiPercentValid(null);
-      setMnPercentValid(null);
-      setPPercentValid(null);
-      setSPercentValid(null);
-      setMgPercentValid(null);
-      setCuPercentValid(null);
-      setCrPercentValid(null);
+      setCPercentFromValid(null);
+      setCPercentToValid(null);
+      setSiPercentFromValid(null);
+      setSiPercentToValid(null);
+      setMnPercentFromValid(null);
+      setMnPercentToValid(null);
+      setPPercentFromValid(null);
+      setPPercentToValid(null);
+      setSPercentFromValid(null);
+      setSPercentToValid(null);
+      setMgPercentFromValid(null);
+      setMgPercentToValid(null);
+      setCuPercentFromValid(null);
+      setCuPercentToValid(null);
+      setCrPercentFromValid(null);
+      setCrPercentToValid(null);
       setNodularityValid(null);
-      setGraphiteTypeValid(null);
+      setGraphiteTypeFromValid(null);
+      setGraphiteTypeToValid(null);
       setPearliteFertiteValid(null);
-      setHardnessBHNValid(null);
+      setHardnessBHNFromValid(null);
+      setHardnessBHNToValid(null);
       setTsValid(null);
       setYsValid(null);
       setElValid(null);
@@ -390,39 +581,6 @@ const QcProductionDetails = () => {
     } finally {
       setSubmitLoading(false);
     }
-  };
-
-  const handleReset = () => {
-    setFormData({
-      date: '', partName: '', noOfMoulds: '', cPercent: '', siPercent: '', mnPercent: '',
-      pPercent: '', sPercent: '', mgPercent: '', cuPercent: '', crPercent: '',
-      nodularity: '', graphiteType: '', pearliteFerrite: '', hardnessBHN: '', ts: '', ys: '', el: ''
-    });
-    // Reset all validation states
-    setDateValid(null);
-    setPartNameValid(null);
-    setNoOfMouldsValid(null);
-    setCPercentValid(null);
-    setSiPercentValid(null);
-    setMnPercentValid(null);
-    setPPercentValid(null);
-    setSPercentValid(null);
-    setMgPercentValid(null);
-    setCuPercentValid(null);
-    setCrPercentValid(null);
-    setNodularityValid(null);
-    setGraphiteTypeValid(null);
-    setPearliteFertiteValid(null);
-    setHardnessBHNValid(null);
-    setTsValid(null);
-    setYsValid(null);
-    setElValid(null);
-  };
-
-  // Helper to get current date
-  const getTodayDate = () => {
-    const today = new Date();
-    return today.toISOString().split('T')[0];
   };
 
   return (
@@ -491,114 +649,226 @@ const QcProductionDetails = () => {
 
             <div className="qcproduction-form-group">
               <label>C % *</label>
-              <input
-                type="text"
-                name="cPercent"
-                value={formData.cPercent}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 3.54-3.75"
-                className={getInputClassName(cPercentValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  step="0.01"
+                  name="cPercentFrom"
+                  value={formData.cPercentFrom}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(cPercentFromValid)}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  name="cPercentTo"
+                  value={formData.cPercentTo}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(cPercentToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
               <label>Si % *</label>
-              <input
-                type="text"
-                name="siPercent"
-                value={formData.siPercent}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 2.40-2.80"
-                className={getInputClassName(siPercentValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  step="0.01"
+                  name="siPercentFrom"
+                  value={formData.siPercentFrom}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(siPercentFromValid)}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  name="siPercentTo"
+                  value={formData.siPercentTo}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(siPercentToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
               <label>Mn % *</label>
-              <input
-                type="text"
-                name="mnPercent"
-                value={formData.mnPercent}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 0.40-0.60"
-                className={getInputClassName(mnPercentValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  step="0.01"
+                  name="mnPercentFrom"
+                  value={formData.mnPercentFrom}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(mnPercentFromValid)}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  name="mnPercentTo"
+                  value={formData.mnPercentTo}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(mnPercentToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
               <label>P % *</label>
-              <input
-                type="text"
-                name="pPercent"
-                value={formData.pPercent}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 0.02-0.05"
-                className={getInputClassName(pPercentValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  step="0.01"
+                  name="pPercentFrom"
+                  value={formData.pPercentFrom}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(pPercentFromValid)}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  name="pPercentTo"
+                  value={formData.pPercentTo}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(pPercentToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
               <label>S % *</label>
-              <input
-                type="text"
-                name="sPercent"
-                value={formData.sPercent}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 0.01-0.05"
-                className={getInputClassName(sPercentValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  step="0.01"
+                  name="sPercentFrom"
+                  value={formData.sPercentFrom}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(sPercentFromValid)}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  name="sPercentTo"
+                  value={formData.sPercentTo}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(sPercentToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
               <label>Mg % *</label>
-              <input
-                type="text"
-                name="mgPercent"
-                value={formData.mgPercent}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 0.03-0.05"
-                className={getInputClassName(mgPercentValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  step="0.01"
+                  name="mgPercentFrom"
+                  value={formData.mgPercentFrom}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(mgPercentFromValid)}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  name="mgPercentTo"
+                  value={formData.mgPercentTo}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(mgPercentToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
               <label>Cu % *</label>
-              <input
-                type="text"
-                name="cuPercent"
-                value={formData.cuPercent}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 0.30-0.80"
-                className={getInputClassName(cuPercentValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  step="0.01"
+                  name="cuPercentFrom"
+                  value={formData.cuPercentFrom}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(cuPercentFromValid)}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  name="cuPercentTo"
+                  value={formData.cuPercentTo}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(cuPercentToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
               <label>Cr % *</label>
-              <input
-                type="text"
-                name="crPercent"
-                value={formData.crPercent}
-                onChange={handleChange}
-                onBlur={handleBlur}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 0.05-0.15"
-                className={getInputClassName(crPercentValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  step="0.01"
+                  name="crPercentFrom"
+                  value={formData.crPercentFrom}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(crPercentFromValid)}
+                />
+                <input
+                  type="number"
+                  step="0.01"
+                  name="crPercentTo"
+                  value={formData.crPercentTo}
+                  onChange={handleChange}
+                  onBlur={handleBlur}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(crPercentToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
@@ -616,15 +886,26 @@ const QcProductionDetails = () => {
 
             <div className="qcproduction-form-group">
               <label>Graphite Type *</label>
-              <input
-                type="text"
-                name="graphiteType"
-                value={formData.graphiteType}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 23-45"
-                className={getInputClassName(graphiteTypeValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  name="graphiteTypeFrom"
+                  value={formData.graphiteTypeFrom}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(graphiteTypeFromValid)}
+                />
+                <input
+                  type="number"
+                  name="graphiteTypeTo"
+                  value={formData.graphiteTypeTo}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(graphiteTypeToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
@@ -642,15 +923,26 @@ const QcProductionDetails = () => {
 
             <div className="qcproduction-form-group">
               <label>Hardness BHN *</label>
-              <input
-                type="text"
-                name="hardnessBHN"
-                value={formData.hardnessBHN}
-                onChange={handleChange}
-                onKeyDown={handleKeyDown}
-                placeholder="e.g: 25-48"
-                className={getInputClassName(hardnessBHNValid)}
-              />
+              <div className="qcproduction-range-input">
+                <input
+                  type="number"
+                  name="hardnessBHNFrom"
+                  value={formData.hardnessBHNFrom}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="From"
+                  className={getInputClassName(hardnessBHNFromValid)}
+                />
+                <input
+                  type="number"
+                  name="hardnessBHNTo"
+                  value={formData.hardnessBHNTo}
+                  onChange={handleChange}
+                  onKeyDown={handleKeyDown}
+                  placeholder="To"
+                  className={getInputClassName(hardnessBHNToValid)}
+                />
+              </div>
             </div>
 
             <div className="qcproduction-form-group">
@@ -694,27 +986,38 @@ const QcProductionDetails = () => {
       </form>
 
       <div className="qcproduction-submit-container">
-        <ResetButton onClick={handleReset}>
-          Reset Form
-        </ResetButton>
-
-        <div className="qcproduction-submit-right">
-          <SubmitButton
-            onClick={handleSubmit}
-            disabled={submitLoading}
-            type="button"
-          >
-            {submitLoading ? (
-              <>
-                <Loader2 size={18} className="animate-spin" />
-                Saving...
-              </>
-            ) : (
-              'Submit Entry'
-            )}
-          </SubmitButton>
-        </div>
+        <SubmitButton
+          onClick={handleSubmit}
+          disabled={submitLoading}
+          type="button"
+        >
+          {submitLoading ? (
+            <>
+              <Loader2 size={18} className="animate-spin" />
+              Saving...
+            </>
+          ) : (
+            'Submit Entry'
+          )}
+        </SubmitButton>
       </div>
+
+      {showSakthi && (
+        <div style={{
+          position: 'fixed',
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 9999
+        }}>
+          <Sakthi onComplete={() => setShowSakthi(false)} />
+        </div>
+      )}
     </>
   );
 };
